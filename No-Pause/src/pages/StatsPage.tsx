@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp } from 'lucide-react';
+import { useUser, useClerk, UserButton } from '@clerk/clerk-react';
 import { storage, SessionData, type AppPreferences } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
@@ -65,6 +66,8 @@ const THRESHOLD_OPTIONS: { level: PauseThresholdLevel; label: string; value: num
 
 export default function StatsPage() {
   const navigate = useNavigate();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
     () => storage.getPreferences().pauseThresholdLevel
@@ -284,51 +287,57 @@ export default function StatsPage() {
           <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Stats</h1>
           <p className="text-base text-muted-foreground font-sans">Flow score by practice mode.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Buttons removed */}
+      </div>
+
+      {/* Profile Row */}
+      <div className="w-full flex items-center justify-between rounded-[20px] bg-surface-elevated border border-border p-4 mb-8 shadow-card elevation-card max-h-[72px]">
+        <div className="flex items-center gap-4">
+          <div className="relative w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ring-2 ring-border overflow-hidden">
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "w-12 h-12",
+                  userButtonPopoverFooter: "hidden"
+                }
+              }}
+            />
+            {/* Fallback image manually defined underneath in case UserButton is overriding anything, but UserButton covers it. */}
+            <div className="absolute inset-0 pointer-events-none -z-10 bg-primary/20 flex items-center justify-center text-primary font-bold">
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <>{user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}</>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-foreground text-base truncate leading-tight">
+              {user?.fullName || 'User'}
+            </span>
+            <span className="text-muted-foreground text-sm truncate leading-tight">
+              {user?.primaryEmailAddress?.emailAddress || ''}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
           {isInstallEligible && !isInstalled && (
             <button
               type="button"
               onClick={handleInstallClick}
-              className="self-start md:self-auto px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
+              className="px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors hidden sm:block"
             >
               Install
             </button>
           )}
           <button
             type="button"
-            onClick={handleExportJson}
-            className="self-start md:self-auto px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
+            onClick={() => signOut()}
+            className="px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
           >
-            Export Data
+            Sign out
           </button>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="self-start md:self-auto px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={handleImportClick}
-            className="self-start md:self-auto px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
-          >
-            Import Data
-          </button>
-          <button
-            type="button"
-            onClick={handleResetStats}
-            className="self-start md:self-auto px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
-          >
-            Reset Stats
-          </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleImportJson}
-            className="hidden"
-          />
         </div>
       </div>
 
