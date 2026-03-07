@@ -62,3 +62,26 @@ export const getUserStats = query({
     };
   },
 });
+
+export const getSessions = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    if (identity.subject !== args.userId) {
+      throw new Error("Forbidden");
+    }
+
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    sessions.sort((a, b) => b.createdAt - a.createdAt);
+    return sessions.slice(0, 20);
+  },
+});

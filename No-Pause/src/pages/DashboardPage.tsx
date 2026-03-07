@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Flame, Target, Clock, Shield, Zap, Timer, Download, Instagram, Send, ExternalLink } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
+import { useQuery } from 'convex/react';
+import { api } from '@convex/_generated/api';
 import { storage } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/lib/scoringConstants';
@@ -90,6 +93,7 @@ const CompactModeCard = ({
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
+  const { userId } = useAuth();
   const [stats, setStats] = useState<ReturnType<typeof storage.getStats> | null>(null);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [installBannerDismissed, setInstallBannerDismissed] = useState(false);
@@ -99,6 +103,15 @@ export default function DashboardPage() {
   useEffect(() => {
     setStats(storage.getStats());
   }, []);
+
+  const remoteStats = useQuery(
+    api.sessions.getUserStats,
+    userId ? { userId } : 'skip',
+  );
+  const remoteStreak = useQuery(
+    api.streaks.getStreak,
+    userId ? { userId } : 'skip',
+  );
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -145,6 +158,11 @@ export default function DashboardPage() {
   const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
 
   if (!stats) return null;
+
+  const backendTotalSessions = remoteStats?.totalSessions ?? stats.totalSessions;
+  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? stats.totalPracticeTime;
+  const backendCurrentStreak = remoteStreak?.currentStreak ?? stats.currentStreak;
+  const backendBestStreak = stats.bestStreak;
 
   return (
     <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
@@ -326,9 +344,9 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Flame} label="Day Streak" value={stats.currentStreak} sub={`Best: ${stats.bestStreak}`} className="elevation-card" />
-        <StatCard icon={Target} label="Sessions" value={stats.totalSessions} className="elevation-card" />
-        <StatCard icon={Clock} label="Practice Time" value={formatTime(stats.totalPracticeTime)} className="elevation-card" />
+        <StatCard icon={Flame} label="Day Streak" value={backendCurrentStreak} sub={`Best: ${backendBestStreak}`} className="elevation-card" />
+        <StatCard icon={Target} label="Sessions" value={backendTotalSessions} className="elevation-card" />
+        <StatCard icon={Clock} label="Practice Time" value={formatTime(backendTotalPracticeTime)} className="elevation-card" />
         <StatCard icon={Zap} label="Flow Score" value={`${stats.avgScore}%`} sub={stats.bestScore > 0 ? `Best: ${stats.bestScore}%` : ''} className="elevation-card-elevated border border-ember-500/35" />
       </div>
 

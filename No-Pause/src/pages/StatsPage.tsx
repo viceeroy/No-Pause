@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
-import { useUser, useClerk, UserButton } from '@clerk/clerk-react';
+import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
+import { useQuery } from 'convex/react';
+import { api } from '@convex/_generated/api';
 import { storage, SessionData, type AppPreferences } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
@@ -68,6 +70,7 @@ export default function StatsPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const { userId } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
     () => storage.getPreferences().pauseThresholdLevel
@@ -81,6 +84,19 @@ export default function StatsPage() {
   const sessions = storage.getSessions();
   const lemonScores = storage.getLemonScores();
   const topicScores = storage.getTopicScores();
+
+  const remoteStats = useQuery(
+    api.sessions.getUserStats,
+    userId ? { userId } : 'skip',
+  );
+  const remoteStreak = useQuery(
+    api.streaks.getStreak,
+    userId ? { userId } : 'skip',
+  );
+  const remoteRecentSessions = useQuery(
+    api.sessions.getSessions,
+    userId ? { userId } : 'skip',
+  );
 
   const isScoredSession = (session: SessionData) => Boolean(session.isCompleted && (session.flowScore || 0) > 0);
   const scoredLemon = lemonScores.filter(isScoredSession);
@@ -101,9 +117,25 @@ export default function StatsPage() {
     ...storage.getStreak(),
   };
 
+  const backendTotalSessions = remoteStats?.totalSessions ?? scoredStats.totalSessions;
+  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? scoredStats.totalPracticeTime;
+  const backendCurrentStreak = remoteStreak?.currentStreak ?? scoredStats.current;
+  const backendBestStreak = scoredStats.best;
+
   const allSessionsCombined = allSessions
     .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
-  const recentSessions = allSessionsCombined.slice(0, 8);
+  const recentLocalSessions = allSessionsCombined.slice(0, 8);
+
+  const recentSessions = remoteRecentSessions && remoteRecentSessions.length > 0
+    ? remoteRecentSessions.map((session) => ({
+        id: session._id,
+        created_at: new Date(session.createdAt).toISOString(),
+        duration: session.duration,
+        hesitationCount: session.pauses,
+        flowScore: 0,
+        mode: 'session',
+      }))
+    : recentLocalSessions;
 
   const OverviewCard = ({ icon: Icon, label, value, sub }: {
     icon: React.ElementType;
@@ -394,9 +426,9 @@ export default function StatsPage() {
       </Dialog>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-        <OverviewCard icon={Flame} label="Current Streak" value={scoredStats.current} sub={`Best: ${scoredStats.best}`} />
-        <OverviewCard icon={Target} label="Scored Sessions" value={scoredStats.totalSessions} />
-        <OverviewCard icon={Clock} label="Practice Time" value={formatDuration(scoredStats.totalPracticeTime)} />
+        <OverviewCard icon={Flame} label="Current Streak" value={backendCurrentStreak} sub={`Best: ${backendBestStreak}`} />
+        <OverviewCard icon={Target} label="Scored Sessions" value={backendTotalSessions} />
+        <OverviewCard icon={Clock} label="Practice Time" value={formatDuration(backendTotalPracticeTime)} />
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={`${scoredStats.avgScore}`} sub={scoredStats.bestScore > 0 ? `Best: ${scoredStats.bestScore}` : undefined} />
       </div>
 
