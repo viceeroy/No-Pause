@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const AuthPage = () => {
   return (
-    <div className="min-h-screen bg-surface-base flex flex-col items-center justify-center p-6 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-surface-base flex flex-col items-center justify-center p-4 md:p-6 pb-20 relative overflow-hidden">
       <style>{`
         @keyframes wave-pulse {
           0% { transform: scaleY(0.3); opacity: 0.1; }
@@ -39,12 +39,12 @@ const AuthPage = () => {
         })}
       </div>
 
-      <div className="w-full max-w-sm md:max-w-md flex flex-col items-center gap-8 relative z-10">
+      <div className="w-full max-w-sm md:max-w-md flex flex-col items-center gap-6 md:gap-8 relative z-10 px-1 md:px-0">
         <div className="text-center flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-4 tracking-tight drop-shadow-md">
+          <h1 className="text-[2.25rem] leading-none md:text-5xl font-serif font-medium text-foreground mb-2 md:mb-4 tracking-tight drop-shadow-md">
             No Pause
           </h1>
-          <h2 className="text-base md:text-lg font-serif font-semibold text-foreground/95 tracking-tight px-4 text-center">
+          <h2 className="text-sm md:text-lg font-serif font-semibold text-foreground/95 tracking-tight px-1 md:px-4 text-center">
             Real-time speaking analytics tool.
           </h2>
         </div>
@@ -65,7 +65,7 @@ const AuthPage = () => {
                 formButtonPrimary: "hidden",
                 dividerRow: "hidden",
                 socialButtonsBlockButton:
-                  "border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all h-14 md:h-16 shadow-sm hover:shadow-md",
+                  "border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all min-h-[52px] h-14 md:h-16 shadow-sm hover:shadow-md",
                 socialButtonsBlockButtonText: "font-sans font-semibold text-base md:text-lg text-foreground",
               },
             }}

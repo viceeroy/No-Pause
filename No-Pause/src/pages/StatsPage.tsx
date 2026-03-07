@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Flame, Clock, TrendingUp } from 'lucide-react';
+import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton } from '@clerk/clerk-react';
 import { storage, SessionData, type AppPreferences } from '@/lib/storage';
 import { cn } from '@/lib/utils';
@@ -334,9 +334,11 @@ export default function StatsPage() {
           <button
             type="button"
             onClick={() => signOut()}
-            className="px-4 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
+            className="p-2 md:px-4 md:py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors flex items-center justify-center"
+            title="Sign out"
           >
-            Sign out
+            <LogOut size={16} className="md:hidden" />
+            <span className="hidden md:inline">Sign out</span>
           </button>
         </div>
       </div>
