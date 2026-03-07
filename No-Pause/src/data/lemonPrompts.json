@@ -1,0 +1,1202 @@
+[
+  {
+    "id": "L001",
+    "word": "Backpack",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L002",
+    "word": "Pride",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L003",
+    "word": "Negotiating",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L004",
+    "word": "Missing a deadline",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L005",
+    "word": "Airport",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L006",
+    "word": "Mentor",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L007",
+    "word": "Notebook",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L008",
+    "word": "Regret",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L009",
+    "word": "Apologizing",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L010",
+    "word": "First day at work",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L011",
+    "word": "Classroom",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L012",
+    "word": "Manager",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L013",
+    "word": "Key",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L014",
+    "word": "Relief",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L015",
+    "word": "Presenting",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L016",
+    "word": "Unexpected guest",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L017",
+    "word": "Hospital",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L018",
+    "word": "Best friend",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L019",
+    "word": "Phone charger",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L020",
+    "word": "Anxiety",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L021",
+    "word": "Planning",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L022",
+    "word": "Difficult phone call",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L023",
+    "word": "Library",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L024",
+    "word": "Teacher",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L025",
+    "word": "Coffee mug",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L026",
+    "word": "Excitement",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L027",
+    "word": "Listening",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L028",
+    "word": "Team disagreement",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L029",
+    "word": "Train station",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L030",
+    "word": "Neighbor",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L031",
+    "word": "Umbrella",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L032",
+    "word": "Jealousy",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L033",
+    "word": "Explaining",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L034",
+    "word": "Rainy commute",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L035",
+    "word": "Coffee shop",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L036",
+    "word": "Teammate",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L037",
+    "word": "Headphones",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L038",
+    "word": "Calm",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L039",
+    "word": "Adapting",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L040",
+    "word": "Losing your wallet",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L041",
+    "word": "Gym",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L042",
+    "word": "Customer",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L043",
+    "word": "Wallet",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L044",
+    "word": "Frustration",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L045",
+    "word": "Deciding",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L046",
+    "word": "Last-minute change",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L047",
+    "word": "Market",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L048",
+    "word": "Sibling",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L049",
+    "word": "Mirror",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L050",
+    "word": "Hope",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L051",
+    "word": "Teaching",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L052",
+    "word": "Public speaking moment",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L053",
+    "word": "Office",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L054",
+    "word": "Classmate",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L055",
+    "word": "Laptop",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L056",
+    "word": "Gratitude",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L057",
+    "word": "Improvising",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L058",
+    "word": "Travel delay",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L059",
+    "word": "Beach",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L060",
+    "word": "Coach",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L061",
+    "word": "Watch",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L062",
+    "word": "Fear",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L063",
+    "word": "Collaborating",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L064",
+    "word": "Budget problem",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L065",
+    "word": "Park",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L066",
+    "word": "Doctor",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L067",
+    "word": "Water bottle",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L068",
+    "word": "Confidence",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L069",
+    "word": "Persuading",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L070",
+    "word": "Exam morning",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L071",
+    "word": "Restaurant",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L072",
+    "word": "Stranger",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L073",
+    "word": "Pen",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L074",
+    "word": "Disappointment",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L075",
+    "word": "Reflecting",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L076",
+    "word": "Family celebration",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L077",
+    "word": "Museum",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L078",
+    "word": "Partner",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L079",
+    "word": "Sunglasses",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L080",
+    "word": "Motivation",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L081",
+    "word": "Prioritizing",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L082",
+    "word": "Customer complaint",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L083",
+    "word": "Neighborhood street",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L084",
+    "word": "Colleague",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L085",
+    "word": "Shoes",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L086",
+    "word": "Curiosity",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L087",
+    "word": "Helping",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L088",
+    "word": "Job interview",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L089",
+    "word": "Conference room",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L090",
+    "word": "Childhood friend",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L091",
+    "word": "Bicycle",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L092",
+    "word": "Nostalgia",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L093",
+    "word": "Leading",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L094",
+    "word": "Moving to a new city",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L095",
+    "word": "Home kitchen",
+    "category": "Place",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L096",
+    "word": "Team leader",
+    "category": "People",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L097",
+    "word": "Doorbell",
+    "category": "Object",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L098",
+    "word": "Joy",
+    "category": "Emotion",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L099",
+    "word": "Practicing",
+    "category": "Action",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  },
+  {
+    "id": "L100",
+    "word": "Making a big decision",
+    "category": "Situation",
+    "speakingHints": [
+      "describe it",
+      "tell a story",
+      "explain when you use it",
+      "why it matters",
+      "personal memory"
+    ]
+  }
+]

@@ -1,0 +1,3902 @@
+[
+  {
+    "id": "T001",
+    "topicTitle": "Describe a friend who made you laugh",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T002",
+    "topicTitle": "Describe a family member you admire",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T003",
+    "topicTitle": "Describe a teacher you still remember",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T004",
+    "topicTitle": "Describe a neighbor you like talking to",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T005",
+    "topicTitle": "Describe a classmate you learned from",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T006",
+    "topicTitle": "Describe a place you like to relax",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T007",
+    "topicTitle": "Describe a park or street you visit often",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T008",
+    "topicTitle": "Describe a cafe or restaurant you enjoy",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T009",
+    "topicTitle": "Describe a room in your home you like",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T010",
+    "topicTitle": "Describe a trip you really enjoyed",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T011",
+    "topicTitle": "Describe a meal you cooked or ate",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T012",
+    "topicTitle": "Describe a gift you received",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T013",
+    "topicTitle": "Describe a hobby you started",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T014",
+    "topicTitle": "Describe a happy moment with friends",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T015",
+    "topicTitle": "Describe a day you felt stressed",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T016",
+    "topicTitle": "Describe a time you were late",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T017",
+    "topicTitle": "Describe a mistake you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T018",
+    "topicTitle": "Describe a movie that impressed you",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T019",
+    "topicTitle": "Describe a photo that is meaningful to you",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T020",
+    "topicTitle": "Describe a day that ended better than expected",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T021",
+    "topicTitle": "Describe a time you helped a stranger",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T022",
+    "topicTitle": "Describe a time someone helped you",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T023",
+    "topicTitle": "Describe a time you celebrated something small",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T024",
+    "topicTitle": "Describe a moment you felt proud",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T025",
+    "topicTitle": "Describe a school memory you enjoy recalling",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T026",
+    "topicTitle": "Describe a game or activity you loved as a child",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T027",
+    "topicTitle": "Describe a shop you like visiting",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T028",
+    "topicTitle": "Describe a local event you attended",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T029",
+    "topicTitle": "Describe a rainy day you remember",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T030",
+    "topicTitle": "Describe a weekend that felt perfect",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T031",
+    "topicTitle": "Describe a friend who made you laugh",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T032",
+    "topicTitle": "Describe a family member you admire",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T033",
+    "topicTitle": "Describe a teacher you still remember",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T034",
+    "topicTitle": "Describe a neighbor you like talking to",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T035",
+    "topicTitle": "Describe a classmate you learned from",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T036",
+    "topicTitle": "Describe a place you like to relax",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T037",
+    "topicTitle": "Describe a park or street you visit often",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T038",
+    "topicTitle": "Describe a cafe or restaurant you enjoy",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T039",
+    "topicTitle": "Describe a room in your home you like",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T040",
+    "topicTitle": "Describe a trip you really enjoyed",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T041",
+    "topicTitle": "Describe a meal you cooked or ate",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T042",
+    "topicTitle": "Describe a gift you received",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T043",
+    "topicTitle": "Describe a hobby you started",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T044",
+    "topicTitle": "Describe a happy moment with friends",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T045",
+    "topicTitle": "Describe a day you felt stressed",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T046",
+    "topicTitle": "Describe a time you were late",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T047",
+    "topicTitle": "Describe a mistake you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T048",
+    "topicTitle": "Describe a movie that impressed you",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T049",
+    "topicTitle": "Describe a photo that is meaningful to you",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T050",
+    "topicTitle": "Describe a day that ended better than expected",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T051",
+    "topicTitle": "Describe a time you helped a stranger",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T052",
+    "topicTitle": "Describe a time someone helped you",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T053",
+    "topicTitle": "Describe a time you celebrated something small",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T054",
+    "topicTitle": "Describe a moment you felt proud",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T055",
+    "topicTitle": "Describe a school memory you enjoy recalling",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T056",
+    "topicTitle": "Describe a game or activity you loved as a child",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T057",
+    "topicTitle": "Describe a shop you like visiting",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T058",
+    "topicTitle": "Describe a local event you attended",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T059",
+    "topicTitle": "Describe a rainy day you remember",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T060",
+    "topicTitle": "Describe a weekend that felt perfect",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T061",
+    "topicTitle": "Describe a friend who made you laugh",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T062",
+    "topicTitle": "Describe a family member you admire",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T063",
+    "topicTitle": "Describe a teacher you still remember",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T064",
+    "topicTitle": "Describe a neighbor you like talking to",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T065",
+    "topicTitle": "Describe a classmate you learned from",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T066",
+    "topicTitle": "Describe a place you like to relax",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T067",
+    "topicTitle": "Describe a park or street you visit often",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T068",
+    "topicTitle": "Describe a cafe or restaurant you enjoy",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T069",
+    "topicTitle": "Describe a room in your home you like",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T070",
+    "topicTitle": "Describe a trip you really enjoyed",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T071",
+    "topicTitle": "Describe a meal you cooked or ate",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T072",
+    "topicTitle": "Describe a gift you received",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T073",
+    "topicTitle": "Describe a hobby you started",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T074",
+    "topicTitle": "Describe a happy moment with friends",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T075",
+    "topicTitle": "Describe a day you felt stressed",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T076",
+    "topicTitle": "Describe a time you were late",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T077",
+    "topicTitle": "Describe a mistake you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T078",
+    "topicTitle": "Describe a movie that impressed you",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T079",
+    "topicTitle": "Describe a photo that is meaningful to you",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T080",
+    "topicTitle": "Describe a day that ended better than expected",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T081",
+    "topicTitle": "Describe a time you helped a stranger",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T082",
+    "topicTitle": "Describe a time someone helped you",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T083",
+    "topicTitle": "Describe a time you celebrated something small",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T084",
+    "topicTitle": "Describe a moment you felt proud",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T085",
+    "topicTitle": "Describe a school memory you enjoy recalling",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T086",
+    "topicTitle": "Describe a game or activity you loved as a child",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T087",
+    "topicTitle": "Describe a shop you like visiting",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T088",
+    "topicTitle": "Describe a local event you attended",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T089",
+    "topicTitle": "Describe a rainy day you remember",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T090",
+    "topicTitle": "Describe a weekend that felt perfect",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T091",
+    "topicTitle": "Describe a friend who made you laugh",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T092",
+    "topicTitle": "Describe a family member you admire",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T093",
+    "topicTitle": "Describe a teacher you still remember",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T094",
+    "topicTitle": "Describe a neighbor you like talking to",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T095",
+    "topicTitle": "Describe a classmate you learned from",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T096",
+    "topicTitle": "Describe a place you like to relax",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T097",
+    "topicTitle": "Describe a park or street you visit often",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T098",
+    "topicTitle": "Describe a cafe or restaurant you enjoy",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T099",
+    "topicTitle": "Describe a room in your home you like",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T100",
+    "topicTitle": "Describe a trip you really enjoyed",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T101",
+    "topicTitle": "Describe a meal you cooked or ate",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T102",
+    "topicTitle": "Describe a gift you received",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T103",
+    "topicTitle": "Describe a hobby you started",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T104",
+    "topicTitle": "Describe a happy moment with friends",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T105",
+    "topicTitle": "Describe a day you felt stressed",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T106",
+    "topicTitle": "Describe a time you were late",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T107",
+    "topicTitle": "Describe a mistake you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T108",
+    "topicTitle": "Describe a movie that impressed you",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T109",
+    "topicTitle": "Describe a photo that is meaningful to you",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T110",
+    "topicTitle": "Describe a day that ended better than expected",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T111",
+    "topicTitle": "Describe a time you helped a stranger",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T112",
+    "topicTitle": "Describe a time someone helped you",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T113",
+    "topicTitle": "Describe a time you celebrated something small",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T114",
+    "topicTitle": "Describe a moment you felt proud",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T115",
+    "topicTitle": "Describe a school memory you enjoy recalling",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T116",
+    "topicTitle": "Describe a game or activity you loved as a child",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T117",
+    "topicTitle": "Describe a shop you like visiting",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T118",
+    "topicTitle": "Describe a local event you attended",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T119",
+    "topicTitle": "Describe a rainy day you remember",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T120",
+    "topicTitle": "Describe a weekend that felt perfect",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T121",
+    "topicTitle": "Describe a friend who made you laugh",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T122",
+    "topicTitle": "Describe a family member you admire",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T123",
+    "topicTitle": "Describe a teacher you still remember",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T124",
+    "topicTitle": "Describe a neighbor you like talking to",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T125",
+    "topicTitle": "Describe a classmate you learned from",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T126",
+    "topicTitle": "Describe a place you like to relax",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T127",
+    "topicTitle": "Describe a park or street you visit often",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T128",
+    "topicTitle": "Describe a cafe or restaurant you enjoy",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T129",
+    "topicTitle": "Describe a room in your home you like",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T130",
+    "topicTitle": "Describe a trip you really enjoyed",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T131",
+    "topicTitle": "Describe a meal you cooked or ate",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T132",
+    "topicTitle": "Describe a gift you received",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T133",
+    "topicTitle": "Describe a hobby you started",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T134",
+    "topicTitle": "Describe a happy moment with friends",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T135",
+    "topicTitle": "Describe a day you felt stressed",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T136",
+    "topicTitle": "Describe a time you were late",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T137",
+    "topicTitle": "Describe a mistake you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T138",
+    "topicTitle": "Describe a movie that impressed you",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T139",
+    "topicTitle": "Describe a photo that is meaningful to you",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T140",
+    "topicTitle": "Describe a day that ended better than expected",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T141",
+    "topicTitle": "Describe a time you helped a stranger",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T142",
+    "topicTitle": "Describe a time someone helped you",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T143",
+    "topicTitle": "Describe a time you celebrated something small",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T144",
+    "topicTitle": "Describe a moment you felt proud",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T145",
+    "topicTitle": "Describe a school memory you enjoy recalling",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T146",
+    "topicTitle": "Describe a game or activity you loved as a child",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T147",
+    "topicTitle": "Describe a shop you like visiting",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T148",
+    "topicTitle": "Describe a local event you attended",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T149",
+    "topicTitle": "Describe a rainy day you remember",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T150",
+    "topicTitle": "Describe a weekend that felt perfect",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T151",
+    "topicTitle": "Describe a friend who made you laugh",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T152",
+    "topicTitle": "Describe a family member you admire",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T153",
+    "topicTitle": "Describe a teacher you still remember",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T154",
+    "topicTitle": "Describe a neighbor you like talking to",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T155",
+    "topicTitle": "Describe a classmate you learned from",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T156",
+    "topicTitle": "Describe a place you like to relax",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T157",
+    "topicTitle": "Describe a park or street you visit often",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T158",
+    "topicTitle": "Describe a cafe or restaurant you enjoy",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T159",
+    "topicTitle": "Describe a room in your home you like",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T160",
+    "topicTitle": "Describe a trip you really enjoyed",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T161",
+    "topicTitle": "Describe a meal you cooked or ate",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T162",
+    "topicTitle": "Describe a gift you received",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T163",
+    "topicTitle": "Describe a hobby you started",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T164",
+    "topicTitle": "Describe a happy moment with friends",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T165",
+    "topicTitle": "Describe a day you felt stressed",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T166",
+    "topicTitle": "Describe a time you were late",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T167",
+    "topicTitle": "Describe a mistake you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T168",
+    "topicTitle": "Describe a movie that impressed you",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "easy",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T169",
+    "topicTitle": "Describe a photo that is meaningful to you",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T170",
+    "topicTitle": "Describe a day that ended better than expected",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T171",
+    "topicTitle": "Describe a time you helped a stranger",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T172",
+    "topicTitle": "Describe a time someone helped you",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T173",
+    "topicTitle": "Describe a time you celebrated something small",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T174",
+    "topicTitle": "Describe a moment you felt proud",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T175",
+    "topicTitle": "Describe a school memory you enjoy recalling",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T176",
+    "topicTitle": "Describe a game or activity you loved as a child",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "easy",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T177",
+    "topicTitle": "Describe a shop you like visiting",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "easy",
+    "category": "PLACE"
+  },
+  {
+    "id": "T178",
+    "topicTitle": "Describe a local event you attended",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T179",
+    "topicTitle": "Describe a rainy day you remember",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T180",
+    "topicTitle": "Describe a weekend that felt perfect",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "easy",
+    "category": "EVENT"
+  },
+  {
+    "id": "T181",
+    "topicTitle": "Describe a challenge you overcame",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T182",
+    "topicTitle": "Describe a difficult decision you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T183",
+    "topicTitle": "Describe a decision you later regretted",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T184",
+    "topicTitle": "Describe a person who changed your thinking",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T185",
+    "topicTitle": "Describe a skill that took time to learn",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T186",
+    "topicTitle": "Describe a time you solved a problem quickly",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T187",
+    "topicTitle": "Describe a time you spoke in public",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T188",
+    "topicTitle": "Describe a time you had to apologize",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T189",
+    "topicTitle": "Describe a moment you had to stay calm",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T190",
+    "topicTitle": "Describe a situation where you had to lead",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T191",
+    "topicTitle": "Describe a time you changed your plan at the last minute",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T192",
+    "topicTitle": "Describe a time you had to ask for help",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T193",
+    "topicTitle": "Describe a time you gave someone advice",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T194",
+    "topicTitle": "Describe a time you fixed a misunderstanding",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T195",
+    "topicTitle": "Describe a time you managed a busy day well",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T196",
+    "topicTitle": "Describe a time you learned from failure",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T197",
+    "topicTitle": "Describe a time you handled pressure",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T198",
+    "topicTitle": "Describe a time you had to choose between two options",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T199",
+    "topicTitle": "Describe a time you supported someone emotionally",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T200",
+    "topicTitle": "Describe a time you adapted to a new place",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T201",
+    "topicTitle": "Describe a time you learned something outside school",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T202",
+    "topicTitle": "Describe a time you faced an unexpected problem",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T203",
+    "topicTitle": "Describe a time you completed something difficult",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T204",
+    "topicTitle": "Describe a conversation that changed your mind",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T205",
+    "topicTitle": "Describe a time you felt nervous before speaking",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T206",
+    "topicTitle": "Describe a time you solved a conflict between people",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T207",
+    "topicTitle": "Describe a time you learned to be patient",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T208",
+    "topicTitle": "Describe a time you took responsibility for a mistake",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T209",
+    "topicTitle": "Describe a time you did something brave",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T210",
+    "topicTitle": "Describe a time you learned from someone younger or older",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T211",
+    "topicTitle": "Describe a challenge you overcame",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T212",
+    "topicTitle": "Describe a difficult decision you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T213",
+    "topicTitle": "Describe a decision you later regretted",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T214",
+    "topicTitle": "Describe a person who changed your thinking",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T215",
+    "topicTitle": "Describe a skill that took time to learn",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T216",
+    "topicTitle": "Describe a time you solved a problem quickly",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T217",
+    "topicTitle": "Describe a time you spoke in public",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T218",
+    "topicTitle": "Describe a time you had to apologize",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T219",
+    "topicTitle": "Describe a moment you had to stay calm",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T220",
+    "topicTitle": "Describe a situation where you had to lead",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T221",
+    "topicTitle": "Describe a time you changed your plan at the last minute",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T222",
+    "topicTitle": "Describe a time you had to ask for help",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T223",
+    "topicTitle": "Describe a time you gave someone advice",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T224",
+    "topicTitle": "Describe a time you fixed a misunderstanding",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T225",
+    "topicTitle": "Describe a time you managed a busy day well",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T226",
+    "topicTitle": "Describe a time you learned from failure",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T227",
+    "topicTitle": "Describe a time you handled pressure",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T228",
+    "topicTitle": "Describe a time you had to choose between two options",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T229",
+    "topicTitle": "Describe a time you supported someone emotionally",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T230",
+    "topicTitle": "Describe a time you adapted to a new place",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T231",
+    "topicTitle": "Describe a time you learned something outside school",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T232",
+    "topicTitle": "Describe a time you faced an unexpected problem",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T233",
+    "topicTitle": "Describe a time you completed something difficult",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T234",
+    "topicTitle": "Describe a conversation that changed your mind",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T235",
+    "topicTitle": "Describe a time you felt nervous before speaking",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T236",
+    "topicTitle": "Describe a time you solved a conflict between people",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T237",
+    "topicTitle": "Describe a time you learned to be patient",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T238",
+    "topicTitle": "Describe a time you took responsibility for a mistake",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T239",
+    "topicTitle": "Describe a time you did something brave",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T240",
+    "topicTitle": "Describe a time you learned from someone younger or older",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T241",
+    "topicTitle": "Describe a challenge you overcame",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T242",
+    "topicTitle": "Describe a difficult decision you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T243",
+    "topicTitle": "Describe a decision you later regretted",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T244",
+    "topicTitle": "Describe a person who changed your thinking",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T245",
+    "topicTitle": "Describe a skill that took time to learn",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T246",
+    "topicTitle": "Describe a time you solved a problem quickly",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T247",
+    "topicTitle": "Describe a time you spoke in public",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T248",
+    "topicTitle": "Describe a time you had to apologize",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T249",
+    "topicTitle": "Describe a moment you had to stay calm",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T250",
+    "topicTitle": "Describe a situation where you had to lead",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T251",
+    "topicTitle": "Describe a time you changed your plan at the last minute",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T252",
+    "topicTitle": "Describe a time you had to ask for help",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T253",
+    "topicTitle": "Describe a time you gave someone advice",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T254",
+    "topicTitle": "Describe a time you fixed a misunderstanding",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T255",
+    "topicTitle": "Describe a time you managed a busy day well",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T256",
+    "topicTitle": "Describe a time you learned from failure",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T257",
+    "topicTitle": "Describe a time you handled pressure",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T258",
+    "topicTitle": "Describe a time you had to choose between two options",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T259",
+    "topicTitle": "Describe a time you supported someone emotionally",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T260",
+    "topicTitle": "Describe a time you adapted to a new place",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T261",
+    "topicTitle": "Describe a time you learned something outside school",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T262",
+    "topicTitle": "Describe a time you faced an unexpected problem",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T263",
+    "topicTitle": "Describe a time you completed something difficult",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T264",
+    "topicTitle": "Describe a conversation that changed your mind",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T265",
+    "topicTitle": "Describe a time you felt nervous before speaking",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T266",
+    "topicTitle": "Describe a time you solved a conflict between people",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T267",
+    "topicTitle": "Describe a time you learned to be patient",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T268",
+    "topicTitle": "Describe a time you took responsibility for a mistake",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T269",
+    "topicTitle": "Describe a time you did something brave",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T270",
+    "topicTitle": "Describe a time you learned from someone younger or older",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T271",
+    "topicTitle": "Describe a challenge you overcame",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T272",
+    "topicTitle": "Describe a difficult decision you made",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T273",
+    "topicTitle": "Describe a decision you later regretted",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T274",
+    "topicTitle": "Describe a person who changed your thinking",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T275",
+    "topicTitle": "Describe a skill that took time to learn",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T276",
+    "topicTitle": "Describe a time you solved a problem quickly",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T277",
+    "topicTitle": "Describe a time you spoke in public",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T278",
+    "topicTitle": "Describe a time you had to apologize",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T279",
+    "topicTitle": "Describe a moment you had to stay calm",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T280",
+    "topicTitle": "Describe a situation where you had to lead",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T281",
+    "topicTitle": "Describe a time you changed your plan at the last minute",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T282",
+    "topicTitle": "Describe a time you had to ask for help",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T283",
+    "topicTitle": "Describe a time you gave someone advice",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T284",
+    "topicTitle": "Describe a time you fixed a misunderstanding",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T285",
+    "topicTitle": "Describe a time you managed a busy day well",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T286",
+    "topicTitle": "Describe a time you learned from failure",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T287",
+    "topicTitle": "Describe a time you handled pressure",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T288",
+    "topicTitle": "Describe a time you had to choose between two options",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T289",
+    "topicTitle": "Describe a time you supported someone emotionally",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T290",
+    "topicTitle": "Describe a time you adapted to a new place",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T291",
+    "topicTitle": "Describe a time you learned something outside school",
+    "cueCard": [
+      "who this person was",
+      "what your relationship was",
+      "when this happened",
+      "what this person did",
+      "why you remember it"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T292",
+    "topicTitle": "Describe a time you faced an unexpected problem",
+    "cueCard": [
+      "what the place is",
+      "where it is",
+      "when you went there",
+      "what you did there",
+      "how you felt there"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T293",
+    "topicTitle": "Describe a time you completed something difficult",
+    "cueCard": [
+      "what the situation was",
+      "when it happened",
+      "what happened first",
+      "what happened next",
+      "what you learned"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T294",
+    "topicTitle": "Describe a conversation that changed your mind",
+    "cueCard": [
+      "what you remember",
+      "when it happened",
+      "where you were",
+      "who was involved",
+      "why it stays in your mind"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T295",
+    "topicTitle": "Describe a time you felt nervous before speaking",
+    "cueCard": [
+      "what kind of event it was",
+      "how you prepared",
+      "what happened on the day",
+      "what was memorable",
+      "why it mattered to you"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  },
+  {
+    "id": "T296",
+    "topicTitle": "Describe a time you solved a conflict between people",
+    "cueCard": [
+      "who this person is",
+      "when you met this person",
+      "where you were",
+      "what happened",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "PEOPLE"
+  },
+  {
+    "id": "T297",
+    "topicTitle": "Describe a time you learned to be patient",
+    "cueCard": [
+      "what this place looked like",
+      "who you were with",
+      "when you visited",
+      "what happened there",
+      "why this place is special"
+    ],
+    "difficulty": "medium",
+    "category": "PLACE"
+  },
+  {
+    "id": "T298",
+    "topicTitle": "Describe a time you took responsibility for a mistake",
+    "cueCard": [
+      "when it happened",
+      "where you were",
+      "who was with you",
+      "what you did",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EXPERIENCE"
+  },
+  {
+    "id": "T299",
+    "topicTitle": "Describe a time you did something brave",
+    "cueCard": [
+      "what the memory is about",
+      "who you were with",
+      "what happened",
+      "how you reacted",
+      "how you feel about it now"
+    ],
+    "difficulty": "medium",
+    "category": "MEMORY"
+  },
+  {
+    "id": "T300",
+    "topicTitle": "Describe a time you learned from someone younger or older",
+    "cueCard": [
+      "what the event was",
+      "when and where it happened",
+      "who took part",
+      "what happened during it",
+      "how you felt"
+    ],
+    "difficulty": "medium",
+    "category": "EVENT"
+  }
+]
