@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@convex": path.resolve(__dirname, "../convex"),
+      "convex/server": path.resolve(
+        __dirname,
+        "./node_modules/convex/dist/esm/server/index.js",
+      ),
     },
   },
 }));

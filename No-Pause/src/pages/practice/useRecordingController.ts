@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
+import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
 import { micService } from '@/lib/micService';
 import { storage } from '@/lib/storage';
