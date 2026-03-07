@@ -10,6 +10,14 @@ export const updateStreak = mutation({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    if (identity.subject !== args.userId) {
+      throw new Error("Forbidden");
+    }
+
     const now = Date.now();
     const today = dayNumberUtc(now);
 

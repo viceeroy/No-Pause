@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { useMutation, useQuery } from 'convex/react';
+import { useAuth } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
 import { micService } from '@/lib/micService';
@@ -34,27 +35,15 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionDataRef = useRef<{ startTime: number; sessionId: string } | null>(null);
-  const userIdRef = useRef<string>('');
   const soundDetectedRef = useRef(false);
   const micInitializingRef = useRef(false);
   const isRecordingRef = useRef(false);
 
-  if (!userIdRef.current && typeof window !== 'undefined') {
-    const userIdKey = 'nopause_user_id';
-    const existingUserId = window.localStorage.getItem(userIdKey);
-    if (existingUserId) {
-      userIdRef.current = existingUserId;
-    } else {
-      const generatedUserId = `user_${Math.random().toString(36).slice(2, 10)}`;
-      window.localStorage.setItem(userIdKey, generatedUserId);
-      userIdRef.current = generatedUserId;
-    }
-  }
-  const userId = userIdRef.current || 'guest_user';
+  const { userId } = useAuth();
 
   const saveSession = useMutation(api.sessions.saveSession);
   const updateStreak = useMutation(api.streaks.updateStreak);
-  const stats = useQuery(api.sessions.getUserStats, { userId });
+  const stats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
 
   const {
     lemonPrompt,
@@ -143,12 +132,12 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       try {
         await Promise.all([
           saveSession({
-            userId,
+            userId: userId!,
             duration,
             pauses: results.hesitationCount,
             words,
           }),
-          updateStreak({ userId }),
+          updateStreak({ userId: userId! }),
         ]);
       } catch (error) {
         console.error('Failed to sync session to Convex:', error);

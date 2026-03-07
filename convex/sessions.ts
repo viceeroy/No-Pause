@@ -9,6 +9,14 @@ export const saveSession = mutation({
     words: v.number(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    if (identity.subject !== args.userId) {
+      throw new Error("Forbidden");
+    }
+
     await ctx.db.insert("sessions", {
       userId: args.userId,
       duration: args.duration,
@@ -24,6 +32,14 @@ export const getUserStats = query({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    if (identity.subject !== args.userId) {
+      throw new Error("Forbidden");
+    }
+
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
