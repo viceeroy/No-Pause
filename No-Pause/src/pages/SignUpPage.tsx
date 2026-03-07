@@ -30,12 +30,12 @@ const SignUpPage = () => {
               key={i}
               className="w-3 md:w-4 rounded-full bg-primary"
               style={{
-                height: \`\${heights[i]}px\`,
-        animation: \`wave-pulse 2s ease-in-out infinite\`,
-        animationDelay: \`\${delays[i]}s\`
+                height: `${heights[i]}px`,
+                animation: `wave-pulse 2s ease-in-out infinite`,
+                animationDelay: `${delays[i]}s`
               }}
             />
-        );
+          );
         })}
       </div>
 
