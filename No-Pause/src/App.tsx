@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -151,9 +151,6 @@ const App = () => (
             <>
               <SignedIn>
                 <div className="relative min-h-screen bg-background">
-                  <div className="fixed right-4 top-4 z-50 flex items-center gap-2">
-                    <UserButton />
-                  </div>
                   <AppRoutes />
                 </div>
               </SignedIn>
