@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Flame, Target, Clock, Shield, Zap, Timer, Download, Instagram, Send, ExternalLink } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
-import { useQuery } from 'convex/react';
+import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { storage } from '@/lib/storage';
 import { cn } from '@/lib/utils';
@@ -104,14 +104,30 @@ export default function DashboardPage() {
     setStats(storage.getStats());
   }, []);
 
-  const remoteStats = useQuery(
-    api.sessions.getUserStats,
-    userId ? { userId } : 'skip',
-  );
-  const remoteStreak = useQuery(
-    api.streaks.getStreak,
-    userId ? { userId } : 'skip',
-  );
+  const convex = useConvex();
+  const [remoteStats, setRemoteStats] = useState<any>(null);
+  const [remoteStreak, setRemoteStreak] = useState<any>(null);
+
+  useEffect(() => {
+    if (userId) {
+      const fetchConvexData = async () => {
+        try {
+          const stats = await convex.query(api.sessions.getUserStats, { userId });
+          setRemoteStats(stats);
+        } catch (error) {
+          console.warn('Convex getUserStats failed, falling back to local data:', error);
+        }
+
+        try {
+          const streak = await convex.query(api.streaks.getStreak, { userId });
+          setRemoteStreak(streak);
+        } catch (error) {
+          console.warn('Convex getStreak failed, falling back to local data:', error);
+        }
+      };
+      fetchConvexData();
+    }
+  }, [userId, convex]);
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -222,15 +238,15 @@ export default function DashboardPage() {
             <p className="text-sm md:text-base text-muted-foreground font-sans">Install No Pause for faster access</p>
           </div>
           <div className="flex items-center gap-2">
-              <button
-                onClick={handleInstallClick}
-                className="px-4 py-2 rounded-full border border-border text-sm md:text-base font-sans text-foreground hover:bg-surface-card transition-colors"
-              >
-                Install No Pause
-              </button>
-              <button
-                type="button"
-                onClick={handleDismissInstallBanner}
+            <button
+              onClick={handleInstallClick}
+              className="px-4 py-2 rounded-full border border-border text-sm md:text-base font-sans text-foreground hover:bg-surface-card transition-colors"
+            >
+              Install No Pause
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissInstallBanner}
               className="px-3 py-2 rounded-full border border-border text-xs md:text-sm font-sans text-muted-foreground hover:text-foreground hover:bg-surface-card transition-colors"
             >
               ✕

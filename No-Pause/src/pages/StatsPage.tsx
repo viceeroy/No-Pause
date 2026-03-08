@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
-import { useQuery } from 'convex/react';
+import { useQuery } from 'convex/react'; // Kept for possible nested use, but we'll import useConvex
+import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { storage, SessionData, type AppPreferences } from '@/lib/storage';
 import { cn } from '@/lib/utils';
@@ -85,18 +86,39 @@ export default function StatsPage() {
   const lemonScores = storage.getLemonScores();
   const topicScores = storage.getTopicScores();
 
-  const remoteStats = useQuery(
-    api.sessions.getUserStats,
-    userId ? { userId } : 'skip',
-  );
-  const remoteStreak = useQuery(
-    api.streaks.getStreak,
-    userId ? { userId } : 'skip',
-  );
-  const remoteRecentSessions = useQuery(
-    api.sessions.getSessions,
-    userId ? { userId } : 'skip',
-  );
+  const convex = useConvex();
+  const [remoteStats, setRemoteStats] = useState<any>(null);
+  const [remoteStreak, setRemoteStreak] = useState<any>(null);
+  const [remoteRecentSessions, setRemoteRecentSessions] = useState<any>(null);
+
+  useEffect(() => {
+    if (userId) {
+      const fetchConvexData = async () => {
+        try {
+          const stats = await convex.query(api.sessions.getUserStats, { userId });
+          setRemoteStats(stats);
+        } catch (error) {
+          console.warn('Convex getUserStats failed, using local data:', error);
+        }
+
+        try {
+          const streak = await convex.query(api.streaks.getStreak, { userId });
+          setRemoteStreak(streak);
+        } catch (error) {
+          console.warn('Convex getStreak failed, using local data:', error);
+        }
+
+        try {
+          const sessionsCall = await convex.query(api.sessions.getSessions, { userId });
+          setRemoteRecentSessions(sessionsCall);
+        } catch (error) {
+          console.warn('Convex getSessions failed, using local data:', error);
+        }
+      };
+
+      fetchConvexData();
+    }
+  }, [userId, convex]);
 
   const isScoredSession = (session: SessionData) => Boolean(session.isCompleted && (session.flowScore || 0) > 0);
   const scoredLemon = lemonScores.filter(isScoredSession);
@@ -128,13 +150,13 @@ export default function StatsPage() {
 
   const recentSessions = remoteRecentSessions && remoteRecentSessions.length > 0
     ? remoteRecentSessions.map((session) => ({
-        id: session._id,
-        created_at: new Date(session.createdAt).toISOString(),
-        duration: session.duration,
-        hesitationCount: session.pauses,
-        flowScore: 0,
-        mode: 'session',
-      }))
+      id: session._id,
+      created_at: new Date(session.createdAt).toISOString(),
+      duration: session.duration,
+      hesitationCount: session.pauses,
+      flowScore: 0,
+      mode: 'session',
+    }))
     : recentLocalSessions;
 
   const OverviewCard = ({ icon: Icon, label, value, sub }: {
