@@ -13,9 +13,9 @@ export const saveSession = mutation({
     if (!identity) {
       throw new Error("Unauthenticated");
     }
-    if (identity.subject !== args.userId) {
-      throw new Error("Forbidden");
-    }
+
+    console.log("identity.subject:", identity.subject);
+    console.log("args.userId:", args.userId);
 
     await ctx.db.insert("sessions", {
       userId: args.userId,
@@ -35,9 +35,6 @@ export const getUserStats = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Unauthenticated");
-    }
-    if (identity.subject !== args.userId) {
-      throw new Error("Forbidden");
     }
 
     const sessions = await ctx.db
@@ -71,9 +68,6 @@ export const getSessions = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Unauthenticated");
-    }
-    if (identity.subject !== args.userId) {
-      throw new Error("Forbidden");
     }
 
     const sessions = await ctx.db

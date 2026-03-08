@@ -130,7 +130,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       try {
-        await Promise.all([
+        console.log('Saving session with userId:', userId);
+        const [saveSessionResult, updateStreakResult] = await Promise.all([
           saveSession({
             userId: userId!,
             duration,
@@ -139,6 +140,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
           }),
           updateStreak({ userId: userId! }),
         ]);
+        console.log('saveSession result:', saveSessionResult);
+        console.log('updateStreak result:', updateStreakResult);
       } catch (error) {
         console.error('Failed to sync session to Convex:', error);
       }
