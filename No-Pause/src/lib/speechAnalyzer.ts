@@ -105,6 +105,7 @@ export class AudioAnalyzer {
   private firstChunkDelayMs: number | null = null;
   private lastChunkTimestamp: number | null = null;
   private streamHealthInterval: ReturnType<typeof setInterval> | null = null;
+  private analyzerHealthInterval: ReturnType<typeof setInterval> | null = null;
   private chunkRmsAccumulator = 0;
   private chunkPeakAccumulator = 0;
   private chunkRmsSampleCount = 0;
@@ -462,6 +463,20 @@ export class AudioAnalyzer {
         });
       }, 2000);
 
+      if (this.analyzerHealthInterval) {
+        clearInterval(this.analyzerHealthInterval);
+      }
+      this.analyzerHealthInterval = setInterval(() => {
+        if (!IS_ANDROID || !this.isRunning || this.graphRecoveryInProgress) return;
+        const track = this.stream?.getAudioTracks?.()[0];
+        const streamHealthy = !!this.stream?.active && track?.readyState === 'live';
+        if (!streamHealthy) return;
+        if (this.hasAudioSignal()) return;
+        if (Date.now() - this.lastGraphRecoveryAt < 2500) return;
+        this.lastGraphRecoveryAt = Date.now();
+        this.rebuildAnalyzerGraph();
+      }, 2500);
+
       // Start Speech Recognition for transcription
       if (this.enableTranscription) {
         this._startRecognition();
@@ -800,6 +815,10 @@ export class AudioAnalyzer {
       clearInterval(this.streamHealthInterval);
       this.streamHealthInterval = null;
     }
+    if (this.analyzerHealthInterval) {
+      clearInterval(this.analyzerHealthInterval);
+      this.analyzerHealthInterval = null;
+    }
 
     const totalRecordingTime = now - this.recordingStartTime;
     const finalizedMicState = finalizeMicState(
@@ -927,6 +946,10 @@ export class AudioAnalyzer {
       clearInterval(this.streamHealthInterval);
       this.streamHealthInterval = null;
     }
+    if (this.analyzerHealthInterval) {
+      clearInterval(this.analyzerHealthInterval);
+      this.analyzerHealthInterval = null;
+    }
     this.isListening = false;
     if (this._recognitionRestartTimer) {
       clearTimeout(this._recognitionRestartTimer);
@@ -965,5 +988,12 @@ export class AudioAnalyzer {
 
   static getScoreLabel(score: number): string {
     return getScoreLabel(score);
+  }
+
+  hasAudioSignal(): boolean {
+    if (!this.analyser) return false;
+    const testBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(testBuffer);
+    return testBuffer.some((value) => value > 0);
   }
 }
