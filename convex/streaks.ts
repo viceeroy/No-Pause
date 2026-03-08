@@ -3,20 +3,13 @@ import { v } from "convex/values";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const dayNumberUtc = (timestamp: number) => Math.floor(timestamp / DAY_IN_MS);
-
 export const updateStreak = mutation({
   args: {
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated");
-    }
-
     const now = Date.now();
-    const today = dayNumberUtc(now);
+    const today = Math.floor(now / DAY_IN_MS);
 
     const existing = await ctx.db
       .query("streaks")
@@ -32,13 +25,8 @@ export const updateStreak = mutation({
       return;
     }
 
-    const lastPracticeDay = dayNumberUtc(existing.lastPracticeDate);
-    if (lastPracticeDay === today) {
-      return;
-    }
-
-    const nextStreak =
-      lastPracticeDay === today - 1 ? existing.currentStreak + 1 : 1;
+    const lastDay = Math.floor(existing.lastPracticeDate / DAY_IN_MS);
+    const nextStreak = lastDay === today - 1 ? existing.currentStreak + 1 : 1;
 
     await ctx.db.patch(existing._id, {
       currentStreak: nextStreak,

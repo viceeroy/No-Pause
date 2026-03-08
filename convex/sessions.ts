@@ -9,14 +9,6 @@ export const saveSession = mutation({
     words: v.number(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated");
-    }
-
-    console.log("identity.subject:", identity.subject);
-    console.log("args.userId:", args.userId);
-
     await ctx.db.insert("sessions", {
       userId: args.userId,
       duration: args.duration,
