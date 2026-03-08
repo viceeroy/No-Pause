@@ -70,19 +70,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const practiceMode = mode === 'free' ? 'free-speak' : mode;
       const totalSessionTimeSec = Math.round(results.totalTime / 1000);
 
-      console.log('[NoSpeech] 📋 Scoring inputs:', {
-        mode,
-        totalSessionTime: `${totalSessionTimeSec}s`,
-        speakingTime: `${results.totalSpeakingTime}s`,
-        hesitationCount: results.hesitationCount,
-      });
-
       const transcriptHasSpeech = Boolean(results.transcript && results.transcript !== 'No speech detected.' && results.transcript.trim().length > 0);
       const hasSpeechEvidence = transcriptHasSpeech || results.hesitationCount > 0;
-      if (import.meta.env.DEV) {
-        console.log('results fields:', Object.keys(results));
-        console.log('words value:', (results as any).wordCount, (results as any).words);
-      }
       const transcriptWordCount = transcriptHasSpeech ? results.transcript.trim().split(/\s+/).length : 0;
       const estimatedWordCount = hasSpeechEvidence ? Math.max(1, Math.round(results.totalSpeakingTime * 2.2)) : 0;
       const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
@@ -95,7 +84,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       });
       const flowScore = mode === 'free' ? 0 : scoreResult.score;
       const safeFlowScore = Number.isFinite(flowScore) ? flowScore : 0;
-      console.log(`[NoSpeech] ✅ FINAL SCORE: ${safeFlowScore}/100 (${AudioAnalyzer.getScoreLabel(safeFlowScore)})`);
 
       let statusNote: string | undefined;
       if (mode === 'free') {
@@ -176,12 +164,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       const stream = micService.getStream();
       const audioCtx = micService.getAudioContext();
-      console.log('[NoSpeech] startRecording() — passing to analyzer:', {
-        hasStream: !!stream,
-        streamActive: stream?.active,
-        hasAudioCtx: !!audioCtx,
-        audioCtxState: audioCtx?.state,
-      });
       const started = await analyzerRef.current.start(
         stream || undefined,
         audioCtx || undefined,
@@ -277,13 +259,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const audioCtx = micService.getAudioContext();
       await micService.ensureAudioContextRunning();
 
-      console.log('[NoSpeech] handleStart() — mic ready:', {
-        streamId: stream?.id,
-        streamActive: stream?.active,
-        tracks: stream?.getAudioTracks().map(t => `${t.label}:${t.readyState}:enabled=${t.enabled}:muted=${t.muted}`),
-        audioCtxState: audioCtx.state,
-      });
-
       const prefs = storage.getPreferences();
       const hesitationMinDurationMs = Math.round(PAUSE_THRESHOLD_BY_LEVEL[prefs.pauseThresholdLevel] * 1000);
 
@@ -328,12 +303,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   }, [handleStart]);
 
   const handleRetry = useCallback(() => {
-    const stream = micService.getStream();
-    console.log('[MicDebug] 🔁 Practice Again pressed', {
-      streamExists: !!stream,
-      streamActive: stream?.active,
-      trackStates: stream?.getAudioTracks().map(t => `${t.readyState}:enabled=${t.enabled}`) || [],
-    });
     setState('setup');
     setAudioData(null);
     setLastResults(null);

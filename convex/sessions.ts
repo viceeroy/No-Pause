@@ -12,6 +12,9 @@ export const saveSession = mutation({
     flowScore: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
     await ctx.db.insert("sessions", {
       userId: args.userId,
       email: args.email,
@@ -30,6 +33,9 @@ export const getUserStats = query({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
@@ -58,6 +64,9 @@ export const getSessions = query({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
