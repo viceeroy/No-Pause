@@ -26,6 +26,7 @@ const SMOOTHING_WINDOW = 10;
 const CALIBRATION_DURATION = 1500;
 const ANALYTICS_START_DELAY_MS = 400;
 const IS_ANDROID_DEVICE = /android/i.test(navigator.userAgent);
+const IS_IOS_DEVICE = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const IS_LOW_END_ANDROID =
   IS_ANDROID_DEVICE && (navigator.hardwareConcurrency || 8) <= 4;
 
@@ -117,6 +118,7 @@ export class AudioAnalyzer {
   private chunkPeakRmsPerChunk: number[] = [];
   private chunkLowAmplitudeFlags: boolean[] = [];
   private chunkDropFlags: boolean[] = [];
+  private suppressHesitationUntil = 0;
   private pauseResumeEvents: { type: 'pause' | 'resume'; atMs: number }[] = [];
   private streamHealthLogs: { atMs: number; streamActive: boolean; trackReadyState: string; trackMuted: boolean | null }[] = [];
   private diagnosticsSessionId = '';
@@ -197,16 +199,17 @@ export class AudioAnalyzer {
     });
   }
 
-  private static getSupportedRecorderMimeType(): string {
-    const candidates = [
-      'audio/webm;codecs=opus',
-      'audio/webm',
-    ];
-    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') return '';
+  private static getSupportedRecorderMimeType(): string | undefined {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') return undefined;
+    if (IS_IOS_DEVICE) {
+      if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+      return undefined;
+    }
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm'];
     for (const mimeType of candidates) {
       if (MediaRecorder.isTypeSupported(mimeType)) return mimeType;
     }
-    return '';
+    return undefined;
   }
 
   constructor(options: AudioAnalyzerOptions = {}) {
@@ -361,6 +364,7 @@ export class AudioAnalyzer {
       this.chunkPeakRmsPerChunk = [];
       this.chunkLowAmplitudeFlags = [];
       this.chunkDropFlags = [];
+      this.suppressHesitationUntil = 0;
       this.pauseResumeEvents = [];
       this.streamHealthLogs = [];
       this.transcript = '';
@@ -415,6 +419,13 @@ export class AudioAnalyzer {
           this.chunkPeakRmsPerChunk.push(Number(peakRms.toFixed(5)));
           this.chunkLowAmplitudeFlags.push(lowAmplitude);
           this.chunkDropFlags.push(suddenDrop);
+          if (suddenDrop) {
+            const suppressionWindowMs = IS_IOS_DEVICE ? 2000 : 1000;
+            this.suppressHesitationUntil = Math.max(
+              this.suppressHesitationUntil,
+              nowChunk + suppressionWindowMs,
+            );
+          }
           debugLog('[MicDiag] 📦 Chunk telemetry:', {
             chunkIndex: this.chunkCount,
             sizeBytes: event.data.size,
@@ -432,7 +443,8 @@ export class AudioAnalyzer {
           this.chunkPeakAccumulator = 0;
           this.chunkRmsSampleCount = 0;
         };
-        this.mediaRecorder.start(100);
+        const chunkInterval = IS_IOS_DEVICE ? 1000 : 100;
+        this.mediaRecorder.start(chunkInterval);
         debugLog('[MicDebug] MediaRecorder started', { state: this.mediaRecorder.state });
       }
 
@@ -672,7 +684,9 @@ export class AudioAnalyzer {
       inStartDelayWindow,
       isCalibrating: this.isCalibrating,
       microPauseFilter: this.microPauseFilter,
-      hesitationMinDuration: this.hesitationMinDuration,
+      hesitationMinDuration: now < this.suppressHesitationUntil
+        ? Number.MAX_SAFE_INTEGER
+        : this.hesitationMinDuration,
       startBufferMs: this.START_BUFFER_MS,
     });
 

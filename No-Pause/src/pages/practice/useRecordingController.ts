@@ -32,6 +32,8 @@ type RecordingControllerResult = {
   soundDetectedRef: React.MutableRefObject<boolean>;
 };
 
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
 export function useRecordingController({ mode, navigate, state }: UseRecordingControllerOptions): RecordingControllerResult {
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -210,6 +212,10 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       const stream = micService.getStream();
       const audioCtx = micService.getAudioContext();
+      if (IS_IOS) {
+        toast('Recording starts in 1 second...');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
       const started = await analyzerRef.current.start(
         stream || undefined,
         audioCtx || undefined,

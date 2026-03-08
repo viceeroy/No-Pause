@@ -2,13 +2,29 @@ export type MicInitOptions = {
   constraints?: MediaTrackConstraints;
 };
 
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const IS_ANDROID = /android/i.test(navigator.userAgent);
 
-const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
-  echoCancellation: true,
-  noiseSuppression: true,
-  autoGainControl: true,
-  channelCount: 1,
+const getAudioConstraints = (): MediaTrackConstraints => {
+  if (IS_IOS) {
+    return {
+      echoCancellation: true,
+    };
+  }
+  if (IS_ANDROID) {
+    return {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+      channelCount: 1,
+    };
+  }
+  return {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+  };
 };
 
 const IS_DEV = import.meta.env.DEV;
@@ -140,13 +156,14 @@ class MicService {
     await this.logPermissionState();
 
     this.getUserMediaCount++;
+    const resolvedConstraints = options.constraints || getAudioConstraints();
     debugLog(`[MicDebug] 🔴 getUserMedia() CALL #${this.getUserMediaCount} — source: MicService.init()`, {
-      constraints: options.constraints || DEFAULT_AUDIO_CONSTRAINTS,
+      constraints: resolvedConstraints,
       stack: new Error().stack?.split('\n').slice(1, 5).join(' | '),
     });
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: options.constraints || DEFAULT_AUDIO_CONSTRAINTS,
+      audio: resolvedConstraints,
     });
 
     this.stream = stream;
