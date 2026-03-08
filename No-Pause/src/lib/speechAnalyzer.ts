@@ -25,6 +25,7 @@ const MICRO_PAUSE_IGNORE = 300;
 const SMOOTHING_WINDOW = 10;
 const CALIBRATION_DURATION = 1500;
 const ANALYTICS_START_DELAY_MS = 400;
+const IS_ANDROID = /android/i.test(navigator.userAgent);
 
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: any[]) => { if (IS_DEV) console.log(...args); };
@@ -84,6 +85,7 @@ export class AudioAnalyzer {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
+  private analyserSink: GainNode | null = null;
   stream: MediaStream | null = null;
   private dataArray: Float32Array | null = null;
   isRunning = false;
@@ -316,6 +318,13 @@ export class AudioAnalyzer {
 
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       this.source.connect(this.analyser);
+      if (IS_ANDROID) {
+        // Android Chrome may not feed analyser data unless graph is connected downstream.
+        this.analyserSink = this.audioContext.createGain();
+        this.analyserSink.gain.value = 0;
+        this.analyser.connect(this.analyserSink);
+        this.analyserSink.connect(this.audioContext.destination);
+      }
       this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
       this.isRunning = true;
 
@@ -518,6 +527,11 @@ export class AudioAnalyzer {
       // Only restart if still actively recording
       if (!this.isListening || !this.isRunning) {
         debugLog('[Transcript] Not restarting (session ended)');
+        return;
+      }
+
+      if (IS_ANDROID) {
+        debugLog('[Transcript] Android detected — skipping recognition auto-restart to avoid repeated permission prompts');
         return;
       }
 
@@ -816,6 +830,10 @@ export class AudioAnalyzer {
       try { this.analyser.disconnect(); } catch { }
       this.analyser = null;
     }
+    if (this.analyserSink) {
+      try { this.analyserSink.disconnect(); } catch { }
+      this.analyserSink = null;
+    }
 
     const avgVolume = sessionAvgRms;
 
@@ -868,6 +886,10 @@ export class AudioAnalyzer {
     if (this.analyser) {
       try { this.analyser.disconnect(); } catch { }
       this.analyser = null;
+    }
+    if (this.analyserSink) {
+      try { this.analyserSink.disconnect(); } catch { }
+      this.analyserSink = null;
     }
     this.stream = null;
     this.audioContext = null;
