@@ -81,10 +81,6 @@ export default function StatsPage() {
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
-  const sessions = storage.getSessions();
-  const lemonScores = storage.getLemonScores();
-  const topicScores = storage.getTopicScores();
-
   const convex = useConvex();
   const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
   const [remoteStreak, setRemoteStreak] = useState<any | undefined>(undefined);
@@ -129,15 +125,6 @@ export default function StatsPage() {
     }
   }, [userId, convex]);
 
-  const isScoredSession = (session: SessionData) => Boolean(session.isCompleted && (session.flowScore || 0) > 0);
-  const scoredLemon = lemonScores.filter(isScoredSession);
-  const scoredTopic = topicScores.filter(isScoredSession);
-  const scoredSessions = [...scoredLemon, ...scoredTopic];
-
-  const lemonStats = calcModeStats(scoredLemon);
-  const topicStats = calcModeStats(scoredTopic);
-  const allSessions = [...lemonScores, ...topicScores];
-
   const isRemoteStatsLoading = remoteStats === undefined;
   const isRemoteStreakLoading = remoteStreak === undefined;
   const isRemoteRecentSessionsLoading = remoteRecentSessions === undefined;
@@ -147,18 +134,12 @@ export default function StatsPage() {
   const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
   const backendBestStreak = 0;
 
-  const allSessionsCombined = allSessions
-    .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
-  const recentLocalSessions = allSessionsCombined.slice(0, 8);
-
-  const recentSessions = isRemoteRecentSessionsLoading
-    ? recentLocalSessions
-    : (remoteRecentSessions ?? []).map((session) => ({
+  const recentSessions = (remoteRecentSessions ?? []).map((session) => ({
       id: session._id,
       created_at: new Date(session.createdAt).toISOString(),
       duration: session.duration,
       hesitationCount: session.pauses,
-      flowScore: 0,
+      flowScore: session.flowScore ?? 0,
       mode: session.mode || 'free',
     }));
 
@@ -492,7 +473,21 @@ export default function StatsPage() {
         </p>
       </div>
 
-      {hasAnySession && (
+      {isRemoteRecentSessionsLoading && (
+        <div className="mb-8">
+          <h2 className="text-xl font-serif text-foreground mb-3">Recent Activity</h2>
+          <div className="space-y-3">
+            {[0, 1, 2].map((index) => (
+              <div
+                key={index}
+                className="h-[82px] rounded-2xl border border-border bg-surface-elevated animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!isRemoteRecentSessionsLoading && hasAnySession && (
         <div className="mb-8">
           <h2 className="text-xl font-serif text-foreground mb-3">Recent Activity</h2>
           <div className="space-y-3">
@@ -521,7 +516,7 @@ export default function StatsPage() {
         </div>
       )}
 
-      {!hasAnySession && (
+      {!isRemoteRecentSessionsLoading && !hasAnySession && (
         <div className="text-center py-12">
           <p className="text-lg font-serif text-foreground mb-2">No sessions yet</p>
           <p className="text-sm text-[#AAB2C5] font-sans mb-6">Complete a Lemon or Topic session to see scored stats.</p>

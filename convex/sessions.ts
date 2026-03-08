@@ -8,6 +8,7 @@ export const saveSession = mutation({
     pauses: v.number(),
     words: v.number(),
     mode: v.string(),
+    flowScore: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("sessions", {
@@ -16,6 +17,7 @@ export const saveSession = mutation({
       pauses: args.pauses,
       words: args.words,
       mode: args.mode,
+      flowScore: args.flowScore,
       createdAt: Date.now(),
     });
   },

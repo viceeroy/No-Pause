@@ -4,7 +4,6 @@ import { Mic, Flame, Target, Clock, Shield, Zap, Timer, Download, Instagram, Sen
 import { useAuth } from '@clerk/clerk-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { storage } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/lib/scoringConstants';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
@@ -94,15 +93,10 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const { userId } = useAuth();
-  const [stats, setStats] = useState<ReturnType<typeof storage.getStats> | null>(null);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [installBannerDismissed, setInstallBannerDismissed] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
-
-  useEffect(() => {
-    setStats(storage.getStats());
-  }, []);
 
   const convex = useConvex();
   const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
@@ -179,8 +173,6 @@ export default function DashboardPage() {
   };
 
   const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
-
-  if (!stats) return null;
 
   const isRemoteStatsLoading = remoteStats === undefined;
   const isRemoteStreakLoading = remoteStreak === undefined;
