@@ -150,6 +150,9 @@ export class AudioAnalyzer {
   private volumeSamples: number[] = [];
   private lastAnalyzeTime = 0;
   private analyzeInterval = 33;
+  private zeroRmsFrameCount = 0;
+  private lastGraphRecoveryAt = 0;
+  private graphRecoveryInProgress = false;
   private calibrationSamples: number[] = [];
   private isCalibrating = true;
   private calibrationStartTime: number | null = null;
@@ -369,6 +372,9 @@ export class AudioAnalyzer {
       this.finalTranscript = '';
       this.calibrationSamples = [];
       this.isCalibrating = true;
+      this.zeroRmsFrameCount = 0;
+      this.lastGraphRecoveryAt = 0;
+      this.graphRecoveryInProgress = false;
 
       if (typeof MediaRecorder !== 'undefined') {
         const preferredMimeType = AudioAnalyzer.getSupportedRecorderMimeType();
@@ -601,6 +607,27 @@ export class AudioAnalyzer {
       sumSquares += this.dataArray[i] * this.dataArray[i];
     }
     const rms = Math.sqrt(sumSquares / this.dataArray.length);
+    if (IS_ANDROID) {
+      if (rms <= 0.000001) {
+        this.zeroRmsFrameCount += 1;
+      } else {
+        this.zeroRmsFrameCount = 0;
+      }
+
+      const zeroRmsThreshold = Math.ceil(2000 / this.analyzeInterval);
+      const recoveryCooldownMs = 5000;
+      const canRecover =
+        this.zeroRmsFrameCount >= zeroRmsThreshold &&
+        !this.graphRecoveryInProgress &&
+        now - this.lastGraphRecoveryAt > recoveryCooldownMs;
+
+      if (canRecover) {
+        this.graphRecoveryInProgress = true;
+        this.lastGraphRecoveryAt = now;
+        this.zeroRmsFrameCount = 0;
+        this.rebuildAnalyzerGraph();
+      }
+    }
     this.chunkRmsAccumulator += rms;
     if (rms > this.chunkPeakAccumulator) this.chunkPeakAccumulator = rms;
     this.chunkRmsSampleCount += 1;
@@ -703,6 +730,39 @@ export class AudioAnalyzer {
     }
 
     this.animationFrame = requestAnimationFrame(() => this._analyze());
+  }
+
+  private rebuildAnalyzerGraph() {
+    try {
+      if (!this.audioContext || !this.stream || !this.isRunning) return;
+
+      try { this.source?.disconnect(); } catch { }
+      try { this.analyser?.disconnect(); } catch { }
+      try { this.analyserSink?.disconnect(); } catch { }
+
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.3;
+
+      this.source = this.audioContext.createMediaStreamSource(this.stream);
+      this.source.connect(this.analyser);
+
+      if (IS_ANDROID) {
+        this.analyserSink = this.audioContext.createGain();
+        this.analyserSink.gain.value = 0;
+        this.analyser.connect(this.analyserSink);
+        this.analyserSink.connect(this.audioContext.destination);
+      } else {
+        this.analyserSink = null;
+      }
+
+      this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
+      debugWarn('[Audio] Rebuilt analyzer graph after sustained zero RMS');
+    } catch (error) {
+      debugError('[Audio] Failed to rebuild analyzer graph', error);
+    } finally {
+      this.graphRecoveryInProgress = false;
+    }
   }
 
   async stop(): Promise<AnalyzerResults> {
