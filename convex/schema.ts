@@ -7,6 +7,7 @@ export default defineSchema({
     duration: v.number(),
     pauses: v.number(),
     words: v.number(),
+    mode: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
 

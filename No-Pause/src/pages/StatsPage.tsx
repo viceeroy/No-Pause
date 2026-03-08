@@ -159,7 +159,7 @@ export default function StatsPage() {
       duration: session.duration,
       hesitationCount: session.pauses,
       flowScore: 0,
-      mode: 'session',
+      mode: session.mode || 'free',
     }));
 
   const hasAnySession = recentSessions.length > 0;

@@ -136,6 +136,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             duration,
             pauses: results.hesitationCount,
             words,
+            mode: mode || 'free',
           }),
           updateStreak({ userId: userId! }),
         ]);

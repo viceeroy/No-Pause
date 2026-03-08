@@ -7,6 +7,7 @@ export const saveSession = mutation({
     duration: v.number(),
     pauses: v.number(),
     words: v.number(),
+    mode: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("sessions", {
@@ -14,6 +15,7 @@ export const saveSession = mutation({
       duration: args.duration,
       pauses: args.pauses,
       words: args.words,
+      mode: args.mode,
       createdAt: Date.now(),
     });
   },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   LEMON_MIN_TOTAL_SECONDS,
@@ -42,7 +42,11 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
   const location = useLocation();
 
   const isFreeSpeakingRoute = location.pathname === '/practice/free-speaking';
-  const mode = isFreeSpeakingRoute ? 'free' : (searchParams.get('mode') || 'free');
+  const frozenModeRef = useRef<string | null>(null);
+  if (!frozenModeRef.current) {
+    frozenModeRef.current = isFreeSpeakingRoute ? 'free' : (searchParams.get('mode') || 'free');
+  }
+  const mode = frozenModeRef.current ?? 'free';
   const word = searchParams.get('word');
   const promptId = searchParams.get('prompt');
   const promptText = searchParams.get('prompt_text');
