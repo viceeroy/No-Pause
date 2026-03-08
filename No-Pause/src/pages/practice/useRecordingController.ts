@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation } from 'convex/react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
@@ -44,7 +44,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
   const saveSession = useMutation(api.sessions.saveSession);
   const updateStreak = useMutation(api.streaks.updateStreak);
-  const stats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
 
   const {
     lemonPrompt,
@@ -71,10 +70,11 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const totalSessionTimeSec = Math.round(results.totalTime / 1000);
 
       const transcriptHasSpeech = Boolean(results.transcript && results.transcript !== 'No speech detected.' && results.transcript.trim().length > 0);
-      const hasSpeechEvidence = transcriptHasSpeech || results.hesitationCount > 0;
+      const hasSpeechEvidence = transcriptHasSpeech || results.hesitationCount > 0 || results.totalSpeakingTime > 0;
       const transcriptWordCount = transcriptHasSpeech ? results.transcript.trim().split(/\s+/).length : 0;
       const estimatedWordCount = hasSpeechEvidence ? Math.max(1, Math.round(results.totalSpeakingTime * 2.2)) : 0;
       const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
+      const completed = duration > 10;
 
       const scoreResult = AudioAnalyzer.calculateFlowScore(results.hesitationCount, {
         mode,
@@ -135,6 +135,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             words,
             mode: mode || 'free',
             flowScore: safeFlowScore,
+            completed,
           }),
           updateStreak({
             userId: userId!,

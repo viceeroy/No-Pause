@@ -11,6 +11,7 @@ export const updateStreak = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
+    if (identity.subject !== args.userId) throw new Error("Forbidden");
 
     const now = Date.now();
     const today = Math.floor(now / DAY_IN_MS);
@@ -25,6 +26,7 @@ export const updateStreak = mutation({
         userId: args.userId,
         email: args.email,
         currentStreak: 1,
+        bestStreak: 1,
         lastPracticeDate: now,
       });
       return;
@@ -32,10 +34,12 @@ export const updateStreak = mutation({
 
     const lastDay = Math.floor(existing.lastPracticeDate / DAY_IN_MS);
     const nextStreak = lastDay === today - 1 ? existing.currentStreak + 1 : 1;
+    const newBest = Math.max(existing.bestStreak ?? 0, nextStreak);
 
     await ctx.db.patch(existing._id, {
       email: args.email ?? existing.email,
       currentStreak: nextStreak,
+      bestStreak: newBest,
       lastPracticeDate: now,
     });
   },
@@ -48,6 +52,7 @@ export const getStreak = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthenticated");
+    if (identity.subject !== args.userId) throw new Error("Forbidden");
 
     const existing = await ctx.db
       .query("streaks")
@@ -57,12 +62,14 @@ export const getStreak = query({
     if (!existing) {
       return {
         currentStreak: 0,
+        bestStreak: 0,
         lastPracticeDate: null as number | null,
       };
     }
 
     return {
       currentStreak: existing.currentStreak,
+      bestStreak: existing.bestStreak ?? 0,
       lastPracticeDate: existing.lastPracticeDate,
     };
   },

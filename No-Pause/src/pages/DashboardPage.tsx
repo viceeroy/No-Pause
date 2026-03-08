@@ -178,9 +178,11 @@ export default function DashboardPage() {
   const isRemoteStreakLoading = remoteStreak === undefined;
 
   const backendTotalSessions = remoteStats?.totalSessions ?? 0;
+  const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
   const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
+  const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;
   const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
-  const backendBestStreak = 0;
+  const backendBestStreak = remoteStreak?.bestStreak ?? 0;
 
   return (
     <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
@@ -363,9 +365,9 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Flame} label="Day Streak" value={isRemoteStreakLoading ? '...' : backendCurrentStreak} sub={`Best: ${backendBestStreak}`} className="elevation-card" />
-        <StatCard icon={Target} label="Sessions" value={isRemoteStatsLoading ? '...' : backendTotalSessions} className="elevation-card" />
+        <StatCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendScoredSessions} className="elevation-card" />
         <StatCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatTime(backendTotalPracticeTime)} className="elevation-card" />
-        <StatCard icon={Zap} label="Flow Score" value={isRemoteStatsLoading ? '...' : '0%'} className="elevation-card-elevated border border-ember-500/35" />
+        <StatCard icon={Zap} label="Flow Score" value={isRemoteStatsLoading ? '...' : `${backendAvgFlowScore}%`} className="elevation-card-elevated border border-ember-500/35" />
       </div>
 
       {/* Quick Actions */}

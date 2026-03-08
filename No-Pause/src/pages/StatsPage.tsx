@@ -130,9 +130,11 @@ export default function StatsPage() {
   const isRemoteRecentSessionsLoading = remoteRecentSessions === undefined;
 
   const backendTotalSessions = remoteStats?.totalSessions ?? 0;
+  const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
   const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
+  const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;
   const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
-  const backendBestStreak = 0;
+  const backendBestStreak = remoteStreak?.bestStreak ?? 0;
 
   const recentSessions = (remoteRecentSessions ?? []).map((session) => ({
       id: session._id,
@@ -435,9 +437,9 @@ export default function StatsPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
         <OverviewCard icon={Flame} label="Current Streak" value={isRemoteStreakLoading ? '...' : backendCurrentStreak} sub={`Best: ${backendBestStreak}`} />
-        <OverviewCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendTotalSessions} />
+        <OverviewCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendScoredSessions} />
         <OverviewCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatDuration(backendTotalPracticeTime)} />
-        <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : '0'} />
+        <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : backendAvgFlowScore} />
       </div>
 
       <div className="mb-8">

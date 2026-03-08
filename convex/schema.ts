@@ -10,6 +10,7 @@ export default defineSchema({
     words: v.number(),
     mode: v.optional(v.string()),
     flowScore: v.optional(v.number()),
+    completed: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
 
@@ -17,6 +18,7 @@ export default defineSchema({
     userId: v.string(),
     email: v.optional(v.string()),
     currentStreak: v.number(),
+    bestStreak: v.optional(v.number()),
     lastPracticeDate: v.number(),
   }).index("by_userId", ["userId"]),
 });
