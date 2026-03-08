@@ -40,11 +40,6 @@ export const getStreak = query({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated");
-    }
-
     const existing = await ctx.db
       .query("streaks")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
