@@ -3,7 +3,6 @@ import type { NavigateFunction } from 'react-router-dom';
 import { useMutation } from 'convex/react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
-import { toast } from '@/components/ui/sonner';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
 import { micService } from '@/lib/micService';
 import { storage } from '@/lib/storage';
@@ -32,14 +31,9 @@ type RecordingControllerResult = {
   soundDetectedRef: React.MutableRefObject<boolean>;
 };
 
-const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-
 export function useRecordingController({ mode, navigate, state }: UseRecordingControllerOptions): RecordingControllerResult {
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const contextHealthIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pipelineHealthTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const sessionDataRef = useRef<{ startTime: number; sessionId: string } | null>(null);
   const soundDetectedRef = useRef(false);
   const micInitializingRef = useRef(false);
@@ -65,53 +59,12 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     setElapsedTime,
   } = state;
 
-  const clearContextHealthInterval = useCallback(() => {
-    if (contextHealthIntervalRef.current) {
-      clearInterval(contextHealthIntervalRef.current);
-      contextHealthIntervalRef.current = null;
-    }
-  }, []);
-
-  const clearPipelineHealthTimeout = useCallback(() => {
-    if (pipelineHealthTimeoutRef.current) {
-      clearTimeout(pipelineHealthTimeoutRef.current);
-      pipelineHealthTimeoutRef.current = null;
-    }
-  }, []);
-
-  const releaseWakeLock = useCallback(async () => {
-    if (!wakeLockRef.current) return;
-    try {
-      await wakeLockRef.current.release();
-    } catch {
-      // ignore release failures
-    } finally {
-      wakeLockRef.current = null;
-    }
-  }, []);
-
-  const acquireWakeLock = useCallback(async () => {
-    const wakeLockApi = (navigator as Navigator & {
-      wakeLock?: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> };
-    }).wakeLock;
-    if (!wakeLockApi?.request) return;
-    try {
-      wakeLockRef.current = await wakeLockApi.request('screen');
-    } catch (error) {
-      console.warn('[WakeLock] Not available:', error);
-    }
-  }, []);
-
   const stopRecording = useCallback(async () => {
     if (analyzerRef.current && analyzerRef.current.isRunning) {
       const results = await analyzerRef.current.stop();
       const duration = Math.floor((Date.now() - (sessionDataRef.current?.startTime || Date.now())) / 1000);
 
       if (timerRef.current) clearInterval(timerRef.current);
-      clearPipelineHealthTimeout();
-      clearContextHealthInterval();
-      micService.setRecordingActive(false);
-      void releaseWakeLock();
 
       const practiceMode = mode === 'free' ? 'free-speak' : mode;
       const totalSessionTimeSec = Math.round(results.totalTime / 1000);
@@ -199,7 +152,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       micService.setTracksEnabled(false);
       setShowMicRetry(false);
     }
-  }, [clearContextHealthInterval, clearPipelineHealthTimeout, mode, lemonPrompt, releaseWakeLock, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
+  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -212,10 +165,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       const stream = micService.getStream();
       const audioCtx = micService.getAudioContext();
-      if (IS_IOS) {
-        toast('Recording starts in 1 second...');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
       const started = await analyzerRef.current.start(
         stream || undefined,
         audioCtx || undefined,
@@ -242,54 +191,12 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       isRecordingRef.current = true;
-      micService.setRecordingActive(true);
-      void acquireWakeLock();
 
       const sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
       setState('recording');
       soundDetectedRef.current = false;
 
       sessionDataRef.current = { startTime: Date.now(), sessionId };
-
-      clearPipelineHealthTimeout();
-      pipelineHealthTimeoutRef.current = setTimeout(() => {
-        if (!isRecordingRef.current) return;
-        const analyzer = analyzerRef.current;
-        const hasSignal = analyzer?.hasAudioSignal() ?? false;
-        if (!hasSignal) {
-          console.warn('[Audio] Pipeline health check failed — no signal detected');
-          setTranscriptError('No audio detected — check mic permissions.');
-          setShowMicRetry(true);
-          toast('No audio detected — check mic permissions', {
-            action: {
-              label: 'Retry',
-              onClick: () => {
-                void stopRecording().then(() => {
-                  setState('setup');
-                });
-              },
-            },
-          });
-        }
-      }, 1000);
-
-      clearContextHealthInterval();
-      contextHealthIntervalRef.current = setInterval(() => {
-        if (!isRecordingRef.current) return;
-        if (audioCtx.state !== 'suspended') return;
-        void audioCtx.resume().then(() => {
-          // Recovery succeeded; keep interval alive for future suspensions.
-        }).catch(() => {
-          toast('Recording paused — tap to resume', {
-            action: {
-              label: 'Resume',
-              onClick: () => {
-                void audioCtx.resume();
-              },
-            },
-          });
-        });
-      }, 3000);
 
       const duration = mode === 'lemon' ? LEMON_MIN_TOTAL_SECONDS : (mode === 'topic' ? TOPIC_MIN_TOTAL_SECONDS : 0);
       setTimeLeft(duration);
@@ -318,7 +225,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       setTranscriptError('Failed to start recording. Please try again.');
       setState('setup');
     }
-  }, [acquireWakeLock, clearContextHealthInterval, clearPipelineHealthTimeout, mode, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
+  }, [mode, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
 
   const handleStart = useCallback(async (forceRetryMic = false) => {
     try {
@@ -368,20 +275,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         onStartError: (error) => {
           setTranscriptError(`Microphone error: ${error?.name || 'unknown'}`);
         },
-        onSilenceWarning: () => {
-          toast('No audio detected — check mic permissions', {
-            action: {
-              label: 'Retry',
-              onClick: () => {
-                void stopRecording().then(() => {
-                  setShowMicRetry(true);
-                  setTranscriptError('No audio detected — check mic permissions.');
-                  setState('setup');
-                });
-              },
-            },
-          });
-        },
       });
 
       analyzerRef.current = analyzer;
@@ -411,15 +304,13 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   }, [handleStart]);
 
   const handleRetry = useCallback(() => {
-    micService.setRecordingActive(false);
-    void releaseWakeLock();
     setState('setup');
     setAudioData(null);
     setLastResults(null);
     if (mode === 'lemon') setTimeLeft(LEMON_MIN_TOTAL_SECONDS);
     else if (mode === 'topic') setTimeLeft(TOPIC_MIN_TOTAL_SECONDS);
     else setTimeLeft(0);
-  }, [mode, releaseWakeLock, setState, setAudioData, setLastResults, setTimeLeft]);
+  }, [mode, setState, setAudioData, setLastResults, setTimeLeft]);
 
   const handleBack = useCallback(() => {
     if (analyzerRef.current) {
@@ -427,13 +318,9 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       analyzerRef.current = null;
     }
     micService.setTracksEnabled(false);
-    micService.setRecordingActive(false);
     if (timerRef.current) clearInterval(timerRef.current);
-    clearPipelineHealthTimeout();
-    clearContextHealthInterval();
-    void releaseWakeLock();
     navigate('/');
-  }, [clearContextHealthInterval, clearPipelineHealthTimeout, navigate, releaseWakeLock]);
+  }, [navigate]);
 
   const exportDiagnosticsLogs = useCallback(() => {
     const analyzer = analyzerRef.current;
@@ -486,37 +373,15 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   }, [exportDiagnosticsLogs]);
 
   useEffect(() => {
-    micService.onTrackEnded = () => {
-      toast('Microphone disconnected — tap to retry', {
-        action: {
-          label: 'Retry',
-          onClick: () => {
-            setShowMicRetry(true);
-            setTranscriptError('Microphone disconnected. Please retry.');
-            setState('setup');
-          },
-        },
-      });
-    };
-    return () => {
-      micService.onTrackEnded = null;
-    };
-  }, [setShowMicRetry, setState, setTranscriptError]);
-
-  useEffect(() => {
     return () => {
       if (analyzerRef.current) {
         try { analyzerRef.current.destroy(); } catch { }
         analyzerRef.current = null;
       }
       micService.setTracksEnabled(false);
-      micService.setRecordingActive(false);
       if (timerRef.current) clearInterval(timerRef.current);
-      clearPipelineHealthTimeout();
-      clearContextHealthInterval();
-      void releaseWakeLock();
     };
-  }, [clearContextHealthInterval, clearPipelineHealthTimeout, releaseWakeLock]);
+  }, []);
 
   return {
     handleStart,

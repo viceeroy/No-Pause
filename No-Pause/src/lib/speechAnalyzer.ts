@@ -25,10 +25,6 @@ const MICRO_PAUSE_IGNORE = 300;
 const SMOOTHING_WINDOW = 10;
 const CALIBRATION_DURATION = 1500;
 const ANALYTICS_START_DELAY_MS = 400;
-const IS_ANDROID_DEVICE = /android/i.test(navigator.userAgent);
-const IS_IOS_DEVICE = /iphone|ipad|ipod/i.test(navigator.userAgent);
-const IS_LOW_END_ANDROID =
-  IS_ANDROID_DEVICE && (navigator.hardwareConcurrency || 8) <= 4;
 
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: any[]) => { if (IS_DEV) console.log(...args); };
@@ -42,7 +38,6 @@ interface AudioAnalyzerOptions {
   onHesitation?: (duration: number, count: number) => void;
   onCalibrated?: (ambientNoise: number, thresholdSet: number) => void;
   onStartError?: (error: any) => void;
-  onSilenceWarning?: () => void;
   onDebugLog?: (event: string, details: any) => void;
 }
 
@@ -89,7 +84,6 @@ export class AudioAnalyzer {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
-  private analyserSink: GainNode | null = null;
   stream: MediaStream | null = null;
   private dataArray: Float32Array | null = null;
   isRunning = false;
@@ -98,7 +92,6 @@ export class AudioAnalyzer {
   private onHesitation: ((duration: number, count: number) => void) | null;
   private onCalibrated: ((ambientNoise: number, thresholdSet: number) => void) | null;
   private onStartError: ((error: any) => void) | null;
-  private onSilenceWarning: (() => void) | null;
   private onDebugLog: ((event: string, details: any) => void) | null;
   private animationFrame: number | null = null;
   private mediaRecorder: MediaRecorder | null = null;
@@ -119,7 +112,6 @@ export class AudioAnalyzer {
   private chunkPeakRmsPerChunk: number[] = [];
   private chunkLowAmplitudeFlags: boolean[] = [];
   private chunkDropFlags: boolean[] = [];
-  private suppressHesitationUntil = 0;
   private pauseResumeEvents: { type: 'pause' | 'resume'; atMs: number }[] = [];
   private streamHealthLogs: { atMs: number; streamActive: boolean; trackReadyState: string; trackMuted: boolean | null }[] = [];
   private diagnosticsSessionId = '';
@@ -155,8 +147,7 @@ export class AudioAnalyzer {
   private noiseFloor = 0;
   private volumeSamples: number[] = [];
   private lastAnalyzeTime = 0;
-  private analyzeInterval = IS_LOW_END_ANDROID ? 66 : 33;
-  private zeroRmsCount = 0;
+  private analyzeInterval = 33;
   private calibrationSamples: number[] = [];
   private isCalibrating = true;
   private calibrationStartTime: number | null = null;
@@ -200,17 +191,16 @@ export class AudioAnalyzer {
     });
   }
 
-  private static getSupportedRecorderMimeType(): string | undefined {
-    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') return undefined;
-    if (IS_IOS_DEVICE) {
-      if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
-      return undefined;
-    }
-    const candidates = ['audio/webm;codecs=opus', 'audio/webm'];
+  private static getSupportedRecorderMimeType(): string {
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+    ];
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') return '';
     for (const mimeType of candidates) {
       if (MediaRecorder.isTypeSupported(mimeType)) return mimeType;
     }
-    return undefined;
+    return '';
   }
 
   constructor(options: AudioAnalyzerOptions = {}) {
@@ -223,7 +213,6 @@ export class AudioAnalyzer {
     this.onHesitation = options.onHesitation || null;
     this.onCalibrated = options.onCalibrated || null;
     this.onStartError = options.onStartError || null;
-    this.onSilenceWarning = options.onSilenceWarning || null;
     this.onDebugLog = options.onDebugLog || null;
   }
 
@@ -327,13 +316,6 @@ export class AudioAnalyzer {
 
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       this.source.connect(this.analyser);
-      if (IS_ANDROID_DEVICE) {
-        // Keep the analyzer graph "pulled" on Android without audible feedback.
-        this.analyserSink = this.audioContext.createGain();
-        this.analyserSink.gain.value = 0;
-        this.analyser.connect(this.analyserSink);
-        this.analyserSink.connect(this.audioContext.destination);
-      }
       this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
       this.isRunning = true;
 
@@ -372,14 +354,12 @@ export class AudioAnalyzer {
       this.chunkPeakRmsPerChunk = [];
       this.chunkLowAmplitudeFlags = [];
       this.chunkDropFlags = [];
-      this.suppressHesitationUntil = 0;
       this.pauseResumeEvents = [];
       this.streamHealthLogs = [];
       this.transcript = '';
       this.finalTranscript = '';
       this.calibrationSamples = [];
       this.isCalibrating = true;
-      this.zeroRmsCount = 0;
 
       if (typeof MediaRecorder !== 'undefined') {
         const preferredMimeType = AudioAnalyzer.getSupportedRecorderMimeType();
@@ -427,13 +407,6 @@ export class AudioAnalyzer {
           this.chunkPeakRmsPerChunk.push(Number(peakRms.toFixed(5)));
           this.chunkLowAmplitudeFlags.push(lowAmplitude);
           this.chunkDropFlags.push(suddenDrop);
-          if (suddenDrop) {
-            const suppressionWindowMs = IS_IOS_DEVICE ? 2000 : 1000;
-            this.suppressHesitationUntil = Math.max(
-              this.suppressHesitationUntil,
-              nowChunk + suppressionWindowMs,
-            );
-          }
           debugLog('[MicDiag] 📦 Chunk telemetry:', {
             chunkIndex: this.chunkCount,
             sizeBytes: event.data.size,
@@ -451,8 +424,7 @@ export class AudioAnalyzer {
           this.chunkPeakAccumulator = 0;
           this.chunkRmsSampleCount = 0;
         };
-        const chunkInterval = IS_IOS_DEVICE ? 1000 : 100;
-        this.mediaRecorder.start(chunkInterval);
+        this.mediaRecorder.start(100);
         debugLog('[MicDebug] MediaRecorder started', { state: this.mediaRecorder.state });
       }
 
@@ -501,7 +473,6 @@ export class AudioAnalyzer {
   private _recognitionRestartTimer: ReturnType<typeof setTimeout> | null = null;
   private static readonly MAX_RECOGNITION_RESTARTS = 20;
   private static readonly RECOGNITION_RESTART_DELAY_MS = 1000;
-  private static readonly IS_ANDROID = IS_ANDROID_DEVICE;
 
   private _startRecognition() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -547,22 +518,6 @@ export class AudioAnalyzer {
       // Only restart if still actively recording
       if (!this.isListening || !this.isRunning) {
         debugLog('[Transcript] Not restarting (session ended)');
-        return;
-      }
-
-      // On Android, retry recognition with a small delay while session is still active.
-      if (AudioAnalyzer.IS_ANDROID) {
-        if (this._recognitionRestartTimer) {
-          clearTimeout(this._recognitionRestartTimer);
-        }
-        this._recognitionRestartTimer = setTimeout(() => {
-          if (!this.isListening || !this.isRunning || !this.recognition) return;
-          try {
-            this.recognition.start();
-          } catch (e) {
-            debugError('[Transcript] Android restart failed:', e);
-          }
-        }, 500);
         return;
       }
 
@@ -632,16 +587,6 @@ export class AudioAnalyzer {
       sumSquares += this.dataArray[i] * this.dataArray[i];
     }
     const rms = Math.sqrt(sumSquares / this.dataArray.length);
-    if (rms === 0) {
-      this.zeroRmsCount += 1;
-      const zeroThreshold = Math.ceil(3000 / this.analyzeInterval);
-      if (this.zeroRmsCount > zeroThreshold && this.onSilenceWarning) {
-        this.onSilenceWarning();
-        this.zeroRmsCount = 0;
-      }
-    } else {
-      this.zeroRmsCount = 0;
-    }
     this.chunkRmsAccumulator += rms;
     if (rms > this.chunkPeakAccumulator) this.chunkPeakAccumulator = rms;
     this.chunkRmsSampleCount += 1;
@@ -692,9 +637,7 @@ export class AudioAnalyzer {
       inStartDelayWindow,
       isCalibrating: this.isCalibrating,
       microPauseFilter: this.microPauseFilter,
-      hesitationMinDuration: now < this.suppressHesitationUntil
-        ? Number.MAX_SAFE_INTEGER
-        : this.hesitationMinDuration,
+      hesitationMinDuration: this.hesitationMinDuration,
       startBufferMs: this.START_BUFFER_MS,
     });
 
@@ -873,10 +816,6 @@ export class AudioAnalyzer {
       try { this.analyser.disconnect(); } catch { }
       this.analyser = null;
     }
-    if (this.analyserSink) {
-      try { this.analyserSink.disconnect(); } catch { }
-      this.analyserSink = null;
-    }
 
     const avgVolume = sessionAvgRms;
 
@@ -930,10 +869,6 @@ export class AudioAnalyzer {
       try { this.analyser.disconnect(); } catch { }
       this.analyser = null;
     }
-    if (this.analyserSink) {
-      try { this.analyserSink.disconnect(); } catch { }
-      this.analyserSink = null;
-    }
     this.stream = null;
     this.audioContext = null;
     debugLog('[NoSpeech] Analyzer destroyed (stream retained by MicService)');
@@ -948,12 +883,5 @@ export class AudioAnalyzer {
 
   static getScoreLabel(score: number): string {
     return getScoreLabel(score);
-  }
-
-  hasAudioSignal(): boolean {
-    if (!this.analyser) return false;
-    const testBuffer = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteFrequencyData(testBuffer);
-    return testBuffer.some((value) => value > 0);
   }
 }
