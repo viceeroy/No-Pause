@@ -1,5 +1,4 @@
 import { SignIn } from "@clerk/clerk-react";
-import { Link } from "react-router-dom";
 import { Flame, Mic, TrendingUp } from "lucide-react";
 
 const AuthPage = () => {
@@ -85,6 +84,7 @@ const AuthPage = () => {
             appearance={{
               elements: {
                 footer: "hidden",
+                footerAction: "hidden",
                 card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-0",
                 rootBox: "w-full",
                 headerTitle: "hidden",
@@ -103,10 +103,6 @@ const AuthPage = () => {
             No Pause only supports Google sign-in
           </p>
 
-        </div>
-
-        <div className="text-center text-sm text-muted-foreground font-sans mt-8 relative z-10">
-          New to No Pause? <Link to="/auth/sign-up" className="text-foreground font-semibold hover:text-primary transition-colors">Create account</Link>
         </div>
       </div>
     </div>

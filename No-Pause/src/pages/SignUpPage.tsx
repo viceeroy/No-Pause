@@ -1,5 +1,4 @@
 import { SignUp } from "@clerk/clerk-react";
-import { Link } from "react-router-dom";
 import { Flame, Mic, TrendingUp } from "lucide-react";
 
 const SignUpPage = () => {
@@ -85,6 +84,7 @@ const SignUpPage = () => {
             appearance={{
               elements: {
                 footer: "hidden",
+                footerAction: "hidden",
                 card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-0",
                 rootBox: "w-full",
                 headerTitle: "hidden",
@@ -103,10 +103,6 @@ const SignUpPage = () => {
             No Pause only supports Google sign-up
           </p>
 
-        </div>
-
-        <div className="text-center text-sm text-muted-foreground font-sans mt-8 relative z-10">
-          Already have an account? <Link to="/auth" className="text-foreground font-semibold hover:text-primary transition-colors">Sign in</Link>
         </div>
       </div>
     </div>
