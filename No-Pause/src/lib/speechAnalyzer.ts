@@ -41,6 +41,7 @@ interface AudioAnalyzerOptions {
   onHesitation?: (duration: number, count: number) => void;
   onCalibrated?: (ambientNoise: number, thresholdSet: number) => void;
   onStartError?: (error: any) => void;
+  onSilenceWarning?: () => void;
   onDebugLog?: (event: string, details: any) => void;
 }
 
@@ -95,6 +96,7 @@ export class AudioAnalyzer {
   private onHesitation: ((duration: number, count: number) => void) | null;
   private onCalibrated: ((ambientNoise: number, thresholdSet: number) => void) | null;
   private onStartError: ((error: any) => void) | null;
+  private onSilenceWarning: (() => void) | null;
   private onDebugLog: ((event: string, details: any) => void) | null;
   private animationFrame: number | null = null;
   private mediaRecorder: MediaRecorder | null = null;
@@ -151,6 +153,7 @@ export class AudioAnalyzer {
   private volumeSamples: number[] = [];
   private lastAnalyzeTime = 0;
   private analyzeInterval = IS_LOW_END_ANDROID ? 66 : 33;
+  private zeroRmsCount = 0;
   private calibrationSamples: number[] = [];
   private isCalibrating = true;
   private calibrationStartTime: number | null = null;
@@ -216,6 +219,7 @@ export class AudioAnalyzer {
     this.onHesitation = options.onHesitation || null;
     this.onCalibrated = options.onCalibrated || null;
     this.onStartError = options.onStartError || null;
+    this.onSilenceWarning = options.onSilenceWarning || null;
     this.onDebugLog = options.onDebugLog || null;
   }
 
@@ -363,6 +367,7 @@ export class AudioAnalyzer {
       this.finalTranscript = '';
       this.calibrationSamples = [];
       this.isCalibrating = true;
+      this.zeroRmsCount = 0;
 
       if (typeof MediaRecorder !== 'undefined') {
         const preferredMimeType = AudioAnalyzer.getSupportedRecorderMimeType();
@@ -607,6 +612,16 @@ export class AudioAnalyzer {
       sumSquares += this.dataArray[i] * this.dataArray[i];
     }
     const rms = Math.sqrt(sumSquares / this.dataArray.length);
+    if (rms === 0) {
+      this.zeroRmsCount += 1;
+      const zeroThreshold = Math.ceil(3000 / this.analyzeInterval);
+      if (this.zeroRmsCount > zeroThreshold && this.onSilenceWarning) {
+        this.onSilenceWarning();
+        this.zeroRmsCount = 0;
+      }
+    } else {
+      this.zeroRmsCount = 0;
+    }
     this.chunkRmsAccumulator += rms;
     if (rms > this.chunkPeakAccumulator) this.chunkPeakAccumulator = rms;
     this.chunkRmsSampleCount += 1;
@@ -903,5 +918,12 @@ export class AudioAnalyzer {
 
   static getScoreLabel(score: number): string {
     return getScoreLabel(score);
+  }
+
+  hasAudioSignal(): boolean {
+    if (!this.analyser) return false;
+    const testBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(testBuffer);
+    return testBuffer.some((value) => value > 0);
   }
 }

@@ -9,7 +9,6 @@ const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   noiseSuppression: true,
   autoGainControl: true,
   channelCount: 1,
-  ...(IS_ANDROID ? { sampleRate: 16000 } : {}),
 };
 
 const IS_DEV = import.meta.env.DEV;
@@ -23,6 +22,9 @@ class MicService {
   private initializing: Promise<MediaStream> | null = null;
   private getUserMediaCount = 0;
   private visibilityHandler: (() => void) | null = null;
+  private recordingActive = false;
+  private recoveryInProgress = false;
+  onTrackEnded: (() => void) | null = null;
 
   async init(options: MicInitOptions = {}): Promise<MediaStream> {
     if (this.stream) {
@@ -84,6 +86,10 @@ class MicService {
 
   getStream(): MediaStream | null {
     return this.stream;
+  }
+
+  setRecordingActive(active: boolean) {
+    this.recordingActive = active;
   }
 
   setTracksEnabled(enabled: boolean) {
@@ -180,6 +186,30 @@ class MicService {
         });
         return originalStop();
       };
+
+      const endedHandler = () => {
+        debugWarn('[MicDebug] 🎤 Track ended unexpectedly', {
+          id: track.id,
+          readyState: track.readyState,
+          recordingActive: this.recordingActive,
+        });
+        if (!this.recordingActive || this.recoveryInProgress) return;
+        this.recoveryInProgress = true;
+        void (async () => {
+          try {
+            debugWarn('[Mic] Track ended unexpectedly, attempting recovery...');
+            this.reset();
+            await this.init();
+            debugLog('[Mic] Recovery successful');
+          } catch (error) {
+            debugError('[Mic] Recovery failed:', error);
+            this.onTrackEnded?.();
+          } finally {
+            this.recoveryInProgress = false;
+          }
+        })();
+      };
+      track.addEventListener('ended', endedHandler);
     });
   }
 
