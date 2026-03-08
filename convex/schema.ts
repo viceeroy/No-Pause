@@ -4,6 +4,7 @@ import { v } from "convex/values";
 export default defineSchema({
   sessions: defineTable({
     userId: v.string(),
+    email: v.optional(v.string()),
     duration: v.number(),
     pauses: v.number(),
     words: v.number(),
@@ -14,6 +15,7 @@ export default defineSchema({
 
   streaks: defineTable({
     userId: v.string(),
+    email: v.optional(v.string()),
     currentStreak: v.number(),
     lastPracticeDate: v.number(),
   }).index("by_userId", ["userId"]),

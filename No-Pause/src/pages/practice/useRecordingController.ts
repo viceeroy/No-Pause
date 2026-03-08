@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { useMutation, useQuery } from 'convex/react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
 import { micService } from '@/lib/micService';
@@ -40,6 +40,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   const isRecordingRef = useRef(false);
 
   const { userId } = useAuth();
+  const { user } = useUser();
 
   const saveSession = useMutation(api.sessions.saveSession);
   const updateStreak = useMutation(api.streaks.updateStreak);
@@ -78,7 +79,13 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       const transcriptHasSpeech = Boolean(results.transcript && results.transcript !== 'No speech detected.' && results.transcript.trim().length > 0);
       const hasSpeechEvidence = transcriptHasSpeech || results.hesitationCount > 0;
-      const words = transcriptHasSpeech ? results.transcript.trim().split(/\s+/).length : 0;
+      if (import.meta.env.DEV) {
+        console.log('results fields:', Object.keys(results));
+        console.log('words value:', (results as any).wordCount, (results as any).words);
+      }
+      const transcriptWordCount = transcriptHasSpeech ? results.transcript.trim().split(/\s+/).length : 0;
+      const estimatedWordCount = hasSpeechEvidence ? Math.max(1, Math.round(results.totalSpeakingTime * 2.2)) : 0;
+      const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
 
       const scoreResult = AudioAnalyzer.calculateFlowScore(results.hesitationCount, {
         mode,
@@ -87,7 +94,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         hasSpeechEvidence,
       });
       const flowScore = mode === 'free' ? 0 : scoreResult.score;
-      console.log(`[NoSpeech] ✅ FINAL SCORE: ${flowScore}/100 (${AudioAnalyzer.getScoreLabel(flowScore)})`);
+      const safeFlowScore = Number.isFinite(flowScore) ? flowScore : 0;
+      console.log(`[NoSpeech] ✅ FINAL SCORE: ${safeFlowScore}/100 (${AudioAnalyzer.getScoreLabel(safeFlowScore)})`);
 
       let statusNote: string | undefined;
       if (mode === 'free') {
@@ -109,7 +117,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       const sessionResult: SessionResult = {
-        flowScore,
+        flowScore: safeFlowScore,
         totalSpeakingTime: results.totalSpeakingTime,
         totalSessionTime: totalSessionTimeSec,
         isCompleted: scoreResult.isCompleted,
@@ -133,13 +141,17 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         await Promise.all([
           saveSession({
             userId: userId!,
+            email: user?.primaryEmailAddress?.emailAddress,
             duration,
             pauses: results.hesitationCount,
             words,
             mode: mode || 'free',
-            flowScore,
+            flowScore: safeFlowScore,
           }),
-          updateStreak({ userId: userId! }),
+          updateStreak({
+            userId: userId!,
+            email: user?.primaryEmailAddress?.emailAddress,
+          }),
         ]);
       } catch (error) {
         console.error('Failed to sync session to Convex:', error);
@@ -151,7 +163,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       micService.setTracksEnabled(false);
       setShowMicRetry(false);
     }
-  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, userId]);
+  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
 
   const startRecording = useCallback(async () => {
     try {

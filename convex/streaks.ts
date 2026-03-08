@@ -6,6 +6,7 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 export const updateStreak = mutation({
   args: {
     userId: v.string(),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -19,6 +20,7 @@ export const updateStreak = mutation({
     if (!existing) {
       await ctx.db.insert("streaks", {
         userId: args.userId,
+        email: args.email,
         currentStreak: 1,
         lastPracticeDate: now,
       });
@@ -29,6 +31,7 @@ export const updateStreak = mutation({
     const nextStreak = lastDay === today - 1 ? existing.currentStreak + 1 : 1;
 
     await ctx.db.patch(existing._id, {
+      email: args.email ?? existing.email,
       currentStreak: nextStreak,
       lastPracticeDate: now,
     });

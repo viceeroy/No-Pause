@@ -4,6 +4,7 @@ import { v } from "convex/values";
 export const saveSession = mutation({
   args: {
     userId: v.string(),
+    email: v.optional(v.string()),
     duration: v.number(),
     pauses: v.number(),
     words: v.number(),
@@ -13,6 +14,7 @@ export const saveSession = mutation({
   handler: async (ctx, args) => {
     await ctx.db.insert("sessions", {
       userId: args.userId,
+      email: args.email,
       duration: args.duration,
       pauses: args.pauses,
       words: args.words,
