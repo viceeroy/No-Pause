@@ -2,10 +2,14 @@ export type MicInitOptions = {
   constraints?: MediaTrackConstraints;
 };
 
+const IS_ANDROID = /android/i.test(navigator.userAgent);
+
 const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
+  channelCount: 1,
+  ...(IS_ANDROID ? { sampleRate: 16000 } : {}),
 };
 
 const IS_DEV = import.meta.env.DEV;
@@ -18,6 +22,7 @@ class MicService {
   private audioContext: AudioContext | null = null;
   private initializing: Promise<MediaStream> | null = null;
   private getUserMediaCount = 0;
+  private visibilityHandler: (() => void) | null = null;
 
   async init(options: MicInitOptions = {}): Promise<MediaStream> {
     if (this.stream) {
@@ -66,6 +71,10 @@ class MicService {
     }
     this.stream = null;
     this.initializing = null;
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
     if (this.audioContext && this.audioContext.state !== 'closed') {
       try { this.audioContext.close(); } catch { }
     }
@@ -88,6 +97,7 @@ class MicService {
   getAudioContext(): AudioContext {
     if (!this.audioContext || this.audioContext.state === 'closed') {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.ensureVisibilityRecovery();
       debugLog('[MicDebug] MicService created AudioContext', { state: this.audioContext.state });
     }
     return this.audioContext;
@@ -99,6 +109,21 @@ class MicService {
       await this.audioContext.resume();
       debugLog('[MicDebug] MicService resumed AudioContext', { state: this.audioContext.state });
     }
+  }
+
+  private ensureVisibilityRecovery() {
+    if (this.visibilityHandler) return;
+    this.visibilityHandler = () => {
+      if (document.visibilityState !== 'visible') return;
+      const ctx = this.audioContext;
+      if (!ctx || ctx.state !== 'suspended') return;
+      void ctx.resume().then(() => {
+        debugLog('[Audio] AudioContext resumed after visibility change');
+      }).catch((error) => {
+        debugWarn('[Audio] Failed to resume AudioContext after visibility change', error);
+      });
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   private async _initInternal(options: MicInitOptions): Promise<MediaStream> {

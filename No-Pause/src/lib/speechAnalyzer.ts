@@ -25,6 +25,9 @@ const MICRO_PAUSE_IGNORE = 300;
 const SMOOTHING_WINDOW = 10;
 const CALIBRATION_DURATION = 1500;
 const ANALYTICS_START_DELAY_MS = 400;
+const IS_ANDROID_DEVICE = /android/i.test(navigator.userAgent);
+const IS_LOW_END_ANDROID =
+  IS_ANDROID_DEVICE && (navigator.hardwareConcurrency || 8) <= 4;
 
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: any[]) => { if (IS_DEV) console.log(...args); };
@@ -147,7 +150,7 @@ export class AudioAnalyzer {
   private noiseFloor = 0;
   private volumeSamples: number[] = [];
   private lastAnalyzeTime = 0;
-  private analyzeInterval = 33;
+  private analyzeInterval = IS_LOW_END_ANDROID ? 66 : 33;
   private calibrationSamples: number[] = [];
   private isCalibrating = true;
   private calibrationStartTime: number | null = null;
@@ -473,7 +476,7 @@ export class AudioAnalyzer {
   private _recognitionRestartTimer: ReturnType<typeof setTimeout> | null = null;
   private static readonly MAX_RECOGNITION_RESTARTS = 20;
   private static readonly RECOGNITION_RESTART_DELAY_MS = 1000;
-  private static readonly IS_ANDROID = /android/i.test(navigator.userAgent);
+  private static readonly IS_ANDROID = IS_ANDROID_DEVICE;
 
   private _startRecognition() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -522,10 +525,19 @@ export class AudioAnalyzer {
         return;
       }
 
-      // CRITICAL: On Android Chrome, each recognition.start() triggers a new
-      // permission prompt. Do NOT restart recognition on Android.
+      // On Android, retry recognition with a small delay while session is still active.
       if (AudioAnalyzer.IS_ANDROID) {
-        debugLog('[Transcript] Android detected — skipping recognition restart to avoid permission re-prompt');
+        if (this._recognitionRestartTimer) {
+          clearTimeout(this._recognitionRestartTimer);
+        }
+        this._recognitionRestartTimer = setTimeout(() => {
+          if (!this.isListening || !this.isRunning || !this.recognition) return;
+          try {
+            this.recognition.start();
+          } catch (e) {
+            debugError('[Transcript] Android restart failed:', e);
+          }
+        }, 500);
         return;
       }
 

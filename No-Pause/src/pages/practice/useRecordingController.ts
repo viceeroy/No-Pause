@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router-dom';
 import { useMutation } from 'convex/react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
+import { toast } from '@/components/ui/sonner';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
 import { micService } from '@/lib/micService';
 import { storage } from '@/lib/storage';
@@ -34,6 +35,7 @@ type RecordingControllerResult = {
 export function useRecordingController({ mode, navigate, state }: UseRecordingControllerOptions): RecordingControllerResult {
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const contextHealthIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionDataRef = useRef<{ startTime: number; sessionId: string } | null>(null);
   const soundDetectedRef = useRef(false);
   const micInitializingRef = useRef(false);
@@ -59,12 +61,20 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     setElapsedTime,
   } = state;
 
+  const clearContextHealthInterval = useCallback(() => {
+    if (contextHealthIntervalRef.current) {
+      clearInterval(contextHealthIntervalRef.current);
+      contextHealthIntervalRef.current = null;
+    }
+  }, []);
+
   const stopRecording = useCallback(async () => {
     if (analyzerRef.current && analyzerRef.current.isRunning) {
       const results = await analyzerRef.current.stop();
       const duration = Math.floor((Date.now() - (sessionDataRef.current?.startTime || Date.now())) / 1000);
 
       if (timerRef.current) clearInterval(timerRef.current);
+      clearContextHealthInterval();
 
       const practiceMode = mode === 'free' ? 'free-speak' : mode;
       const totalSessionTimeSec = Math.round(results.totalTime / 1000);
@@ -152,7 +162,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       micService.setTracksEnabled(false);
       setShowMicRetry(false);
     }
-  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
+  }, [clearContextHealthInterval, mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -198,6 +208,24 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       sessionDataRef.current = { startTime: Date.now(), sessionId };
 
+      clearContextHealthInterval();
+      contextHealthIntervalRef.current = setInterval(() => {
+        if (!isRecordingRef.current) return;
+        if (audioCtx.state !== 'suspended') return;
+        void audioCtx.resume().then(() => {
+          // Recovery succeeded; keep interval alive for future suspensions.
+        }).catch(() => {
+          toast('Recording paused — tap to resume', {
+            action: {
+              label: 'Resume',
+              onClick: () => {
+                void audioCtx.resume();
+              },
+            },
+          });
+        });
+      }, 3000);
+
       const duration = mode === 'lemon' ? LEMON_MIN_TOTAL_SECONDS : (mode === 'topic' ? TOPIC_MIN_TOTAL_SECONDS : 0);
       setTimeLeft(duration);
       setElapsedTime(0);
@@ -225,7 +253,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       setTranscriptError('Failed to start recording. Please try again.');
       setState('setup');
     }
-  }, [mode, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
+  }, [clearContextHealthInterval, mode, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
 
   const handleStart = useCallback(async (forceRetryMic = false) => {
     try {
@@ -319,8 +347,9 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     }
     micService.setTracksEnabled(false);
     if (timerRef.current) clearInterval(timerRef.current);
+    clearContextHealthInterval();
     navigate('/');
-  }, [navigate]);
+  }, [clearContextHealthInterval, navigate]);
 
   const exportDiagnosticsLogs = useCallback(() => {
     const analyzer = analyzerRef.current;
@@ -380,8 +409,9 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
       micService.setTracksEnabled(false);
       if (timerRef.current) clearInterval(timerRef.current);
+      clearContextHealthInterval();
     };
-  }, []);
+  }, [clearContextHealthInterval]);
 
   return {
     handleStart,
