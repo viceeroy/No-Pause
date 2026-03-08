@@ -175,9 +175,12 @@ export default function DashboardPage() {
 
   if (!stats) return null;
 
-  const backendTotalSessions = remoteStats?.totalSessions ?? stats.totalSessions;
-  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? stats.totalPracticeTime;
-  const backendCurrentStreak = remoteStreak?.currentStreak ?? stats.currentStreak;
+  const safeRemoteStats = (remoteStats as any) ?? null;
+  const safeRemoteStreak = (remoteStreak as any) ?? null;
+
+  const backendTotalSessions = safeRemoteStats?.totalSessions ?? stats.totalSessions;
+  const backendTotalPracticeTime = safeRemoteStats?.totalSpeakingTime ?? stats.totalPracticeTime;
+  const backendCurrentStreak = safeRemoteStreak?.currentStreak ?? stats.currentStreak;
   const backendBestStreak = stats.bestStreak;
 
   return (

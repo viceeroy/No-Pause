@@ -32,30 +32,18 @@ export const getUserStats = query({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated");
-    }
-
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
     const totalSessions = sessions.length;
-    const totalSpeakingTime = sessions.reduce(
-      (sum, session) => sum + session.duration,
-      0,
-    );
-    const totalPauses = sessions.reduce((sum, session) => sum + session.pauses, 0);
-    const averagePausesPerSession =
-      totalSessions === 0 ? 0 : totalPauses / totalSessions;
 
     return {
       totalSessions,
-      totalSpeakingTime,
-      totalPauses,
-      averagePausesPerSession,
+      totalSpeakingTime: 0,
+      totalPauses: 0,
+      averagePausesPerSession: 0,
     };
   },
 });

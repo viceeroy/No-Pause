@@ -139,9 +139,12 @@ export default function StatsPage() {
     ...storage.getStreak(),
   };
 
-  const backendTotalSessions = remoteStats?.totalSessions ?? scoredStats.totalSessions;
-  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? scoredStats.totalPracticeTime;
-  const backendCurrentStreak = remoteStreak?.currentStreak ?? scoredStats.current;
+  const safeRemoteStats = (remoteStats as any) ?? null;
+  const safeRemoteStreak = (remoteStreak as any) ?? null;
+
+  const backendTotalSessions = safeRemoteStats?.totalSessions ?? scoredStats.totalSessions;
+  const backendTotalPracticeTime = safeRemoteStats?.totalSpeakingTime ?? scoredStats.totalPracticeTime;
+  const backendCurrentStreak = safeRemoteStreak?.currentStreak ?? scoredStats.current;
   const backendBestStreak = scoredStats.best;
 
   const allSessionsCombined = allSessions
