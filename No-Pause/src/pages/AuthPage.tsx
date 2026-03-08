@@ -1,5 +1,6 @@
 import { SignIn } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
+import { Flame, Mic, TrendingUp } from "lucide-react";
 
 const AuthPage = () => {
   return (
@@ -39,17 +40,44 @@ const AuthPage = () => {
         })}
       </div>
 
-      <div className="w-full max-w-sm md:max-w-md flex flex-col items-center gap-6 md:gap-8 relative z-10 px-1 md:px-0">
-        <div className="text-center flex flex-col items-center">
-          <h1 className="text-[2.25rem] leading-none md:text-5xl font-serif font-medium text-foreground mb-2 md:mb-4 tracking-tight drop-shadow-md">
-            No Pause
-          </h1>
-          <h2 className="text-sm md:text-lg font-serif font-semibold text-foreground/95 tracking-tight px-1 md:px-4 text-center">
-            Real-time speaking analytics tool.
-          </h2>
-        </div>
+      <div className="w-full max-w-md md:max-w-none md:w-[480px] relative z-10 px-4 md:px-0">
 
-        <div className="w-full relative z-10 bg-surface-elevated border border-border rounded-[24px] p-2 md:p-3 shadow-card elevation-card overflow-hidden">
+        <div className="w-full bg-surface-elevated border border-border rounded-[24px] p-6 md:p-10 shadow-card elevation-card overflow-hidden">
+
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-2 tracking-tight drop-shadow-md">
+              No Pause
+            </h1>
+            <h2 className="text-sm md:text-base font-serif font-semibold text-muted-foreground tracking-tight">
+              Real-time speaking analytics tool.
+            </h2>
+          </div>
+
+          <hr className="border-border my-6 md:my-8" />
+
+          <div className="flex flex-col gap-4 mb-6 md:mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-surface-card border border-border">
+                <Flame size={18} className="text-ember-500" />
+              </div>
+              <span className="text-sm md:text-base text-foreground font-sans font-medium">Track your fluency streak</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-surface-card border border-border">
+                <Mic size={18} className="text-primary" />
+              </div>
+              <span className="text-sm md:text-base text-foreground font-sans font-medium">Measure hesitations in real time</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-surface-card border border-border">
+                <TrendingUp size={18} className="text-emerald-400" />
+              </div>
+              <span className="text-sm md:text-base text-foreground font-sans font-medium">Improve with every session</span>
+            </div>
+          </div>
+
+          <hr className="border-border my-6 md:my-8" />
+
           <SignIn
             routing="path"
             path="/auth"
@@ -57,7 +85,7 @@ const AuthPage = () => {
             appearance={{
               elements: {
                 footer: "hidden",
-                card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-3 md:p-4",
+                card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-0",
                 rootBox: "w-full",
                 headerTitle: "hidden",
                 headerSubtitle: "hidden",
@@ -65,14 +93,19 @@ const AuthPage = () => {
                 formButtonPrimary: "hidden",
                 dividerRow: "hidden",
                 socialButtonsBlockButton:
-                  "border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all min-h-[52px] h-14 md:h-16 shadow-sm hover:shadow-md",
-                socialButtonsBlockButtonText: "font-sans font-semibold text-base md:text-lg text-foreground",
+                  "border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all min-h-[52px] h-14 shadow-sm hover:shadow-md",
+                socialButtonsBlockButtonText: "font-sans font-semibold text-base text-foreground",
               },
             }}
           />
+
+          <p className="text-center text-xs text-muted-foreground mt-4 font-sans font-medium">
+            No Pause only supports Google sign-in
+          </p>
+
         </div>
 
-        <div className="text-center text-sm text-muted-foreground font-sans relative z-10">
+        <div className="text-center text-sm text-muted-foreground font-sans mt-8 relative z-10">
           New to No Pause? <Link to="/auth/sign-up" className="text-foreground font-semibold hover:text-primary transition-colors">Create account</Link>
         </div>
       </div>
