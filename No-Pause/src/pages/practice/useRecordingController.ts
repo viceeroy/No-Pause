@@ -130,8 +130,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       try {
-        console.log('Saving session with userId:', userId);
-        const [saveSessionResult, updateStreakResult] = await Promise.all([
+        await Promise.all([
           saveSession({
             userId: userId!,
             duration,
@@ -140,8 +139,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
           }),
           updateStreak({ userId: userId! }),
         ]);
-        console.log('saveSession result:', saveSessionResult);
-        console.log('updateStreak result:', updateStreakResult);
       } catch (error) {
         console.error('Failed to sync session to Convex:', error);
       }
@@ -153,12 +150,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       setShowMicRetry(false);
     }
   }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, userId]);
-
-  useEffect(() => {
-    if (stats) {
-      console.log('[Convex] Refreshed user stats:', stats);
-    }
-  }, [stats]);
 
   const startRecording = useCallback(async () => {
     try {

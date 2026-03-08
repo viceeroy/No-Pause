@@ -105,27 +105,34 @@ export default function DashboardPage() {
   }, []);
 
   const convex = useConvex();
-  const [remoteStats, setRemoteStats] = useState<any>(null);
-  const [remoteStreak, setRemoteStreak] = useState<any>(null);
+  const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
+  const [remoteStreak, setRemoteStreak] = useState<any | undefined>(undefined);
 
   useEffect(() => {
     if (userId) {
+      setRemoteStats(undefined);
+      setRemoteStreak(undefined);
       const fetchConvexData = async () => {
         try {
           const stats = await convex.query(api.sessions.getUserStats, { userId });
           setRemoteStats(stats);
         } catch (error) {
-          console.warn('Convex getUserStats failed, falling back to local data:', error);
+          console.warn('Convex getUserStats failed, using zeroed stats:', error);
+          setRemoteStats(null);
         }
 
         try {
           const streak = await convex.query(api.streaks.getStreak, { userId });
           setRemoteStreak(streak);
         } catch (error) {
-          console.warn('Convex getStreak failed, falling back to local data:', error);
+          console.warn('Convex getStreak failed, using zeroed streak:', error);
+          setRemoteStreak(null);
         }
       };
       fetchConvexData();
+    } else {
+      setRemoteStats(null);
+      setRemoteStreak(null);
     }
   }, [userId, convex]);
 
@@ -175,13 +182,13 @@ export default function DashboardPage() {
 
   if (!stats) return null;
 
-  const safeRemoteStats = (remoteStats as any) ?? null;
-  const safeRemoteStreak = (remoteStreak as any) ?? null;
+  const isRemoteStatsLoading = remoteStats === undefined;
+  const isRemoteStreakLoading = remoteStreak === undefined;
 
-  const backendTotalSessions = safeRemoteStats?.totalSessions ?? stats.totalSessions;
-  const backendTotalPracticeTime = safeRemoteStats?.totalSpeakingTime ?? stats.totalPracticeTime;
-  const backendCurrentStreak = safeRemoteStreak?.currentStreak ?? stats.currentStreak;
-  const backendBestStreak = stats.bestStreak;
+  const backendTotalSessions = remoteStats?.totalSessions ?? 0;
+  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
+  const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
+  const backendBestStreak = 0;
 
   return (
     <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
@@ -363,10 +370,10 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Flame} label="Day Streak" value={backendCurrentStreak} sub={`Best: ${backendBestStreak}`} className="elevation-card" />
-        <StatCard icon={Target} label="Sessions" value={backendTotalSessions} className="elevation-card" />
-        <StatCard icon={Clock} label="Practice Time" value={formatTime(backendTotalPracticeTime)} className="elevation-card" />
-        <StatCard icon={Zap} label="Flow Score" value={`${stats.avgScore}%`} sub={stats.bestScore > 0 ? `Best: ${stats.bestScore}%` : ''} className="elevation-card-elevated border border-ember-500/35" />
+        <StatCard icon={Flame} label="Day Streak" value={isRemoteStreakLoading ? '...' : backendCurrentStreak} sub={`Best: ${backendBestStreak}`} className="elevation-card" />
+        <StatCard icon={Target} label="Sessions" value={isRemoteStatsLoading ? '...' : backendTotalSessions} className="elevation-card" />
+        <StatCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatTime(backendTotalPracticeTime)} className="elevation-card" />
+        <StatCard icon={Zap} label="Flow Score" value={isRemoteStatsLoading ? '...' : '0%'} className="elevation-card-elevated border border-ember-500/35" />
       </div>
 
       {/* Quick Actions */}

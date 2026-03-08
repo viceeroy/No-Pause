@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
-import { useQuery } from 'convex/react'; // Kept for possible nested use, but we'll import useConvex
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { storage, SessionData, type AppPreferences } from '@/lib/storage';
@@ -87,36 +86,46 @@ export default function StatsPage() {
   const topicScores = storage.getTopicScores();
 
   const convex = useConvex();
-  const [remoteStats, setRemoteStats] = useState<any>(null);
-  const [remoteStreak, setRemoteStreak] = useState<any>(null);
-  const [remoteRecentSessions, setRemoteRecentSessions] = useState<any>(null);
+  const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
+  const [remoteStreak, setRemoteStreak] = useState<any | undefined>(undefined);
+  const [remoteRecentSessions, setRemoteRecentSessions] = useState<any[] | null | undefined>(undefined);
 
   useEffect(() => {
     if (userId) {
+      setRemoteStats(undefined);
+      setRemoteStreak(undefined);
+      setRemoteRecentSessions(undefined);
       const fetchConvexData = async () => {
         try {
           const stats = await convex.query(api.sessions.getUserStats, { userId });
           setRemoteStats(stats);
         } catch (error) {
-          console.warn('Convex getUserStats failed, using local data:', error);
+          console.warn('Convex getUserStats failed, using zeroed stats:', error);
+          setRemoteStats(null);
         }
 
         try {
           const streak = await convex.query(api.streaks.getStreak, { userId });
           setRemoteStreak(streak);
         } catch (error) {
-          console.warn('Convex getStreak failed, using local data:', error);
+          console.warn('Convex getStreak failed, using zeroed streak:', error);
+          setRemoteStreak(null);
         }
 
         try {
           const sessionsCall = await convex.query(api.sessions.getSessions, { userId });
           setRemoteRecentSessions(sessionsCall);
         } catch (error) {
-          console.warn('Convex getSessions failed, using local data:', error);
+          console.warn('Convex getSessions failed, showing empty history:', error);
+          setRemoteRecentSessions(null);
         }
       };
 
       fetchConvexData();
+    } else {
+      setRemoteStats(null);
+      setRemoteStreak(null);
+      setRemoteRecentSessions(null);
     }
   }, [userId, convex]);
 
@@ -128,39 +137,32 @@ export default function StatsPage() {
   const lemonStats = calcModeStats(scoredLemon);
   const topicStats = calcModeStats(scoredTopic);
   const allSessions = [...lemonScores, ...topicScores];
-  const hasAnySession = allSessions.length > 0;
-  const scoredStats = {
-    totalSessions: scoredSessions.length,
-    totalPracticeTime: allSessions.reduce((sum, s) => sum + (s.duration || 0), 0),
-    avgScore: scoredSessions.length > 0
-      ? Math.round(scoredSessions.reduce((sum, s) => sum + (s.flowScore || 0), 0) / scoredSessions.length)
-      : 0,
-    bestScore: scoredSessions.length > 0 ? Math.max(...scoredSessions.map(s => s.flowScore || 0)) : 0,
-    ...storage.getStreak(),
-  };
 
-  const safeRemoteStats = (remoteStats as any) ?? null;
-  const safeRemoteStreak = (remoteStreak as any) ?? null;
+  const isRemoteStatsLoading = remoteStats === undefined;
+  const isRemoteStreakLoading = remoteStreak === undefined;
+  const isRemoteRecentSessionsLoading = remoteRecentSessions === undefined;
 
-  const backendTotalSessions = safeRemoteStats?.totalSessions ?? scoredStats.totalSessions;
-  const backendTotalPracticeTime = safeRemoteStats?.totalSpeakingTime ?? scoredStats.totalPracticeTime;
-  const backendCurrentStreak = safeRemoteStreak?.currentStreak ?? scoredStats.current;
-  const backendBestStreak = scoredStats.best;
+  const backendTotalSessions = remoteStats?.totalSessions ?? 0;
+  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
+  const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
+  const backendBestStreak = 0;
 
   const allSessionsCombined = allSessions
     .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
   const recentLocalSessions = allSessionsCombined.slice(0, 8);
 
-  const recentSessions = remoteRecentSessions && remoteRecentSessions.length > 0
-    ? remoteRecentSessions.map((session) => ({
+  const recentSessions = isRemoteRecentSessionsLoading
+    ? recentLocalSessions
+    : (remoteRecentSessions ?? []).map((session) => ({
       id: session._id,
       created_at: new Date(session.createdAt).toISOString(),
       duration: session.duration,
       hesitationCount: session.pauses,
       flowScore: 0,
       mode: 'session',
-    }))
-    : recentLocalSessions;
+    }));
+
+  const hasAnySession = recentSessions.length > 0;
 
   const OverviewCard = ({ icon: Icon, label, value, sub }: {
     icon: React.ElementType;
@@ -451,10 +453,10 @@ export default function StatsPage() {
       </Dialog>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-        <OverviewCard icon={Flame} label="Current Streak" value={backendCurrentStreak} sub={`Best: ${backendBestStreak}`} />
-        <OverviewCard icon={Target} label="Scored Sessions" value={backendTotalSessions} />
-        <OverviewCard icon={Clock} label="Practice Time" value={formatDuration(backendTotalPracticeTime)} />
-        <OverviewCard icon={TrendingUp} label="Overall Flow" value={`${scoredStats.avgScore}`} sub={scoredStats.bestScore > 0 ? `Best: ${scoredStats.bestScore}` : undefined} />
+        <OverviewCard icon={Flame} label="Current Streak" value={isRemoteStreakLoading ? '...' : backendCurrentStreak} sub={`Best: ${backendBestStreak}`} />
+        <OverviewCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendTotalSessions} />
+        <OverviewCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatDuration(backendTotalPracticeTime)} />
+        <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : '0'} />
       </div>
 
       <div className="mb-8">
