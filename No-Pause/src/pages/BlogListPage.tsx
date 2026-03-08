@@ -1,5 +1,29 @@
 import { Link } from 'react-router-dom';
+import { Activity, BookOpen, Brain, Clock3, MessageCircle, Mic, PauseCircle } from 'lucide-react';
 import { blogPosts } from '@/data/blog';
+
+const getPostIcon = (slug: string) => {
+  if (slug.includes('um-and-uh')) return MessageCircle;
+  if (slug.includes('pauses-hurt-fluency')) return PauseCircle;
+  if (slug.includes('hesitation')) return Brain;
+  if (slug.includes('how-long-should-i-practice-speaking')) return Clock3;
+  if (slug.includes('reading-aloud')) return BookOpen;
+  if (slug.includes('nervous')) return Activity;
+  return Mic;
+};
+
+const estimateReadTime = (post: (typeof blogPosts)[number]) => {
+  const rawText = [
+    post.title,
+    post.description,
+    post.shortAnswer,
+    post.takeaway,
+    ...post.sections.map((section) => `${section.heading} ${section.content} ${(section.bullets || []).join(' ')}`),
+  ].join(' ');
+
+  const words = rawText.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 220));
+};
 
 export default function BlogListPage() {
   return (
@@ -12,9 +36,20 @@ export default function BlogListPage() {
       </header>
 
       <section className="space-y-4" aria-label="Blog posts">
-        {blogPosts.map((post) => (
-          <Link key={post.slug} to={`/blog/${post.slug}`} className="block">
-            <article className="rounded-2xl bg-surface-elevated border border-border shadow-card p-6 card-hover cursor-pointer">
+        {blogPosts.map((post) => {
+          const Icon = getPostIcon(post.slug);
+          const readTime = estimateReadTime(post);
+          return (
+            <Link key={post.slug} to={`/blog/${post.slug}`} className="block">
+              <article className="rounded-2xl bg-surface-elevated border border-border shadow-card p-6 card-hover cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface-card text-primary">
+                    <Icon size={18} />
+                  </div>
+                  <span className="inline-flex items-center rounded-full border border-primary/40 bg-primary/15 px-3 py-1 text-[11px] font-sans font-semibold uppercase tracking-[0.14em] text-primary">
+                    {readTime} min read
+                  </span>
+                </div>
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-sans mb-2">
                 {new Date(post.date).toLocaleDateString('en-US', {
                   year: 'numeric',
@@ -32,9 +67,10 @@ export default function BlogListPage() {
               <p className="text-xs text-muted-foreground/85 font-sans">
                 Includes short answer, key points, and a practical takeaway.
               </p>
-            </article>
-          </Link>
-        ))}
+              </article>
+            </Link>
+          );
+        })}
       </section>
     </main>
   );

@@ -1,11 +1,52 @@
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Activity, ArrowLeft, BookOpen, Brain, Clock3, MessageCircle, Mic, PauseCircle, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBlogPostBySlug } from '@/data/blog';
+
+const getPostIcon = (slug: string) => {
+  if (slug.includes('um-and-uh')) return MessageCircle;
+  if (slug.includes('pauses-hurt-fluency')) return PauseCircle;
+  if (slug.includes('hesitation')) return Brain;
+  if (slug.includes('how-long-should-i-practice-speaking')) return Clock3;
+  if (slug.includes('reading-aloud')) return BookOpen;
+  if (slug.includes('nervous')) return Activity;
+  return Mic;
+};
+
+const statIcons = [Target, Clock3, TrendingUp, Sparkles, Brain, BookOpen];
+
+const getPullQuote = (shortAnswer: string) => {
+  const sentences = shortAnswer
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  if (sentences.length === 0) return shortAnswer;
+  return sentences.reduce((longest, current) => (current.length > longest.length ? current : longest), sentences[0]);
+};
 
 export default function BlogPostPage() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPostBySlug(slug) : undefined;
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!post) return;
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const fullHeight = document.documentElement.scrollHeight - viewportHeight;
+      if (fullHeight <= 0) {
+        setProgress(0);
+        return;
+      }
+      setProgress(Math.max(0, Math.min(100, (scrollTop / fullHeight) * 100)));
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [post]);
+
   const handleBack = () => {
     if (window.history.length > 1) {
       navigate(-1);
@@ -13,6 +54,9 @@ export default function BlogPostPage() {
     }
     navigate('/blog');
   };
+
+  const Icon = useMemo(() => getPostIcon(post?.slug || ''), [post?.slug]);
+  const pullQuote = useMemo(() => getPullQuote(post?.shortAnswer || ''), [post?.shortAnswer]);
 
   if (!post) {
     return (
@@ -35,6 +79,12 @@ export default function BlogPostPage() {
 
   return (
     <main className="min-h-screen bg-surface-base pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-4xl mx-auto">
+      <div className="fixed top-0 left-0 right-0 z-[70] h-[3px] bg-surface-card/60">
+        <div
+          className="h-full bg-primary transition-[width] duration-150 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
       <article className="rounded-2xl border border-border bg-surface-elevated p-6 md:p-8 shadow-card">
         <button
           type="button"
@@ -44,6 +94,12 @@ export default function BlogPostPage() {
           <ArrowLeft size={16} />
           Back
         </button>
+        <div className="mb-6 flex justify-center">
+          <div className="relative inline-flex h-28 w-28 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-primary shadow-[0_0_40px_rgba(230,140,106,0.25)]">
+            <span className="absolute inset-3 rounded-full bg-primary/10 blur-md" />
+            <Icon size={96} strokeWidth={1.2} className="relative z-10" />
+          </div>
+        </div>
         <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-sans mb-2">
           {new Date(post.date).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -65,6 +121,12 @@ export default function BlogPostPage() {
           <p className="text-sm md:text-base text-foreground/90 font-sans leading-relaxed">{post.shortAnswer}</p>
         </section>
 
+        <blockquote className="mb-8 rounded-xl border-l-4 border-primary bg-surface-card/60 px-5 py-4">
+          <p className="text-lg md:text-xl italic font-serif text-foreground/95 leading-relaxed">
+            "{pullQuote}"
+          </p>
+        </blockquote>
+
         <section className="space-y-6">
           {post.sections.map((section) => (
             <div key={section.heading} className="space-y-2">
@@ -73,13 +135,22 @@ export default function BlogPostPage() {
                 {section.content}
               </p>
               {section.bullets && section.bullets.length > 0 && (
-                <ul className="list-disc pl-5 space-y-1">
-                  {section.bullets.map((bullet) => (
-                    <li key={bullet} className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed">
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                  {section.bullets.map((bullet, index) => {
+                    const BulletIcon = statIcons[index % statIcons.length];
+                    return (
+                      <div
+                        key={bullet}
+                        className="rounded-xl border border-border bg-surface-card/70 p-4 shadow-card"
+                      >
+                        <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface-elevated text-primary">
+                          <BulletIcon size={15} />
+                        </div>
+                        <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed">{bullet}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           ))}
