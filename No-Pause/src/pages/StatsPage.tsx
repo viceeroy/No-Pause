@@ -4,7 +4,7 @@ import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { storage, SessionData, type AppPreferences } from '@/lib/storage';
+import { storage, type AppPreferences } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
 import { useInstallPlatform } from '@/hooks/useInstallPlatform';
@@ -21,20 +21,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-
-interface ModeStats {
-  avgFlow: number;
-  sessionCount: number;
-}
-
-function calcModeStats(items: SessionData[]): ModeStats {
-  if (items.length === 0) return { avgFlow: 0, sessionCount: 0 };
-
-  return {
-    avgFlow: Math.round(items.reduce((s, i) => s + (i.flowScore || 0), 0) / items.length),
-    sessionCount: items.length,
-  };
-}
 
 function formatDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return '0m';
@@ -75,9 +61,6 @@ export default function StatsPage() {
   const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
     () => storage.getPreferences().pauseThresholdLevel
   );
-  const [resetTick, setResetTick] = useState(0);
-  const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const importInputRef = useRef<HTMLInputElement | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
@@ -137,13 +120,13 @@ export default function StatsPage() {
   const backendBestStreak = remoteStreak?.bestStreak ?? 0;
 
   const recentSessions = (remoteRecentSessions ?? []).map((session) => ({
-      id: session._id,
-      created_at: new Date(session.createdAt).toISOString(),
-      duration: session.duration,
-      hesitationCount: session.pauses,
-      flowScore: session.flowScore ?? 0,
-      mode: session.mode || 'free',
-    }));
+    id: session._id,
+    created_at: new Date(session.createdAt).toISOString(),
+    duration: session.duration,
+    hesitationCount: session.pauses,
+    flowScore: session.flowScore ?? 0,
+    mode: session.mode || 'free',
+  }));
 
   const hasAnySession = recentSessions.length > 0;
 
@@ -165,79 +148,6 @@ export default function StatsPage() {
     </div>
   );
 
-  const handleResetStats = () => {
-    const confirmed = window.confirm('Are you sure you want to reset all your stats? You will lose all data and cannot recover them.');
-    if (!confirmed) return;
-    storage.resetStats();
-    setResetTick((tick) => tick + 1);
-  };
-
-  const formatDateForFilename = (date = new Date()) => date.toISOString().split('T')[0];
-
-  const downloadBlob = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleExportJson = () => {
-    const backup = {
-      type: 'nopause-backup',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      data: {
-        sessions: storage.getSessions(),
-        lemonScores: storage.getLemonScores(),
-        topicScores: storage.getTopicScores(),
-        streak: storage.getStreak(),
-        preferences: storage.getPreferences(),
-      },
-    };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, `nopause-backup-${formatDateForFilename()}.json`);
-  };
-
-  const escapeCsv = (value: string | number | boolean | null | undefined) => {
-    const str = value === null || value === undefined ? '' : String(value);
-    if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-    return str;
-  };
-
-  const formatDurationCsv = (seconds?: number | null) => {
-    const totalSeconds = Math.max(0, Math.floor(seconds ?? 0));
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleExportCsv = () => {
-    const allSessions = [...storage.getSessions(), ...storage.getLemonScores(), ...storage.getTopicScores()];
-    const rows = [
-      ['date', 'mode', 'score', 'duration', 'hesitations', 'completed'],
-      ...allSessions.map((s) => [
-        s.created_at || '',
-        s.mode || '',
-        s.flowScore ?? 0,
-        formatDurationCsv(s.duration),
-        s.hesitationCount ?? 0,
-        Boolean(s.isCompleted),
-      ].map(escapeCsv)),
-    ];
-    const csv = rows.map((row) => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    downloadBlob(blob, `nopause-stats-${formatDateForFilename()}.csv`);
-  };
-
-  const handleImportClick = () => {
-    setImportStatus(null);
-    importInputRef.current?.click();
-  };
-
   const handleInstallClick = async () => {
     if (!isInstallEligible || isInstalled) return;
 
@@ -251,75 +161,6 @@ export default function StatsPage() {
       return;
     }
     setShowInstallHelp(true);
-  };
-
-  const MAX_IMPORTED_ITEMS = 200;
-  const mergeById = (existing: SessionData[], incoming: SessionData[]) => {
-    const seenIds = new Set(existing.map((s) => s.id).filter(Boolean) as string[]);
-    const seenWithoutId = new Set(
-      existing
-        .filter((s) => !s.id)
-        .map((s) => `${s.created_at ?? ''}|${s.mode ?? ''}|${s.flowScore ?? ''}|${s.duration ?? ''}`)
-    );
-    const merged = [...existing];
-    for (const item of incoming) {
-      if (!item) continue;
-      if (item.id) {
-        if (seenIds.has(item.id)) continue;
-        seenIds.add(item.id);
-        merged.push(item);
-        continue;
-      }
-      const fingerprint = `${item.created_at ?? ''}|${item.mode ?? ''}|${item.flowScore ?? ''}|${item.duration ?? ''}`;
-      if (seenWithoutId.has(fingerprint)) continue;
-      seenWithoutId.add(fingerprint);
-      merged.push(item);
-    }
-    return merged.slice(0, MAX_IMPORTED_ITEMS);
-  };
-
-  const handleImportJson: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    try {
-      const raw = await file.text();
-      const parsed = JSON.parse(raw);
-      if (!parsed || parsed.type !== 'nopause-backup' || !parsed.data) {
-        throw new Error('Invalid backup file.');
-      }
-      const data = parsed.data as {
-        sessions?: SessionData[];
-        lemonScores?: SessionData[];
-        topicScores?: SessionData[];
-        streak?: { current: number; best: number; lastDate: string | null };
-        preferences?: AppPreferences;
-      };
-      if (!Array.isArray(data.sessions) || !Array.isArray(data.lemonScores) || !Array.isArray(data.topicScores)) {
-        throw new Error('Invalid backup file structure.');
-      }
-
-      const mergedSessions = mergeById(storage.getSessions(), data.sessions);
-      const mergedLemon = mergeById(storage.getLemonScores(), data.lemonScores);
-      const mergedTopic = mergeById(storage.getTopicScores(), data.topicScores);
-
-      localStorage.setItem('fluencyflow_sessions', JSON.stringify(mergedSessions));
-      localStorage.setItem('fluencyflow_lemon_scores', JSON.stringify(mergedLemon));
-      localStorage.setItem('fluencyflow_topic_scores', JSON.stringify(mergedTopic));
-
-      if (data.streak) {
-        localStorage.setItem('fluencyflow_streak', JSON.stringify(data.streak));
-      }
-      if (data.preferences?.pauseThresholdLevel) {
-        storage.savePreferences({ pauseThresholdLevel: data.preferences.pauseThresholdLevel });
-        setPauseThresholdLevel(data.preferences.pauseThresholdLevel);
-      }
-
-      setImportStatus({ type: 'success', message: 'Import successful. Data merged.' });
-      setResetTick((tick) => tick + 1);
-    } catch (err: any) {
-      setImportStatus({ type: 'error', message: err?.message || 'Import failed. Invalid file.' });
-    }
   };
 
   return (
@@ -384,17 +225,6 @@ export default function StatsPage() {
           </button>
         </div>
       </div>
-
-      {importStatus && (
-        <p
-          className={cn(
-            'text-sm font-sans mb-6',
-            importStatus.type === 'success' ? 'text-emerald-300' : 'text-amber-300'
-          )}
-        >
-          {importStatus.message}
-        </p>
-      )}
 
       <Dialog open={showInstallHelp} onOpenChange={setShowInstallHelp}>
         <DialogContent className="bg-[var(--surface-card)] border-border/60 rounded-[20px] p-0 max-w-md mx-auto gap-0 overflow-hidden">

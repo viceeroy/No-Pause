@@ -116,15 +116,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         transcript: results.transcript,
         statusNote,
       };
-
-      if (mode === 'free') {
-        storage.saveSession({ ...sessionResult, duration });
-      } else if (mode === 'lemon') {
-        storage.saveLemonScore({ ...sessionResult, word: lemonPrompt?.word, duration });
-      } else if (mode === 'topic') {
-        storage.saveTopicScore({ ...sessionResult, topic: topicPrompt?.topicTitle, difficulty: topicPrompt?.difficulty, duration });
-      }
-
       try {
         await Promise.all([
           saveSession({

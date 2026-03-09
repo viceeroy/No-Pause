@@ -93,7 +93,6 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const { userId } = useAuth();
-  const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [installBannerDismissed, setInstallBannerDismissed] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
@@ -193,14 +192,6 @@ export default function DashboardPage() {
           <h2 className="text-lg md:text-2xl font-serif font-semibold text-foreground/95 tracking-tight">
             Real-time speaking analytics tool.
           </h2>
-          <button
-            type="button"
-            onClick={() => setShowPrivacyInfo(true)}
-            className="md:hidden inline-flex items-center gap-2 text-[11px] font-sans text-muted-foreground/90 hover:text-foreground transition-colors mt-2"
-          >
-            <Shield size={12} className="text-primary" />
-            Offline &amp; Private
-          </button>
         </div>
         <div className="flex items-center justify-center gap-2">
           {showInstallBanner && (
@@ -222,14 +213,6 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => setShowPrivacyInfo(true)}
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-surface-elevated border border-border/80 text-primary rounded-full text-xs md:text-sm font-sans font-semibold hover:bg-surface-card transition-colors"
-          >
-            <Shield size={14} />
-            Offline & Private
-          </button>
         </div>
       </div>
 
@@ -258,25 +241,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      <Dialog open={showPrivacyInfo} onOpenChange={setShowPrivacyInfo}>
-        <DialogContent className="bg-[var(--surface-card)] border-border/60 rounded-[20px] p-0 max-w-md mx-auto gap-0 overflow-hidden">
-          <div className="p-6 pb-4">
-            <DialogHeader className="gap-2">
-              <DialogTitle className="text-xl font-serif text-foreground">Offline &amp; Private</DialogTitle>
-              <DialogDescription asChild>
-                <div className="text-sm font-sans text-muted-foreground leading-relaxed space-y-2">
-                  <p>• Your sessions stay on your device</p>
-                  <p>• Audio and transcripts are stored locally</p>
-                  <p>• Nothing is sent to servers unless you export it</p>
-                  <p>• Works without internet</p>
-                  <p className="text-xs text-muted-foreground/80 pt-1">You control your data.</p>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showInstallHelp} onOpenChange={setShowInstallHelp}>
         <DialogContent className="bg-[var(--surface-card)] border-border/60 rounded-[20px] p-0 max-w-md mx-auto gap-0 overflow-hidden">

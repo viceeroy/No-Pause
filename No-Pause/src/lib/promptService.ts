@@ -51,7 +51,6 @@ let topicCache: TopicPrompt[] | null = null;
 let lemonCache: LemonPrompt[] | null = null;
 let topicLoadPromise: Promise<TopicPrompt[]> | null = null;
 let lemonLoadPromise: Promise<LemonPrompt[]> | null = null;
-let legacyPromptStorageCleared = false;
 
 const topicUrl = new URL('../data/topicPrompts.json', import.meta.url).href;
 const lemonUrl = new URL('../data/lemonPrompts.json', import.meta.url).href;
@@ -113,15 +112,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json();
 }
 
-function clearLegacyPromptStorage() {
-  if (legacyPromptStorageCleared || typeof window === 'undefined') return;
-  const legacyKeys = ['used_lemon_words', 'used_topic_questions', 'cached_topic_prompts', 'cached_lemon_prompts'];
-  legacyKeys.forEach((key) => localStorage.removeItem(key));
-  legacyPromptStorageCleared = true;
-}
-
 export async function getTopicPrompts(): Promise<TopicPrompt[]> {
-  clearLegacyPromptStorage();
   if (topicCache) return topicCache;
   if (!topicLoadPromise) {
     topicLoadPromise = fetchJson<TopicPrompt[]>(topicUrl)
@@ -143,7 +134,6 @@ export async function getTopicPrompts(): Promise<TopicPrompt[]> {
 }
 
 export async function getLemonPrompts(): Promise<LemonPrompt[]> {
-  clearLegacyPromptStorage();
   if (lemonCache) return lemonCache;
   if (!lemonLoadPromise) {
     lemonLoadPromise = fetchJson<LemonPrompt[]>(lemonUrl)
