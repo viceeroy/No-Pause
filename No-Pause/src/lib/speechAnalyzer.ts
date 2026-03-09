@@ -303,11 +303,30 @@ export class AudioAnalyzer {
         }
       });
 
-      // Use provided AudioContext or create new one
+      // Use provided AudioContext or create new one.
+      // CRITICAL: On Android Chrome, the AudioContext sample rate must match the
+      // mic's native rate. A mismatch causes the internal resampler to output
+      // silence, which makes the AnalyserNode return all zeros even though
+      // MediaRecorder (which reads the raw pipeline) still has real data.
+      const nativeSampleRate: number | undefined = (trackSettings as any).sampleRate || undefined;
       if (existingAudioContext) {
         this.audioContext = existingAudioContext;
+        if (IS_ANDROID && nativeSampleRate && existingAudioContext.sampleRate !== nativeSampleRate) {
+          debugWarn('[MicDebug] ⚠️ AudioContext sampleRate mismatch on Android', {
+            contextRate: existingAudioContext.sampleRate,
+            micNativeRate: nativeSampleRate,
+          });
+          // Close the mismatched context and create a new one
+          try { existingAudioContext.close(); } catch { }
+          const ctxOpts: AudioContextOptions = { sampleRate: nativeSampleRate };
+          this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)(ctxOpts);
+          debugLog('[MicDebug] Created rate-matched AudioContext', { sampleRate: this.audioContext.sampleRate });
+        }
       } else {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const ctxOpts: AudioContextOptions = {};
+        if (nativeSampleRate) ctxOpts.sampleRate = nativeSampleRate;
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)(ctxOpts);
+        debugLog('[MicDebug] Created AudioContext', { sampleRate: this.audioContext.sampleRate, requestedRate: nativeSampleRate });
       }
 
       // Ensure AudioContext is running (critical for iOS Safari)
@@ -507,6 +526,14 @@ export class AudioAnalyzer {
   private static readonly RECOGNITION_RESTART_DELAY_MS = 1000;
 
   private _startRecognition() {
+    // On Android Chrome, SpeechRecognition.start() internally calls getUserMedia(),
+    // which triggers a second mic permission prompt. Skip recognition entirely on
+    // Android to avoid the re-prompt loop and rely on AnalyserNode for detection.
+    if (IS_ANDROID) {
+      debugLog('[Transcript] Skipping SpeechRecognition on Android to avoid permission re-prompt');
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     debugLog('[Transcript] Speech Recognition available?', !!SpeechRecognition);
 
@@ -793,7 +820,19 @@ export class AudioAnalyzer {
       try { this.source?.disconnect(); } catch { }
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       this.source.connect(this.analyser);
-      debugWarn('[Audio] Rebound MediaStreamSource after sustained zero RMS');
+
+      // On Android, also rebuild the downstream sink chain.
+      // Without analyser → GainNode(0) → destination, Android Chrome won't
+      // pull samples through the graph and the AnalyserNode stays silent.
+      if (IS_ANDROID) {
+        try { this.analyserSink?.disconnect(); } catch { }
+        this.analyserSink = this.audioContext.createGain();
+        this.analyserSink.gain.value = 0;
+        this.analyser.connect(this.analyserSink);
+        this.analyserSink.connect(this.audioContext.destination);
+      }
+
+      debugWarn('[Audio] Rebound MediaStreamSource (+ Android sink chain) after sustained zero RMS');
     } catch (error) {
       debugError('[Audio] Failed to rebind source node; rebuilding graph', error);
       this.rebuildAnalyzerGraph();
