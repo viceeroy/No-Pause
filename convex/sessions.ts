@@ -57,15 +57,17 @@ export const getUserStats = query({
     const flowScoredSessions = scoredSessions.filter(
       (session) => session.flowScore !== undefined && session.flowScore >= 0,
     );
-    const avgFlowScore =
-      flowScoredSessions.length > 0
-        ? Math.round(
-          flowScoredSessions.reduce(
-            (sum, session) => sum + (session.flowScore ?? 0),
-            0,
-          ) / flowScoredSessions.length,
-        )
-        : 0;
+    // Duration-weighted average: longer sessions carry more weight,
+    // capped at 300s (5 min) to prevent outlier dominance.
+    const MAX_WEIGHT = 300;
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const session of flowScoredSessions) {
+      const weight = Math.min(Math.max(session.duration, 1), MAX_WEIGHT);
+      weightedSum += (session.flowScore ?? 0) * weight;
+      totalWeight += weight;
+    }
+    const avgFlowScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
 
     return {
       totalSessions,

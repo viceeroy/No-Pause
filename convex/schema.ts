@@ -20,5 +20,6 @@ export default defineSchema({
     currentStreak: v.number(),
     bestStreak: v.optional(v.number()),
     lastPracticeDate: v.number(),
+    lastPracticeDateStr: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
 });

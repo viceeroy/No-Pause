@@ -101,7 +101,21 @@ export function calculateFlowScore(
   const GRACE_RATE = 1.0;
   const PENALTY_PER_HPM = 15;
   const excessRate = Math.max(0, hesitationsPerMinute - GRACE_RATE);
-  const finalScore = Math.max(0, Math.round(100 - excessRate * PENALTY_PER_HPM));
+  let finalScore = Math.max(0, Math.round(100 - excessRate * PENALTY_PER_HPM));
+
+  // Speaking fluency cap: the maximum achievable score scales with how much
+  // of the session was actual speech. This prevents users who barely spoke
+  // from getting 100 just because they had few hesitations.
+  // 25% ratio → capped at 70, 65%+ ratio → uncapped (100)
+  const MIN_RATIO_FOR_UNCAPPED = 0.65;
+  const CAP_AT_MIN_RATIO = 70;
+  if (speakingRatio < MIN_RATIO_FOR_UNCAPPED) {
+    // Linear interpolation: 0.25→70, 0.65→100
+    const ratioRange = MIN_RATIO_FOR_UNCAPPED - 0.25;
+    const ratioProgress = Math.min(1, (speakingRatio - 0.25) / ratioRange);
+    const maxScore = Math.round(CAP_AT_MIN_RATIO + ratioProgress * (100 - CAP_AT_MIN_RATIO));
+    finalScore = Math.min(finalScore, maxScore);
+  }
 
   if (IS_DEV && !IS_TEST) {
     console.log('[NoSpeech] 📊 SCORE BREAKDOWN:', {
@@ -113,6 +127,7 @@ export function calculateFlowScore(
       hesitationsPerMinute: hesitationsPerMinute.toFixed(2),
       graceRate: GRACE_RATE,
       excessRate: excessRate.toFixed(2),
+      speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
       completed: true,
       finalScore,
     });

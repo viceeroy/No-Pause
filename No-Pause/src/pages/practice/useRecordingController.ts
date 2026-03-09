@@ -140,6 +140,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
           updateStreak({
             userId: userId!,
             email: user?.primaryEmailAddress?.emailAddress,
+            localDate: new Date().toLocaleDateString('en-CA'),
           }),
         ]);
       } catch (error) {
