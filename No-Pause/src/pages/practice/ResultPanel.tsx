@@ -96,14 +96,6 @@ export function ResultPanel({
 
       <div className="mb-12">
         <h3 className="text-lg font-serif font-medium text-foreground mb-4 text-left">Performance Stats</h3>
-        {lastResults.statusNote && (
-          <p className={cn(
-            'text-sm font-sans mb-3 text-left',
-            lastResults.isCompleted ? 'text-orange-300' : 'text-amber-300'
-          )}>
-            {lastResults.statusNote}
-          </p>
-        )}
         {mode === 'lemon' && !lastResults.statusNote && (
           <p className="text-xs font-sans mb-3 text-left text-muted-foreground">
             Scoring rule: speak for at least {toMMSS(LEMON_MIN_SPEAKING_SECONDS)} with a {toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session.

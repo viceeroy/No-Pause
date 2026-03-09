@@ -19,6 +19,7 @@ import { whyDoIForgetWordsMidSentencePost } from './why-do-i-forget-words-mid-se
 import { doesAnxietyIncreaseFillerWordsPost } from './does-anxiety-increase-filler-words';
 import { howToSpeakFluentlyInInterviewsPost } from './how-to-speak-fluently-in-interviews';
 import { howToStopFreezingInPresentationsPost } from './how-to-stop-freezing-in-presentations';
+import { howDoesNoPauseScoreYourSpeakingSessionsPost } from './how-does-no-pause-score-your-speaking-sessions';
 
 const allBlogPosts: BlogPost[] = [
   whyPausesHurtFluencyPost,
@@ -41,6 +42,7 @@ const allBlogPosts: BlogPost[] = [
   doesAnxietyIncreaseFillerWordsPost,
   howToSpeakFluentlyInInterviewsPost,
   howToStopFreezingInPresentationsPost,
+  howDoesNoPauseScoreYourSpeakingSessionsPost,
 ];
 
 export const blogPosts: BlogPost[] = allBlogPosts
