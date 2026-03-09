@@ -152,6 +152,7 @@ export class AudioAnalyzer {
   private lastAnalyzeTime = 0;
   private analyzeInterval = 33;
   private zeroRmsFrameCount = 0;
+  private lastSourceRebindAt = 0;
   private lastGraphRecoveryAt = 0;
   private graphRecoveryInProgress = false;
   private calibrationSamples: number[] = [];
@@ -374,6 +375,7 @@ export class AudioAnalyzer {
       this.calibrationSamples = [];
       this.isCalibrating = true;
       this.zeroRmsFrameCount = 0;
+      this.lastSourceRebindAt = 0;
       this.lastGraphRecoveryAt = 0;
       this.graphRecoveryInProgress = false;
 
@@ -472,9 +474,9 @@ export class AudioAnalyzer {
         const streamHealthy = !!this.stream?.active && track?.readyState === 'live';
         if (!streamHealthy) return;
         if (this.hasAudioSignal()) return;
-        if (Date.now() - this.lastGraphRecoveryAt < 2500) return;
-        this.lastGraphRecoveryAt = Date.now();
-        this.rebuildAnalyzerGraph();
+        if (Date.now() - this.lastSourceRebindAt < 1500) return;
+        this.lastSourceRebindAt = Date.now();
+        this.rebindSourceNode();
       }, 2500);
 
       // Start Speech Recognition for transcription
@@ -630,17 +632,18 @@ export class AudioAnalyzer {
       }
 
       const zeroRmsThreshold = Math.ceil(2000 / this.analyzeInterval);
-      const recoveryCooldownMs = 5000;
+      const recoveryCooldownMs = 1500;
       const canRecover =
         this.zeroRmsFrameCount >= zeroRmsThreshold &&
         !this.graphRecoveryInProgress &&
-        now - this.lastGraphRecoveryAt > recoveryCooldownMs;
+        now - this.lastSourceRebindAt > recoveryCooldownMs;
 
       if (canRecover) {
         this.graphRecoveryInProgress = true;
-        this.lastGraphRecoveryAt = now;
+        this.lastSourceRebindAt = now;
         this.zeroRmsFrameCount = 0;
-        this.rebuildAnalyzerGraph();
+        this.rebindSourceNode();
+        this.graphRecoveryInProgress = false;
       }
     }
     this.chunkRmsAccumulator += rms;
@@ -777,6 +780,23 @@ export class AudioAnalyzer {
       debugError('[Audio] Failed to rebuild analyzer graph', error);
     } finally {
       this.graphRecoveryInProgress = false;
+    }
+  }
+
+  private rebindSourceNode() {
+    try {
+      if (!this.audioContext || !this.stream || !this.analyser) {
+        this.rebuildAnalyzerGraph();
+        return;
+      }
+
+      try { this.source?.disconnect(); } catch { }
+      this.source = this.audioContext.createMediaStreamSource(this.stream);
+      this.source.connect(this.analyser);
+      debugWarn('[Audio] Rebound MediaStreamSource after sustained zero RMS');
+    } catch (error) {
+      debugError('[Audio] Failed to rebind source node; rebuilding graph', error);
+      this.rebuildAnalyzerGraph();
     }
   }
 
