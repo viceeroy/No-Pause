@@ -22,6 +22,9 @@ function safeSetItem(key: string, value: string): boolean {
 }
 
 export const storage = {
+  /**
+   * Reads saved app preferences from local storage and falls back to defaults.
+   */
   getPreferences(): AppPreferences {
     try {
       const raw = localStorage.getItem(PREFS_KEY);
@@ -36,6 +39,9 @@ export const storage = {
     }
   },
 
+  /**
+   * Merges and persists a partial preferences update.
+   */
   savePreferences(prefs: Partial<AppPreferences>): AppPreferences {
     const current = this.getPreferences();
     const next: AppPreferences = {

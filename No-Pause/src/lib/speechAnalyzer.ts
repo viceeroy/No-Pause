@@ -26,11 +26,60 @@ const SMOOTHING_WINDOW = 10;
 const CALIBRATION_DURATION = 1500;
 const ANALYTICS_START_DELAY_MS = 400;
 const IS_ANDROID = /android/i.test(navigator.userAgent);
+const FRAME_LOG_INTERVAL = 60;
+const ZERO_RMS_RECOVERY_WINDOW_MS = 2000;
+const SOURCE_REBIND_COOLDOWN_MS = 1500;
+const STREAM_HEALTH_INTERVAL_MS = 2000;
+const ANALYZER_HEALTH_INTERVAL_MS = 2500;
+const WEBM_AUDIO_MIME_TYPE = 'audio/webm';
+const EMPTY_TRANSCRIPT = 'No speech detected.';
 
 const IS_DEV = import.meta.env.DEV;
-const debugLog = (...args: any[]) => { if (IS_DEV) console.log(...args); };
-const debugWarn = (...args: any[]) => { if (IS_DEV) console.warn(...args); };
-const debugError = (...args: any[]) => { if (IS_DEV) console.error(...args); };
+const debugLog = (...args: unknown[]) => { if (IS_DEV) console.log(...args); };
+const debugWarn = (...args: unknown[]) => { if (IS_DEV) console.warn(...args); };
+const debugError = (...args: unknown[]) => { if (IS_DEV) console.error(...args); };
+
+type WindowWithSpeechRecognition = Window &
+  typeof globalThis & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    webkitAudioContext?: typeof AudioContext;
+  };
+
+type SpeechRecognitionAlternativeLike = {
+  transcript: string;
+};
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  0: SpeechRecognitionAlternativeLike;
+};
+
+type SpeechRecognitionResultListLike = {
+  length: number;
+  [index: number]: SpeechRecognitionResultLike;
+};
+
+type SpeechRecognitionEventLike = Event & {
+  results: SpeechRecognitionResultListLike;
+};
+
+type SpeechRecognitionErrorEventLike = Event & {
+  error: string;
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 interface AudioAnalyzerOptions {
   enableTranscription?: boolean;
@@ -38,8 +87,7 @@ interface AudioAnalyzerOptions {
   onData?: (data: AudioDataPayload) => void;
   onHesitation?: (duration: number, count: number) => void;
   onCalibrated?: (ambientNoise: number, thresholdSet: number) => void;
-  onStartError?: (error: any) => void;
-  onDebugLog?: (event: string, details: any) => void;
+  onStartError?: (error: unknown) => void;
 }
 
 export interface AudioDataPayload {
@@ -93,7 +141,7 @@ export class AudioAnalyzer {
   private onData: ((data: AudioDataPayload) => void) | null;
   private onHesitation: ((duration: number, count: number) => void) | null;
   private onCalibrated: ((ambientNoise: number, thresholdSet: number) => void) | null;
-  private onStartError: ((error: any) => void) | null;
+  private onStartError: ((error: unknown) => void) | null;
   private animationFrame: number | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private mediaRecorderMimeType = '';
@@ -129,7 +177,7 @@ export class AudioAnalyzer {
   private diagnosticsLatency: number | null = null;
   private transcript = '';
   private finalTranscript = '';
-  private recognition: any = null;
+  private recognition: SpeechRecognitionLike | null = null;
   private isListening = false;
 
   private recordingStartTime: number = 0;
@@ -157,6 +205,9 @@ export class AudioAnalyzer {
   private calibrationStartTime: number | null = null;
   static getUserMediaGlobalCount = 0;
 
+  /**
+   * Returns a lightweight snapshot of the current capture pipeline state.
+   */
   getCaptureState() {
     const track = this.stream?.getAudioTracks?.()[0];
     return {
@@ -168,6 +219,9 @@ export class AudioAnalyzer {
     };
   }
 
+  /**
+   * Returns the current diagnostics snapshot for export and troubleshooting.
+   */
   getDiagnosticsSnapshot(): AnalyzerDiagnosticsSnapshot {
     return buildDiagnosticsSnapshot({
       sessionId: this.diagnosticsSessionId,
@@ -217,7 +271,6 @@ export class AudioAnalyzer {
     this.onHesitation = options.onHesitation || null;
     this.onCalibrated = options.onCalibrated || null;
     this.onStartError = options.onStartError || null;
-    this.onDebugLog = options.onDebugLog || null;
   }
 
   /**
@@ -240,6 +293,14 @@ export class AudioAnalyzer {
       let audioTracks = this.stream.getAudioTracks();
       const primaryTrack = audioTracks[0];
       const trackSettings = primaryTrack?.getSettings?.() || {};
+      const trackSettingsWithExtras = trackSettings as MediaTrackSettings & {
+        channelCount?: number;
+        echoCancellation?: boolean;
+        noiseSuppression?: boolean;
+        autoGainControl?: boolean;
+        latency?: number;
+        sampleRate?: number;
+      };
       const trackConstraints = primaryTrack?.getConstraints?.() || {};
       const ua = navigator.userAgent;
       const platform = navigator.platform || 'unknown';
@@ -268,20 +329,20 @@ export class AudioAnalyzer {
       });
       debugLog('[MicDiag] 🎚️ Audio config:', {
         audioContextSampleRate: this.audioContext?.sampleRate,
-        channelCount: (trackSettings as any).channelCount,
-        echoCancellation: (trackSettings as any).echoCancellation,
-        noiseSuppression: (trackSettings as any).noiseSuppression,
-        autoGainControl: (trackSettings as any).autoGainControl,
-        latency: (trackSettings as any).latency,
-        sampleRate: (trackSettings as any).sampleRate,
+        channelCount: trackSettingsWithExtras.channelCount,
+        echoCancellation: trackSettingsWithExtras.echoCancellation,
+        noiseSuppression: trackSettingsWithExtras.noiseSuppression,
+        autoGainControl: trackSettingsWithExtras.autoGainControl,
+        latency: trackSettingsWithExtras.latency,
+        sampleRate: trackSettingsWithExtras.sampleRate,
         trackConstraints,
       });
       this.diagnosticsAudioSampleRate = this.audioContext?.sampleRate ?? null;
-      this.diagnosticsChannelCount = (trackSettings as any).channelCount ?? null;
-      this.diagnosticsEchoCancellation = (trackSettings as any).echoCancellation ?? null;
-      this.diagnosticsNoiseSuppression = (trackSettings as any).noiseSuppression ?? null;
-      this.diagnosticsAutoGainControl = (trackSettings as any).autoGainControl ?? null;
-      this.diagnosticsLatency = (trackSettings as any).latency ?? null;
+      this.diagnosticsChannelCount = trackSettingsWithExtras.channelCount ?? null;
+      this.diagnosticsEchoCancellation = trackSettingsWithExtras.echoCancellation ?? null;
+      this.diagnosticsNoiseSuppression = trackSettingsWithExtras.noiseSuppression ?? null;
+      this.diagnosticsAutoGainControl = trackSettingsWithExtras.autoGainControl ?? null;
+      this.diagnosticsLatency = trackSettingsWithExtras.latency ?? null;
 
       if (audioTracks.length === 0 || audioTracks[0].readyState === 'ended') {
         debugWarn('[MicDebug] Stream tracks ended/missing — will not re-request getUserMedia', {
@@ -305,7 +366,7 @@ export class AudioAnalyzer {
       // mic's native rate. A mismatch causes the internal resampler to output
       // silence, which makes the AnalyserNode return all zeros even though
       // MediaRecorder (which reads the raw pipeline) still has real data.
-      const nativeSampleRate: number | undefined = (trackSettings as any).sampleRate || undefined;
+      const nativeSampleRate = trackSettingsWithExtras.sampleRate;
       if (existingAudioContext) {
         this.audioContext = existingAudioContext;
         if (IS_ANDROID && nativeSampleRate && existingAudioContext.sampleRate !== nativeSampleRate) {
@@ -316,13 +377,15 @@ export class AudioAnalyzer {
           // Close the mismatched context and create a new one
           try { existingAudioContext.close(); } catch { }
           const ctxOpts: AudioContextOptions = { sampleRate: nativeSampleRate };
-          this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)(ctxOpts);
+          const AudioContextCtor = window.AudioContext || (window as WindowWithSpeechRecognition).webkitAudioContext;
+          this.audioContext = new AudioContextCtor(ctxOpts);
           debugLog('[MicDebug] Created rate-matched AudioContext', { sampleRate: this.audioContext.sampleRate });
         }
       } else {
         const ctxOpts: AudioContextOptions = {};
         if (nativeSampleRate) ctxOpts.sampleRate = nativeSampleRate;
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)(ctxOpts);
+        const AudioContextCtor = window.AudioContext || (window as WindowWithSpeechRecognition).webkitAudioContext;
+        this.audioContext = new AudioContextCtor(ctxOpts);
         debugLog('[MicDebug] Created AudioContext', { sampleRate: this.audioContext.sampleRate, requestedRate: nativeSampleRate });
       }
 
@@ -350,7 +413,6 @@ export class AudioAnalyzer {
       this.isRunning = true;
 
       const now = Date.now();
-      this.sessionStartTime = now;
       this.recordingStartTime = now;
       this.lastFrameTime = now;
       this.calibrationStartTime = now;
@@ -392,7 +454,6 @@ export class AudioAnalyzer {
       this.isCalibrating = true;
       this.zeroRmsFrameCount = 0;
       this.lastSourceRebindAt = 0;
-      this.lastGraphRecoveryAt = 0;
       this.graphRecoveryInProgress = false;
 
       if (typeof MediaRecorder !== 'undefined') {
@@ -479,7 +540,7 @@ export class AudioAnalyzer {
           trackMuted: logItem.trackMuted,
           trackReadyState: logItem.trackReadyState,
         });
-      }, 2000);
+      }, STREAM_HEALTH_INTERVAL_MS);
 
       if (this.analyzerHealthInterval) {
         clearInterval(this.analyzerHealthInterval);
@@ -493,7 +554,7 @@ export class AudioAnalyzer {
         if (Date.now() - this.lastSourceRebindAt < 1500) return;
         this.lastSourceRebindAt = Date.now();
         this.rebindSourceNode();
-      }, 2500);
+      }, ANALYZER_HEALTH_INTERVAL_MS);
 
       // Start Speech Recognition for transcription
       if (this.enableTranscription) {
@@ -531,7 +592,9 @@ export class AudioAnalyzer {
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as WindowWithSpeechRecognition).SpeechRecognition ||
+      (window as WindowWithSpeechRecognition).webkitSpeechRecognition;
     debugLog('[Transcript] Speech Recognition available?', !!SpeechRecognition);
 
     if (!SpeechRecognition) {
@@ -548,7 +611,7 @@ export class AudioAnalyzer {
 
     let lastResultIndex = 0;
 
-    this.recognition.onresult = (event: any) => {
+    this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let interim = '';
       let newFinal = '';
       for (let i = lastResultIndex; i < event.results.length; i++) {
@@ -605,7 +668,7 @@ export class AudioAnalyzer {
       }, AudioAnalyzer.RECOGNITION_RESTART_DELAY_MS);
     };
 
-    this.recognition.onerror = (event: any) => {
+    this.recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
       debugError('[Transcript] Error:', event.error);
       if (event.error === 'not-allowed') {
         this.isListening = false;
@@ -639,7 +702,7 @@ export class AudioAnalyzer {
     const delta = now - (this.lastFrameTime || now);
     this.lastFrameTime = now;
 
-    this.analyser.getFloatTimeDomainData(this.dataArray as any);
+    this.analyser.getFloatTimeDomainData(this.dataArray);
     let sumSquares = 0;
     let maxSample = 0;
     for (let i = 0; i < this.dataArray.length; i++) {
@@ -655,12 +718,11 @@ export class AudioAnalyzer {
         this.zeroRmsFrameCount = 0;
       }
 
-      const zeroRmsThreshold = Math.ceil(2000 / this.analyzeInterval);
-      const recoveryCooldownMs = 1500;
+      const zeroRmsThreshold = Math.ceil(ZERO_RMS_RECOVERY_WINDOW_MS / this.analyzeInterval);
       const canRecover =
         this.zeroRmsFrameCount >= zeroRmsThreshold &&
         !this.graphRecoveryInProgress &&
-        now - this.lastSourceRebindAt > recoveryCooldownMs;
+        now - this.lastSourceRebindAt > SOURCE_REBIND_COOLDOWN_MS;
 
       if (canRecover) {
         this.graphRecoveryInProgress = true;
@@ -675,7 +737,7 @@ export class AudioAnalyzer {
     this.chunkRmsSampleCount += 1;
 
     // Periodic diagnostic: log every ~2 seconds (60 frames at 33ms interval)
-    if (this.frameCount % 60 === 1) {
+    if (this.frameCount % FRAME_LOG_INTERVAL === 1) {
       const tracks = this.stream?.getAudioTracks() || [];
       debugLog(`[NoSpeech] 📊 Frame ${this.frameCount} | RMS: ${rms.toFixed(5)} | Peak: ${maxSample.toFixed(5)} | Speaking: ${this.isSpeaking} | Hesitations: ${this.hesitationCount} | HesitSilence: ${(this.hesitationSilenceTime / 1000).toFixed(1)}s | Track: ${tracks[0]?.readyState || 'none'}:${tracks[0]?.enabled ? 'on' : 'OFF'}`);
     }
@@ -836,6 +898,9 @@ export class AudioAnalyzer {
     }
   }
 
+  /**
+   * Stops analysis, preserves the shared stream, and returns the session results.
+   */
   async stop(): Promise<AnalyzerResults> {
     this.isRunning = false;
 
@@ -945,7 +1010,7 @@ export class AudioAnalyzer {
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
         this.mediaRecorder.onstop = () => {
           debugLog('[MicDebug] MediaRecorder stop (from stop())', { state: this.mediaRecorder?.state || 'none' });
-          resolve(new Blob(this.audioChunks, { type: 'audio/webm' }));
+          resolve(new Blob(this.audioChunks, { type: WEBM_AUDIO_MIME_TYPE }));
         };
         debugLog('[MicDebug] MediaRecorder stop requested', { state: this.mediaRecorder.state });
         this.mediaRecorder.stop();
@@ -983,8 +1048,8 @@ export class AudioAnalyzer {
       totalTime: totalRecordingTime,
       avgVolume: Math.round(avgVolume * 1000) / 1000,
       audioBlob,
-      audioMimeType: this.mediaRecorderMimeType || audioBlob?.type || 'audio/webm',
-      transcript: this.transcript.trim() || 'No speech detected.',
+      audioMimeType: this.mediaRecorderMimeType || audioBlob?.type || WEBM_AUDIO_MIME_TYPE,
+      transcript: this.transcript.trim() || EMPTY_TRANSCRIPT,
     };
   }
 
@@ -1042,10 +1107,16 @@ export class AudioAnalyzer {
     return calculateFlowScore(hesitationCount, options);
   }
 
+  /**
+   * Maps a numeric score to a human-readable label.
+   */
   static getScoreLabel(score: number): string {
     return getScoreLabel(score);
   }
 
+  /**
+   * Checks whether the current analyser node is receiving any frequency energy.
+   */
   hasAudioSignal(): boolean {
     if (!this.analyser) return false;
     const testBuffer = new Uint8Array(this.analyser.frequencyBinCount);

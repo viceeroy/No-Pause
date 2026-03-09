@@ -2,6 +2,15 @@ export type MicInitOptions = {
   constraints?: MediaTrackConstraints;
 };
 
+type ConsoleArgs = unknown[];
+type WindowWithWebkitAudioContext = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+type AudioTrackWithStopMarker = MediaStreamTrack & {
+  __micStopWrapped?: boolean;
+};
+
 const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
@@ -9,9 +18,9 @@ const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
 };
 
 const IS_DEV = import.meta.env.DEV;
-const debugLog = (...args: any[]) => { if (IS_DEV) console.log(...args); };
-const debugWarn = (...args: any[]) => { if (IS_DEV) console.warn(...args); };
-const debugError = (...args: any[]) => { if (IS_DEV) console.error(...args); };
+const debugLog = (...args: ConsoleArgs) => { if (IS_DEV) console.log(...args); };
+const debugWarn = (...args: ConsoleArgs) => { if (IS_DEV) console.warn(...args); };
+const debugError = (...args: ConsoleArgs) => { if (IS_DEV) console.error(...args); };
 
 class MicService {
   private stream: MediaStream | null = null;
@@ -19,6 +28,9 @@ class MicService {
   private initializing: Promise<MediaStream> | null = null;
   private getUserMediaCount = 0;
 
+  /**
+   * Initializes microphone access and reuses an existing healthy stream when possible.
+   */
   async init(options: MicInitOptions = {}): Promise<MediaStream> {
     if (this.stream) {
       const track = this.stream.getAudioTracks()[0];
@@ -53,11 +65,17 @@ class MicService {
     return this.initializing;
   }
 
+  /**
+   * Forces a fresh microphone initialization by clearing cached state first.
+   */
   async retryInit(options: MicInitOptions = {}): Promise<MediaStream> {
     this.reset();
     return this.init(options);
   }
 
+  /**
+   * Releases the cached stream and audio context owned by the mic service.
+   */
   reset() {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => {
@@ -73,10 +91,16 @@ class MicService {
     debugLog('[MicDebug] MicService reset complete');
   }
 
+  /**
+   * Returns the currently cached microphone stream, if one exists.
+   */
   getStream(): MediaStream | null {
     return this.stream;
   }
 
+  /**
+   * Enables or disables all tracks on the cached stream.
+   */
   setTracksEnabled(enabled: boolean) {
     if (!this.stream) return;
     this.stream.getAudioTracks().forEach(track => {
@@ -85,14 +109,21 @@ class MicService {
     debugLog('[MicDebug] MicService setTracksEnabled', { enabled });
   }
 
+  /**
+   * Returns a reusable audio context for microphone analysis.
+   */
   getAudioContext(): AudioContext {
     if (!this.audioContext || this.audioContext.state === 'closed') {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextCtor = window.AudioContext || (window as WindowWithWebkitAudioContext).webkitAudioContext;
+      this.audioContext = new AudioContextCtor();
       debugLog('[MicDebug] MicService created AudioContext', { state: this.audioContext.state });
     }
     return this.audioContext;
   }
 
+  /**
+   * Resumes the cached audio context if the browser has suspended it.
+   */
   async ensureAudioContextRunning(): Promise<void> {
     if (!this.audioContext) return;
     if (this.audioContext.state === 'suspended') {
@@ -142,9 +173,10 @@ class MicService {
 
   private installTrackStopLogger(stream: MediaStream) {
     stream.getTracks().forEach(track => {
-      const originalStop = track.stop.bind(track);
-      if ((track as any).__micStopWrapped) return;
-      (track as any).__micStopWrapped = true;
+      const tracked = track as AudioTrackWithStopMarker;
+      const originalStop = tracked.stop.bind(tracked);
+      if (tracked.__micStopWrapped) return;
+      tracked.__micStopWrapped = true;
       track.stop = () => {
         debugError('[MicDebug] 🚨 track.stop() called', {
           id: track.id,

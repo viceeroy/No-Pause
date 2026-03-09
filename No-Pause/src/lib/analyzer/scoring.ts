@@ -8,6 +8,12 @@ import {
 const IS_DEV = import.meta.env.DEV;
 const IS_TEST = Boolean(import.meta.env.VITEST) || import.meta.env.MODE === 'test';
 
+const debugScoreBreakdown = (details: Record<string, unknown>) => {
+  if (IS_DEV && !IS_TEST) {
+    console.debug('[NoSpeech] SCORE BREAKDOWN:', details);
+  }
+};
+
 type ScoreReason = 'duration' | 'speaking';
 
 export interface FlowScoreOptions {
@@ -62,17 +68,15 @@ export function calculateFlowScore(
   }
 
   if (!isCompleted) {
-    if (IS_DEV && !IS_TEST) {
-      console.log('[NoSpeech] 📊 SCORE BREAKDOWN:', {
-        mode,
-        speakingTime: `${speakingTime}s`,
-        totalSession: `${totalSession}s`,
-        hesitationCount,
-        reason,
-        completed: false,
-        finalScore: 0,
-      });
-    }
+    debugScoreBreakdown({
+      mode,
+      speakingTime: `${speakingTime}s`,
+      totalSession: `${totalSession}s`,
+      hesitationCount,
+      reason,
+      completed: false,
+      finalScore: 0,
+    });
     return { score: 0, isCompleted: false, reason };
   }
 
@@ -80,13 +84,15 @@ export function calculateFlowScore(
   // the session doesn't count as a real attempt.
   const speakingRatio = totalSession > 0 ? speakingTime / totalSession : 0;
   if (speakingRatio < 0.25) {
-    if (IS_DEV && !IS_TEST) {
-      console.log('[NoSpeech] 📊 SCORE BREAKDOWN:', {
-        mode, speakingTime: `${speakingTime}s`, totalSession: `${totalSession}s`,
-        speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
-        reason: 'speaking', completed: false, finalScore: 0,
-      });
-    }
+    debugScoreBreakdown({
+      mode,
+      speakingTime: `${speakingTime}s`,
+      totalSession: `${totalSession}s`,
+      speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
+      reason: 'speaking',
+      completed: false,
+      finalScore: 0,
+    });
     return { score: 0, isCompleted: false, reason: 'speaking' };
   }
 
@@ -117,21 +123,19 @@ export function calculateFlowScore(
     finalScore = Math.min(finalScore, maxScore);
   }
 
-  if (IS_DEV && !IS_TEST) {
-    console.log('[NoSpeech] 📊 SCORE BREAKDOWN:', {
-      mode,
-      speakingTime: `${speakingTime}s`,
-      totalSession: `${totalSession}s`,
-      hesitationCount,
-      speakingMinutes: speakingMinutes.toFixed(2),
-      hesitationsPerMinute: hesitationsPerMinute.toFixed(2),
-      graceRate: GRACE_RATE,
-      excessRate: excessRate.toFixed(2),
-      speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
-      completed: true,
-      finalScore,
-    });
-  }
+  debugScoreBreakdown({
+    mode,
+    speakingTime: `${speakingTime}s`,
+    totalSession: `${totalSession}s`,
+    hesitationCount,
+    speakingMinutes: speakingMinutes.toFixed(2),
+    hesitationsPerMinute: hesitationsPerMinute.toFixed(2),
+    graceRate: GRACE_RATE,
+    excessRate: excessRate.toFixed(2),
+    speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
+    completed: true,
+    finalScore,
+  });
 
   return { score: finalScore, isCompleted: true };
 }
