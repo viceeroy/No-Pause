@@ -1,118 +1,97 @@
 # No Pause
 
-A modern focus and productivity application designed to help you maintain flow state and minimize distractions during work sessions.
+No Pause is a real-time speaking analytics web application designed to help you improve your speaking fluency, reduce hesitations, and eliminate filler words. It uses the Web Audio API to track your speech patterns locally and provides a comprehensive "Flow Score" to measure your progress over time.
 
-## Features
+## 🎯 Features
 
-- **Focus Modes**: Multiple focus modes tailored to different types of work
-- **Session Tracking**: Track your productivity and analyze patterns over time
-- **Real-time Analytics**: Monitor your focus metrics and hesitation detection
-- **Calibration System**: Personalized threshold settings for optimal focus detection
-- **Statistics Dashboard**: Comprehensive insights into your productivity patterns
-- **Practice Sessions**: Guided practice modes to improve focus and reduce hesitation
+- **Real-Time Speech Analysis**: Analyzes audio input purely on the client side using the Web Audio API without streaming your voice to servers.
+- **Three Practice Modes**:
+  - **Free Speaking**: Unrestricted practice to build stamina.
+  - **Lemon Technique**: Time-pressured speaking exercises based on random words to build quick-thinking skills.
+  - **Topic Score**: Structured prompts categorized by difficulty to practice critical thinking and storytelling.
+- **Measurable Flow Score**: A customized algorithm evaluating hesitation rate (pauses/minute) and speaking ratio to penalize excessive silences and reward continuous flow.
+- **Configurable Sensitivities**: Granular settings (Beginner, Intermediate, Advanced) adjusting how long a silence must be to constitute a "hesitation".
+- **Progress Tracking**: Cloud-synced practice history, daily streaks, and aggregate flow metrics.
+- **PWA Ready**: Installable as a progressive web app on desktop and mobile browsers for quick native-like access.
 
-## Technology Stack
+## 🛠 Technology Stack
 
-- **Frontend**: React 18 with TypeScript
-- **Build Tool**: Vite
+- **Frontend**: React 18, Vite, TypeScript
+- **Backend & Database**: Convex
+- **Authentication**: Clerk
 - **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui with Radix UI primitives
-- **State Management**: React Query for server state
-- **Routing**: React Router DOM
-- **Forms**: React Hook Form with Zod validation
-- **Charts**: Recharts for data visualization
+- **UI Components**: shadcn/ui + Radix UI Primitives
 - **Icons**: Lucide React
-- **Testing**: Vitest with React Testing Library
+- **PWA Support**: Vite PWA plugin / custom service worker
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- npm or yarn package manager
+- npm or yarn
+- Convex account (for backend functions)
+- Clerk account (for authentication)
 
 ### Installation
 
 1. Clone the repository:
 ```bash
 git clone https://github.com/viceeroy/No-Pause.git
-cd no-pause
+cd No-Pause
 ```
 
 2. Install dependencies:
+Both in the root directory (for Convex) and the `No-Pause` directory.
 ```bash
+# Install frontend packages
+cd No-Pause
+npm install
+
+# Install backend packages
+cd ..
 npm install
 ```
 
-3. Start the development server:
+3. Set up environment variables:
+Create a `.env.local` file inside the `No-Pause` directory and add your Clerk publishable keys and Convex deployment URLs.
+
+4. Deploy Convex functions:
+From the root directory:
+```bash
+npx convex dev
+```
+
+5. Start the Vite development server:
+From the `No-Pause` directory:
 ```bash
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:8080`
+6. Open your browser and navigate to the localhost port provided.
 
-## Available Scripts
-
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run build:dev` - Build for development mode
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run ESLint
-- `npm run test` - Run tests
-- `npm run test:watch` - Run tests in watch mode
-
-## Project Structure
+## 📁 Project Structure
 
 ```
-src/
-├── components/          # Reusable UI components
-├── lib/                # Utility functions and configurations
-├── pages/              # Page components
-├── hooks/              # Custom React hooks
-├── types/              # TypeScript type definitions
-└── App.tsx             # Main application component
+├── convex/                   # Backend API, schema, and queries
+├── No-Pause/
+│   ├── src/
+│   │   ├── components/       # Reusable UI components
+│   │   ├── contexts/         # React Contexts (e.g., PWA updates)
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── lib/              # Core business logic
+│   │   │   ├── analyzer/     # Audio state machine and Flow Score logic
+│   │   │   ├── micService.ts # Microphone device management
+│   │   │   └── storage.ts    # Preference management
+│   │   ├── pages/            # Top-level route components
+│   │   └── App.tsx           # Application router & layout
+│   └── public/               # Static assets & PWA manifest/service worker
 ```
 
-## Key Features Explained
+## 🔒 Privacy & Architecture
 
-### Focus Modes
-No Pause offers different focus modes tailored to various work scenarios:
-- **Free Speaking**: Practice verbal communication without hesitation
-- **Deep Work**: Extended focus sessions for complex tasks
-- **Quick Sprints**: Short, intense focus periods
+No Pause is built with privacy in mind. Voice recording and analytical calculations happen entirely inside your browser tab using the `AudioContext` and `AnalyserNode` APIs. Raw audio data is **never** sent to our servers. The backend only syncs the resulting metrics (e.g., duration, hesitation count, and calculated Flow Score).
 
-### Analytics & Insights
-The application tracks:
-- Session duration and quality
-- Hesitation patterns and frequency
-- Flow state consistency
-- Productivity trends over time
+## 📄 License
 
-### Calibration System
-Personalized settings that adapt to your unique working patterns:
-- Ambient noise detection
-- Custom hesitation thresholds
-- Individual flow state indicators
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-If you encounter any issues or have questions, please:
-- Check the [Issues](https://github.com/viceeroy/No-Pause/issues) page
-- Create a new issue with detailed information
-- Include steps to reproduce any bugs
-
-## Acknowledgments
-
-Built with modern web technologies to help you achieve your productivity goals and maintain focus in a distraction-filled world.
+This project is licensed under the MIT License.
