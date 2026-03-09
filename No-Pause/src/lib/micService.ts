@@ -10,12 +10,17 @@ type WindowWithWebkitAudioContext = Window &
 type AudioTrackWithStopMarker = MediaStreamTrack & {
   __micStopWrapped?: boolean;
 };
+type MediaTrackSettingsWithSampleRate = MediaTrackSettings & {
+  sampleRate?: number;
+};
 
 const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
 };
+
+const IS_ANDROID = /android/i.test(navigator.userAgent);
 
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: ConsoleArgs) => { if (IS_DEV) console.log(...args); };
@@ -114,9 +119,9 @@ class MicService {
    */
   getAudioContext(): AudioContext {
     if (!this.audioContext || this.audioContext.state === 'closed') {
-      const AudioContextCtor = window.AudioContext || (window as WindowWithWebkitAudioContext).webkitAudioContext;
-      this.audioContext = new AudioContextCtor();
-      debugLog('[MicDebug] MicService created AudioContext', { state: this.audioContext.state });
+      this.audioContext = this.stream
+        ? this.createBestAudioContext(this.stream)
+        : this.createFallbackAudioContext();
     }
     return this.audioContext;
   }
@@ -150,6 +155,7 @@ class MicService {
     });
 
     this.stream = stream;
+    this.audioContext = await this.replaceAudioContextForStream(stream);
     this.installTrackStopLogger(stream);
     this.ensureTracksEnabled(stream);
 
@@ -160,6 +166,46 @@ class MicService {
     });
 
     return stream;
+  }
+
+  private createFallbackAudioContext(): AudioContext {
+    const AudioContextCtor = window.AudioContext || (window as WindowWithWebkitAudioContext).webkitAudioContext;
+    const context = new AudioContextCtor();
+    debugLog('[MicDebug] MicService created fallback AudioContext', {
+      state: context.state,
+      sampleRate: context.sampleRate,
+    });
+    return context;
+  }
+
+  private getPreferredSampleRate(stream: MediaStream): number | undefined {
+    const settings = stream.getAudioTracks()[0]?.getSettings?.() as MediaTrackSettingsWithSampleRate | undefined;
+    return settings?.sampleRate;
+  }
+
+  private createBestAudioContext(stream: MediaStream): AudioContext {
+    const AudioContextCtor = window.AudioContext || (window as WindowWithWebkitAudioContext).webkitAudioContext;
+    const nativeSampleRate = this.getPreferredSampleRate(stream);
+    const shouldMatchSampleRate = IS_ANDROID && !!nativeSampleRate;
+    const context = shouldMatchSampleRate
+      ? new AudioContextCtor({ sampleRate: nativeSampleRate })
+      : new AudioContextCtor();
+
+    debugLog('[MicDebug] MicService created AudioContext', {
+      state: context.state,
+      sampleRate: context.sampleRate,
+      requestedRate: shouldMatchSampleRate ? nativeSampleRate : undefined,
+    });
+
+    return context;
+  }
+
+  private async replaceAudioContextForStream(stream: MediaStream): Promise<AudioContext> {
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      try { await this.audioContext.close(); } catch { }
+    }
+
+    return this.createBestAudioContext(stream);
   }
 
   private ensureTracksEnabled(stream: MediaStream) {

@@ -361,39 +361,12 @@ export class AudioAnalyzer {
         }
       });
 
-      // Use provided AudioContext or create new one.
-      // CRITICAL: On Android Chrome, the AudioContext sample rate must match the
-      // mic's native rate. A mismatch causes the internal resampler to output
-      // silence, which makes the AnalyserNode return all zeros even though
-      // MediaRecorder (which reads the raw pipeline) still has real data.
-      const nativeSampleRate = trackSettingsWithExtras.sampleRate;
-      if (existingAudioContext) {
-        this.audioContext = existingAudioContext;
-        if (IS_ANDROID && nativeSampleRate && existingAudioContext.sampleRate !== nativeSampleRate) {
-          debugWarn('[MicDebug] ⚠️ AudioContext sampleRate mismatch on Android', {
-            contextRate: existingAudioContext.sampleRate,
-            micNativeRate: nativeSampleRate,
-          });
-          // Close the mismatched context and create a new one
-          try { existingAudioContext.close(); } catch { }
-          const ctxOpts: AudioContextOptions = { sampleRate: nativeSampleRate };
-          const AudioContextCtor = window.AudioContext || (window as WindowWithSpeechRecognition).webkitAudioContext;
-          this.audioContext = new AudioContextCtor(ctxOpts);
-          debugLog('[MicDebug] Created rate-matched AudioContext', { sampleRate: this.audioContext.sampleRate });
-        }
-      } else {
-        const ctxOpts: AudioContextOptions = {};
-        if (nativeSampleRate) ctxOpts.sampleRate = nativeSampleRate;
-        const AudioContextCtor = window.AudioContext || (window as WindowWithSpeechRecognition).webkitAudioContext;
-        this.audioContext = new AudioContextCtor(ctxOpts);
-        debugLog('[MicDebug] Created AudioContext', { sampleRate: this.audioContext.sampleRate, requestedRate: nativeSampleRate });
+      if (!existingAudioContext) {
+        if (this.onStartError) this.onStartError(new Error('AudioContext not initialized'));
+        return false;
       }
+      this.audioContext = existingAudioContext;
 
-      // Ensure AudioContext is running (critical for iOS Safari)
-      if (this.audioContext.state === 'suspended') {
-        debugLog('[NoSpeech] AudioContext suspended, resuming...');
-        await this.audioContext.resume();
-      }
       debugLog('[NoSpeech] 🔊 AudioContext state:', this.audioContext.state, 'sampleRate:', this.audioContext.sampleRate);
 
       this.analyser = this.audioContext.createAnalyser();
@@ -871,12 +844,19 @@ export class AudioAnalyzer {
 
   private rebindSourceNode() {
     try {
-      if (!this.audioContext || !this.stream || !this.analyser) {
+      if (!this.audioContext || !this.stream) {
         this.rebuildAnalyzerGraph();
         return;
       }
 
       try { this.source?.disconnect(); } catch { }
+      try { this.analyser?.disconnect(); } catch { }
+      try { this.analyserSink?.disconnect(); } catch { }
+
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.3;
+
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       this.source.connect(this.analyser);
 
@@ -884,14 +864,17 @@ export class AudioAnalyzer {
       // Without analyser → GainNode(0) → destination, Android Chrome won't
       // pull samples through the graph and the AnalyserNode stays silent.
       if (IS_ANDROID) {
-        try { this.analyserSink?.disconnect(); } catch { }
         this.analyserSink = this.audioContext.createGain();
         this.analyserSink.gain.value = 0;
         this.analyser.connect(this.analyserSink);
         this.analyserSink.connect(this.audioContext.destination);
+      } else {
+        this.analyserSink = null;
       }
 
-      debugWarn('[Audio] Rebound MediaStreamSource (+ Android sink chain) after sustained zero RMS');
+      this.dataArray = new Float32Array(this.analyser.frequencyBinCount);
+
+      debugWarn('[Audio] Rebuilt source/analyser/sink chain after sustained zero RMS');
     } catch (error) {
       debugError('[Audio] Failed to rebind source node; rebuilding graph', error);
       this.rebuildAnalyzerGraph();
