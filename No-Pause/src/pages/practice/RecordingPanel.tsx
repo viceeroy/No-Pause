@@ -1,7 +1,6 @@
 import { FileText, Mic, Square, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
-import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/lib/scoringConstants';
 import type { AudioDataPayload } from '@/lib/speechAnalyzer';
 import type { LemonPrompt, TopicPrompt } from '@/lib/promptService';
 import { formatTime } from './time';

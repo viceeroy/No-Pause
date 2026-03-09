@@ -94,7 +94,6 @@ export class AudioAnalyzer {
   private onHesitation: ((duration: number, count: number) => void) | null;
   private onCalibrated: ((ambientNoise: number, thresholdSet: number) => void) | null;
   private onStartError: ((error: any) => void) | null;
-  private onDebugLog: ((event: string, details: any) => void) | null;
   private animationFrame: number | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private mediaRecorderMimeType = '';
@@ -135,7 +134,6 @@ export class AudioAnalyzer {
 
   private recordingStartTime: number = 0;
   private hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[] = [];
-  private sessionStartTime: number | null = null;
   private lastFrameTime: number | null = null;
   private totalSpeakingTimeMs = 0;
   private totalSilenceTimeMs = 0;
@@ -153,7 +151,6 @@ export class AudioAnalyzer {
   private analyzeInterval = 33;
   private zeroRmsFrameCount = 0;
   private lastSourceRebindAt = 0;
-  private lastGraphRecoveryAt = 0;
   private graphRecoveryInProgress = false;
   private calibrationSamples: number[] = [];
   private isCalibrating = true;

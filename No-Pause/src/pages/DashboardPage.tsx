@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Flame, Target, Clock, Shield, Zap, Timer, Download, Instagram, Send, ExternalLink } from 'lucide-react';
+import { Mic, Flame, Target, Clock, Zap, Timer, Download, Instagram, Send, ExternalLink } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
@@ -176,7 +176,6 @@ export default function DashboardPage() {
   const isRemoteStatsLoading = remoteStats === undefined;
   const isRemoteStreakLoading = remoteStreak === undefined;
 
-  const backendTotalSessions = remoteStats?.totalSessions ?? 0;
   const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
   const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
   const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;

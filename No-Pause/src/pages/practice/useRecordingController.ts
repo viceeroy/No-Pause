@@ -48,7 +48,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   const {
     lemonPrompt,
     topicPrompt,
-    topicDifficultyMode,
     setState,
     setTimeLeft,
     setCountdown,
@@ -238,9 +237,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       micInitializingRef.current = true;
 
-      let stream: MediaStream | null = null;
       try {
-        stream = forceRetryMic ? await micService.retryInit() : await micService.init();
+        forceRetryMic ? await micService.retryInit() : await micService.init();
       } catch {
         setTranscriptError('Mic not capturing audio');
         setShowMicRetry(true);
@@ -249,7 +247,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       micService.setTracksEnabled(true);
 
-      const audioCtx = micService.getAudioContext();
       await micService.ensureAudioContextRunning();
 
       const prefs = storage.getPreferences();

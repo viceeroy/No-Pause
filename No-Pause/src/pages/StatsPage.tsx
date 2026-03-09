@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import { storage, type AppPreferences } from '@/lib/storage';
+import { storage } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
 import { useInstallPlatform } from '@/hooks/useInstallPlatform';
@@ -112,7 +112,6 @@ export default function StatsPage() {
   const isRemoteStreakLoading = remoteStreak === undefined;
   const isRemoteRecentSessionsLoading = remoteRecentSessions === undefined;
 
-  const backendTotalSessions = remoteStats?.totalSessions ?? 0;
   const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
   const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
   const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;
@@ -170,7 +169,6 @@ export default function StatsPage() {
           <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Stats</h1>
           <p className="text-base text-muted-foreground font-sans">Flow score by practice mode.</p>
         </div>
-        {/* Buttons removed */}
       </div>
 
       {/* Profile Row */}
