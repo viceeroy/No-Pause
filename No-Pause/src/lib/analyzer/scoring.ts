@@ -76,9 +76,32 @@ export function calculateFlowScore(
     return { score: 0, isCompleted: false, reason };
   }
 
-  const penalizedHesitations = Math.max(0, hesitationCount - 2);
-  const hesitationPenalty = penalizedHesitations * 10;
-  const finalScore = Math.max(0, 100 - hesitationPenalty);
+  // Speaking ratio gate: if the user spoke less than 25% of the session,
+  // the session doesn't count as a real attempt.
+  const speakingRatio = totalSession > 0 ? speakingTime / totalSession : 0;
+  if (speakingRatio < 0.25) {
+    if (IS_DEV && !IS_TEST) {
+      console.log('[NoSpeech] 📊 SCORE BREAKDOWN:', {
+        mode, speakingTime: `${speakingTime}s`, totalSession: `${totalSession}s`,
+        speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
+        reason: 'speaking', completed: false, finalScore: 0,
+      });
+    }
+    return { score: 0, isCompleted: false, reason: 'speaking' };
+  }
+
+  // --- Rate-based scoring ---
+  // Hesitations per minute of speaking time, with a 30s floor to avoid
+  // division spikes on sessions that barely qualify.
+  const speakingMinutes = Math.max(speakingTime / 60, 0.5);
+  const hesitationsPerMinute = hesitationCount / speakingMinutes;
+
+  // Grace zone: up to 1.0 hesitations/min scores a perfect 100.
+  // Each additional hesitation/min above the grace costs 15 points.
+  const GRACE_RATE = 1.0;
+  const PENALTY_PER_HPM = 15;
+  const excessRate = Math.max(0, hesitationsPerMinute - GRACE_RATE);
+  const finalScore = Math.max(0, Math.round(100 - excessRate * PENALTY_PER_HPM));
 
   if (IS_DEV && !IS_TEST) {
     console.log('[NoSpeech] 📊 SCORE BREAKDOWN:', {
@@ -86,8 +109,10 @@ export function calculateFlowScore(
       speakingTime: `${speakingTime}s`,
       totalSession: `${totalSession}s`,
       hesitationCount,
-      penalizedHesitations,
-      hesitationPenalty: `-${hesitationPenalty}`,
+      speakingMinutes: speakingMinutes.toFixed(2),
+      hesitationsPerMinute: hesitationsPerMinute.toFixed(2),
+      graceRate: GRACE_RATE,
+      excessRate: excessRate.toFixed(2),
       completed: true,
       finalScore,
     });

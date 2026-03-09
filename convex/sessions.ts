@@ -55,16 +55,16 @@ export const getUserStats = query({
       totalSessions === 0 ? 0 : totalPauses / totalSessions;
     const scoredSessions = sessions.filter((session) => session.completed === true);
     const flowScoredSessions = scoredSessions.filter(
-      (session) => session.flowScore !== undefined && session.flowScore > 0,
+      (session) => session.flowScore !== undefined && session.flowScore >= 0,
     );
     const avgFlowScore =
       flowScoredSessions.length > 0
         ? Math.round(
-            flowScoredSessions.reduce(
-              (sum, session) => sum + (session.flowScore ?? 0),
-              0,
-            ) / flowScoredSessions.length,
-          )
+          flowScoredSessions.reduce(
+            (sum, session) => sum + (session.flowScore ?? 0),
+            0,
+          ) / flowScoredSessions.length,
+        )
         : 0;
 
     return {

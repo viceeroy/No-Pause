@@ -74,7 +74,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const transcriptWordCount = transcriptHasSpeech ? results.transcript.trim().split(/\s+/).length : 0;
       const estimatedWordCount = hasSpeechEvidence ? Math.max(1, Math.round(results.totalSpeakingTime * 2.2)) : 0;
       const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
-      const completed = duration > 10;
 
       const scoreResult = AudioAnalyzer.calculateFlowScore(results.hesitationCount, {
         mode,
@@ -82,6 +81,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         totalSessionTimeSec,
         hasSpeechEvidence,
       });
+      const completed = scoreResult.isCompleted;
       const flowScore = mode === 'free' ? 0 : scoreResult.score;
       const safeFlowScore = Number.isFinite(flowScore) ? flowScore : 0;
 

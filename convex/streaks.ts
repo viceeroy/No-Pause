@@ -33,6 +33,16 @@ export const updateStreak = mutation({
     }
 
     const lastDay = Math.floor(existing.lastPracticeDate / DAY_IN_MS);
+
+    // Same day — streak is already counted, just update timestamp
+    if (lastDay === today) {
+      await ctx.db.patch(existing._id, {
+        email: args.email ?? existing.email,
+        lastPracticeDate: now,
+      });
+      return;
+    }
+
     const nextStreak = lastDay === today - 1 ? existing.currentStreak + 1 : 1;
     const newBest = Math.max(existing.bestStreak ?? 0, nextStreak);
 
