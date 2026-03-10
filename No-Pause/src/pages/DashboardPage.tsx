@@ -104,7 +104,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (userId) {
       setRemoteStats(undefined);
-      setRemoteStreak(undefined);
       const fetchConvexData = async () => {
         try {
           const stats = await convex.query(api.sessions.getUserStats, { userId });

@@ -72,7 +72,6 @@ export default function StatsPage() {
   useEffect(() => {
     if (userId) {
       setRemoteStats(undefined);
-      setRemoteStreak(undefined);
       setRemoteRecentSessions(undefined);
       const fetchConvexData = async () => {
         try {
