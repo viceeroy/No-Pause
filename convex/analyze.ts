@@ -11,38 +11,46 @@ export const analyzeSpeech = action({
     transcript: v.string(),
   },
   handler: async (_ctx, args) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is not set");
+    try {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error("OPENROUTER_API_KEY is not set");
+      }
+
+      const trimmed = args.transcript.trim();
+      if (!trimmed) {
+        throw new Error("Transcript is empty");
+      }
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.3-70b-instruct:free",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: trimmed },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter analysis failed: ${response.status} ${errorText.slice(0, 200)}`);
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content ?? "";
+      return String(content).trim();
+    } catch (error) {
+      console.error("OpenRouter analyzeSpeech failed", {
+        message: error instanceof Error ? error.message : String(error),
+        transcriptLength: args.transcript.length,
+      });
+      throw error;
     }
-
-    const trimmed = args.transcript.trim();
-    if (!trimmed) {
-      throw new Error("Transcript is empty");
-    }
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3.3-70b-instruct:free",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: trimmed },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenRouter analysis failed: ${response.status} ${errorText.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content ?? "";
-    return String(content).trim();
   },
 });

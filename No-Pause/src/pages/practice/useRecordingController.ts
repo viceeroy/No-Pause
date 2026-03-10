@@ -165,11 +165,15 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
           });
         } catch (error) {
           console.error('Failed to analyze transcript:', error);
+          const message =
+            error && typeof error === 'object' && 'message' in error
+              ? String((error as { message?: unknown }).message)
+              : 'Unknown error';
           setLastResults((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              analysisFeedback: 'AI feedback unavailable.',
+              analysisFeedback: `AI feedback unavailable: ${message}`,
               analysisFeedbackLoading: false,
             };
           });
