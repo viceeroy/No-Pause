@@ -28,6 +28,7 @@ type RecordingControllerResult = {
   handleRetry: () => void;
   handleBack: () => void;
   stopRecording: () => Promise<void>;
+  requestFeedback: () => Promise<void>;
   soundDetectedRef: React.MutableRefObject<boolean>;
 };
 
@@ -54,6 +55,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     setCountdown,
     setAudioData,
     setLastResults,
+    lastResults,
     setTranscriptError,
     setShowMicRetry,
     setElapsedTime,
@@ -104,17 +106,6 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         statusNote = 'Session completed, but score is 0 because hesitation units were too high.';
       }
 
-      let analysisFeedback: string | undefined;
-      let analysisFeedbackLoading = false;
-      const transcript = results.transcript.trim();
-      const shouldAnalyze =
-        transcript.length > 0 &&
-        transcript !== 'No speech detected.' &&
-        !transcript.startsWith('Transcription failed');
-      if (shouldAnalyze) {
-        analysisFeedbackLoading = true;
-      }
-
       const sessionResult: SessionResult = {
         flowScore: safeFlowScore,
         totalSpeakingTime: results.totalSpeakingTime,
@@ -125,8 +116,10 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         audioBlob: results.audioBlob,
         audioMimeType: results.audioMimeType,
         transcript: results.transcript,
-        analysisFeedback,
-        analysisFeedbackLoading,
+        analysisFeedback: undefined,
+        analysisFeedbackLoading: false,
+        analysisFeedbackError: undefined,
+        wordCount: words,
         statusNote,
       };
       try {
@@ -152,45 +145,66 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       setLastResults(sessionResult);
-      if (shouldAnalyze) {
-        try {
-          const feedback = await convex.action(api.analyze.analyzeSpeech, {
-            transcript,
-            flowScore: safeFlowScore,
-            hesitationCount: results.hesitationCount,
-            speakingTime: results.totalSpeakingTime,
-            wordCount: words,
-          });
-          setLastResults((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              analysisFeedback: feedback,
-              analysisFeedbackLoading: false,
-            };
-          });
-        } catch (error) {
-          console.error('Failed to analyze transcript:', error);
-          const message =
-            error && typeof error === 'object' && 'message' in error
-              ? String((error as { message?: unknown }).message)
-              : 'Unknown error';
-          setLastResults((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              analysisFeedback: `AI feedback unavailable: ${message}`,
-              analysisFeedbackLoading: false,
-            };
-          });
-        }
-      }
       setState('done');
       isRecordingRef.current = false;
       micService.setTracksEnabled(false);
       setShowMicRetry(false);
     }
-  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId, convex]);
+  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
+
+  const requestFeedback = useCallback(async () => {
+    if (!lastResults) return;
+    if (lastResults.analysisFeedbackLoading) return;
+    if (lastResults.analysisFeedback) return;
+
+    const transcript = lastResults.transcript.trim();
+    const shouldAnalyze =
+      transcript.length > 0 &&
+      transcript !== 'No speech detected.' &&
+      !transcript.startsWith('Transcription failed');
+    if (!shouldAnalyze) return;
+
+    setLastResults((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        analysisFeedbackLoading: true,
+        analysisFeedbackError: undefined,
+      };
+    });
+
+    try {
+      const feedback = await convex.action(api.analyze.analyzeSpeech, {
+        transcript,
+        flowScore: lastResults.flowScore,
+        hesitationCount: lastResults.hesitationCount,
+        speakingTime: lastResults.totalSpeakingTime,
+        wordCount: lastResults.wordCount,
+      });
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          analysisFeedback: feedback,
+          analysisFeedbackLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to analyze transcript:', error);
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String((error as { message?: unknown }).message)
+          : 'Unknown error';
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          analysisFeedbackError: message,
+          analysisFeedbackLoading: false,
+        };
+      });
+    }
+  }, [convex, lastResults, setLastResults]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -427,6 +441,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     handleRetry,
     handleBack,
     stopRecording,
+    requestFeedback,
     soundDetectedRef,
   };
 }

@@ -17,6 +17,7 @@ type ResultPanelProps = {
   lastResults: SessionResult;
   showResultsDebugExport: boolean;
   handleRetry: () => void;
+  requestFeedback: () => void;
   copied: boolean;
   setCopied: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -26,6 +27,7 @@ export function ResultPanel({
   lastResults,
   showResultsDebugExport,
   handleRetry,
+  requestFeedback,
   copied,
   setCopied,
 }: ResultPanelProps) {
@@ -184,11 +186,44 @@ export function ResultPanel({
           </h3>
           <div className="p-8 night-panel rounded-3xl">
             <p className="text-foreground font-sans leading-relaxed text-left">
-              {lastResults.analysisFeedbackLoading ? 'Generating feedback…' : lastResults.analysisFeedback}
+              {lastResults.analysisFeedbackLoading
+                ? 'Generating feedback…'
+                : lastResults.analysisFeedback || 'AI feedback unavailable.'}
             </p>
           </div>
         </div>
       )}
+
+      {(() => {
+        const transcript = (lastResults.transcript || '').trim();
+        const transcriptReady =
+          transcript.length > 0 &&
+          transcript !== 'No speech detected.' &&
+          !transcript.startsWith('Transcription failed');
+        const showButton = transcriptReady && !lastResults.analysisFeedback;
+
+        if (!showButton) return null;
+
+        return (
+          <div className="mb-16">
+            <button
+              type="button"
+              onClick={() => requestFeedback()}
+              disabled={lastResults.analysisFeedbackLoading}
+              className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
+            >
+              {lastResults.analysisFeedbackLoading
+                ? 'Getting AI Feedback…'
+                : (lastResults.analysisFeedbackError ? 'Retry AI Feedback' : 'Get AI Feedback')}
+            </button>
+            {lastResults.analysisFeedbackError && (
+              <p className="mt-2 text-sm text-amber-200/90 font-sans">
+                {lastResults.analysisFeedbackError}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="flex flex-col md:flex-row gap-4 justify-center">
         <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-semibold btn-press night-glow">

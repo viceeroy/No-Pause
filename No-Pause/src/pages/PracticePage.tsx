@@ -84,6 +84,7 @@ export default function PracticePage() {
           lastResults={state.lastResults}
           showResultsDebugExport={state.showResultsDebugExport}
           handleRetry={recording.handleRetry}
+          requestFeedback={recording.requestFeedback}
           copied={state.copied}
           setCopied={state.setCopied}
         />

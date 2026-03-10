@@ -16,6 +16,8 @@ export interface SessionResult {
   transcript: string;
   analysisFeedback?: string;
   analysisFeedbackLoading?: boolean;
+  analysisFeedbackError?: string;
+  wordCount: number;
   isCompleted: boolean;
   statusNote?: string;
 }
