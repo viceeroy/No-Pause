@@ -154,7 +154,13 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       setLastResults(sessionResult);
       if (shouldAnalyze) {
         try {
-          const feedback = await convex.action(api.analyze.analyzeSpeech, { transcript });
+          const feedback = await convex.action(api.analyze.analyzeSpeech, {
+            transcript,
+            flowScore: safeFlowScore,
+            hesitationCount: results.hesitationCount,
+            speakingTime: results.totalSpeakingTime,
+            wordCount: words,
+          });
           setLastResults((prev) => {
             if (!prev) return prev;
             return {

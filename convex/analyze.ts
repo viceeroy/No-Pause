@@ -3,12 +3,29 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 
-const SYSTEM_PROMPT =
-  "You are a speech analysis expert. Analyze the given speech transcript and provide concise feedback on clarity, structure, vocabulary, and overall impression. Keep it friendly, constructive, and under 200 words.";
+const buildPrompt = (input: {
+  transcript: string;
+  flowScore: number;
+  hesitationCount: number;
+  speakingTime: number;
+  wordCount: number;
+}) =>
+  `You are a speech analysis expert. The user just completed a speaking session with these stats:
+- Flow Score: ${input.flowScore}/100
+- Hesitations: ${input.hesitationCount}
+- Speaking Time: ${input.speakingTime} seconds
+- Word Count: ${input.wordCount}
+- Transcript: ${input.transcript}
+
+Give concise, personalized feedback referencing these specific numbers. Comment on their flow score, hesitation count, and suggest one concrete improvement. Keep it friendly, constructive, and under 200 words.`;
 
 export const analyzeSpeech = action({
   args: {
     transcript: v.string(),
+    flowScore: v.number(),
+    hesitationCount: v.number(),
+    speakingTime: v.number(),
+    wordCount: v.number(),
   },
   handler: async (_ctx, args) => {
     try {
@@ -35,8 +52,16 @@ export const analyzeSpeech = action({
         body: JSON.stringify({
           model: "google/gemma-2-9b-it",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: trimmed },
+            {
+              role: "system",
+              content: buildPrompt({
+                transcript: trimmed,
+                flowScore: args.flowScore,
+                hesitationCount: args.hesitationCount,
+                speakingTime: args.speakingTime,
+                wordCount: args.wordCount,
+              }),
+            },
           ],
         }),
       });
