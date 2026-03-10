@@ -41,15 +41,15 @@ function formatDate(isoString?: string): string {
 }
 
 const THRESHOLD_DESCRIPTIONS: Record<PauseThresholdLevel, string> = {
-  beginner: 'Longer pauses are forgiven — focus on keeping your ideas flowing.',
-  intermediate: 'Some hesitation is okay, but aim to keep momentum.',
-  advanced: 'Tight delivery expected — minimal pausing between thoughts.',
+  beginner: 'Relaxed timing — longer pauses are forgiven.',
+  intermediate: 'Normal timing — keep momentum without rushing.',
+  advanced: 'Strict timing — minimal pauses between thoughts.',
 };
 
 const THRESHOLD_OPTIONS: { level: PauseThresholdLevel; label: string; value: number }[] = [
-  { level: 'beginner', label: 'Beginner', value: THRESHOLD_BEGINNER },
-  { level: 'intermediate', label: 'Intermediate', value: THRESHOLD_INTERMEDIATE },
-  { level: 'advanced', label: 'Advanced', value: THRESHOLD_ADVANCED },
+  { level: 'beginner', label: 'Relaxed', value: THRESHOLD_BEGINNER },
+  { level: 'intermediate', label: 'Normal', value: THRESHOLD_INTERMEDIATE },
+  { level: 'advanced', label: 'Strict', value: THRESHOLD_ADVANCED },
 ];
 
 export default function StatsPage() {
