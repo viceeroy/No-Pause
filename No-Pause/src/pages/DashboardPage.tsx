@@ -269,25 +269,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-14">
+      {/* Social Icons */}
+      <div className="flex items-center justify-center gap-4 mb-14">
         <button
           onClick={() => openExternal('https://instagram.com/nopause_org')}
-          className="rounded-2xl night-panel p-3 md:p-4 text-left card-hover btn-press min-h-[68px] border border-rose-400/25 bg-gradient-to-b from-rose-400/10 to-surface-elevated"
+          className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground btn-press transition-colors"
+          aria-label="Instagram"
         >
-          <div className="inline-flex items-center gap-2">
-            <Instagram size={14} className="text-rose-300" />
-            <p className="text-xs md:text-sm text-rose-200/85 font-sans">@nopause_org</p>
-          </div>
+          <Instagram size={22} />
         </button>
         <button
           onClick={() => openExternal('https://t.me/nopause_org')}
-          className="rounded-2xl night-panel p-3 md:p-4 text-left card-hover btn-press min-h-[68px] border border-cyan-400/25 bg-gradient-to-b from-cyan-400/10 to-surface-elevated"
+          className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground btn-press transition-colors"
+          aria-label="Telegram"
         >
-          <div className="inline-flex items-center gap-2">
-            <Send size={14} className="text-cyan-300" />
-            <p className="text-xs md:text-sm text-cyan-200/85 font-sans">t.me/nopause_org</p>
-          </div>
+          <Send size={22} />
         </button>
       </div>
 
