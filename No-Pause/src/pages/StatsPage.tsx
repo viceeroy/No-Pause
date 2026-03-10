@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
-import { useConvex } from 'convex/react';
+import { useConvex, useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { storage } from '@/lib/storage';
 import { cn } from '@/lib/utils';
@@ -66,7 +66,7 @@ export default function StatsPage() {
 
   const convex = useConvex();
   const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
-  const [remoteStreak, setRemoteStreak] = useState<any | undefined>(undefined);
+  const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
   const [remoteRecentSessions, setRemoteRecentSessions] = useState<any[] | null | undefined>(undefined);
 
   useEffect(() => {
@@ -84,14 +84,6 @@ export default function StatsPage() {
         }
 
         try {
-          const streak = await convex.query(api.streaks.getStreak, { userId });
-          setRemoteStreak(streak);
-        } catch (error) {
-          console.warn('Convex getStreak failed, using zeroed streak:', error);
-          setRemoteStreak(null);
-        }
-
-        try {
           const sessionsCall = await convex.query(api.sessions.getSessions, { userId });
           setRemoteRecentSessions(sessionsCall);
         } catch (error) {
@@ -103,13 +95,12 @@ export default function StatsPage() {
       fetchConvexData();
     } else {
       setRemoteStats(null);
-      setRemoteStreak(null);
       setRemoteRecentSessions(null);
     }
   }, [userId, convex]);
 
   const isRemoteStatsLoading = remoteStats === undefined;
-  const isRemoteStreakLoading = remoteStreak === undefined;
+  const isRemoteStreakLoading = userId ? remoteStreak === undefined : false;
   const isRemoteRecentSessionsLoading = remoteRecentSessions === undefined;
 
   const backendScoredSessions = remoteStats?.scoredSessions ?? 0;

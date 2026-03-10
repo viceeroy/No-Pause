@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Flame, Target, Clock, Zap, Timer, Download, Instagram, Send, ExternalLink } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
-import { useConvex } from 'convex/react';
+import { useConvex, useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/lib/scoringConstants';
@@ -99,7 +99,7 @@ export default function DashboardPage() {
 
   const convex = useConvex();
   const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
-  const [remoteStreak, setRemoteStreak] = useState<any | undefined>(undefined);
+  const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
 
   useEffect(() => {
     if (userId) {
@@ -114,18 +114,10 @@ export default function DashboardPage() {
           setRemoteStats(null);
         }
 
-        try {
-          const streak = await convex.query(api.streaks.getStreak, { userId });
-          setRemoteStreak(streak);
-        } catch (error) {
-          console.warn('Convex getStreak failed, using zeroed streak:', error);
-          setRemoteStreak(null);
-        }
       };
       fetchConvexData();
     } else {
       setRemoteStats(null);
-      setRemoteStreak(null);
     }
   }, [userId, convex]);
 
@@ -174,7 +166,7 @@ export default function DashboardPage() {
   const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
 
   const isRemoteStatsLoading = remoteStats === undefined;
-  const isRemoteStreakLoading = remoteStreak === undefined;
+  const isRemoteStreakLoading = userId ? remoteStreak === undefined : false;
 
   const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
   const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
