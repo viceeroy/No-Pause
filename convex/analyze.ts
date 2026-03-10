@@ -22,6 +22,10 @@ export const analyzeSpeech = action({
         throw new Error("Transcript is empty");
       }
 
+      console.log("analyzeSpeech request", {
+        transcriptLength: trimmed.length,
+      });
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -44,7 +48,11 @@ export const analyzeSpeech = action({
 
       const data = await response.json();
       const content = data?.choices?.[0]?.message?.content ?? "";
-      return String(content).trim();
+      const output = String(content).trim();
+      console.log("analyzeSpeech response", {
+        responseLength: output.length,
+      });
+      return output;
     } catch (error) {
       console.error("OpenRouter analyzeSpeech failed", {
         message: error instanceof Error ? error.message : String(error),
