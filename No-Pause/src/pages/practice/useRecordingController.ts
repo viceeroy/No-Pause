@@ -105,18 +105,14 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       let analysisFeedback: string | undefined;
+      let analysisFeedbackLoading = false;
       const transcript = results.transcript.trim();
       const shouldAnalyze =
         transcript.length > 0 &&
         transcript !== 'No speech detected.' &&
         !transcript.startsWith('Transcription failed');
       if (shouldAnalyze) {
-        try {
-          analysisFeedback = await convex.action(api.analyze.analyzeSpeech, { transcript });
-        } catch (error) {
-          console.error('Failed to analyze transcript:', error);
-          analysisFeedback = 'AI feedback unavailable.';
-        }
+        analysisFeedbackLoading = true;
       }
 
       const sessionResult: SessionResult = {
@@ -130,6 +126,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         audioMimeType: results.audioMimeType,
         transcript: results.transcript,
         analysisFeedback,
+        analysisFeedbackLoading,
         statusNote,
       };
       try {
@@ -155,6 +152,29 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
 
       setLastResults(sessionResult);
+      if (shouldAnalyze) {
+        try {
+          const feedback = await convex.action(api.analyze.analyzeSpeech, { transcript });
+          setLastResults((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              analysisFeedback: feedback,
+              analysisFeedbackLoading: false,
+            };
+          });
+        } catch (error) {
+          console.error('Failed to analyze transcript:', error);
+          setLastResults((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              analysisFeedback: 'AI feedback unavailable.',
+              analysisFeedbackLoading: false,
+            };
+          });
+        }
+      }
       setState('done');
       isRecordingRef.current = false;
       micService.setTracksEnabled(false);

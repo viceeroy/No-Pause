@@ -15,6 +15,7 @@ export interface SessionResult {
   audioMimeType?: string;
   transcript: string;
   analysisFeedback?: string;
+  analysisFeedbackLoading?: boolean;
   isCompleted: boolean;
   statusNote?: string;
 }

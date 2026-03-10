@@ -177,14 +177,14 @@ export function ResultPanel({
         </div>
       </div>
 
-      {lastResults.analysisFeedback && (
+      {(lastResults.analysisFeedback || lastResults.analysisFeedbackLoading) && (
         <div className="mb-16">
           <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
             <MessageSquare size={20} className="text-primary" /> AI Feedback
           </h3>
           <div className="p-8 night-panel rounded-3xl">
             <p className="text-foreground font-sans leading-relaxed text-left">
-              {lastResults.analysisFeedback}
+              {lastResults.analysisFeedbackLoading ? 'Generating feedback…' : lastResults.analysisFeedback}
             </p>
           </div>
         </div>
