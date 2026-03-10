@@ -29,6 +29,7 @@ type RecordingControllerResult = {
   handleBack: () => void;
   stopRecording: () => Promise<void>;
   requestFeedback: () => Promise<void>;
+  requestTranscription: () => Promise<void>;
   soundDetectedRef: React.MutableRefObject<boolean>;
 };
 
@@ -60,6 +61,17 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     setShowMicRetry,
     setElapsedTime,
   } = state;
+
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    return btoa(binary);
+  };
 
   const stopRecording = useCallback(async () => {
     if (analyzerRef.current && analyzerRef.current.isRunning) {
@@ -112,6 +124,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         totalSessionTime: totalSessionTimeSec,
         isCompleted: scoreResult.isCompleted,
         hesitationCount: results.hesitationCount,
+        hesitationLog: results.hesitationLog,
         mode: practiceMode,
         audioBlob: results.audioBlob,
         audioMimeType: results.audioMimeType,
@@ -119,6 +132,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         analysisFeedback: undefined,
         analysisFeedbackLoading: false,
         analysisFeedbackError: undefined,
+        transcriptionLoading: false,
+        transcriptionError: undefined,
         wordCount: words,
         statusNote,
       };
@@ -201,6 +216,55 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
           ...prev,
           analysisFeedbackError: message,
           analysisFeedbackLoading: false,
+        };
+      });
+    }
+  }, [convex, lastResults, setLastResults]);
+
+  const requestTranscription = useCallback(async () => {
+    if (!lastResults) return;
+    if (lastResults.transcriptionLoading) return;
+    if (!lastResults.audioBlob) return;
+
+    setLastResults((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        transcriptionLoading: true,
+        transcriptionError: undefined,
+      };
+    });
+
+    try {
+      const base64Audio = arrayBufferToBase64(await lastResults.audioBlob.arrayBuffer());
+      const transcript = await convex.action(api.transcribe.transcribeAudio, {
+        audioBase64: base64Audio,
+        mimeType: lastResults.audioMimeType || 'audio/webm',
+      });
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          transcript,
+          transcriptionLoading: false,
+          transcriptionError: undefined,
+          analysisFeedback: undefined,
+          analysisFeedbackLoading: false,
+          analysisFeedbackError: undefined,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to transcribe audio:', error);
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String((error as { message?: unknown }).message)
+          : 'Unknown error';
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          transcriptionError: message,
+          transcriptionLoading: false,
         };
       });
     }
@@ -442,6 +506,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     handleBack,
     stopRecording,
     requestFeedback,
+    requestTranscription,
     soundDetectedRef,
   };
 }

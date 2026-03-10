@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { VoicePlayer } from '@/components/VoicePlayer';
 import Confetti from '@/components/Confetti';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ type ResultPanelProps = {
   showResultsDebugExport: boolean;
   handleRetry: () => void;
   requestFeedback: () => void;
+  requestTranscription: () => void;
   copied: boolean;
   setCopied: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -28,14 +30,43 @@ export function ResultPanel({
   showResultsDebugExport,
   handleRetry,
   requestFeedback,
+  requestTranscription,
   copied,
   setCopied,
 }: ResultPanelProps) {
+  const getScoreHeadline = (score: number) => {
+    if (score >= 100) return 'Flawless Flow!';
+    if (score >= 95) return 'Near Perfect!';
+    if (score >= 90) return 'Almost Flawless!';
+    if (score >= 80) return 'Strong Performance!';
+    if (score >= 70) return 'Good Momentum!';
+    if (score >= 60) return 'Solid Effort!';
+    if (score >= 50) return 'Building Consistency!';
+    if (score >= 40) return 'Keep Practicing!';
+    return 'Just Getting Started!';
+  };
+
   const speakingTargetPercent = useMemo(() => {
     if (!lastResults.totalSessionTime || lastResults.totalSessionTime <= 0) return 0;
     const raw = (lastResults.totalSpeakingTime / lastResults.totalSessionTime) * 100;
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
+
+  const hesitationSpikes = useMemo(() => {
+    const totalMs = (lastResults.totalSessionTime || 0) * 1000;
+    if (!totalMs || !lastResults.hesitationLog?.length) return [];
+    const durations = lastResults.hesitationLog.map((h) => h.duration);
+    const maxDuration = Math.max(1, ...durations);
+    return lastResults.hesitationLog.map((h) => {
+      const leftPct = Math.max(0, Math.min(100, (h.timestamp / totalMs) * 100));
+      const heightPct = Math.max(25, Math.min(100, (h.duration / maxDuration) * 100));
+      return {
+        leftPct,
+        heightPct,
+        durationSec: (h.duration / 1000).toFixed(1),
+      };
+    });
+  }, [lastResults.hesitationLog, lastResults.totalSessionTime]);
 
   const [animatedSpeakingPercent, setAnimatedSpeakingPercent] = useState(0);
 
@@ -69,17 +100,7 @@ export function ResultPanel({
           <Zap size={32} className="text-primary" />
         </div>
         <h2 className="text-3xl font-serif font-medium text-foreground mb-3">
-          {lastResults.flowScore === 100
-            ? 'Perfect Score! 🎉'
-            : lastResults.flowScore >= 90
-              ? 'Almost Flawless!'
-              : lastResults.flowScore >= 75
-                ? 'Strong Performance!'
-                : lastResults.flowScore >= 60
-                  ? 'Good Effort!'
-                  : lastResults.flowScore >= 40
-                    ? 'Keep Practicing!'
-                    : 'Room to Grow!'}
+          {getScoreHeadline(lastResults.flowScore)}
         </h2>
         <p className="text-muted-foreground font-sans">
           {lastResults.flowScore === 100
@@ -137,6 +158,19 @@ export function ResultPanel({
               style={{ width: `${animatedSpeakingPercent}%` }}
             />
           </div>
+          <div className="mt-3 h-5 rounded-full bg-primary/80 relative overflow-hidden">
+            {hesitationSpikes.map((spike, index) => (
+              <div
+                key={`${spike.leftPct}-${index}`}
+                className="absolute bottom-0 w-1 rounded-full bg-amber-200/90 shadow-[0_0_6px_rgba(251,191,36,0.6)]"
+                style={{
+                  left: `calc(${spike.leftPct}% - 2px)`,
+                  height: `${spike.heightPct}%`,
+                }}
+                title={`${spike.durationSec}s hesitation`}
+              />
+            ))}
+          </div>
         </div>
         {showResultsDebugExport && (
           <div className="mt-2 md:mt-3 text-left">
@@ -168,31 +202,36 @@ export function ResultPanel({
             </div>
           )}
         </div>
-      </div>
 
-      <div className="mb-16">
-        <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-          <FileText size={20} className="text-primary" /> Speech Transcript
-        </h3>
-        <div className="p-8 night-panel rounded-3xl">
-          <p className="text-foreground font-sans leading-relaxed text-left">{lastResults.transcript}</p>
-        </div>
-      </div>
+        {(() => {
+          const transcript = (lastResults.transcript || '').trim();
+          const transcriptReady =
+            transcript.length > 0 &&
+            transcript !== 'No speech detected.' &&
+            !transcript.startsWith('Transcription failed');
+          const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
 
-      {(lastResults.analysisFeedback || lastResults.analysisFeedbackLoading) && (
-        <div className="mb-16">
-          <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-            <MessageSquare size={20} className="text-primary" /> AI Feedback
-          </h3>
-          <div className="p-8 night-panel rounded-3xl">
-            <p className="text-foreground font-sans leading-relaxed text-left">
-              {lastResults.analysisFeedbackLoading
-                ? 'Generating feedback…'
-                : lastResults.analysisFeedback || 'AI feedback unavailable.'}
-            </p>
-          </div>
-        </div>
-      )}
+          if (!showTranscribeButton) return null;
+
+          return (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => requestTranscription()}
+                disabled={lastResults.transcriptionLoading}
+                className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
+              >
+                {lastResults.transcriptionLoading ? 'Transcribing…' : (lastResults.transcriptionError ? 'Retry Transcription' : 'Transcribe')}
+              </button>
+              {lastResults.transcriptionError && (
+                <p className="mt-2 text-sm text-amber-200/90 font-sans">
+                  {lastResults.transcriptionError}
+                </p>
+              )}
+            </div>
+          );
+        })()}
+      </div>
 
       {(() => {
         const transcript = (lastResults.transcript || '').trim();
@@ -200,30 +239,61 @@ export function ResultPanel({
           transcript.length > 0 &&
           transcript !== 'No speech detected.' &&
           !transcript.startsWith('Transcription failed');
-        const showButton = transcriptReady && !lastResults.analysisFeedback;
 
-        if (!showButton) return null;
+        if (!transcriptReady) return null;
 
         return (
           <div className="mb-16">
-            <button
-              type="button"
-              onClick={() => requestFeedback()}
-              disabled={lastResults.analysisFeedbackLoading}
-              className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
-            >
-              {lastResults.analysisFeedbackLoading
-                ? 'Getting AI Feedback…'
-                : (lastResults.analysisFeedbackError ? 'Retry AI Feedback' : 'Get AI Feedback')}
-            </button>
-            {lastResults.analysisFeedbackError && (
-              <p className="mt-2 text-sm text-amber-200/90 font-sans">
-                {lastResults.analysisFeedbackError}
-              </p>
+            <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+              <FileText size={20} className="text-primary" /> Speech Transcript
+            </h3>
+            <div className="p-8 night-panel rounded-3xl">
+              <p className="text-foreground font-sans leading-relaxed text-left">{lastResults.transcript}</p>
+            </div>
+            {!lastResults.analysisFeedback && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => requestFeedback()}
+                  disabled={lastResults.analysisFeedbackLoading}
+                  className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
+                >
+                  {lastResults.analysisFeedbackLoading
+                    ? 'Getting AI Feedback…'
+                    : (lastResults.analysisFeedbackError ? 'Retry AI Feedback' : 'Get AI Feedback')}
+                </button>
+                {lastResults.analysisFeedbackError && (
+                  <p className="mt-2 text-sm text-amber-200/90 font-sans">
+                    {lastResults.analysisFeedbackError}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         );
       })()}
+
+      {(lastResults.analysisFeedback || lastResults.analysisFeedbackLoading) && (
+        <div className="mb-16">
+          <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+            <MessageSquare size={20} className="text-primary" /> AI Feedback
+          </h3>
+          <div className="p-8 night-panel rounded-3xl">
+            {lastResults.analysisFeedbackLoading ? (
+              <p className="text-foreground font-sans leading-relaxed text-left">
+                Generating feedback…
+              </p>
+            ) : (
+              <div className="text-foreground font-sans leading-relaxed text-left">
+                <ReactMarkdown>
+                  {lastResults.analysisFeedback || 'AI feedback unavailable.'}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
 
       <div className="flex flex-col md:flex-row gap-4 justify-center">
         <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-semibold btn-press night-glow">

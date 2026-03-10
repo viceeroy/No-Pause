@@ -10,6 +10,7 @@ export interface SessionResult {
   totalSpeakingTime: number;
   totalSessionTime: number;
   hesitationCount: number;
+  hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[];
   mode: string;
   audioBlob: Blob | null;
   audioMimeType?: string;
@@ -17,6 +18,8 @@ export interface SessionResult {
   analysisFeedback?: string;
   analysisFeedbackLoading?: boolean;
   analysisFeedbackError?: string;
+  transcriptionLoading?: boolean;
+  transcriptionError?: string;
   wordCount: number;
   isCompleted: boolean;
   statusNote?: string;

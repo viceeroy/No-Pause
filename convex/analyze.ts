@@ -17,7 +17,12 @@ const buildPrompt = (input: {
 - Word Count: ${input.wordCount}
 - Transcript: ${input.transcript}
 
-Give concise, personalized feedback referencing these specific numbers. Comment on their flow score, hesitation count, and suggest one concrete improvement. Keep it friendly, constructive, and under 200 words.`;
+Return feedback in markdown with:
+- A short punchy header (e.g. ## 🎯 Your Session Breakdown)
+- Bold the key stats when mentioned (flow score, hesitation count)
+- 2-3 short sections with emoji headers like ### 💪 What You Did Well and ### 🎯 Focus On This
+- End with a single motivational sentence under ### 🚀 Next Time
+Keep it under 200 words, punchy and energetic in tone — not corporate or boring.`;
 
 export const analyzeSpeech = action({
   args: {

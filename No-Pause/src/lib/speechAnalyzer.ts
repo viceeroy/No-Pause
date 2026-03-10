@@ -124,6 +124,7 @@ export interface AnalyzerResults {
   totalSilenceTime: number;
   hesitationSilenceTime: number;
   hesitationCount: number;
+  hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[];
   longestFlowStreak: number;
   frameCount: number;
   noiseFloor: number;
@@ -1090,6 +1091,7 @@ export class AudioAnalyzer {
       totalSilenceTime: Math.round(this.totalSilenceTimeMs / 1000),
       hesitationSilenceTime: Math.round(filteredHesitationSilenceTime),
       hesitationCount: filteredHesitationCount,
+      hesitationLog: finalizedMicState.filteredHesitations,
       longestFlowStreak: this.longestFlowStreak,
       frameCount: this.frameCount,
       noiseFloor: this.noiseFloor,
