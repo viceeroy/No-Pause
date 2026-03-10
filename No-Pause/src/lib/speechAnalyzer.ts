@@ -1021,6 +1021,7 @@ export class AudioAnalyzer {
     });
 
     const audioMimeType = this.mediaRecorderMimeType || audioBlob?.type || WEBM_AUDIO_MIME_TYPE;
+    const normalizedMimeType = audioMimeType.split(';')[0] || WEBM_AUDIO_MIME_TYPE;
     let finalTranscript = this.transcript.trim() || EMPTY_TRANSCRIPT;
 
     if (IS_ANDROID && this.enableTranscription && this.transcribeAudio && audioBlob) {
@@ -1028,7 +1029,7 @@ export class AudioAnalyzer {
         const base64Audio = arrayBufferToBase64(await audioBlob.arrayBuffer());
         const groqTranscript = await this.transcribeAudio({
           audioBase64: base64Audio,
-          mimeType: audioMimeType,
+          mimeType: normalizedMimeType,
         });
         if (groqTranscript && groqTranscript.trim().length > 0) {
           finalTranscript = groqTranscript.trim();
@@ -1036,6 +1037,7 @@ export class AudioAnalyzer {
         }
       } catch (error) {
         debugError('[Transcript] Groq transcription failed:', error);
+        finalTranscript = 'Transcription failed.';
       }
     }
 

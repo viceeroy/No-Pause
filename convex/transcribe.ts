@@ -12,11 +12,23 @@ export const transcribeAudio = action({
       throw new Error("GROQ_API_KEY is not set");
     }
 
+    const safeMimeType = args.mimeType.split(";")[0] || "audio/webm";
     const audioBytes = Buffer.from(args.audioBase64, "base64");
-    const audioBlob = new Blob([audioBytes], { type: args.mimeType });
+    const audioBlob = new Blob([audioBytes], { type: safeMimeType });
+
+    const extensionByMime: Record<string, string> = {
+      "audio/webm": "webm",
+      "audio/wav": "wav",
+      "audio/mpeg": "mp3",
+      "audio/mp3": "mp3",
+      "audio/mp4": "mp4",
+      "audio/m4a": "m4a",
+      "audio/ogg": "ogg",
+    };
+    const fileExt = extensionByMime[safeMimeType] || "webm";
 
     const formData = new FormData();
-    formData.append("file", audioBlob, "recording.webm");
+    formData.append("file", audioBlob, `recording.${fileExt}`);
     formData.append("model", "whisper-large-v3-turbo");
 
     const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
