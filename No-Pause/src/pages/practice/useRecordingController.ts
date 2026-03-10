@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
-import { useMutation } from 'convex/react';
+import { useConvex, useMutation } from 'convex/react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
@@ -41,6 +41,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
   const { userId } = useAuth();
   const { user } = useUser();
+  const convex = useConvex();
 
   const saveSession = useMutation(api.sessions.saveSession);
   const updateStreak = useMutation(api.streaks.updateStreak);
@@ -255,6 +256,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const analyzer = new AudioAnalyzer({
         enableTranscription: true,
         hesitationMinDurationMs,
+        transcribeAudio: async ({ audioBase64, mimeType }) =>
+          convex.action(api.transcribe.transcribeAudio, { audioBase64, mimeType }),
         onData: (data) => {
           setAudioData(data);
           if (data.rms > 0.01) soundDetectedRef.current = true;

@@ -81,6 +81,17 @@ type SpeechRecognitionLike = {
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+};
+
 interface AudioAnalyzerOptions {
   enableTranscription?: boolean;
   hesitationMinDurationMs?: number;
@@ -88,6 +99,7 @@ interface AudioAnalyzerOptions {
   onHesitation?: (duration: number, count: number) => void;
   onCalibrated?: (ambientNoise: number, thresholdSet: number) => void;
   onStartError?: (error: unknown) => void;
+  transcribeAudio?: (payload: { audioBase64: string; mimeType: string }) => Promise<string>;
 }
 
 export interface AudioDataPayload {
@@ -142,6 +154,7 @@ export class AudioAnalyzer {
   private onHesitation: ((duration: number, count: number) => void) | null;
   private onCalibrated: ((ambientNoise: number, thresholdSet: number) => void) | null;
   private onStartError: ((error: unknown) => void) | null;
+  private transcribeAudio: ((payload: { audioBase64: string; mimeType: string }) => Promise<string>) | null;
   private animationFrame: number | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private mediaRecorderMimeType = '';
@@ -271,6 +284,7 @@ export class AudioAnalyzer {
     this.onHesitation = options.onHesitation || null;
     this.onCalibrated = options.onCalibrated || null;
     this.onStartError = options.onStartError || null;
+    this.transcribeAudio = options.transcribeAudio || null;
   }
 
   /**
@@ -431,8 +445,12 @@ export class AudioAnalyzer {
 
       if (typeof MediaRecorder !== 'undefined') {
         const preferredMimeType = AudioAnalyzer.getSupportedRecorderMimeType();
-        this.mediaRecorder = preferredMimeType
-          ? new MediaRecorder(this.stream, { mimeType: preferredMimeType })
+        const recorderOptions: MediaRecorderOptions = {
+          ...(preferredMimeType ? { mimeType: preferredMimeType } : {}),
+          ...(IS_ANDROID ? { audioBitsPerSecond: 128000 } : {}),
+        };
+        this.mediaRecorder = Object.keys(recorderOptions).length > 0
+          ? new MediaRecorder(this.stream, recorderOptions)
           : new MediaRecorder(this.stream);
         this.mediaRecorderMimeType = this.mediaRecorder.mimeType || preferredMimeType || 'default';
         debugLog('[MicDebug] MediaRecorder created', {
@@ -1002,6 +1020,25 @@ export class AudioAnalyzer {
       }
     });
 
+    const audioMimeType = this.mediaRecorderMimeType || audioBlob?.type || WEBM_AUDIO_MIME_TYPE;
+    let finalTranscript = this.transcript.trim() || EMPTY_TRANSCRIPT;
+
+    if (IS_ANDROID && this.enableTranscription && this.transcribeAudio && audioBlob) {
+      try {
+        const base64Audio = arrayBufferToBase64(await audioBlob.arrayBuffer());
+        const groqTranscript = await this.transcribeAudio({
+          audioBase64: base64Audio,
+          mimeType: audioMimeType,
+        });
+        if (groqTranscript && groqTranscript.trim().length > 0) {
+          finalTranscript = groqTranscript.trim();
+          this.transcript = finalTranscript;
+        }
+      } catch (error) {
+        debugError('[Transcript] Groq transcription failed:', error);
+      }
+    }
+
     // Disconnect source but do NOT stop stream tracks or close AudioContext.
     // The stream and context are managed by the caller (PracticePage) so they
     // can be reused across sessions without re-prompting for mic permission.
@@ -1031,8 +1068,8 @@ export class AudioAnalyzer {
       totalTime: totalRecordingTime,
       avgVolume: Math.round(avgVolume * 1000) / 1000,
       audioBlob,
-      audioMimeType: this.mediaRecorderMimeType || audioBlob?.type || WEBM_AUDIO_MIME_TYPE,
-      transcript: this.transcript.trim() || EMPTY_TRANSCRIPT,
+      audioMimeType,
+      transcript: finalTranscript,
     };
   }
 

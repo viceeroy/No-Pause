@@ -10,6 +10,7 @@
 
 import type * as sessions from "../sessions.js";
 import type * as streaks from "../streaks.js";
+import type * as transcribe from "../transcribe.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +21,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   sessions: typeof sessions;
   streaks: typeof streaks;
+  transcribe: typeof transcribe;
 }>;
 
 /**
