@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Flame, Target, Clock, Zap, Timer, Download, Instagram, Send, ExternalLink } from 'lucide-react';
-import { useAuth } from '@clerk/clerk-react';
-import { useConvex, useQuery } from 'convex/react';
-import { api } from '@convex/_generated/api';
+import { Mic, BookOpen, Target, Timer, Instagram, Send, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/lib/scoringConstants';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
@@ -21,28 +18,6 @@ const toMMSS = (seconds: number) => {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
-
-interface StatCardProps {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  sub?: string;
-  className?: string;
-}
-
-const StatCard = ({ icon: Icon, label, value, sub, className }: StatCardProps) => (
-  <div className={`card-hover rounded-3xl p-3.5 md:p-5 ${className}`}>
-    <div className="flex items-start justify-between mb-2 md:mb-3">
-      <div className="p-1.5 md:p-2.5 rounded-2xl bg-surface-elevated border border-border">
-        <Icon size={16} className="text-primary md:hidden" />
-        <Icon size={20} className="text-primary hidden md:block" />
-      </div>
-    </div>
-    <p className="text-2xl md:text-4xl font-serif font-medium text-foreground drop-shadow-[0_1px_0_rgba(0,0,0,0.3)]">{value}</p>
-    <p className="text-[11px] md:text-sm text-muted-foreground/90 mt-0.5 font-sans">{label}</p>
-    {sub && <p className="text-[10px] md:text-xs text-muted-foreground/70 mt-0.5">{sub}</p>}
-  </div>
-);
 
 interface CompactModeCardProps {
   title: string;
@@ -92,40 +67,9 @@ const CompactModeCard = ({
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
-  const { userId } = useAuth();
   const [installBannerDismissed, setInstallBannerDismissed] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
-
-  const convex = useConvex();
-  const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
-  const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
-
-  useEffect(() => {
-    if (userId) {
-      setRemoteStats(undefined);
-      const fetchConvexData = async () => {
-        try {
-          const stats = await convex.query(api.sessions.getUserStats, { userId });
-          setRemoteStats(stats);
-        } catch (error) {
-          console.warn('Convex getUserStats failed, using zeroed stats:', error);
-          setRemoteStats(null);
-        }
-
-      };
-      fetchConvexData();
-    } else {
-      setRemoteStats(null);
-    }
-  }, [userId, convex]);
-
-  const formatTime = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-  };
 
   const handleCardClick = (mode: string) => {
     if (mode === 'free') navigate('/practice/free-speaking');
@@ -163,15 +107,6 @@ export default function DashboardPage() {
   };
 
   const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
-
-  const isRemoteStatsLoading = remoteStats === undefined;
-  const isRemoteStreakLoading = userId ? remoteStreak === undefined : false;
-
-  const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
-  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
-  const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;
-  const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
-  const backendBestStreak = remoteStreak?.bestStreak ?? 0;
 
   return (
     <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
@@ -317,38 +252,45 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Flame} label="Day Streak" value={isRemoteStreakLoading ? '...' : backendCurrentStreak} sub={`Best: ${backendBestStreak}`} className="elevation-card" />
-        <StatCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendScoredSessions} className="elevation-card" />
-        <StatCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatTime(backendTotalPracticeTime)} className="elevation-card" />
-        <StatCard icon={Zap} label="Flow Score" value={isRemoteStatsLoading ? '...' : `${backendAvgFlowScore}%`} className="elevation-card-elevated border border-ember-500/35" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <button
+          onClick={() => navigate('/practice?mode=reading')}
+          className="rounded-3xl night-panel p-5 md:p-6 text-left card-hover btn-press border border-ember-500/35 bg-gradient-to-b from-ember-200/14 to-surface-primary shadow-card"
+        >
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 rounded-2xl bg-ember-200/35 border border-ember-500/35">
+              <BookOpen size={18} className="text-ember-600" />
+            </span>
+            <div>
+              <p className="text-sm md:text-base font-serif text-foreground">Reading Challenge</p>
+              <p className="text-[11px] md:text-sm text-muted-foreground font-sans">Read aloud, get scored</p>
+            </div>
+          </div>
+          <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full text-[11px] md:text-xs font-sans font-semibold border border-ember-500/35 bg-surface-interactive text-ember-600">
+            Start
+          </div>
+        </button>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3 md:gap-4 mb-14">
         <button
           onClick={() => openExternal('https://instagram.com/nopause_org')}
-          className="rounded-2xl night-panel p-4 md:p-5 text-left card-hover btn-press min-h-[96px] border border-rose-400/25 bg-gradient-to-b from-rose-400/10 to-surface-elevated relative"
+          className="rounded-2xl night-panel p-3 md:p-4 text-left card-hover btn-press min-h-[68px] border border-rose-400/25 bg-gradient-to-b from-rose-400/10 to-surface-elevated"
         >
-          <ExternalLink size={12} className="absolute right-3 top-3 text-muted-foreground" />
-          <div className="inline-flex items-center gap-2 mb-1">
+          <div className="inline-flex items-center gap-2">
             <Instagram size={14} className="text-rose-300" />
-            <p className="text-sm md:text-lg font-serif text-foreground">Join Instagram</p>
+            <p className="text-xs md:text-sm text-rose-200/85 font-sans">@nopause_org</p>
           </div>
-          <p className="text-xs md:text-sm text-rose-200/85 font-sans">@nopause_org</p>
-          <p className="text-[11px] md:text-xs text-muted-foreground font-sans mt-1">Daily speaking motivation</p>
         </button>
         <button
           onClick={() => openExternal('https://t.me/nopause_org')}
-          className="rounded-2xl night-panel p-4 md:p-5 text-left card-hover btn-press min-h-[96px] border border-cyan-400/25 bg-gradient-to-b from-cyan-400/10 to-surface-elevated relative"
+          className="rounded-2xl night-panel p-3 md:p-4 text-left card-hover btn-press min-h-[68px] border border-cyan-400/25 bg-gradient-to-b from-cyan-400/10 to-surface-elevated"
         >
-          <ExternalLink size={12} className="absolute right-3 top-3 text-muted-foreground" />
-          <div className="inline-flex items-center gap-2 mb-1">
+          <div className="inline-flex items-center gap-2">
             <Send size={14} className="text-cyan-300" />
-            <p className="text-sm md:text-lg font-serif text-foreground">Discuss on Telegram</p>
+            <p className="text-xs md:text-sm text-cyan-200/85 font-sans">t.me/nopause_org</p>
           </div>
-          <p className="text-xs md:text-sm text-cyan-200/85 font-sans">t.me/nopause_org</p>
-          <p className="text-[11px] md:text-xs text-muted-foreground font-sans mt-1">Community chat &amp; feedback</p>
         </button>
       </div>
 
