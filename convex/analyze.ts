@@ -22,10 +22,10 @@ Give concise, personalized feedback referencing these specific numbers. Comment 
 export const analyzeSpeech = action({
   args: {
     transcript: v.string(),
-    flowScore: v.number(),
-    hesitationCount: v.number(),
-    speakingTime: v.number(),
-    wordCount: v.number(),
+    flowScore: v.optional(v.number()),
+    hesitationCount: v.optional(v.number()),
+    speakingTime: v.optional(v.number()),
+    wordCount: v.optional(v.number()),
   },
   handler: async (_ctx, args) => {
     try {
@@ -39,8 +39,17 @@ export const analyzeSpeech = action({
         throw new Error("Transcript is empty");
       }
 
+      const flowScore = args.flowScore ?? 0;
+      const hesitationCount = args.hesitationCount ?? 0;
+      const speakingTime = args.speakingTime ?? 0;
+      const wordCount = args.wordCount ?? 0;
+
       console.log("analyzeSpeech request", {
         transcriptLength: trimmed.length,
+        flowScore,
+        hesitationCount,
+        speakingTime,
+        wordCount,
       });
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -56,10 +65,10 @@ export const analyzeSpeech = action({
               role: "system",
               content: buildPrompt({
                 transcript: trimmed,
-                flowScore: args.flowScore,
-                hesitationCount: args.hesitationCount,
-                speakingTime: args.speakingTime,
-                wordCount: args.wordCount,
+                flowScore,
+                hesitationCount,
+                speakingTime,
+                wordCount,
               }),
             },
           ],
