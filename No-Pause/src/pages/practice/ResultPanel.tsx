@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, FileText, Share2, Volume2, Zap } from 'lucide-react';
+import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-react';
 import { VoicePlayer } from '@/components/VoicePlayer';
 import Confetti from '@/components/Confetti';
 import { cn } from '@/lib/utils';
@@ -176,6 +176,19 @@ export function ResultPanel({
           <p className="text-foreground font-sans leading-relaxed text-left">{lastResults.transcript}</p>
         </div>
       </div>
+
+      {lastResults.analysisFeedback && (
+        <div className="mb-16">
+          <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+            <MessageSquare size={20} className="text-primary" /> AI Feedback
+          </h3>
+          <div className="p-8 night-panel rounded-3xl">
+            <p className="text-foreground font-sans leading-relaxed text-left">
+              {lastResults.analysisFeedback}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-4 justify-center">
         <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-semibold btn-press night-glow">

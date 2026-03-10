@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as analyze from "../analyze.js";
 import type * as sessions from "../sessions.js";
 import type * as streaks from "../streaks.js";
 import type * as transcribe from "../transcribe.js";
@@ -19,6 +20,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analyze: typeof analyze;
   sessions: typeof sessions;
   streaks: typeof streaks;
   transcribe: typeof transcribe;

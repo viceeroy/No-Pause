@@ -55,6 +55,9 @@ npm install
 
 3. Set up environment variables:
 Create a `.env.local` file inside the `No-Pause` directory and add your Clerk publishable keys and Convex deployment URLs.
+Set the following Convex environment variables in the Convex dashboard:
+- `GROQ_API_KEY`
+- `OPENROUTER_API_KEY`
 
 4. Deploy Convex functions:
 From the root directory:

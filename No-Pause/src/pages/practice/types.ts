@@ -14,6 +14,7 @@ export interface SessionResult {
   audioBlob: Blob | null;
   audioMimeType?: string;
   transcript: string;
+  analysisFeedback?: string;
   isCompleted: boolean;
   statusNote?: string;
 }

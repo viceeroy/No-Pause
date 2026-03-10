@@ -104,6 +104,21 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         statusNote = 'Session completed, but score is 0 because hesitation units were too high.';
       }
 
+      let analysisFeedback: string | undefined;
+      const transcript = results.transcript.trim();
+      const shouldAnalyze =
+        transcript.length > 0 &&
+        transcript !== 'No speech detected.' &&
+        !transcript.startsWith('Transcription failed');
+      if (shouldAnalyze) {
+        try {
+          analysisFeedback = await convex.action(api.analyze.analyzeSpeech, { transcript });
+        } catch (error) {
+          console.error('Failed to analyze transcript:', error);
+          analysisFeedback = 'AI feedback unavailable.';
+        }
+      }
+
       const sessionResult: SessionResult = {
         flowScore: safeFlowScore,
         totalSpeakingTime: results.totalSpeakingTime,
@@ -114,6 +129,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         audioBlob: results.audioBlob,
         audioMimeType: results.audioMimeType,
         transcript: results.transcript,
+        analysisFeedback,
         statusNote,
       };
       try {
@@ -144,7 +160,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       micService.setTracksEnabled(false);
       setShowMicRetry(false);
     }
-  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
+  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId, convex]);
 
   const startRecording = useCallback(async () => {
     try {
