@@ -32,6 +32,7 @@ const SOURCE_REBIND_COOLDOWN_MS = 1500;
 const STREAM_HEALTH_INTERVAL_MS = 2000;
 const ANALYZER_HEALTH_INTERVAL_MS = 2500;
 const WEBM_AUDIO_MIME_TYPE = 'audio/webm';
+const MAX_TRANSCRIBE_BYTES = 15 * 1024 * 1024;
 const EMPTY_TRANSCRIPT = 'No speech detected.';
 
 const IS_DEV = import.meta.env.DEV;
@@ -1026,11 +1027,30 @@ export class AudioAnalyzer {
 
     if (IS_ANDROID && this.enableTranscription && this.transcribeAudio && audioBlob) {
       try {
+        if (audioBlob.size === 0) {
+          finalTranscript = 'Transcription failed: empty audio.';
+          throw new Error('Audio blob is empty');
+        }
+        if (audioBlob.size > MAX_TRANSCRIBE_BYTES) {
+          finalTranscript = 'Transcription skipped: audio too large.';
+          throw new Error(`Audio blob too large: ${audioBlob.size} bytes`);
+        }
+
         const base64Audio = arrayBufferToBase64(await audioBlob.arrayBuffer());
-        const groqTranscript = await this.transcribeAudio({
-          audioBase64: base64Audio,
-          mimeType: normalizedMimeType,
-        });
+        const groqTranscript = await (async () => {
+          try {
+            return await this.transcribeAudio!({
+              audioBase64: base64Audio,
+              mimeType: normalizedMimeType,
+            });
+          } catch (error) {
+            debugWarn('[Transcript] Groq transcription failed, retrying once...', error);
+            return await this.transcribeAudio!({
+              audioBase64: base64Audio,
+              mimeType: normalizedMimeType,
+            });
+          }
+        })();
         if (groqTranscript && groqTranscript.trim().length > 0) {
           finalTranscript = groqTranscript.trim();
           this.transcript = finalTranscript;
@@ -1041,7 +1061,9 @@ export class AudioAnalyzer {
           error && typeof error === 'object' && 'message' in error
             ? String((error as { message?: unknown }).message)
             : 'Unknown error';
-        finalTranscript = `Transcription failed: ${message}`;
+        if (finalTranscript === EMPTY_TRANSCRIPT || finalTranscript === this.transcript.trim()) {
+          finalTranscript = `Transcription failed: ${message}`;
+        }
       }
     }
 

@@ -17,8 +17,12 @@ export const transcribeAudio = action({
 
       const safeMimeType = args.mimeType.split(";")[0] || "audio/webm";
       const audioBytes = Buffer.from(args.audioBase64, "base64");
+      const MAX_BYTES = 15 * 1024 * 1024;
       if (audioBytes.length === 0) {
         throw new Error("Audio payload is empty");
+      }
+      if (audioBytes.length > MAX_BYTES) {
+        throw new Error(`Audio payload too large: ${audioBytes.length} bytes`);
       }
 
       const audioBlob = new Blob([audioBytes], { type: safeMimeType });
@@ -48,7 +52,7 @@ export const transcribeAudio = action({
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Groq transcription failed: ${response.status} ${errorText}`);
+        throw new Error(`Groq transcription failed: ${response.status} ${errorText.slice(0, 200)}`);
       }
 
       const data = await response.json();
@@ -56,6 +60,8 @@ export const transcribeAudio = action({
     } catch (error) {
       console.error("Groq transcription action failed", {
         message: error instanceof Error ? error.message : String(error),
+        mimeType: args.mimeType,
+        base64Length: args.audioBase64.length,
       });
       throw error;
     }
