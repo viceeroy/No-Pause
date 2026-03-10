@@ -33,7 +33,7 @@ export const analyzeSpeech = action({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemma-2-9b-it:free",
+          model: "google/gemma-2-9b-it",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: trimmed },
