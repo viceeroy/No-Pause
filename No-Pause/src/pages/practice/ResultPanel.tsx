@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import { VoicePlayer } from '@/components/VoicePlayer';
 import Confetti from '@/components/Confetti';
@@ -52,20 +53,24 @@ export function ResultPanel({
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
 
-  const hesitationSpikes = useMemo(() => {
-    const totalMs = (lastResults.totalSessionTime || 0) * 1000;
-    if (!totalMs || !lastResults.hesitationLog?.length) return [];
-    const durations = lastResults.hesitationLog.map((h) => h.duration);
-    const maxDuration = Math.max(1, ...durations);
-    return lastResults.hesitationLog.map((h) => {
-      const leftPct = Math.max(0, Math.min(100, (h.timestamp / totalMs) * 100));
-      const heightPct = Math.max(25, Math.min(100, (h.duration / maxDuration) * 100));
-      return {
-        leftPct,
-        heightPct,
-        durationSec: (h.duration / 1000).toFixed(1),
-      };
-    });
+  const hesitationSeries = useMemo(() => {
+    const totalSec = Math.max(0, lastResults.totalSessionTime || 0);
+    const points: { x: number; y: number }[] = [{ x: 0, y: 0 }];
+    for (const h of lastResults.hesitationLog || []) {
+      const startSec = h.timestamp / 1000;
+      const durationSec = h.duration / 1000;
+      const peakSec = startSec + durationSec / 2;
+      const endSec = startSec + durationSec;
+      points.push(
+        { x: startSec, y: 0 },
+        { x: peakSec, y: h.duration },
+        { x: endSec, y: 0 },
+      );
+    }
+    points.push({ x: totalSec, y: 0 });
+    return points
+      .filter((p) => p.x >= 0 && p.x <= totalSec)
+      .sort((a, b) => a.x - b.x);
   }, [lastResults.hesitationLog, lastResults.totalSessionTime]);
 
   const [animatedSpeakingPercent, setAnimatedSpeakingPercent] = useState(0);
@@ -158,18 +163,34 @@ export function ResultPanel({
               style={{ width: `${animatedSpeakingPercent}%` }}
             />
           </div>
-          <div className="mt-3 h-5 rounded-full bg-primary/80 relative overflow-hidden">
-            {hesitationSpikes.map((spike, index) => (
-              <div
-                key={`${spike.leftPct}-${index}`}
-                className="absolute bottom-0 w-1 rounded-full bg-amber-200/90 shadow-[0_0_6px_rgba(251,191,36,0.6)]"
-                style={{
-                  left: `calc(${spike.leftPct}% - 2px)`,
-                  height: `${spike.heightPct}%`,
-                }}
-                title={`${spike.durationSec}s hesitation`}
-              />
-            ))}
+          <div className="mt-3 h-[6px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={hesitationSeries}>
+                <XAxis dataKey="x" type="number" domain={[0, lastResults.totalSessionTime || 0]} hide />
+                <YAxis hide domain={[0, 'dataMax']} />
+                <Tooltip
+                  cursor={false}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    const value = payload[0]?.value as number | undefined;
+                    if (!value || value <= 0) return null;
+                    return (
+                      <div className="px-2 py-1 rounded-md bg-surface-elevated border border-border text-xs font-sans text-foreground">
+                        {(value / 1000).toFixed(1)}s hesitation
+                      </div>
+                    );
+                  }}
+                />
+                <Line
+                  type="linear"
+                  dataKey="y"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
         {showResultsDebugExport && (

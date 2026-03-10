@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, BookOpen, Target, Timer, Instagram, Send, Download } from 'lucide-react';
+import { Mic, BookOpen, Target, Timer, Download, Instagram, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/lib/scoringConstants';
 import { usePWAInstall } from '@/contexts/PWAInstallContext';
@@ -252,24 +252,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <button
+      <div className="mb-8">
+        <div
           onClick={() => navigate('/practice?mode=reading')}
-          className="rounded-3xl night-panel p-5 md:p-6 text-left card-hover btn-press border border-ember-500/35 bg-gradient-to-b from-ember-200/14 to-surface-primary shadow-card"
+          className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-6 md:p-8 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
         >
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-2xl bg-ember-200/35 border border-ember-500/35">
-              <BookOpen size={18} className="text-ember-600" />
-            </span>
-            <div>
-              <p className="text-sm md:text-base font-serif text-foreground">Reading Challenge</p>
-              <p className="text-[11px] md:text-sm text-muted-foreground font-sans">Read aloud, get scored</p>
+          <div className="flex justify-center mb-4">
+            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
+              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
+              <BookOpen size={32} className="md:hidden text-primary relative z-10" />
+              <BookOpen size={44} className="hidden md:block text-primary relative z-10" />
             </div>
           </div>
-          <div className="mt-4 inline-flex items-center px-3 py-1.5 rounded-full text-[11px] md:text-xs font-sans font-semibold border border-ember-500/35 bg-surface-interactive text-ember-600">
-            Start
-          </div>
-        </button>
+          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Reading Challenge</h3>
+          <p className="text-sm md:text-base text-muted-foreground font-sans">Read aloud, get scored</p>
+        </div>
       </div>
 
       {/* Quick Actions */}
