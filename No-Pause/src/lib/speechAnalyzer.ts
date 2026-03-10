@@ -124,8 +124,8 @@ export interface AnalyzerResults {
 export type { AnalyzerDiagnosticsSnapshot } from '@/lib/analyzer/diagnostics';
 
 export class AudioAnalyzer {
-  private readonly START_BUFFER_MS = 5000;  // Ignore first 5 seconds
-  private readonly END_BUFFER_MS = 2000;    // Ignore last 2 seconds
+  private readonly START_BUFFER_MS = 0;  // Count from first frame
+  private readonly END_BUFFER_MS = 0;    // Count until final frame
   private speechOnThreshold: number;
   private speechOffThreshold: number;
   private hesitationMinDuration: number;
