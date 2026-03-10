@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import { VoicePlayer } from '@/components/VoicePlayer';
 import Confetti from '@/components/Confetti';
@@ -52,26 +51,6 @@ export function ResultPanel({
     const raw = (lastResults.totalSpeakingTime / lastResults.totalSessionTime) * 100;
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
-
-  const hesitationSeries = useMemo(() => {
-    const totalSec = Math.max(0, lastResults.totalSessionTime || 0);
-    const points: { x: number; y: number }[] = [{ x: 0, y: 0 }];
-    for (const h of lastResults.hesitationLog || []) {
-      const startSec = h.timestamp / 1000;
-      const durationSec = h.duration / 1000;
-      const peakSec = startSec + durationSec / 2;
-      const endSec = startSec + durationSec;
-      points.push(
-        { x: startSec, y: 0 },
-        { x: peakSec, y: h.duration },
-        { x: endSec, y: 0 },
-      );
-    }
-    points.push({ x: totalSec, y: 0 });
-    return points
-      .filter((p) => p.x >= 0 && p.x <= totalSec)
-      .sort((a, b) => a.x - b.x);
-  }, [lastResults.hesitationLog, lastResults.totalSessionTime]);
 
   const [animatedSpeakingPercent, setAnimatedSpeakingPercent] = useState(0);
 
@@ -162,35 +141,6 @@ export function ResultPanel({
               className="h-full rounded-full bg-primary"
               style={{ width: `${animatedSpeakingPercent}%` }}
             />
-          </div>
-          <div className="mt-3 h-[6px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={hesitationSeries}>
-                <XAxis dataKey="x" type="number" domain={[0, lastResults.totalSessionTime || 0]} hide />
-                <YAxis hide domain={[0, 'dataMax']} />
-                <Tooltip
-                  cursor={false}
-                  content={({ active, payload }) => {
-                    if (!active || !payload || payload.length === 0) return null;
-                    const value = payload[0]?.value as number | undefined;
-                    if (!value || value <= 0) return null;
-                    return (
-                      <div className="px-2 py-1 rounded-md bg-surface-elevated border border-border text-xs font-sans text-foreground">
-                        {(value / 1000).toFixed(1)}s hesitation
-                      </div>
-                    );
-                  }}
-                />
-                <Line
-                  type="linear"
-                  dataKey="y"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         </div>
         {showResultsDebugExport && (

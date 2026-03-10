@@ -191,6 +191,7 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
       case 'free': return 'Free Speaking';
       case 'lemon': return 'Lemon Technique';
       case 'topic': return 'Topic Score';
+      case 'reading': return 'Reading Challenge';
       default: return 'Practice';
     }
   }, [mode]);
@@ -203,6 +204,8 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
         return `Speak about "${lemonPrompt?.word || ''}" for a ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session`;
       case 'topic':
         return `Respond to the topic for a ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session`;
+      case 'reading':
+        return 'Read aloud and advance through sentences';
       default:
         return 'Speaking practice';
     }

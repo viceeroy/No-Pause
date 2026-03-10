@@ -7,6 +7,7 @@ import { ResultPanel } from '@/pages/practice/ResultPanel';
 import { usePracticeState } from '@/pages/practice/usePracticeState';
 import { usePromptLoader } from '@/pages/practice/usePromptLoader';
 import { useRecordingController } from '@/pages/practice/useRecordingController';
+import { ReadingChallengePanel } from '@/pages/practice/ReadingChallengePanel';
 
 export default function PracticePage() {
   const navigate = useNavigate();
@@ -20,7 +21,12 @@ export default function PracticePage() {
 
   const canStart =
     prompt.mode === 'free' ||
+    prompt.mode === 'reading' ||
     (prompt.mode === 'lemon' ? !!state.lemonPrompt : !!state.topicPrompt);
+
+  if (prompt.mode === 'reading') {
+    return <ReadingChallengePanel onExit={() => navigate('/')} />;
+  }
 
   return (
     <div className={cn(
