@@ -91,35 +91,26 @@ const AppRoutes = () => {
   const isPractice = location.pathname.startsWith('/practice');
   const { hasPendingUpdate, applyUpdateIfAvailable } = useServiceWorkerUpdate();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const mouseStartRef = useRef<{ x: number; y: number } | null>(null);
+  const mouseLastRef = useRef<{ x: number; y: number } | null>(null);
+  const isMouseDownRef = useRef(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
+  const currentTabIndex = getNavTabIndex(location.pathname);
 
   useEffect(() => {
     if (!hasPendingUpdate || isPractice) return;
     void applyUpdateIfAvailable();
   }, [hasPendingUpdate, isPractice, applyUpdateIfAvailable]);
 
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return;
-    if (document.body.dataset.recording === 'true') return;
-    const touch = event.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  };
-
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+  const handleSwipe = (deltaX: number, deltaY: number, minDistance: number) => {
     if (isSwipeAnimating) return;
     if (document.body.dataset.recording === 'true') return;
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start || event.changedTouches.length === 0) return;
 
-    const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - start.x;
-    const deltaY = touch.clientY - start.y;
     const absX = Math.abs(deltaX);
     const absY = Math.abs(deltaY);
 
-    if (absX < 50) return;
+    if (absX < minDistance) return;
     if (absY > absX) return;
 
     const direction = deltaX < 0 ? 'left' : 'right';
@@ -161,6 +152,57 @@ const AppRoutes = () => {
     }, 220);
   };
 
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1) return;
+    if (document.body.dataset.recording === 'true') return;
+    const touch = event.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start || event.changedTouches.length === 0) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    handleSwipe(deltaX, deltaY, 50);
+  };
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    if (document.body.dataset.recording === 'true') return;
+    isMouseDownRef.current = true;
+    mouseStartRef.current = { x: event.clientX, y: event.clientY };
+    mouseLastRef.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDownRef.current) return;
+    mouseLastRef.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handleMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDownRef.current) return;
+    isMouseDownRef.current = false;
+    const start = mouseStartRef.current;
+    const end = mouseLastRef.current ?? { x: event.clientX, y: event.clientY };
+    mouseStartRef.current = null;
+    mouseLastRef.current = null;
+    if (!start) return;
+
+    const deltaX = end.x - start.x;
+    const deltaY = end.y - start.y;
+    handleSwipe(deltaX, deltaY, 80);
+  };
+
+  const handleMouseLeave = () => {
+    isMouseDownRef.current = false;
+    mouseStartRef.current = null;
+    mouseLastRef.current = null;
+  };
+
   return (
     <>
       <RouteSeoManager />
@@ -169,6 +211,10 @@ const AppRoutes = () => {
         data-swipe={swipeDirection ?? undefined}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
       >
         <Routes>
           <Route path="/" element={<DashboardPage />} />
@@ -182,6 +228,16 @@ const AppRoutes = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
+      {currentTabIndex !== -1 && (
+        <div className="page-indicator" aria-hidden="true">
+          {navTabs.map((tab, index) => (
+            <span
+              key={tab.path}
+              className={index === currentTabIndex ? "page-indicator-dot is-active" : "page-indicator-dot"}
+            />
+          ))}
+        </div>
+      )}
       {!isPractice && <Navbar />}
     </>
   );
