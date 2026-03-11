@@ -224,7 +224,7 @@ const App = () => (
           element={(
             <>
               <SignedIn>
-                <div className="relative min-h-screen bg-background">
+                <div className="relative min-h-screen bg-background overflow-x-hidden">
                   <AppRoutes />
                 </div>
               </SignedIn>
