@@ -209,15 +209,18 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
                 </div>
               )}
             </div>
+            <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
+              💡 Voice Acting is for reading practice — no flow score is awarded in this mode.
+            </p>
           </div>
 
-          <button
-            onClick={resetSession}
-            className="px-10 py-4 rounded-full bg-surface-card border border-border text-foreground font-sans font-black text-lg btn-press shadow-card"
-          >
-            Perform Another Passage
-          </button>
-          <div className="mt-4">
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              onClick={resetSession}
+              className="px-10 py-4 rounded-full bg-surface-card border border-border text-foreground font-sans font-black text-lg btn-press shadow-card"
+            >
+              Perform Another Passage
+            </button>
             <button
               type="button"
               onClick={() => navigate('/')}
@@ -232,7 +235,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   }
 
   return (
-    <div className="min-h-screen pb-28 pt-2 px-5 md:px-12 lg:px-20 max-w-4xl mx-auto">
+    <div className="min-h-screen pb-28 pt-2 px-5 md:px-12 lg:px-20 max-w-4xl mx-auto overflow-hidden">
       <button onClick={handleExit} className="flex items-center gap-1 text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors mb-8">
         <ChevronLeft size={16} /> Back
       </button>

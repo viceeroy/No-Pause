@@ -159,6 +159,21 @@ export function ResultPanel({
             </button>
           </div>
         )}
+        {mode === 'free' && (
+          <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
+            💡 Free Speaking is practice only — no flow score is awarded in this mode.
+          </p>
+        )}
+        {mode === 'lemon' && (!lastResults.isCompleted || lastResults.flowScore === 0) && (
+          <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
+            💡 To earn a flow score, you need to complete the full 1:00 and speak for at least 30 seconds.
+          </p>
+        )}
+        {mode === 'topic' && (!lastResults.isCompleted || lastResults.flowScore === 0) && (
+          <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
+            💡 To earn a flow score, you need to complete the full 2:00 and speak for at least 60 seconds.
+          </p>
+        )}
       </div>
 
       <div className="mb-16">
@@ -268,7 +283,7 @@ export function ResultPanel({
       )}
 
 
-      <div className="flex flex-col md:flex-row gap-4 justify-center">
+      <div className="flex flex-wrap justify-center gap-4">
         <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-semibold btn-press night-glow">
           Practice Again
         </button>
@@ -307,8 +322,6 @@ export function ResultPanel({
             </span>
           )}
         </button>
-      </div>
-      <div className="mt-4 flex justify-center">
         <button
           type="button"
           onClick={() => navigate('/')}
