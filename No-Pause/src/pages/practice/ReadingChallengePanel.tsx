@@ -171,21 +171,12 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           </p>
           <div className="mb-16">
             <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-              <FileText size={20} className="text-primary" /> Speech Transcript
+              <FileText size={20} className="text-primary" /> Your Passage
             </h3>
             <div className="p-8 night-panel rounded-3xl">
-              {transcriptionLoading && (
-                <p className="text-foreground font-sans leading-relaxed text-left">Transcribing…</p>
-              )}
-              {transcriptionError && (
-                <p className="text-sm text-amber-200/90 font-sans text-left">{transcriptionError}</p>
-              )}
-              {!transcriptionLoading && !transcriptionError && transcript && (
-                <p className="text-foreground font-sans leading-relaxed text-left">{transcript}</p>
-              )}
-              {!transcriptionLoading && !transcriptionError && !transcript && (
-                <p className="text-muted-foreground font-sans text-left">Transcription pending.</p>
-              )}
+              <p className="text-foreground font-sans leading-relaxed text-left">
+                {passageText}
+              </p>
             </div>
           </div>
 
