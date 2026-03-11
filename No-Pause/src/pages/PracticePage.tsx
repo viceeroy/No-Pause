@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,17 @@ export default function PracticePage() {
     prompt.mode === 'free' ||
     prompt.mode === 'reading' ||
     (prompt.mode === 'lemon' ? !!state.lemonPrompt : !!state.topicPrompt);
+
+  useEffect(() => {
+    if (state.state === 'recording') {
+      document.body.dataset.recording = 'true';
+    } else {
+      delete document.body.dataset.recording;
+    }
+    return () => {
+      delete document.body.dataset.recording;
+    };
+  }, [state.state]);
 
   if (prompt.mode === 'reading') {
     return <ReadingChallengePanel onExit={() => navigate('/')} />;

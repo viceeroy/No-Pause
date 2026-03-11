@@ -100,13 +100,15 @@ const AppRoutes = () => {
   }, [hasPendingUpdate, isPractice, applyUpdateIfAvailable]);
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (isPractice || event.touches.length !== 1) return;
+    if (event.touches.length !== 1) return;
+    if (document.body.dataset.recording === 'true') return;
     const touch = event.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
   };
 
   const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (isPractice || isSwipeAnimating) return;
+    if (isSwipeAnimating) return;
+    if (document.body.dataset.recording === 'true') return;
     const start = touchStartRef.current;
     touchStartRef.current = null;
     if (!start || event.changedTouches.length === 0) return;
@@ -121,6 +123,22 @@ const AppRoutes = () => {
     if (absY > absX) return;
 
     const direction = deltaX < 0 ? 'left' : 'right';
+    const isMainTabRoute = navTabs.some((tab) => tab.path === location.pathname);
+
+    if (!isMainTabRoute) {
+      if (direction !== 'right') return;
+      setIsSwipeAnimating(true);
+      setSwipeDirection(direction);
+      window.setTimeout(() => {
+        navigate(-1);
+      }, 90);
+      window.setTimeout(() => {
+        setSwipeDirection(null);
+        setIsSwipeAnimating(false);
+      }, 220);
+      return;
+    }
+
     const currentIndex = getNavTabIndex(location.pathname);
     if (currentIndex === -1) return;
 
