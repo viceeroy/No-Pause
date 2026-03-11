@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, FileText, Mic, Play, Square } from 'lucide-react';
+import { ChevronLeft, FileText, Mic, Play, Square, Volume2 } from 'lucide-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { createAudioAnalyzer } from '@/lib/audioRecording';
 import { micService } from '@/lib/micService';
-import { runPronunciationCheck } from '@/lib/pronunciationCheck';
 import type { AudioDataPayload } from '@/lib/speechAnalyzer';
+import { VoicePlayer } from '@/components/VoicePlayer';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
 import { shufflePassages, voiceActingPassages, type VoiceActingPassage } from '@/lib/readingTexts';
 
@@ -24,6 +24,8 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const [transcript, setTranscript] = useState('');
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioMimeType, setAudioMimeType] = useState<string | null>(null);
   const [audioData, setAudioData] = useState<AudioDataPayload | null>(null);
   const [soundDetected, setSoundDetected] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -80,6 +82,8 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       const results = await analyzerRef.current.stop();
       audioBlobRef.current = results.audioBlob || null;
       audioMimeTypeRef.current = results.audioMimeType || null;
+      setAudioBlob(results.audioBlob || null);
+      setAudioMimeType(results.audioMimeType || null);
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
@@ -124,6 +128,8 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setTranscript('');
     setAudioData(null);
     setSoundDetected(false);
+    setAudioBlob(null);
+    setAudioMimeType(null);
     setErrorMessage(null);
     setTranscriptionError(null);
     setTranscriptionLoading(false);
@@ -147,17 +153,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       transcript !== 'No speech detected.' &&
       !transcript.startsWith('Transcription failed');
     const passageText = currentPassage?.text || '';
-    const pronunciation = transcriptReady
-      ? runPronunciationCheck(passageText, transcript)
-      : null;
-    const accuracy = pronunciation?.accuracy ?? 0;
-    const accuracyLabel = accuracy >= 95
-      ? 'Perfect Delivery! 🎭'
-      : accuracy >= 80
-        ? 'Great Performance! 🌟'
-        : accuracy >= 60
-          ? 'Good Effort! 👏'
-          : 'Keep Practicing! 🎤';
 
     return (
       <div className="min-h-screen pb-28 pt-2 px-5 md:px-12 lg:px-20 max-w-4xl mx-auto">
@@ -180,36 +175,38 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
             </div>
           </div>
 
-          {transcriptReady && pronunciation && (
-            <div className="mb-16">
-              <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left">
-                Pronunciation Check
-              </h3>
-              <div className="p-6 md:p-8 night-panel rounded-3xl">
-                <div className="flex flex-wrap gap-x-2 gap-y-2 text-left">
-                  {pronunciation.words.map((item, index) => (
-                    <span
-                      key={`${item.word}-${index}`}
-                      className={cn(
-                        'text-sm md:text-base font-sans font-semibold px-2 py-1 rounded-full',
-                        item.status === 'exact' && 'bg-emerald-500/15 text-emerald-200',
-                        item.status === 'close' && 'bg-amber-400/20 text-amber-200',
-                        item.status === 'missed' && 'bg-rose-500/20 text-rose-200'
-                      )}
-                    >
-                      {item.word}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-6 flex flex-col items-center">
-                  <p className="text-3xl md:text-4xl font-serif font-semibold text-primary">
-                    {accuracy}%
-                  </p>
-                  <p className="mt-2 text-base font-sans font-bold text-foreground">{accuracyLabel}</p>
-                </div>
-              </div>
+          <div className="mb-16">
+            <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+              <FileText size={20} className="text-primary" /> Your Transcript
+            </h3>
+            <div className="p-8 night-panel rounded-3xl">
+              {transcriptionLoading ? (
+                <p className="text-foreground font-sans leading-relaxed text-left">Transcribing…</p>
+              ) : transcriptionError ? (
+                <p className="text-amber-200/90 font-sans leading-relaxed text-left">{transcriptionError}</p>
+              ) : (
+                <p className="text-foreground font-sans leading-relaxed text-left">
+                  {transcriptReady ? transcript : 'No transcript available yet.'}
+                </p>
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="mb-16">
+            <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+              <Volume2 size={20} className="text-primary" /> Voice Recording
+            </h3>
+            <div className="p-4 sm:p-8 night-panel rounded-3xl">
+              {audioBlob ? (
+                <VoicePlayer audioBlob={audioBlob} audioMimeType={audioMimeType || undefined} />
+              ) : (
+                <div className="text-center py-8">
+                  <Volume2 size={48} className="text-muted-foreground/60 mx-auto mb-4" />
+                  <p className="text-muted-foreground font-sans">Audio recording will be available here</p>
+                </div>
+              )}
+            </div>
+          </div>
 
           <button
             onClick={resetSession}
