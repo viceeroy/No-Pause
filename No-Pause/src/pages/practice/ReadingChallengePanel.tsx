@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, FileText, MessageSquare, Mic, Play, Square } from 'lucide-react';
+import { ChevronLeft, FileText, Mic, Play, Square } from 'lucide-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
-import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { createAudioAnalyzer } from '@/lib/audioRecording';
 import { micService } from '@/lib/micService';
@@ -24,8 +23,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const [transcript, setTranscript] = useState('');
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
-  const [analysisFeedback, setAnalysisFeedback] = useState<string | null>(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [audioData, setAudioData] = useState<AudioDataPayload | null>(null);
   const [soundDetected, setSoundDetected] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -53,8 +50,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setPhase('recording');
     setTranscript('');
     setTranscriptionError(null);
-    setAnalysisFeedback(null);
-    setAnalysisLoading(false);
     setTranscriptionLoading(false);
 
     try {
@@ -114,23 +109,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     }
   }, [arrayBufferToBase64, convex]);
 
-  const requestFeedback = useCallback(async () => {
-    if (!transcript || analysisLoading) return;
-    setAnalysisLoading(true);
-    try {
-      const feedback = await convex.action(api.analyze.analyzeSpeech, {
-        transcript,
-        mode: 'voiceacting',
-      });
-      setAnalysisFeedback(feedback);
-    } catch (error) {
-      console.error('Failed to analyze transcript:', error);
-      setAnalysisFeedback('AI feedback unavailable.');
-    } finally {
-      setAnalysisLoading(false);
-    }
-  }, [analysisLoading, convex, transcript]);
-
   const handleExit = useCallback(() => {
     if (analyzerRef.current) {
       analyzerRef.current.destroy();
@@ -148,8 +126,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setErrorMessage(null);
     setTranscriptionError(null);
     setTranscriptionLoading(false);
-    setAnalysisFeedback(null);
-    setAnalysisLoading(false);
     setPassages(shufflePassages(voiceActingPassages));
     setCurrentIndex(0);
   }, []);
@@ -169,6 +145,16 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       transcript.length > 0 &&
       transcript !== 'No speech detected.' &&
       !transcript.startsWith('Transcription failed');
+    const wordCount = transcriptReady
+      ? transcript.trim().split(/\s+/).filter(Boolean).length
+      : 0;
+    const cheerMessage = wordCount >= 50
+      ? 'Incredible performance! You owned that stage!'
+      : wordCount >= 30
+        ? 'Great delivery! Your voice carried the moment!'
+        : wordCount >= 15
+          ? 'Nice read! Keep practicing for more impact!'
+          : 'Warming up! Try reading the full passage next time!';
 
     return (
       <div className="min-h-screen pb-28 pt-2 px-5 md:px-12 lg:px-20 max-w-4xl mx-auto">
@@ -198,37 +184,13 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
                 <p className="text-muted-foreground font-sans text-left">Transcription pending.</p>
               )}
             </div>
-            {!analysisFeedback && transcriptReady && (
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={requestFeedback}
-                  disabled={analysisLoading}
-                  className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
-                >
-                  {analysisLoading ? 'Getting AI Feedback…' : 'Get AI Feedback'}
-                </button>
-              </div>
-            )}
           </div>
 
-          {(analysisFeedback || analysisLoading) && (
+          {transcriptReady && (
             <div className="mb-16">
-              <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-                <MessageSquare size={20} className="text-primary" /> AI Feedback
-              </h3>
-              <div className="p-8 night-panel rounded-3xl">
-                {analysisLoading ? (
-                  <p className="text-foreground font-sans leading-relaxed text-left">
-                    Generating feedback…
-                  </p>
-                ) : (
-                  <div className="text-foreground font-sans leading-relaxed text-left">
-                    <ReactMarkdown>
-                      {analysisFeedback || 'AI feedback unavailable.'}
-                    </ReactMarkdown>
-                  </div>
-                )}
+              <div className="mx-auto max-w-2xl rounded-3xl bg-surface-card/60 px-6 py-6 text-center">
+                <div className="text-4xl mb-3">🎭</div>
+                <p className="text-lg font-sans font-bold text-foreground">{cheerMessage}</p>
               </div>
             </div>
           )}
