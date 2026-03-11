@@ -4,8 +4,9 @@ import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { createAudioAnalyzer } from '@/lib/audioRecording';
 import { micService } from '@/lib/micService';
-import { AudioAnalyzer, type AudioDataPayload } from '@/lib/speechAnalyzer';
+import type { AudioDataPayload } from '@/lib/speechAnalyzer';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
 import { shufflePassages, voiceActingPassages, type VoiceActingPassage } from '@/lib/readingTexts';
 
@@ -60,7 +61,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       await micService.init();
       micService.setTracksEnabled(true);
       await micService.ensureAudioContextRunning();
-      const analyzer = new AudioAnalyzer({
+      const analyzer = createAudioAnalyzer({
         enableTranscription: false,
         onData: (data) => {
           setAudioData(data);

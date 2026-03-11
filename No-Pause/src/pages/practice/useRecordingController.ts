@@ -6,6 +6,7 @@ import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/lib/speechAnalyzer';
 import { micService } from '@/lib/micService';
 import { storage } from '@/lib/storage';
+import { createAudioAnalyzer } from '@/lib/audioRecording';
 import {
   LEMON_MIN_SPEAKING_SECONDS,
   LEMON_MIN_TOTAL_SECONDS,
@@ -382,7 +383,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const prefs = storage.getPreferences();
       const hesitationMinDurationMs = Math.round(PAUSE_THRESHOLD_BY_LEVEL[prefs.pauseThresholdLevel] * 1000);
 
-      const analyzer = new AudioAnalyzer({
+      const analyzer = createAudioAnalyzer({
         enableTranscription: true,
         hesitationMinDurationMs,
         transcribeAudio: async ({ audioBase64, mimeType }) =>

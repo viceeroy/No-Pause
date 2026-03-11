@@ -268,6 +268,8 @@ export class AudioAnalyzer {
     const candidates = [
       'audio/webm;codecs=opus',
       'audio/webm',
+      'audio/mp4',
+      'audio/ogg',
     ];
     if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') return '';
     for (const mimeType of candidates) {
@@ -1013,7 +1015,8 @@ export class AudioAnalyzer {
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
         this.mediaRecorder.onstop = () => {
           debugLog('[MicDebug] MediaRecorder stop (from stop())', { state: this.mediaRecorder?.state || 'none' });
-          resolve(new Blob(this.audioChunks, { type: WEBM_AUDIO_MIME_TYPE }));
+          const blobType = this.mediaRecorderMimeType || this.mediaRecorder?.mimeType || WEBM_AUDIO_MIME_TYPE;
+          resolve(new Blob(this.audioChunks, { type: blobType }));
         };
         debugLog('[MicDebug] MediaRecorder stop requested', { state: this.mediaRecorder.state });
         this.mediaRecorder.stop();
