@@ -19,6 +19,7 @@ export default function PracticePage() {
     navigate,
     state,
   });
+  const isPromptMode = prompt.mode === 'lemon' || prompt.mode === 'topic';
 
   const canStart =
     prompt.mode === 'free' ||
@@ -46,7 +47,9 @@ export default function PracticePage() {
       state.isFixedScreen
         ? state.state === 'recording'
           ? 'h-[100dvh] flex flex-col overflow-hidden'
-          : 'min-h-screen flex flex-col pb-28 pt-2'
+          : isPromptMode
+            ? 'h-[100dvh] flex flex-col overflow-hidden pt-2 pb-4'
+            : 'min-h-screen flex flex-col pb-28 pt-2'
         : 'min-h-screen pb-32 pt-8'
     )}>
       {state.isFixedScreen && <div className="shrink-0 pt-6" />}
