@@ -1,14 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Navbar } from "@/components/Navbar";
 import { useServiceWorkerUpdate } from "@/contexts/ServiceWorkerUpdateContext";
 import { getRouteSeoConfig, seoDefaults } from "@/seo/routeSeo";
+import { getNavTabIndex, navTabs } from "@/lib/navTabs";
 import DashboardPage from "./pages/DashboardPage";
 import PracticePage from "./pages/PracticePage";
 import PromptsPage from "./pages/PromptsPage";
@@ -86,28 +87,83 @@ const RouteSeoManager = () => {
 
 const AppRoutes = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isPractice = location.pathname.startsWith('/practice');
   const { hasPendingUpdate, applyUpdateIfAvailable } = useServiceWorkerUpdate();
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
 
   useEffect(() => {
     if (!hasPendingUpdate || isPractice) return;
     void applyUpdateIfAvailable();
   }, [hasPendingUpdate, isPractice, applyUpdateIfAvailable]);
 
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (isPractice || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (isPractice || isSwipeAnimating) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start || event.changedTouches.length === 0) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (absX < 50) return;
+    if (absY > absX) return;
+
+    const direction = deltaX < 0 ? 'left' : 'right';
+    const currentIndex = getNavTabIndex(location.pathname);
+    if (currentIndex === -1) return;
+
+    const nextIndex = direction === 'left' ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0 || nextIndex >= navTabs.length) return;
+
+    const nextPath = navTabs[nextIndex].path;
+    if (nextPath === location.pathname) return;
+
+    setIsSwipeAnimating(true);
+    setSwipeDirection(direction);
+
+    window.setTimeout(() => {
+      navigate(nextPath);
+    }, 90);
+
+    window.setTimeout(() => {
+      setSwipeDirection(null);
+      setIsSwipeAnimating(false);
+    }, 220);
+  };
+
   return (
     <>
       <RouteSeoManager />
-      <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/practice" element={<PracticePage />} />
-        <Route path="/practice/free-speaking" element={<PracticePage />} />
-        <Route path="/prompts" element={<PromptsPage />} />
-        <Route path="/blog" element={<BlogListPage />} />
-        <Route path="/blog/:slug" element={<BlogPostPage />} />
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="/history" element={<Navigate to="/stats" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <div
+        className="page-swipe-container"
+        data-swipe={swipeDirection ?? undefined}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/practice" element={<PracticePage />} />
+          <Route path="/practice/free-speaking" element={<PracticePage />} />
+          <Route path="/prompts" element={<PromptsPage />} />
+          <Route path="/blog" element={<BlogListPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/history" element={<Navigate to="/stats" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
       {!isPractice && <Navbar />}
     </>
   );

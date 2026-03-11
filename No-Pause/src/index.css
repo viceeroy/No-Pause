@@ -220,6 +220,21 @@ body::before {
   box-shadow: 0 22px 38px -20px rgba(0, 0, 0, 0.82), 0 0 0 1px rgba(230, 140, 106, 0.14);
 }
 
+.page-swipe-container {
+  transition: transform 180ms ease, opacity 180ms ease;
+  will-change: transform, opacity;
+}
+
+.page-swipe-container[data-swipe="left"] {
+  transform: translateX(-14px);
+  opacity: 0.92;
+}
+
+.page-swipe-container[data-swipe="right"] {
+  transform: translateX(14px);
+  opacity: 0.92;
+}
+
 .btn-press {
   transition: transform 0.15s ease;
 }
