@@ -182,7 +182,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
               <p className="text-sm text-amber-200/90 font-sans">{transcriptionError}</p>
             )}
             {!transcriptionLoading && !transcriptionError && transcript && (
-              <p className="text-sm text-foreground font-sans leading-relaxed">{transcript}</p>
+              <p className="text-foreground font-sans leading-relaxed text-left">{transcript}</p>
             )}
             {!transcriptionLoading && !transcriptionError && !transcript && (
               <p className="text-sm text-muted-foreground font-sans">Transcription pending.</p>
@@ -196,16 +196,21 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
                 {analysisFeedback}
               </div>
             ) : (
-              <button
-                onClick={requestFeedback}
-                disabled={!transcript || analysisLoading || transcriptionLoading}
-                className={cn(
-                  'px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-sans font-bold btn-press shadow-soft night-glow',
-                  (!transcript || analysisLoading || transcriptionLoading) && 'opacity-50 cursor-not-allowed'
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={requestFeedback}
+                  disabled={!transcript || analysisLoading || transcriptionLoading}
+                  className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
+                >
+                  {analysisLoading ? 'Getting AI Feedback…' : 'Get AI Feedback'}
+                </button>
+                {!transcript && (
+                  <p className="mt-2 text-sm text-amber-200/90 font-sans">
+                    Wait for transcription to finish first.
+                  </p>
                 )}
-              >
-                {analysisLoading ? 'Analyzing...' : 'Get AI Feedback'}
-              </button>
+              </div>
             )}
           </div>
 
