@@ -254,7 +254,7 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="mb-8">
         <div
-          onClick={() => navigate('/practice?mode=reading')}
+          onClick={() => navigate('/practice?mode=voiceacting')}
           className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-6 md:p-8 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
         >
           <div className="flex justify-center mb-4">
@@ -264,8 +264,8 @@ export default function DashboardPage() {
               <BookOpen size={44} className="hidden md:block text-primary relative z-10" />
             </div>
           </div>
-          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Reading Challenge</h3>
-          <p className="text-sm md:text-base text-muted-foreground font-sans">Read aloud, get scored</p>
+          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Voice Acting</h3>
+          <p className="text-sm md:text-base text-muted-foreground font-sans">Perform a dramatic passage</p>
         </div>
       </div>
 

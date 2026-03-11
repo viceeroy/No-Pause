@@ -1,133 +1,59 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, Mic, Square, Play } from 'lucide-react';
+import { useConvex } from 'convex/react';
+import { api } from '@convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { micService } from '@/lib/micService';
 import { AudioAnalyzer, type AudioDataPayload } from '@/lib/speechAnalyzer';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
-import { readingSentences, shuffleSentences } from '@/lib/readingSentences';
+import { shufflePassages, voiceActingPassages, type VoiceActingPassage } from '@/lib/readingTexts';
 
-type ReadingPhase = 'idle' | 'reading' | 'done';
+type ReadingPhase = 'idle' | 'recording' | 'done';
 
 type ReadingChallengePanelProps = {
   onExit: () => void;
 };
 
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  onresult: ((event: any) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((event: any) => void) | null;
-};
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-
 export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
+  const convex = useConvex();
   const [phase, setPhase] = useState<ReadingPhase>('idle');
-  const [sentences, setSentences] = useState<string[]>(() => shuffleSentences(readingSentences));
+  const [passages, setPassages] = useState<VoiceActingPassage[]>(() => shufflePassages(voiceActingPassages));
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [liveTranscript, setLiveTranscript] = useState('');
+  const [transcript, setTranscript] = useState('');
+  const [transcriptionLoading, setTranscriptionLoading] = useState(false);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  const [analysisFeedback, setAnalysisFeedback] = useState<string | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [audioData, setAudioData] = useState<AudioDataPayload | null>(null);
   const [soundDetected, setSoundDetected] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const currentSentenceRef = useRef('');
-  const phaseRef = useRef<ReadingPhase>('idle');
+  const audioBlobRef = useRef<Blob | null>(null);
+  const audioMimeTypeRef = useRef<string | null>(null);
 
-  const currentSentence = sentences[currentIndex] || '';
-  useEffect(() => {
-    currentSentenceRef.current = currentSentence;
-  }, [currentSentence]);
-  useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
+  const currentPassage = useMemo(() => passages[currentIndex], [passages, currentIndex]);
 
-  const normalizeWords = (text: string) =>
-    text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .split(/\s+/)
-      .filter(Boolean);
-
-  const shouldAdvance = useCallback((spoken: string, target: string) => {
-    const spokenWords = new Set(normalizeWords(spoken));
-    const targetWords = normalizeWords(target);
-    if (targetWords.length === 0) return false;
-    let matched = 0;
-    for (const word of targetWords) {
-      if (spokenWords.has(word)) matched += 1;
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
     }
-    const ratio = matched / targetWords.length;
-    return ratio >= 0.6;
-  }, []);
-
-  const setupRecognition = useCallback(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setErrorMessage('Speech recognition is not supported in this browser.');
-      return null;
-    }
-    const recognition = new (SpeechRecognition as SpeechRecognitionConstructor)();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    recognition.onresult = (event) => {
-      let interim = '';
-      let final = '';
-      for (let i = 0; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          final += result[0].transcript + ' ';
-        } else {
-          interim += result[0].transcript;
-        }
-      }
-      const combined = `${final}${interim}`.trim();
-      setLiveTranscript(combined);
-      const targetSentence = currentSentenceRef.current;
-      if (shouldAdvance(combined, targetSentence)) {
-        setCompletedCount((count) => count + 1);
-        setCurrentIndex((prev) => {
-          const next = prev + 1;
-          if (next >= sentences.length) {
-            setPhase('done');
-            return prev;
-          }
-          return next;
-        });
-        setLiveTranscript('');
-      }
-    };
-    recognition.onerror = () => {
-      setErrorMessage('Speech recognition error. Try again.');
-    };
-    recognition.onend = () => {
-      if (phaseRef.current === 'reading') {
-        try {
-          recognition.start();
-        } catch {
-          // ignore restart errors
-        }
-      }
-    };
-    return recognition;
-  }, [currentSentence, phase, sentences.length, shouldAdvance]);
+    return btoa(binary);
+  };
 
   const startSession = useCallback(async () => {
     setErrorMessage(null);
-    setLiveTranscript('');
     setSoundDetected(false);
-    setPhase('reading');
-    setCompletedCount(0);
-    setCurrentIndex(0);
-    setSentences(shuffleSentences(readingSentences));
+    setPhase('recording');
+    setTranscript('');
+    setTranscriptionError(null);
+    setAnalysisFeedback(null);
+    setAnalysisLoading(false);
+    setTranscriptionLoading(false);
 
     try {
       await micService.init();
@@ -143,38 +69,67 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       analyzerRef.current = analyzer;
       await analyzer.start(micService.getStream() || undefined, micService.getAudioContext() || undefined);
     } catch (error) {
-      console.error('Failed to start reading session:', error);
+      console.error('Failed to start voice acting session:', error);
       setErrorMessage('Microphone error. Please try again.');
       setPhase('idle');
       return;
     }
+  }, []);
 
-    const recognition = setupRecognition();
-    if (recognition) {
-      recognitionRef.current = recognition;
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error('Failed to start recognition:', error);
-        setErrorMessage('Speech recognition could not start.');
-      }
-    }
-  }, [setupRecognition]);
-
-  const finishSession = useCallback(() => {
+  const finishSession = useCallback(async () => {
     setPhase('done');
-    try { recognitionRef.current?.stop(); } catch { }
-    recognitionRef.current = null;
     if (analyzerRef.current) {
+      const results = await analyzerRef.current.stop();
+      audioBlobRef.current = results.audioBlob || null;
+      audioMimeTypeRef.current = results.audioMimeType || null;
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
     micService.setTracksEnabled(false);
-  }, []);
+    setTranscriptionLoading(true);
+    setTranscriptionError(null);
+    if (audioBlobRef.current) {
+      try {
+        const base64Audio = arrayBufferToBase64(await audioBlobRef.current.arrayBuffer());
+        const mimeType = audioMimeTypeRef.current || audioBlobRef.current.type || 'audio/webm';
+        const text = await convex.action(api.transcribe.transcribeAudio, {
+          audioBase64: base64Audio,
+          mimeType,
+        });
+        setTranscript(text.trim());
+      } catch (error) {
+        const message =
+          error && typeof error === 'object' && 'message' in error
+            ? String((error as { message?: unknown }).message)
+            : 'Unknown error';
+        setTranscriptionError(`Transcription failed: ${message}`);
+      } finally {
+        setTranscriptionLoading(false);
+      }
+    } else {
+      setTranscriptionError('No audio captured. Please try again.');
+      setTranscriptionLoading(false);
+    }
+  }, [arrayBufferToBase64, convex]);
+
+  const requestFeedback = useCallback(async () => {
+    if (!transcript || analysisLoading) return;
+    setAnalysisLoading(true);
+    try {
+      const feedback = await convex.action(api.analyze.analyzeSpeech, {
+        transcript,
+        mode: 'voiceacting',
+      });
+      setAnalysisFeedback(feedback);
+    } catch (error) {
+      console.error('Failed to analyze transcript:', error);
+      setAnalysisFeedback('AI feedback unavailable.');
+    } finally {
+      setAnalysisLoading(false);
+    }
+  }, [analysisLoading, convex, transcript]);
 
   const handleExit = useCallback(() => {
-    try { recognitionRef.current?.stop(); } catch { }
-    recognitionRef.current = null;
     if (analyzerRef.current) {
       analyzerRef.current.destroy();
       analyzerRef.current = null;
@@ -185,19 +140,20 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
 
   const resetSession = useCallback(() => {
     setPhase('idle');
-    setLiveTranscript('');
-    setCompletedCount(0);
-    setCurrentIndex(0);
+    setTranscript('');
     setAudioData(null);
     setSoundDetected(false);
     setErrorMessage(null);
-    setSentences(shuffleSentences(readingSentences));
+    setTranscriptionError(null);
+    setTranscriptionLoading(false);
+    setAnalysisFeedback(null);
+    setAnalysisLoading(false);
+    setPassages(shufflePassages(voiceActingPassages));
+    setCurrentIndex(0);
   }, []);
 
   useEffect(() => {
     return () => {
-      try { recognitionRef.current?.stop(); } catch { }
-      recognitionRef.current = null;
       if (analyzerRef.current) {
         analyzerRef.current.destroy();
         analyzerRef.current = null;
@@ -213,15 +169,51 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           <ChevronLeft size={16} /> Back
         </button>
         <div className="text-center mt-16">
-          <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Reading Complete</h2>
-          <p className="text-muted-foreground font-sans mb-10">
-            You completed {completedCount} sentence{completedCount === 1 ? '' : 's'}.
+          <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Voice Acting Complete</h2>
+          <p className="text-muted-foreground font-sans mb-8">
+            Your performance is ready for feedback.
           </p>
+          <div className="max-w-2xl mx-auto text-left bg-surface-card border border-border/70 rounded-[28px] p-5 md:p-6 shadow-card mb-6">
+            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">Transcript</p>
+            {transcriptionLoading && (
+              <p className="text-sm text-muted-foreground font-sans">Transcribing...</p>
+            )}
+            {transcriptionError && (
+              <p className="text-sm text-amber-200/90 font-sans">{transcriptionError}</p>
+            )}
+            {!transcriptionLoading && !transcriptionError && transcript && (
+              <p className="text-sm text-foreground font-sans leading-relaxed">{transcript}</p>
+            )}
+            {!transcriptionLoading && !transcriptionError && !transcript && (
+              <p className="text-sm text-muted-foreground font-sans">Transcription pending.</p>
+            )}
+          </div>
+
+          <div className="max-w-2xl mx-auto text-left bg-surface-card border border-border/70 rounded-[28px] p-5 md:p-6 shadow-card mb-8">
+            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">AI Feedback</p>
+            {analysisFeedback ? (
+              <div className="text-sm text-foreground font-sans leading-relaxed whitespace-pre-wrap">
+                {analysisFeedback}
+              </div>
+            ) : (
+              <button
+                onClick={requestFeedback}
+                disabled={!transcript || analysisLoading || transcriptionLoading}
+                className={cn(
+                  'px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-sans font-bold btn-press shadow-soft night-glow',
+                  (!transcript || analysisLoading || transcriptionLoading) && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                {analysisLoading ? 'Analyzing...' : 'Get AI Feedback'}
+              </button>
+            )}
+          </div>
+
           <button
             onClick={resetSession}
-            className="px-10 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-lg btn-press shadow-soft night-glow"
+            className="px-10 py-4 rounded-full bg-surface-card border border-border text-foreground font-sans font-black text-lg btn-press shadow-card"
           >
-            Try Again
+            Perform Another Passage
           </button>
         </div>
       </div>
@@ -235,27 +227,30 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       </button>
 
       <div className="flex flex-col items-center">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl md:text-4xl font-serif text-foreground mb-2">Voice Acting</h1>
+          <p className="text-sm md:text-base text-muted-foreground font-sans">Perform the passage with emotion and clarity.</p>
+        </div>
         <div className="w-full text-center mb-6">
           <div className="p-6 md:p-8 bg-surface-card border-2 border-border/70 rounded-[32px] shadow-card">
-            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">Read this sentence</p>
-            <p className="text-2xl md:text-3xl font-serif text-foreground">{currentSentence}</p>
+            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-2">Voice Acting Passage</p>
+            <p className="text-xs text-muted-foreground font-sans mb-3">{currentPassage?.category}</p>
+            <p className="text-lg md:text-2xl font-serif text-foreground leading-relaxed">
+              {currentPassage?.text}
+            </p>
           </div>
-        </div>
-
-        <div className="w-full text-center mb-6">
-          <p className="text-sm md:text-base text-muted-foreground font-sans">{liveTranscript || 'Waiting for your voice...'}</p>
         </div>
 
         <div className="w-full flex-1 flex flex-col justify-center min-h-0 mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <div className={cn('w-2.5 h-2.5 rounded-full', soundDetected ? 'bg-primary animate-pulse shadow-[0_0_12px_rgba(230,140,106,0.65)]' : 'bg-muted-foreground/40')}></div>
             <p className="text-[10px] font-black text-muted-foreground font-sans uppercase tracking-[0.2em]">
-              {soundDetected ? 'Reading Active' : 'Waiting for sound'}
+              {soundDetected ? 'Voice Acting Active' : 'Waiting for sound'}
             </p>
           </div>
           <div className="relative h-32 md:h-44 flex items-center justify-center bg-surface-card border border-border/80 rounded-[40px] shadow-inner overflow-hidden">
             {audioData ? (
-              <VoiceVisualizer frequencyData={audioData.frequencyData} volume={audioData.volume} isSilent={audioData.isSilent} isRecording={phase === 'reading'} />
+              <VoiceVisualizer frequencyData={audioData.frequencyData} volume={audioData.volume} isSilent={audioData.isSilent} isRecording={phase === 'recording'} />
             ) : (
               <Mic size={40} className="text-muted-foreground/50 animate-pulse" />
             )}
@@ -267,7 +262,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
         )}
 
         <div className="shrink-0 pt-2">
-          {phase === 'reading' ? (
+          {phase === 'recording' ? (
             <button
               onClick={finishSession}
               className="w-full md:w-auto px-16 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-lg btn-press shadow-soft night-glow flex items-center justify-center gap-4"

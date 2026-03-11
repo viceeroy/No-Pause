@@ -196,6 +196,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         hesitationCount: lastResults.hesitationCount,
         speakingTime: lastResults.totalSpeakingTime,
         wordCount: lastResults.wordCount,
+        mode: lastResults.mode,
       });
       setLastResults((prev) => {
         if (!prev) return prev;
