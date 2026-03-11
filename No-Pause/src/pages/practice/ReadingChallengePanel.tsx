@@ -5,6 +5,7 @@ import { api } from '@convex/_generated/api';
 import { cn } from '@/lib/utils';
 import { createAudioAnalyzer } from '@/lib/audioRecording';
 import { micService } from '@/lib/micService';
+import { runPronunciationCheck } from '@/lib/pronunciationCheck';
 import type { AudioDataPayload } from '@/lib/speechAnalyzer';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
 import { shufflePassages, voiceActingPassages, type VoiceActingPassage } from '@/lib/readingTexts';
@@ -145,16 +146,18 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       transcript.length > 0 &&
       transcript !== 'No speech detected.' &&
       !transcript.startsWith('Transcription failed');
-    const wordCount = transcriptReady
-      ? transcript.trim().split(/\s+/).filter(Boolean).length
-      : 0;
-    const cheerMessage = wordCount >= 50
-      ? 'Incredible performance! You owned that stage!'
-      : wordCount >= 30
-        ? 'Great delivery! Your voice carried the moment!'
-        : wordCount >= 15
-          ? 'Nice read! Keep practicing for more impact!'
-          : 'Warming up! Try reading the full passage next time!';
+    const passageText = currentPassage?.text || '';
+    const pronunciation = transcriptReady
+      ? runPronunciationCheck(passageText, transcript)
+      : null;
+    const accuracy = pronunciation?.accuracy ?? 0;
+    const accuracyLabel = accuracy >= 95
+      ? 'Perfect Delivery! 🎭'
+      : accuracy >= 80
+        ? 'Great Performance! 🌟'
+        : accuracy >= 60
+          ? 'Good Effort! 👏'
+          : 'Keep Practicing! 🎤';
 
     return (
       <div className="min-h-screen pb-28 pt-2 px-5 md:px-12 lg:px-20 max-w-4xl mx-auto">
@@ -186,11 +189,33 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
             </div>
           </div>
 
-          {transcriptReady && (
+          {transcriptReady && pronunciation && (
             <div className="mb-16">
-              <div className="mx-auto max-w-2xl rounded-3xl bg-surface-card/60 px-6 py-6 text-center">
-                <div className="text-4xl mb-3">🎭</div>
-                <p className="text-lg font-sans font-bold text-foreground">{cheerMessage}</p>
+              <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left">
+                Pronunciation Check
+              </h3>
+              <div className="p-6 md:p-8 night-panel rounded-3xl">
+                <div className="flex flex-wrap gap-x-2 gap-y-2 text-left">
+                  {pronunciation.words.map((item, index) => (
+                    <span
+                      key={`${item.word}-${index}`}
+                      className={cn(
+                        'text-sm md:text-base font-sans font-semibold px-2 py-1 rounded-full',
+                        item.status === 'exact' && 'bg-emerald-500/15 text-emerald-200',
+                        item.status === 'close' && 'bg-amber-400/20 text-amber-200',
+                        item.status === 'missed' && 'bg-rose-500/20 text-rose-200'
+                      )}
+                    >
+                      {item.word}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-6 flex flex-col items-center">
+                  <p className="text-3xl md:text-4xl font-serif font-semibold text-primary">
+                    {accuracy}%
+                  </p>
+                  <p className="mt-2 text-base font-sans font-bold text-foreground">{accuracyLabel}</p>
+                </div>
               </div>
             </div>
           )}
