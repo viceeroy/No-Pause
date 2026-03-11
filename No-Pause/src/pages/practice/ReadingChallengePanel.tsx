@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, Mic, Square, Play } from 'lucide-react';
+import { ChevronLeft, FileText, MessageSquare, Mic, Play, Square } from 'lucide-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
+import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { micService } from '@/lib/micService';
 import { AudioAnalyzer, type AudioDataPayload } from '@/lib/speechAnalyzer';
@@ -163,6 +164,11 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   }, []);
 
   if (phase === 'done') {
+    const transcriptReady =
+      transcript.length > 0 &&
+      transcript !== 'No speech detected.' &&
+      !transcript.startsWith('Transcription failed');
+
     return (
       <div className="min-h-screen pb-28 pt-2 px-5 md:px-12 lg:px-20 max-w-4xl mx-auto">
         <button onClick={handleExit} className="flex items-center gap-1 text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors mb-8">
@@ -173,46 +179,58 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           <p className="text-muted-foreground font-sans mb-8">
             Your performance is ready for feedback.
           </p>
-          <div className="max-w-2xl mx-auto text-left bg-surface-card border border-border/70 rounded-[28px] p-5 md:p-6 shadow-card mb-6">
-            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">Transcript</p>
-            {transcriptionLoading && (
-              <p className="text-sm text-muted-foreground font-sans">Transcribing...</p>
-            )}
-            {transcriptionError && (
-              <p className="text-sm text-amber-200/90 font-sans">{transcriptionError}</p>
-            )}
-            {!transcriptionLoading && !transcriptionError && transcript && (
-              <p className="text-foreground font-sans leading-relaxed text-left">{transcript}</p>
-            )}
-            {!transcriptionLoading && !transcriptionError && !transcript && (
-              <p className="text-sm text-muted-foreground font-sans">Transcription pending.</p>
-            )}
-          </div>
-
-          <div className="max-w-2xl mx-auto text-left bg-surface-card border border-border/70 rounded-[28px] p-5 md:p-6 shadow-card mb-8">
-            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">AI Feedback</p>
-            {analysisFeedback ? (
-              <div className="text-sm text-foreground font-sans leading-relaxed whitespace-pre-wrap">
-                {analysisFeedback}
-              </div>
-            ) : (
-              <div className="mt-4 text-center">
+          <div className="mb-16">
+            <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+              <FileText size={20} className="text-primary" /> Speech Transcript
+            </h3>
+            <div className="p-8 night-panel rounded-3xl">
+              {transcriptionLoading && (
+                <p className="text-foreground font-sans leading-relaxed text-left">Transcribing…</p>
+              )}
+              {transcriptionError && (
+                <p className="text-sm text-amber-200/90 font-sans text-left">{transcriptionError}</p>
+              )}
+              {!transcriptionLoading && !transcriptionError && transcript && (
+                <p className="text-foreground font-sans leading-relaxed text-left">{transcript}</p>
+              )}
+              {!transcriptionLoading && !transcriptionError && !transcript && (
+                <p className="text-muted-foreground font-sans text-left">Transcription pending.</p>
+              )}
+            </div>
+            {!analysisFeedback && transcriptReady && (
+              <div className="mt-4">
                 <button
                   type="button"
                   onClick={requestFeedback}
-                  disabled={!transcript || analysisLoading || transcriptionLoading}
+                  disabled={analysisLoading}
                   className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
                 >
                   {analysisLoading ? 'Getting AI Feedback…' : 'Get AI Feedback'}
                 </button>
-                {!transcript && (
-                  <p className="mt-2 text-sm text-amber-200/90 font-sans">
-                    Wait for transcription to finish first.
-                  </p>
-                )}
               </div>
             )}
           </div>
+
+          {(analysisFeedback || analysisLoading) && (
+            <div className="mb-16">
+              <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
+                <MessageSquare size={20} className="text-primary" /> AI Feedback
+              </h3>
+              <div className="p-8 night-panel rounded-3xl">
+                {analysisLoading ? (
+                  <p className="text-foreground font-sans leading-relaxed text-left">
+                    Generating feedback…
+                  </p>
+                ) : (
+                  <div className="text-foreground font-sans leading-relaxed text-left">
+                    <ReactMarkdown>
+                      {analysisFeedback || 'AI feedback unavailable.'}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={resetSession}
