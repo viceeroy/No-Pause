@@ -8,6 +8,7 @@ export const transcribeAudio = action({
     audioBase64: v.string(),
     mimeType: v.string(),
     language: v.optional(v.string()),
+    durationSec: v.optional(v.number()),
   },
   handler: async (_ctx, args) => {
     try {
@@ -19,8 +20,15 @@ export const transcribeAudio = action({
       const safeMimeType = args.mimeType.split(";")[0] || "audio/webm";
       const audioBytes = Buffer.from(args.audioBase64, "base64");
       const MAX_BYTES = 15 * 1024 * 1024;
+      const MIN_BYTES = 5 * 1024;
       if (audioBytes.length === 0) {
         throw new Error("Audio payload is empty");
+      }
+      if (args.durationSec !== undefined && args.durationSec < 1) {
+        return "";
+      }
+      if (audioBytes.length < MIN_BYTES) {
+        return "";
       }
       if (audioBytes.length > MAX_BYTES) {
         throw new Error(`Audio payload too large: ${audioBytes.length} bytes`);
@@ -60,12 +68,30 @@ export const transcribeAudio = action({
       }
 
       const data = await response.json();
-      return (data?.text ?? "") as string;
+      const transcript = String(data?.text ?? "").trim();
+      if (!transcript) return "";
+      const normalized = transcript.toLowerCase().trim();
+      const HALLUCINATIONS = [
+        "thank you",
+        "thanks",
+        "you",
+        "bye",
+        "goodbye",
+        "please subscribe",
+        "thank you for watching",
+        "thanks for watching",
+        ".",
+        "..",
+        "...",
+      ];
+      if (HALLUCINATIONS.includes(normalized)) return "";
+      return transcript;
     } catch (error) {
       console.error("Groq transcription action failed", {
         message: error instanceof Error ? error.message : String(error),
         mimeType: args.mimeType,
         language: args.language ?? null,
+        durationSec: args.durationSec ?? null,
         base64Length: args.audioBase64.length,
       });
       throw error;

@@ -80,12 +80,14 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
 
   const finishSession = useCallback(async () => {
     setPhase('done');
+    let durationSec: number | undefined;
     if (analyzerRef.current) {
       const results = await analyzerRef.current.stop();
       audioBlobRef.current = results.audioBlob || null;
       audioMimeTypeRef.current = results.audioMimeType || null;
       setAudioBlob(results.audioBlob || null);
       setAudioMimeType(results.audioMimeType || null);
+      durationSec = Math.round((results.totalTime || 0) / 1000);
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
@@ -100,6 +102,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           audioBase64: base64Audio,
           mimeType,
           language: 'en',
+          durationSec,
         });
         setTranscript(text.trim());
       } catch (error) {
@@ -189,7 +192,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
                 <p className="text-amber-200/90 font-sans leading-relaxed text-left">{transcriptionError}</p>
               ) : (
                 <p className="text-foreground font-sans leading-relaxed text-left">
-                  {transcriptReady ? transcript : 'No transcript available yet.'}
+                  {transcriptReady ? transcript : 'No speech detected — try again.'}
                 </p>
               )}
             </div>

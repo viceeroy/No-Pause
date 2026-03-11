@@ -100,7 +100,7 @@ interface AudioAnalyzerOptions {
   onHesitation?: (duration: number, count: number) => void;
   onCalibrated?: (ambientNoise: number, thresholdSet: number) => void;
   onStartError?: (error: unknown) => void;
-  transcribeAudio?: (payload: { audioBase64: string; mimeType: string }) => Promise<string>;
+  transcribeAudio?: (payload: { audioBase64: string; mimeType: string; durationSec?: number }) => Promise<string>;
 }
 
 export interface AudioDataPayload {
@@ -156,7 +156,7 @@ export class AudioAnalyzer {
   private onHesitation: ((duration: number, count: number) => void) | null;
   private onCalibrated: ((ambientNoise: number, thresholdSet: number) => void) | null;
   private onStartError: ((error: unknown) => void) | null;
-  private transcribeAudio: ((payload: { audioBase64: string; mimeType: string }) => Promise<string>) | null;
+  private transcribeAudio: ((payload: { audioBase64: string; mimeType: string; durationSec?: number }) => Promise<string>) | null;
   private animationFrame: number | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private mediaRecorderMimeType = '';
@@ -1041,17 +1041,20 @@ export class AudioAnalyzer {
         }
 
         const base64Audio = arrayBufferToBase64(await audioBlob.arrayBuffer());
+        const durationSec = Math.round(totalRecordingTime / 1000);
         const groqTranscript = await (async () => {
           try {
             return await this.transcribeAudio!({
               audioBase64: base64Audio,
               mimeType: normalizedMimeType,
+              durationSec,
             });
           } catch (error) {
             debugWarn('[Transcript] Groq transcription failed, retrying once...', error);
             return await this.transcribeAudio!({
               audioBase64: base64Audio,
               mimeType: normalizedMimeType,
+              durationSec,
             });
           }
         })();

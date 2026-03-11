@@ -3,7 +3,7 @@ import { AudioAnalyzer, type AudioDataPayload } from '@/lib/speechAnalyzer';
 type CreateAudioAnalyzerOptions = {
   enableTranscription: boolean;
   hesitationMinDurationMs?: number;
-  transcribeAudio?: (payload: { audioBase64: string; mimeType: string }) => Promise<string>;
+  transcribeAudio?: (payload: { audioBase64: string; mimeType: string; durationSec?: number }) => Promise<string>;
   onData?: (data: AudioDataPayload) => void;
   onHesitation?: () => void;
   onCalibrated?: () => void;

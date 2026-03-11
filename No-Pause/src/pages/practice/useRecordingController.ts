@@ -246,6 +246,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const transcript = await convex.action(api.transcribe.transcribeAudio, {
         audioBase64: base64Audio,
         mimeType: lastResults.audioMimeType || 'audio/webm',
+        durationSec: lastResults.totalSessionTime,
       });
       setLastResults((prev) => {
         if (!prev) return prev;
