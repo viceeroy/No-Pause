@@ -80,8 +80,11 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       if (timerRef.current) clearInterval(timerRef.current);
 
-      const practiceMode = mode === 'free' ? 'free-speak' : mode;
-      const totalSessionTimeSec = Math.round(results.totalTime / 1000);
+      const normalizedMode = (mode || 'free').toLowerCase();
+      const practiceMode = normalizedMode === 'free' ? 'free-speak' : normalizedMode;
+      const recordedSeconds = Math.floor((Date.now() - (sessionDataRef.current?.startTime || Date.now())) / 1000);
+      const analyzerSeconds = Math.round(results.totalTime / 1000);
+      const totalSessionTimeSec = Math.max(analyzerSeconds, recordedSeconds);
 
       const transcriptHasSpeech = Boolean(results.transcript && results.transcript !== 'No speech detected.' && results.transcript.trim().length > 0);
       const hasSpeechEvidence = transcriptHasSpeech || results.hesitationCount > 0 || results.totalSpeakingTime > 0;
@@ -90,26 +93,26 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
 
       const scoreResult = AudioAnalyzer.calculateFlowScore(results.hesitationCount, {
-        mode,
+        mode: normalizedMode,
         speakingTimeSec: results.totalSpeakingTime,
         totalSessionTimeSec,
         hasSpeechEvidence,
       });
       const completed = scoreResult.isCompleted;
-      const flowScore = mode === 'free' ? 0 : scoreResult.score;
+      const flowScore = normalizedMode === 'free' ? 0 : scoreResult.score;
       const safeFlowScore = Number.isFinite(flowScore) ? flowScore : 0;
 
       let statusNote: string | undefined;
-      if (mode === 'free') {
+      if (normalizedMode === 'free') {
         statusNote = 'Free Speaking tracks stats only. Lemon and Topic give score when completed.';
       } else if (!scoreResult.isCompleted) {
         if (scoreResult.reason === 'duration') {
-          if (mode === 'lemon') {
+          if (normalizedMode === 'lemon') {
             statusNote = `Lemon requires ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session and ${toMMSS(LEMON_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
           } else {
             statusNote = `Topic requires ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session and ${toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
           }
-        } else if (mode === 'lemon') {
+        } else if (normalizedMode === 'lemon') {
           statusNote = `Lemon requires ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session and ${toMMSS(LEMON_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
         } else {
           statusNote = `Topic requires ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session and ${toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
@@ -146,7 +149,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             speakingTime: results.totalSpeakingTime,
             pauses: results.hesitationCount,
             words,
-            mode: mode || 'free',
+            mode: normalizedMode,
             flowScore: safeFlowScore,
             completed,
           }),

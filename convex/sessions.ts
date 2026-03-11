@@ -53,7 +53,8 @@ export const getUserStats = query({
       totalSessions === 0 ? 0 : totalPauses / totalSessions;
     const scoredSessions = sessions.filter((session) => {
       if (session.flowScore === undefined || session.flowScore <= 0) return false;
-      return session.mode === "lemon" || session.mode === "topic";
+      const mode = (session.mode || "").toLowerCase();
+      return mode === "lemon" || mode === "topic";
     });
     const totalSpeakingTime = scoredSessions.reduce(
       (sum, session) => sum + (session.speakingTime ?? 0),
@@ -99,7 +100,8 @@ export const getSessions = query({
 
     const scoredSessions = sessions.filter((session) => {
       if (session.flowScore === undefined || session.flowScore <= 0) return false;
-      return session.mode === "lemon" || session.mode === "topic";
+      const mode = (session.mode || "").toLowerCase();
+      return mode === "lemon" || mode === "topic";
     });
 
     scoredSessions.sort((a, b) => b.createdAt - a.createdAt);
