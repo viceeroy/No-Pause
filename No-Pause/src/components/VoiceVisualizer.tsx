@@ -11,6 +11,7 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const smoothedHeightsRef = useRef(new Array(32).fill(4));
+  const sizeRef = useRef({ width: 0, height: 0 });
   const frequencyDataRef = useRef(frequencyData);
   const volumeRef = useRef(volume);
   const isSilentRef = useRef(isSilent);
@@ -27,8 +28,11 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
     const dpr = window.devicePixelRatio || 1;
 
     const updateSize = () => {
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      sizeRef.current = { width, height };
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     updateSize();
@@ -53,21 +57,25 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
       ctx.fill();
     };
 
-    const animate = () => {
+    const animate = (time = 0) => {
       if (!canvas) return;
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
+      const { width: w, height: h } = sizeRef.current;
+      if (w === 0 || h === 0) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
       ctx.clearRect(0, 0, w, h);
 
       const centerX = w / 2;
       const centerY = h / 2;
+      const t = time / 1000;
 
       if (!isRecording) {
         const totalWidth = barCount * (barWidth + gap) - gap;
         const startX = centerX - totalWidth / 2;
         for (let i = 0; i < barCount; i++) {
-          const idleHeight = 4 + Math.sin(Date.now() / 1000 + i * 0.2) * 2;
-          smoothedHeightsRef.current[i] += (idleHeight - smoothedHeightsRef.current[i]) * 0.05;
+          const idleHeight = 4 + Math.sin(t * 2 + i * 0.2) * 2;
+          smoothedHeightsRef.current[i] += (idleHeight - smoothedHeightsRef.current[i]) * 0.08;
           const height = smoothedHeightsRef.current[i];
           const x = startX + i * (barWidth + gap);
           const y = centerY - height / 2;
@@ -89,14 +97,16 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
           const mid = barCount / 2;
           const distFromMid = Math.abs(i - mid);
           const freqIndex = Math.floor(distFromMid * 2);
-          const val = data[freqIndex] || 0;
+          const primary = data[freqIndex] ?? 0;
+          const secondary = data[freqIndex + 1] ?? primary;
+          const val = (primary + secondary) / 2;
           targetHeight = (val / 255) * h * 0.8;
-          if (targetHeight < 6) targetHeight = 6 + Math.random() * 2;
+          if (targetHeight < 6) targetHeight = 6;
         } else {
-          targetHeight = 4 + Math.sin(Date.now() / 500 + i * 0.5) * 3;
+          targetHeight = 4 + Math.sin(t * 4 + i * 0.5) * 3;
         }
 
-        const lerpSpeed = currentIsSilent ? 0.1 : 0.3;
+        const lerpSpeed = currentIsSilent ? 0.12 : 0.22;
         smoothedHeightsRef.current[i] += (targetHeight - smoothedHeightsRef.current[i]) * lerpSpeed;
         const height = smoothedHeightsRef.current[i];
         const x = startX + i * (barWidth + gap);
@@ -138,7 +148,7 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full"
+      className="w-full h-full waveform-canvas"
       style={{ width: '100%', height: '100%' }}
     />
   );

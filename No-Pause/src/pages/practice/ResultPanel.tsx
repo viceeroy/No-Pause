@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { VoicePlayer } from '@/components/VoicePlayer';
@@ -34,6 +35,7 @@ export function ResultPanel({
   copied,
   setCopied,
 }: ResultPanelProps) {
+  const navigate = useNavigate();
   const getScoreHeadline = (score: number) => {
     if (score >= 100) return 'Flawless Flow!';
     if (score >= 95) return 'Near Perfect!';
@@ -304,6 +306,15 @@ export function ResultPanel({
               <Share2 size={18} /> Share Results
             </span>
           )}
+        </button>
+      </div>
+      <div className="mt-4 flex justify-center">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300"
+        >
+          Home
         </button>
       </div>
     </div>

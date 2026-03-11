@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, FileText, Mic, Play, Square, Volume2 } from 'lucide-react';
 import { useConvex } from 'convex/react';
 import { api } from '@convex/_generated/api';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { createAudioAnalyzer } from '@/lib/audioRecording';
 import { micService } from '@/lib/micService';
@@ -18,6 +19,7 @@ type ReadingChallengePanelProps = {
 
 export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const convex = useConvex();
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<ReadingPhase>('idle');
   const [passages, setPassages] = useState<VoiceActingPassage[]>(() => shufflePassages(voiceActingPassages));
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -215,6 +217,15 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           >
             Perform Another Passage
           </button>
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="px-10 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300"
+            >
+              Home
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -125,6 +125,9 @@ body::before {
 
 .waveform-canvas {
   image-rendering: optimizeSpeed;
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout paint;
 }
 
 @keyframes pulse-ring {

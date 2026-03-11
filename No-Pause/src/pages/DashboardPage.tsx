@@ -207,7 +207,7 @@ export default function DashboardPage() {
       </Dialog>
 
       {/* Speaking Area */}
-      <div className="flex flex-col mb-14">
+      <div className="flex flex-col mb-4 md:mb-6">
         <div
           onClick={() => handleCardClick('free')}
           className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-8 md:p-12 mb-4 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
