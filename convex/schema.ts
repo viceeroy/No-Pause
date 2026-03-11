@@ -6,6 +6,7 @@ export default defineSchema({
     userId: v.string(),
     email: v.optional(v.string()),
     duration: v.number(),
+    speakingTime: v.optional(v.number()),
     pauses: v.number(),
     words: v.number(),
     mode: v.optional(v.string()),

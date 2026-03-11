@@ -117,7 +117,12 @@ export default function StatsPage() {
     mode: session.mode || 'free',
   }));
 
-  const hasAnySession = recentSessions.length > 0;
+  const scoredRecentSessions = recentSessions.filter((session) => {
+    if (session.flowScore <= 0) return false;
+    return session.mode === 'lemon' || session.mode === 'topic';
+  });
+
+  const hasAnySession = scoredRecentSessions.length > 0;
 
   const OverviewCard = ({ icon: Icon, label, value, sub }: {
     icon: React.ElementType;
@@ -311,7 +316,7 @@ export default function StatsPage() {
         <div className="mb-8">
           <h2 className="text-xl font-serif text-foreground mb-3">Recent Activity</h2>
           <div className="space-y-3">
-            {recentSessions.map((session) => {
+            {scoredRecentSessions.map((session) => {
               const modeLabel = session.mode === 'lemon'
                 ? 'Lemon'
                 : session.mode === 'topic'

@@ -6,6 +6,7 @@ export const saveSession = mutation({
     userId: v.string(),
     email: v.optional(v.string()),
     duration: v.number(),
+    speakingTime: v.optional(v.number()),
     pauses: v.number(),
     words: v.number(),
     mode: v.string(),
@@ -21,6 +22,7 @@ export const saveSession = mutation({
       userId: args.userId,
       email: args.email,
       duration: args.duration,
+      speakingTime: args.speakingTime,
       pauses: args.pauses,
       words: args.words,
       mode: args.mode,
@@ -46,17 +48,18 @@ export const getUserStats = query({
       .collect();
 
     const totalSessions = sessions.length;
-    const totalSpeakingTime = sessions.reduce(
-      (sum, session) => sum + session.duration,
-      0,
-    );
     const totalPauses = sessions.reduce((sum, session) => sum + session.pauses, 0);
     const averagePausesPerSession =
       totalSessions === 0 ? 0 : totalPauses / totalSessions;
-    const scoredSessions = sessions.filter((session) => session.completed === true);
-    const flowScoredSessions = scoredSessions.filter(
-      (session) => session.flowScore !== undefined && session.flowScore >= 0,
+    const scoredSessions = sessions.filter((session) => {
+      if (session.flowScore === undefined || session.flowScore <= 0) return false;
+      return session.mode === "lemon" || session.mode === "topic";
+    });
+    const totalSpeakingTime = scoredSessions.reduce(
+      (sum, session) => sum + (session.speakingTime ?? 0),
+      0,
     );
+    const flowScoredSessions = scoredSessions;
     // Duration-weighted average: longer sessions carry more weight,
     // capped at 300s (5 min) to prevent outlier dominance.
     const MAX_WEIGHT = 300;
@@ -94,7 +97,12 @@ export const getSessions = query({
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
-    sessions.sort((a, b) => b.createdAt - a.createdAt);
-    return sessions.slice(0, 20);
+    const scoredSessions = sessions.filter((session) => {
+      if (session.flowScore === undefined || session.flowScore <= 0) return false;
+      return session.mode === "lemon" || session.mode === "topic";
+    });
+
+    scoredSessions.sort((a, b) => b.createdAt - a.createdAt);
+    return scoredSessions.slice(0, 20);
   },
 });

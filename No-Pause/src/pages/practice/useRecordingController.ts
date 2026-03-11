@@ -143,6 +143,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             userId: userId!,
             email: user?.primaryEmailAddress?.emailAddress,
             duration,
+            speakingTime: results.totalSpeakingTime,
             pauses: results.hesitationCount,
             words,
             mode: mode || 'free',
