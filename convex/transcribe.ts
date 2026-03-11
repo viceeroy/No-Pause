@@ -7,6 +7,7 @@ export const transcribeAudio = action({
   args: {
     audioBase64: v.string(),
     mimeType: v.string(),
+    language: v.optional(v.string()),
   },
   handler: async (_ctx, args) => {
     try {
@@ -41,6 +42,9 @@ export const transcribeAudio = action({
       const formData = new FormData();
       formData.append("file", audioBlob, `recording.${fileExt}`);
       formData.append("model", "whisper-large-v3-turbo");
+      if (args.language) {
+        formData.append("language", args.language);
+      }
 
       const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
         method: "POST",
@@ -61,6 +65,7 @@ export const transcribeAudio = action({
       console.error("Groq transcription action failed", {
         message: error instanceof Error ? error.message : String(error),
         mimeType: args.mimeType,
+        language: args.language ?? null,
         base64Length: args.audioBase64.length,
       });
       throw error;

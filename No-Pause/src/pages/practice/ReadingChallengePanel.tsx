@@ -97,6 +97,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
         const text = await convex.action(api.transcribe.transcribeAudio, {
           audioBase64: base64Audio,
           mimeType,
+          language: 'en',
         });
         setTranscript(text.trim());
       } catch (error) {
