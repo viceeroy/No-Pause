@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, FileText, Mic, Play, Square, Volume2 } from 'lucide-react';
-import { useConvex } from 'convex/react';
+import { useConvex, useMutation } from 'convex/react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { api } from '@convex/_generated/api';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,10 @@ type ReadingChallengePanelProps = {
 };
 
 export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
+  const { userId } = useAuth();
+  const { user } = useUser();
   const convex = useConvex();
+  const saveSession = useMutation(api.sessions.saveSession);
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ReadingPhase>('idle');
   const [passages, setPassages] = useState<ReadingChallengePassage[]>(() => shufflePassages(readingChallengePassages));
@@ -81,8 +85,12 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const finishSession = useCallback(async () => {
     setPhase('done');
     let durationSec: number | undefined;
+    let speakingTimeSec = 0;
+    let hesitationCount = 0;
     if (analyzerRef.current) {
       const results = await analyzerRef.current.stop();
+      speakingTimeSec = results.totalSpeakingTime || 0;
+      hesitationCount = results.hesitationCount || 0;
       audioBlobRef.current = results.audioBlob || null;
       audioMimeTypeRef.current = results.audioMimeType || null;
       setAudioBlob(results.audioBlob || null);
@@ -94,6 +102,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     micService.setTracksEnabled(false);
     setTranscriptionLoading(true);
     setTranscriptionError(null);
+    let transcriptText = '';
     if (audioBlobRef.current) {
       try {
         const base64Audio = arrayBufferToBase64(await audioBlobRef.current.arrayBuffer());
@@ -104,7 +113,8 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           language: 'en',
           durationSec,
         });
-        setTranscript(text.trim());
+        transcriptText = text.trim();
+        setTranscript(transcriptText);
       } catch (error) {
         const message =
           error && typeof error === 'object' && 'message' in error
@@ -118,7 +128,28 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       setTranscriptionError('No audio captured. Please try again.');
       setTranscriptionLoading(false);
     }
-  }, [arrayBufferToBase64, convex]);
+
+    if (userId && durationSec !== undefined) {
+      const transcriptWordCount = transcriptText.length > 0 ? transcriptText.split(/\s+/).length : 0;
+      const estimatedWordCount = Math.max(0, Math.round(speakingTimeSec * 2.2));
+      const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
+      try {
+        await saveSession({
+          userId,
+          email: user?.primaryEmailAddress?.emailAddress,
+          duration: durationSec,
+          speakingTime: speakingTimeSec,
+          pauses: hesitationCount,
+          words,
+          mode: 'readingchallenge',
+          flowScore: null,
+          completed: true,
+        });
+      } catch (error) {
+        console.error('Failed to sync reading challenge session to Convex:', error);
+      }
+    }
+  }, [arrayBufferToBase64, convex, saveSession, user?.primaryEmailAddress?.emailAddress, userId]);
 
   const handleExit = useCallback(() => {
     if (analyzerRef.current) {

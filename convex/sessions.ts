@@ -10,7 +10,7 @@ export const saveSession = mutation({
     pauses: v.number(),
     words: v.number(),
     mode: v.string(),
-    flowScore: v.optional(v.number()),
+    flowScore: v.optional(v.union(v.number(), v.null())),
     completed: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -55,12 +55,12 @@ export const getUserStats = query({
       const mode = (session.mode || "").toLowerCase();
       return mode === "lemon" || mode === "topic";
     });
-    const scoredSessions = statsSessions.filter((session) => session.flowScore != null);
+    const scoredSessions = statsSessions.filter((session) => (session.flowScore ?? 0) > 0);
     const totalSpeakingTime = sessions.reduce(
       (sum, session) => sum + (session.duration ?? 0),
       0,
     );
-    const flowScoredSessions = statsSessions;
+    const flowScoredSessions = scoredSessions;
     // Duration-weighted average: longer sessions carry more weight,
     // capped at 300s (5 min) to prevent outlier dominance.
     const MAX_WEIGHT = 300;
@@ -98,12 +98,7 @@ export const getSessions = query({
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
-    const recentSessions = sessions.filter((session) => {
-      const mode = (session.mode || "").toLowerCase();
-      return mode === "lemon" || mode === "topic";
-    });
-
-    recentSessions.sort((a, b) => b.createdAt - a.createdAt);
-    return recentSessions.slice(0, 20);
+    sessions.sort((a, b) => b.createdAt - a.createdAt);
+    return sessions.slice(0, 20);
   },
 });

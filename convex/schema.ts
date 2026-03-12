@@ -10,7 +10,7 @@ export default defineSchema({
     pauses: v.number(),
     words: v.number(),
     mode: v.optional(v.string()),
-    flowScore: v.optional(v.number()),
+    flowScore: v.optional(v.union(v.number(), v.null())),
     completed: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),

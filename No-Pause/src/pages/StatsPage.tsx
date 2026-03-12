@@ -108,12 +108,21 @@ export default function StatsPage() {
   const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
   const backendBestStreak = remoteStreak?.bestStreak ?? 0;
 
+  const shouldShowScore = (mode: string, score: number | null | undefined) => {
+    const normalizedMode = (mode || '').toLowerCase();
+    if (normalizedMode === 'free' || normalizedMode === 'readingchallenge') return false;
+    if (normalizedMode === 'lemon' || normalizedMode === 'topic') {
+      return score !== null && score !== undefined && score > 0;
+    }
+    return false;
+  };
+
   const recentSessions = (remoteRecentSessions ?? []).map((session) => ({
     id: session._id,
     created_at: new Date(session.createdAt).toISOString(),
     duration: session.duration,
     hesitationCount: session.pauses,
-    flowScore: session.flowScore ?? 0,
+    flowScore: session.flowScore ?? null,
     mode: session.mode || 'free',
   }));
 
@@ -316,7 +325,9 @@ export default function StatsPage() {
                 ? 'Lemon'
                 : session.mode === 'topic'
                   ? 'Topic'
-                  : 'Free';
+                  : session.mode === 'readingchallenge'
+                    ? 'Reading Challenge'
+                    : 'Free';
               return (
                 <div key={session.id || session.created_at} className="rounded-2xl bg-surface-elevated border border-border shadow-card p-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -325,10 +336,12 @@ export default function StatsPage() {
                       {formatDate(session.created_at)} • {formatDuration(session.duration || 0)} • {session.hesitationCount || 0} hesitations
                     </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xl font-serif text-primary">{session.flowScore ?? 0}</p>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-sans">Flow</p>
-                  </div>
+                  {shouldShowScore(session.mode, session.flowScore) ? (
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xl font-serif text-primary">{session.flowScore}</p>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-sans">Flow</p>
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
