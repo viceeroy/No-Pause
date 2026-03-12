@@ -23,7 +23,7 @@ export default function PracticePage() {
 
   const canStart =
     prompt.mode === 'free' ||
-    prompt.mode === 'voiceacting' ||
+    prompt.mode === 'readingchallenge' ||
     (prompt.mode === 'lemon' ? !!state.lemonPrompt : !!state.topicPrompt);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function PracticePage() {
     };
   }, [state.state]);
 
-  if (prompt.mode === 'voiceacting') {
+  if (prompt.mode === 'readingchallenge') {
     return <ReadingChallengePanel onExit={() => navigate('/')} />;
   }
 

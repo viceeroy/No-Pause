@@ -1,10 +1,10 @@
-export type VoiceActingPassage = {
+export type ReadingChallengePassage = {
   id: string;
   category: 'Motivational speeches' | 'Movie monologue style' | 'Storytelling passages' | 'Famous quotes expanded';
   text: string;
 };
 
-export const voiceActingPassages: VoiceActingPassage[] = [
+export const readingChallengePassages: ReadingChallengePassage[] = [
   {
     id: 'motivation-stand-up',
     category: 'Motivational speeches',
@@ -79,7 +79,7 @@ export const voiceActingPassages: VoiceActingPassage[] = [
   },
 ];
 
-export const shufflePassages = (input: VoiceActingPassage[]) => {
+export const shufflePassages = (input: ReadingChallengePassage[]) => {
   const array = [...input];
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));

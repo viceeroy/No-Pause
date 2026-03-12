@@ -9,7 +9,7 @@ import { micService } from '@/lib/micService';
 import type { AudioDataPayload } from '@/lib/speechAnalyzer';
 import { VoicePlayer } from '@/components/VoicePlayer';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
-import { shufflePassages, voiceActingPassages, type VoiceActingPassage } from '@/lib/readingTexts';
+import { shufflePassages, readingChallengePassages, type ReadingChallengePassage } from '@/lib/readingTexts';
 
 type ReadingPhase = 'idle' | 'recording' | 'done';
 
@@ -21,7 +21,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const convex = useConvex();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ReadingPhase>('idle');
-  const [passages, setPassages] = useState<VoiceActingPassage[]>(() => shufflePassages(voiceActingPassages));
+  const [passages, setPassages] = useState<ReadingChallengePassage[]>(() => shufflePassages(readingChallengePassages));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
@@ -71,7 +71,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       analyzerRef.current = analyzer;
       await analyzer.start(micService.getStream() || undefined, micService.getAudioContext() || undefined);
     } catch (error) {
-      console.error('Failed to start voice acting session:', error);
+      console.error('Failed to start reading challenge session:', error);
       setErrorMessage('Microphone error. Please try again.');
       setPhase('idle');
       return;
@@ -139,7 +139,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setErrorMessage(null);
     setTranscriptionError(null);
     setTranscriptionLoading(false);
-    setPassages(shufflePassages(voiceActingPassages));
+    setPassages(shufflePassages(readingChallengePassages));
     setCurrentIndex(0);
   }, []);
 
@@ -166,7 +166,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           <ChevronLeft size={16} /> Back
         </button>
         <div className="text-center mt-16">
-          <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Voice Acting Complete</h2>
+          <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Reading Challenge Complete</h2>
           <p className="text-muted-foreground font-sans mb-8">
             Your performance is ready for feedback.
           </p>
@@ -213,7 +213,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
               )}
             </div>
             <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
-              💡 Voice Acting is for reading practice — no flow score is awarded in this mode.
+              💡 Reading Challenge is for reading practice — no flow score is awarded in this mode.
             </p>
           </div>
 
@@ -222,7 +222,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
               onClick={resetSession}
               className="px-10 py-4 rounded-full bg-surface-card border border-border text-foreground font-sans font-black text-lg btn-press shadow-card"
             >
-              Perform Another Passage
+              Read Another Passage
             </button>
             <button
               type="button"
@@ -245,12 +245,12 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
 
       <div className="flex flex-col items-center">
         <div className="text-center mb-6">
-          <h1 className="text-3xl md:text-4xl font-serif text-foreground mb-2">Voice Acting</h1>
-          <p className="text-sm md:text-base text-muted-foreground font-sans">Perform the passage with emotion and clarity.</p>
+          <h1 className="text-3xl md:text-4xl font-serif text-foreground mb-2">Reading Challenge</h1>
+          <p className="text-sm md:text-base text-muted-foreground font-sans">Read the passage with emotion and clarity.</p>
         </div>
         <div className="w-full text-center mb-6">
           <div className="p-6 md:p-8 bg-surface-card border-2 border-border/70 rounded-[32px] shadow-card">
-            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-2">Voice Acting Passage</p>
+            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-2">Reading Challenge Passage</p>
             <p className="text-xs text-muted-foreground font-sans mb-3">{currentPassage?.category}</p>
             <p className="text-lg md:text-2xl font-serif text-foreground leading-relaxed">
               {currentPassage?.text}
@@ -262,7 +262,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           <div className="flex items-center justify-center gap-2 mb-3">
             <div className={cn('w-2.5 h-2.5 rounded-full', soundDetected ? 'bg-primary animate-pulse shadow-[0_0_12px_rgba(230,140,106,0.65)]' : 'bg-muted-foreground/40')}></div>
             <p className="text-[10px] font-black text-muted-foreground font-sans uppercase tracking-[0.2em]">
-              {soundDetected ? 'Voice Acting Active' : 'Waiting for sound'}
+              {soundDetected ? 'Reading Challenge Active' : 'Waiting for sound'}
             </p>
           </div>
           <div className="relative h-32 md:h-44 flex items-center justify-center bg-surface-card border border-border/80 rounded-[40px] shadow-inner overflow-hidden">

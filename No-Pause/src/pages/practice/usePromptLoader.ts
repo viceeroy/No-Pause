@@ -45,7 +45,10 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
   const frozenModeRef = useRef<string | null>(null);
   if (!frozenModeRef.current) {
     const rawMode = isFreeSpeakingRoute ? 'free' : (searchParams.get('mode') || 'free');
-    frozenModeRef.current = rawMode === 'reading' ? 'voiceacting' : rawMode;
+    frozenModeRef.current =
+      rawMode === 'reading' || rawMode === 'voiceacting'
+        ? 'readingchallenge'
+        : rawMode;
   }
   const mode = frozenModeRef.current ?? 'free';
   const word = searchParams.get('word');
@@ -192,7 +195,7 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
       case 'free': return 'Free Speaking';
       case 'lemon': return 'Lemon Technique';
       case 'topic': return 'Topic Score';
-      case 'voiceacting': return 'Voice Acting';
+      case 'readingchallenge': return 'Reading Challenge';
       default: return 'Practice';
     }
   }, [mode]);
@@ -205,8 +208,8 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
         return `Speak about "${lemonPrompt?.word || ''}" for a ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session`;
       case 'topic':
         return `Respond to the topic for a ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session`;
-      case 'voiceacting':
-        return 'Perform a dramatic passage with emotion and clarity';
+      case 'readingchallenge':
+        return 'Read a passage with emotion and clarity';
       default:
         return 'Speaking practice';
     }
