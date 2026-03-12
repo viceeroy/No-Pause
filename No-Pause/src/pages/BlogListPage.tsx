@@ -38,7 +38,6 @@ export default function BlogListPage() {
       <section className="space-y-4" aria-label="Blog posts">
         {blogPosts.map((post) => {
           const Icon = getPostIcon(post.slug);
-          const readTime = estimateReadTime(post);
           return (
             <Link key={post.slug} to={`/blog/${post.slug}`} className="block">
               <article className="rounded-2xl bg-surface-elevated border border-border shadow-card p-6 card-hover cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
@@ -46,9 +45,6 @@ export default function BlogListPage() {
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface-card text-primary">
                     <Icon size={18} />
                   </div>
-                  <span className="inline-flex items-center rounded-full border border-primary/40 bg-primary/15 px-3 py-1 text-[11px] font-sans font-semibold uppercase tracking-[0.14em] text-primary">
-                    {readTime} min read
-                  </span>
                 </div>
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-sans mb-2">
                 {new Date(post.date).toLocaleDateString('en-US', {
@@ -60,12 +56,6 @@ export default function BlogListPage() {
               <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-3">{post.title}</h2>
               <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed mb-5">
                 {post.description}
-              </p>
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-1.5">
-                1-2 minute read
-              </p>
-              <p className="text-xs text-muted-foreground/85 font-sans">
-                Includes short answer, key points, and a practical takeaway.
               </p>
               </article>
             </Link>
