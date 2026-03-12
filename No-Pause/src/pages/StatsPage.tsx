@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
-import { useConvex, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { storage } from '@/lib/storage';
 import { cn } from '@/lib/utils';
@@ -64,39 +64,9 @@ export default function StatsPage() {
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
-  const convex = useConvex();
-  const [remoteStats, setRemoteStats] = useState<any | undefined>(undefined);
+  const remoteStats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
+  const remoteRecentSessions = useQuery(api.sessions.getSessions, userId ? { userId } : 'skip');
   const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
-  const [remoteRecentSessions, setRemoteRecentSessions] = useState<any[] | null | undefined>(undefined);
-
-  useEffect(() => {
-    if (userId) {
-      setRemoteStats(undefined);
-      setRemoteRecentSessions(undefined);
-      const fetchConvexData = async () => {
-        try {
-          const stats = await convex.query(api.sessions.getUserStats, { userId });
-          setRemoteStats(stats);
-        } catch (error) {
-          console.warn('Convex getUserStats failed, using zeroed stats:', error);
-          setRemoteStats(null);
-        }
-
-        try {
-          const sessionsCall = await convex.query(api.sessions.getSessions, { userId });
-          setRemoteRecentSessions(sessionsCall);
-        } catch (error) {
-          console.warn('Convex getSessions failed, showing empty history:', error);
-          setRemoteRecentSessions(null);
-        }
-      };
-
-      fetchConvexData();
-    } else {
-      setRemoteStats(null);
-      setRemoteRecentSessions(null);
-    }
-  }, [userId, convex]);
 
   const isRemoteStatsLoading = remoteStats === undefined;
   const isRemoteStreakLoading = userId ? remoteStreak === undefined : false;
