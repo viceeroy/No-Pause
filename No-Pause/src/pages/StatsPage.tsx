@@ -56,13 +56,15 @@ export default function StatsPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const { userId } = useAuth();
+  const { userId, isLoaded } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
     () => storage.getPreferences().pauseThresholdLevel
   );
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
+
+  if (!isLoaded) return null;
 
   const remoteStats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
   const remoteRecentSessions = useQuery(api.sessions.getSessions, userId ? { userId } : 'skip');
