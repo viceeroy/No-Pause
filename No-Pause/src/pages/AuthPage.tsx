@@ -66,15 +66,16 @@ const AuthPage = () => {
             footer: "hidden",
             footerAction: "hidden",
             card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-0",
-            rootBox: "w-full",
+            rootBox: "w-full max-w-full",
             headerTitle: "hidden",
             headerSubtitle: "hidden",
             formFieldRow: "hidden",
             formButtonPrimary: "hidden",
             dividerRow: "hidden",
             socialButtonsBlockButton:
-              "w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-full transition-all min-h-[52px] h-14 shadow-sm hover:shadow-md",
-            socialButtonsBlockButtonText: "font-sans font-semibold text-base text-foreground",
+              "w-full max-w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-full transition-all min-h-[48px] h-12 md:h-14 shadow-sm hover:shadow-md px-4",
+            socialButtonsBlockButtonText:
+              "font-sans font-semibold text-base text-foreground whitespace-normal text-center",
           },
         }}
       />
@@ -137,7 +138,7 @@ const AuthPage = () => {
         </div>
 
         <div className="w-full max-w-md md:max-w-none md:w-[560px] relative z-10 px-4 md:px-0">
-          <div className="rounded-[24px] border border-border bg-surface-elevated/80 p-6 md:p-8 shadow-card elevation-card">
+          <div className="rounded-[24px] border border-border bg-surface-elevated/80 p-6 md:p-8 shadow-card elevation-card overflow-hidden">
             {AuthCard}
             <hr className="border-border my-6 md:my-8" />
             {SignInBlock}
@@ -224,7 +225,7 @@ const AuthPage = () => {
         </div>
 
         <div className="rounded-[24px] border border-border bg-surface-elevated/80 p-6 md:p-8 shadow-card elevation-card">
-          <div className={cn(step === 4 ? "min-h-0" : "min-h-[360px] md:min-h-[420px]", "flex flex-col")}>
+            <div className={cn(step === 4 ? "min-h-0" : "min-h-[360px] md:min-h-[420px]", "flex flex-col")}>
             <div className="flex-1">
               <div className={cn("transition-all duration-300", step === 1 ? "opacity-100" : "opacity-0 hidden")}>
                 <div className="text-center mb-6">
