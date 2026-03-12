@@ -207,7 +207,7 @@ export function ResultPanel({
                 type="button"
                 onClick={() => requestTranscription()}
                 disabled={lastResults.transcriptionLoading}
-                className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
+                className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press transition-all duration-300 disabled:opacity-60"
               >
                 {lastResults.transcriptionLoading ? 'Transcribing…' : (lastResults.transcriptionError ? 'Retry Transcription' : 'Transcribe')}
               </button>
@@ -244,7 +244,7 @@ export function ResultPanel({
                   type="button"
                   onClick={() => requestFeedback()}
                   disabled={lastResults.analysisFeedbackLoading}
-                  className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300 disabled:opacity-60"
+                  className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press transition-all duration-300 disabled:opacity-60"
                 >
                   {lastResults.analysisFeedbackLoading
                     ? 'Getting AI Feedback…'
@@ -284,7 +284,7 @@ export function ResultPanel({
 
 
       <div className="flex flex-wrap justify-center gap-4">
-        <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-semibold btn-press night-glow">
+        <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press night-glow">
           Practice Again
         </button>
         <button onClick={async () => {
@@ -311,7 +311,7 @@ export function ResultPanel({
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }
-        }} className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press flex items-center gap-2 justify-center transition-all duration-300">
+        }} className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press flex items-center gap-2 justify-center transition-all duration-300">
           {copied ? (
             <span className="flex items-center gap-2 animate-scale-in">
               <Check size={18} className="text-green-400" /> Copied!
@@ -325,7 +325,7 @@ export function ResultPanel({
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300"
+          className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press transition-all duration-300"
         >
           Home
         </button>

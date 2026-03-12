@@ -102,11 +102,12 @@ export default function StatsPage() {
 
   const hasAnySession = recentSessions.length > 0;
 
-  const OverviewCard = ({ icon: Icon, label, value, sub }: {
+  const OverviewCard = ({ icon: Icon, label, value, sub, valueClassName }: {
     icon: React.ElementType;
     label: string;
     value: string | number;
     sub?: string;
+    valueClassName?: string;
   }) => (
     <div className="rounded-[20px] border shadow-card elevation-card p-4 md:p-5 min-h-[112px]">
       <div className="flex items-start justify-between mb-2">
@@ -115,7 +116,7 @@ export default function StatsPage() {
           <Icon size={14} className="text-primary" />
         </div>
       </div>
-      <p className="text-2xl md:text-3xl font-serif font-medium text-foreground leading-none">{value}</p>
+      <p className={cn('text-2xl md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
     </div>
   );
@@ -239,7 +240,12 @@ export default function StatsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
         <OverviewCard icon={Flame} label="Current Streak" value={isRemoteStreakLoading ? '...' : `${backendCurrentStreak}/${backendBestStreak}`} />
         <OverviewCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendScoredSessions} />
-        <OverviewCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatDuration(backendTotalPracticeTime)} />
+        <OverviewCard
+          icon={Clock}
+          label="Practice Time"
+          value={isRemoteStatsLoading ? '...' : formatDuration(backendTotalPracticeTime)}
+          valueClassName="font-sans font-semibold"
+        />
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : backendAvgFlowScore} />
       </div>
 
