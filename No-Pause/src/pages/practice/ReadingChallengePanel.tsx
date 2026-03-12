@@ -37,6 +37,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
+  const sessionStartRef = useRef<number | null>(null);
   const audioBlobRef = useRef<Blob | null>(null);
   const audioMimeTypeRef = useRef<string | null>(null);
 
@@ -60,6 +61,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setTranscript('');
     setTranscriptionError(null);
     setTranscriptionLoading(false);
+    sessionStartRef.current = Date.now();
 
     try {
       await micService.init();
@@ -82,9 +84,9 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     }
   }, []);
 
-  const finishSession = useCallback(async () => {
+  const finishSession = useCallback(async (sessionCompletedNaturally = true) => {
     setPhase('done');
-    let durationSec: number | undefined;
+    let durationSec = Math.floor((Date.now() - (sessionStartRef.current ?? Date.now())) / 1000);
     let speakingTimeSec = 0;
     let hesitationCount = 0;
     if (analyzerRef.current) {
@@ -95,7 +97,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       audioMimeTypeRef.current = results.audioMimeType || null;
       setAudioBlob(results.audioBlob || null);
       setAudioMimeType(results.audioMimeType || null);
-      durationSec = Math.round((results.totalTime || 0) / 1000);
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
@@ -129,7 +130,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       setTranscriptionLoading(false);
     }
 
-    if (userId && durationSec !== undefined) {
+    if (userId) {
       const transcriptWordCount = transcriptText.length > 0 ? transcriptText.split(/\s+/).length : 0;
       const estimatedWordCount = Math.max(0, Math.round(speakingTimeSec * 2.2));
       const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
@@ -143,22 +144,29 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           words,
           mode: 'readingchallenge',
           flowScore: null,
-          completed: true,
+          completed: sessionCompletedNaturally,
         });
       } catch (error) {
         console.error('Failed to sync reading challenge session to Convex:', error);
       }
     }
+    sessionStartRef.current = null;
   }, [arrayBufferToBase64, convex, saveSession, user?.primaryEmailAddress?.emailAddress, userId]);
 
-  const handleExit = useCallback(() => {
+  const handleExit = useCallback(async () => {
+    if (phase === 'recording') {
+      await finishSession(false);
+      onExit();
+      return;
+    }
     if (analyzerRef.current) {
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
+    sessionStartRef.current = null;
     micService.setTracksEnabled(false);
     onExit();
-  }, [onExit]);
+  }, [finishSession, onExit, phase]);
 
   const resetSession = useCallback(() => {
     setPhase('idle');
@@ -170,6 +178,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setErrorMessage(null);
     setTranscriptionError(null);
     setTranscriptionLoading(false);
+    sessionStartRef.current = null;
     setPassages(shufflePassages(readingChallengePassages));
     setCurrentIndex(0);
   }, []);
@@ -180,6 +189,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
         analyzerRef.current.destroy();
         analyzerRef.current = null;
       }
+      sessionStartRef.current = null;
       micService.setTracksEnabled(false);
     };
   }, []);

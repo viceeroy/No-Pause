@@ -87,6 +87,7 @@ export const getUserStats = query({
 export const getSessions = query({
   args: {
     userId: v.string(),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -99,6 +100,57 @@ export const getSessions = query({
       .collect();
 
     sessions.sort((a, b) => b.createdAt - a.createdAt);
-    return sessions.slice(0, 20);
+    return sessions.slice(0, args.limit ?? 15);
+  },
+});
+
+export const getModeBreakdown = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    if (identity.subject !== args.userId) throw new Error("Forbidden");
+
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const modes = ["free", "lemon", "topic", "readingchallenge"];
+    const breakdown = modes.map((mode) => {
+      const modeSessions = sessions.filter(
+        (session) => (session.mode || "").toLowerCase() === mode,
+      );
+      const totalSessions = modeSessions.length;
+      const totalDuration = modeSessions.reduce(
+        (sum, session) => sum + (session.duration ?? 0),
+        0,
+      );
+      const scoredSessions = modeSessions.filter(
+        (session) => (session.flowScore ?? 0) > 0,
+      );
+      const avgFlowScore =
+        mode === "lemon" || mode === "topic"
+          ? scoredSessions.length > 0
+            ? Math.round(
+                scoredSessions.reduce(
+                  (sum, session) => sum + (session.flowScore ?? 0),
+                  0,
+                ) / scoredSessions.length,
+              )
+            : 0
+          : null;
+
+      return {
+        mode,
+        totalSessions,
+        totalDuration,
+        avgFlowScore,
+      };
+    });
+
+    return breakdown;
   },
 });

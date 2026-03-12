@@ -58,6 +58,7 @@ export default function StatsPage() {
   const { signOut } = useClerk();
   const { userId, isLoaded } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
+  const [limit, setLimit] = useState(15);
   const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
     () => storage.getPreferences().pauseThresholdLevel
   );
@@ -67,7 +68,8 @@ export default function StatsPage() {
   if (!isLoaded) return null;
 
   const remoteStats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
-  const remoteRecentSessions = useQuery(api.sessions.getSessions, userId ? { userId } : 'skip');
+  const remoteRecentSessions = useQuery(api.sessions.getSessions, userId ? { userId, limit } : 'skip');
+  const remoteModeBreakdown = useQuery(api.sessions.getModeBreakdown, userId ? { userId } : 'skip');
   const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
 
   const isRemoteStatsLoading = remoteStats === undefined;
@@ -79,6 +81,7 @@ export default function StatsPage() {
   const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;
   const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
   const backendBestStreak = remoteStreak?.bestStreak ?? 0;
+  const modeBreakdown = remoteModeBreakdown ?? [];
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
     const normalizedMode = (mode || '').toLowerCase();
@@ -274,6 +277,38 @@ export default function StatsPage() {
         </p>
       </div>
 
+      {modeBreakdown.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Practice Breakdown</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {modeBreakdown.map((item) => {
+              const label = item.mode === 'free'
+                ? 'Free Speaking'
+                : item.mode === 'lemon'
+                  ? 'Lemon'
+                  : item.mode === 'topic'
+                    ? 'Topic'
+                    : 'Reading Challenge';
+              const showScore = item.mode === 'lemon' || item.mode === 'topic';
+              return (
+                <div key={item.mode} className="rounded-[20px] border shadow-card elevation-card p-4 md:p-5 min-h-[112px]">
+                  <p className="text-sm text-muted-foreground font-sans mb-2">{label}</p>
+                  <p className="text-2xl md:text-3xl font-serif font-medium text-foreground leading-none">{item.totalSessions}</p>
+                  <p className="text-xs text-muted-foreground/80 mt-1 font-sans">
+                    {formatDuration(item.totalDuration)} total
+                  </p>
+                  {showScore && (
+                    <p className="text-xs text-muted-foreground/80 mt-1 font-sans">
+                      Avg flow {item.avgFlowScore ?? 0}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {isRemoteRecentSessionsLoading && (
         <div className="mb-8">
           <h2 className="text-xl font-serif text-foreground mb-3">Recent Activity</h2>
@@ -318,6 +353,15 @@ export default function StatsPage() {
               );
             })}
           </div>
+          {remoteRecentSessions?.length === limit && (
+            <button
+              type="button"
+              onClick={() => setLimit((prev) => prev + 15)}
+              className="mt-4 px-5 py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
+            >
+              Load more
+            </button>
+          )}
         </div>
       )}
 
