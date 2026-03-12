@@ -22,8 +22,8 @@ const toMMSS = (seconds: number) => {
 interface CompactModeCardProps {
   title: string;
   subtitle: string;
-  actionLabel?: string;
-  timeLabel?: string;
+  actionLabel: string;
+  timeLabel: string;
   onClick: () => void;
   icon: React.ElementType;
   className?: string;
@@ -39,32 +39,28 @@ const CompactModeCard = ({
   <button
     onClick={onClick}
     className={cn(
-      'rounded-[20px] p-3 md:p-4 text-center cursor-pointer card-hover btn-press relative overflow-hidden',
-      'min-h-[150px] md:min-h-[180px] flex flex-col items-center justify-between',
+      'rounded-[22px] p-4 md:p-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden',
+      'min-h-[220px] flex flex-col items-center justify-between',
       className
     )}
   >
-    <div className={cn('p-2 rounded-2xl border', iconWrapClass)}>
-      <Icon size={16} className={iconClass} />
+    <div className={cn('p-2.5 rounded-2xl border', iconWrapClass)}>
+      <Icon size={18} className={iconClass} />
     </div>
-    <div className="mt-2">
-      <h3 className="text-sm md:text-base font-serif text-foreground leading-tight">{title}</h3>
-      <p className="text-[10px] md:text-[11px] text-muted-foreground font-sans leading-tight mt-1">{subtitle}</p>
+    <div className="mt-3">
+      <h3 className="text-sm md:text-lg font-serif text-foreground leading-tight">{title}</h3>
+      <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight mt-1">{subtitle}</p>
     </div>
-    {actionLabel && (
-      <div className={cn(
-        'mt-2 px-3 py-1 rounded-full text-[10px] md:text-[11px] font-sans font-semibold border',
-        actionClass
-      )}>
-        {actionLabel}
-      </div>
-    )}
-    {timeLabel && (
-      <div className="mt-2">
-        <p className="text-base md:text-lg font-serif font-semibold text-foreground leading-none">{timeLabel}</p>
-        <p className="text-[9px] md:text-[10px] text-muted-foreground font-sans uppercase tracking-[0.14em] mt-1">Time Limit</p>
-      </div>
-    )}
+    <div className={cn(
+      'mt-3 px-3 py-1.5 rounded-full text-[11px] md:text-xs font-sans font-semibold border',
+      actionClass
+    )}>
+      {actionLabel}
+    </div>
+    <div className="mt-3">
+      <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-none">{timeLabel}</p>
+      <p className="text-[9px] md:text-[10px] text-muted-foreground font-sans uppercase tracking-[0.14em] mt-1">Time Limit</p>
+    </div>
   </button>
 );
 
@@ -113,12 +109,12 @@ export default function DashboardPage() {
   const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
 
   return (
-    <div className="h-[100dvh] overflow-hidden pb-24 px-5 md:px-12 lg:px-20 pt-6 max-w-6xl mx-auto flex flex-col">
+    <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 md:mb-8">
+      <div className="flex items-start justify-between mb-12">
         <div className="text-left">
-          <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-2 md:mb-3 tracking-tight">No Pause</h1>
-          <h2 className="text-sm md:text-xl font-serif font-semibold text-foreground/95 tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-4 tracking-tight">No Pause</h1>
+          <h2 className="text-lg md:text-2xl font-serif font-semibold text-foreground/95 tracking-tight">
             Real-time speaking analytics tool.
           </h2>
         </div>
@@ -146,7 +142,7 @@ export default function DashboardPage() {
       </div>
 
       {showInstallBanner && (
-        <div className="hidden md:flex mb-4 px-5 py-4 md:px-6 md:py-4 rounded-2xl border border-border bg-surface-elevated/80 items-center justify-between gap-4">
+        <div className="hidden md:flex mb-6 md:mb-8 px-5 py-4 md:px-6 md:py-5 rounded-2xl border border-border bg-surface-elevated/80 items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface-card">
               <Download size={15} className="text-primary animate-bounce" />
@@ -211,17 +207,23 @@ export default function DashboardPage() {
       </Dialog>
 
       {/* Speaking Area */}
-      <div className="flex flex-col gap-3 md:gap-4 flex-1">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <CompactModeCard
-            onClick={() => handleCardClick('free')}
-            icon={Mic}
-            title="Free Speaking"
-            subtitle="Practice continuous speaking"
-            className="col-span-2 md:col-span-1 bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card"
-            iconWrapClass="bg-secondary border-border/60"
-            iconClass="text-primary"
-          />
+      <div className="flex flex-col mb-4 md:mb-6">
+        <div
+          onClick={() => handleCardClick('free')}
+          className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-8 md:p-12 mb-4 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
+        >
+          <div className="flex justify-center mb-6">
+            <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
+              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
+              <Mic size={40} className="md:hidden text-primary relative z-10" />
+              <Mic size={56} className="hidden md:block text-primary relative z-10" />
+            </div>
+          </div>
+          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Free Speaking</h3>
+          <p className="text-sm md:text-base text-muted-foreground font-sans">Practice continuous speaking without time limits</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 md:gap-6">
           <CompactModeCard
             onClick={() => handleCardClick('lemon')}
             icon={Timer}
@@ -246,20 +248,29 @@ export default function DashboardPage() {
             iconClass="text-cyan-300"
             actionClass="bg-surface-interactive border-cyan-400/35 text-cyan-300"
           />
-          <CompactModeCard
-            onClick={() => navigate('/practice?mode=readingchallenge')}
-            icon={BookOpen}
-            title="Reading Challenge"
-            subtitle="Read a passage with clarity"
-            className="col-span-2 md:col-span-1 bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card"
-            iconWrapClass="bg-secondary border-border/60"
-            iconClass="text-primary"
-          />
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mb-8">
+        <div
+          onClick={() => navigate('/practice?mode=readingchallenge')}
+          className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-6 md:p-8 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
+        >
+          <div className="flex justify-center mb-4">
+            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
+              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
+              <BookOpen size={32} className="md:hidden text-primary relative z-10" />
+              <BookOpen size={44} className="hidden md:block text-primary relative z-10" />
+            </div>
+          </div>
+          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Reading Challenge</h3>
+          <p className="text-sm md:text-base text-muted-foreground font-sans">Read a passage with clarity</p>
         </div>
       </div>
 
       {/* Social Icons */}
-      <div className="flex items-center justify-center gap-4 mt-4 md:mt-6 mb-6">
+      <div className="flex items-center justify-center gap-4 mb-14">
         <button
           onClick={() => openExternal('https://instagram.com/nopause_org')}
           className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground btn-press transition-colors"
