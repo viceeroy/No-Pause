@@ -19,8 +19,8 @@ const AuthPage = () => {
   }, [step]);
 
   const AuthCard = useMemo(() => (
-    <div className="w-full max-w-md md:max-w-none md:w-[560px] mx-auto">
-      <div className="w-full">
+    <div className="w-full max-w-md md:max-w-none md:w-[480px] relative z-10 px-4 md:px-0">
+      <div className="w-full bg-surface-elevated border border-border rounded-[24px] p-6 md:p-10 shadow-card elevation-card overflow-hidden">
         <div className="text-center mb-6 md:mb-8">
           <h1 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-2 tracking-tight drop-shadow-md">
             No Pause
@@ -136,9 +136,7 @@ const AuthPage = () => {
           })}
         </div>
 
-        <div className="w-full relative z-10 px-4 md:px-10">
-          {AuthCard}
-        </div>
+        {AuthCard}
       </div>
     );
   }
@@ -189,11 +187,18 @@ const AuthPage = () => {
         })}
       </div>
 
-      <div className="w-full relative z-10 px-4 md:px-10">
+      <div className="w-full max-w-md md:max-w-none md:w-[560px] relative z-10 px-4 md:px-0">
         {/* Preload auth card so screen 4 is instant */}
         {step < 4 && <div className="hidden" aria-hidden>{AuthCard}</div>}
 
-        <div className="w-full">
+        <div
+          className={cn(
+            "rounded-[24px] overflow-hidden",
+            step === 4
+              ? "bg-transparent border-none p-0 shadow-none"
+              : "border border-border bg-surface-elevated/80 p-6 md:p-8 shadow-card elevation-card"
+          )}
+        >
           <div className={cn("flex items-center justify-between", step === 4 ? "mb-4" : "mb-6")}>
             {step > 1 ? (
               <button
@@ -218,114 +223,114 @@ const AuthPage = () => {
             )}
           </div>
 
-          <div
-            className={cn(
-              step === 4 ? "min-h-0" : "min-h-[360px] md:min-h-[420px]",
-              "flex flex-col"
-            )}
-          >
-            <div className="flex-1">
-              <div className={cn("transition-all duration-300", step === 1 ? "opacity-100" : "opacity-0 hidden")}>
-                <div className="text-center mb-6">
-                  <h1 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-3">
-                    Speak more. Hesitate less.
-                  </h1>
-                  <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed">
-                    No Pause tracks your speaking sessions in real time — measuring hesitations, flow, and consistency so you improve with every practice.
-                  </p>
-                </div>
-                <div className="flex justify-center mb-8">
-                  <div className="relative h-16 w-16 md:h-20 md:w-20 rounded-full border border-primary/30 bg-primary/10 flex items-center justify-center" style={{ animation: 'mic-pulse 2.4s ease-in-out infinite' }}>
-                    <Mic size={28} className="text-primary" />
-                    <span className="absolute inset-0 rounded-full bg-primary/10 blur-md" />
-                  </div>
+          <div className={cn(step === 4 ? "min-h-0" : "min-h-[360px] md:min-h-[400px]")}>
+            <div className={cn("transition-all duration-300", step === 1 ? "opacity-100" : "opacity-0 hidden")}>
+              <div className="text-center mb-6">
+                <h1 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-3">
+                  Speak more. Hesitate less.
+                </h1>
+                <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed">
+                  No Pause tracks your speaking sessions in real time — measuring hesitations, flow, and consistency so you improve with every practice.
+                </p>
+              </div>
+              <div className="flex justify-center mb-8">
+                <div className="relative h-16 w-16 md:h-20 md:w-20 rounded-full border border-primary/30 bg-primary/10 flex items-center justify-center" style={{ animation: 'mic-pulse 2.4s ease-in-out infinite' }}>
+                  <Mic size={28} className="text-primary" />
+                  <span className="absolute inset-0 rounded-full bg-primary/10 blur-md" />
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="w-full px-6 py-3 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press transition-all duration-300"
+              >
+                Get Started →
+              </button>
+            </div>
 
-              <div className={cn("transition-all duration-300", step === 2 ? "opacity-100" : "opacity-0 hidden")}>
-                <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-4">Choose how you practice</h2>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <ModeCard
-                    icon={Mic}
-                    title="Free Speaking"
-                    description="Talk freely, no prompts. Pure fluency training."
-                  />
-                  <ModeCard
-                    icon={Target}
-                    title="Topic Score"
-                    description="Get a topic, speak, and receive a delivery score."
-                  />
-                  <ModeCard
-                    icon={Flame}
-                    title="Lemon Technique"
-                    description="Structured hesitation-reduction drills."
-                  />
-                  <ModeCard
-                    icon={Sparkles}
-                    title="Reading Challenge"
-                    description="Read aloud and improve spoken rhythm."
-                  />
-                </div>
+            <div className={cn("transition-all duration-300", step === 2 ? "opacity-100" : "opacity-0 hidden")}>
+              <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-4">Choose how you practice</h2>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <ModeCard
+                  icon={Mic}
+                  title="Free Speaking"
+                  description="Talk freely, no prompts. Pure fluency training."
+                />
+                <ModeCard
+                  icon={Target}
+                  title="Topic Score"
+                  description="Get a topic, speak, and receive a delivery score."
+                />
+                <ModeCard
+                  icon={Flame}
+                  title="Lemon Technique"
+                  description="Structured hesitation-reduction drills."
+                />
+                <ModeCard
+                  icon={Sparkles}
+                  title="Reading Challenge"
+                  description="Read aloud and improve spoken rhythm."
+                />
               </div>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="w-full px-6 py-3 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press transition-all duration-300"
+              >
+                Next →
+              </button>
+            </div>
 
-              <div className={cn("transition-all duration-300", step === 3 ? "opacity-100" : "opacity-0 hidden")}>
-                <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-6">Built for real improvement</h2>
-                <div className="space-y-4 mb-8">
-                  {[
-                    { icon: Sparkles, text: "See every hesitation as it happens" },
-                    { icon: Flame, text: "Build a daily speaking streak" },
-                    { icon: TrendingUp, text: "Watch your fluency score rise over time" },
-                  ].map((item, index) => {
-                    const Icon = item.icon;
-                    return (
-                      <div
-                        key={item.text}
-                        className="flex items-center gap-3 text-sm md:text-base text-foreground font-sans"
-                        style={{ animation: `fade-rise 0.4s ease ${index * 0.1}s both` }}
-                      >
-                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-card text-primary">
-                          <Icon size={16} />
-                        </div>
-                        <span>{item.text}</span>
+            <div className={cn("transition-all duration-300", step === 3 ? "opacity-100" : "opacity-0 hidden")}>
+              <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-6">Built for real improvement</h2>
+              <div className="space-y-4 mb-8">
+                {[
+                  { icon: Sparkles, text: "See every hesitation as it happens" },
+                  { icon: Flame, text: "Build a daily speaking streak" },
+                  { icon: TrendingUp, text: "Watch your fluency score rise over time" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.text}
+                      className="flex items-center gap-3 text-sm md:text-base text-foreground font-sans"
+                      style={{ animation: `fade-rise 0.4s ease ${index * 0.1}s both` }}
+                    >
+                      <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-card text-primary">
+                        <Icon size={16} />
                       </div>
-                    );
-                  })}
-                </div>
+                      <span>{item.text}</span>
+                    </div>
+                  );
+                })}
               </div>
-
-              <div className={cn("transition-all duration-300", step === 4 ? "opacity-100" : "opacity-0 hidden")}>
-                {AuthCard}
-              </div>
+              <button
+                type="button"
+                onClick={() => setStep(4)}
+                className="w-full px-6 py-3 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press transition-all duration-300"
+              >
+                Next →
+              </button>
             </div>
 
-            <div className="mt-auto flex flex-col items-center">
-              {step < 4 && (
-                <div className="w-full pb-2 md:pb-3 h-[72px] flex items-end justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setStep((prev) => Math.min(4, prev + 1))}
-                    className="w-full px-6 py-3 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press transition-all duration-300"
-                  >
-                    {step === 1 ? "Get Started →" : "Next →"}
-                  </button>
-                </div>
-              )}
-
-              <div className={cn("flex flex-col items-center gap-2", step === 4 ? "mt-6" : "mt-2")}>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4].map((dot) => (
-                    <span
-                      key={dot}
-                      className={cn(
-                        "h-2 w-2 rounded-full",
-                        dot === step ? "bg-primary" : "bg-muted-foreground/30"
-                      )}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs font-sans text-muted-foreground">Step {step} of 4</p>
-              </div>
+            <div className={cn("transition-all duration-300", step === 4 ? "opacity-100" : "opacity-0 hidden")}>
+              {AuthCard}
             </div>
+          </div>
+
+          <div className={cn("flex flex-col items-center gap-2", step === 4 ? "mt-6" : "mt-6")}>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4].map((dot) => (
+                <span
+                  key={dot}
+                  className={cn(
+                    "h-2 w-2 rounded-full",
+                    dot === step ? "bg-primary" : "bg-muted-foreground/30"
+                  )}
+                />
+              ))}
+            </div>
+            <p className="text-xs font-sans text-muted-foreground">Step {step} of 4</p>
           </div>
         </div>
       </div>
