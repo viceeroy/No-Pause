@@ -36,6 +36,21 @@ export function ResultPanel({
   setCopied,
 }: ResultPanelProps) {
   const navigate = useNavigate();
+  const renderDurationValue = (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+    const mins = Math.floor(safeSeconds / 60);
+    const secs = safeSeconds % 60;
+    return (
+      <>
+        {mins}
+        <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">m</span>
+        <span className="ml-2">
+          {secs}
+          <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">s</span>
+        </span>
+      </>
+    );
+  };
   const getScoreHeadline = (score: number) => {
     if (score >= 100) return 'Flawless Flow!';
     if (score >= 95) return 'Near Perfect!';
@@ -119,7 +134,7 @@ export function ResultPanel({
           <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
             <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
             <p className="text-3xl md:text-4xl font-serif font-medium text-primary">
-              {formatMMSS(lastResults.totalSessionTime)}
+              {renderDurationValue(lastResults.totalSessionTime)}
             </p>
           </div>
           {mode !== 'free' && (

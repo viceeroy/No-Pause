@@ -22,11 +22,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 
-function formatDuration(seconds: number): string {
-  if (!seconds || seconds <= 0) return '0m 0s';
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}m ${secs}s`;
+function getDurationParts(seconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  return {
+    mins: Math.floor(safeSeconds / 60),
+    secs: safeSeconds % 60,
+  };
 }
 
 function formatDate(isoString?: string): string {
@@ -105,7 +106,7 @@ export default function StatsPage() {
   const OverviewCard = ({ icon: Icon, label, value, sub, valueClassName }: {
     icon: React.ElementType;
     label: string;
-    value: string | number;
+    value: React.ReactNode;
     sub?: string;
     valueClassName?: string;
   }) => (
@@ -120,6 +121,34 @@ export default function StatsPage() {
       {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
     </div>
   );
+
+  const renderDurationValue = (seconds: number) => {
+    const { mins, secs } = getDurationParts(seconds);
+    return (
+      <>
+        {mins}
+        <span className="ml-1 text-sm md:text-base font-sans font-semibold text-muted-foreground/80">m</span>
+        <span className="ml-2">
+          {secs}
+          <span className="ml-1 text-sm md:text-base font-sans font-semibold text-muted-foreground/80">s</span>
+        </span>
+      </>
+    );
+  };
+
+  const renderDurationInline = (seconds: number) => {
+    const { mins, secs } = getDurationParts(seconds);
+    return (
+      <>
+        {mins}
+        <span className="ml-1 text-[10px] md:text-xs font-semibold text-muted-foreground/80">m</span>
+        <span className="ml-2">
+          {secs}
+          <span className="ml-1 text-[10px] md:text-xs font-semibold text-muted-foreground/80">s</span>
+        </span>
+      </>
+    );
+  };
 
   const handleInstallClick = async () => {
     if (!isInstallEligible || isInstalled) return;
@@ -243,8 +272,7 @@ export default function StatsPage() {
         <OverviewCard
           icon={Clock}
           label="Practice Time"
-          value={isRemoteStatsLoading ? '...' : formatDuration(backendTotalPracticeTime)}
-          valueClassName="font-sans font-semibold"
+          value={isRemoteStatsLoading ? '...' : renderDurationValue(backendTotalPracticeTime)}
         />
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : backendAvgFlowScore} />
       </div>
@@ -300,7 +328,10 @@ export default function StatsPage() {
                   <p className="text-sm text-muted-foreground font-sans mb-2">{label}</p>
                   <p className="text-2xl md:text-3xl font-serif font-medium text-foreground leading-none">{item.totalSessions}</p>
                   <p className="text-xs text-muted-foreground/80 mt-1 font-sans">
-                    {formatDuration(item.totalDuration)} total
+                    <span className="font-sans">
+                      {renderDurationValue(item.totalDuration)}
+                    </span>
+                    <span className="ml-1">total</span>
                   </p>
                   {showScore && (
                     <p className="text-xs text-muted-foreground/80 mt-1 font-sans">
@@ -345,7 +376,7 @@ export default function StatsPage() {
                   <div className="min-w-0">
                     <p className="text-sm text-foreground font-sans font-semibold">{modeLabel}</p>
                     <p className="text-xs text-muted-foreground font-sans">
-                      {formatDate(session.created_at)} • {formatDuration(session.duration || 0)} • {session.hesitationCount || 0} hesitations
+                      {formatDate(session.created_at)} • {renderDurationInline(session.duration || 0)} • {session.hesitationCount || 0} hesitations
                     </p>
                   </div>
                   {shouldShowScore(session.mode, session.flowScore) ? (

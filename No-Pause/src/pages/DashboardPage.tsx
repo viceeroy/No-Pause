@@ -23,7 +23,7 @@ interface CompactModeCardProps {
   title: string;
   subtitle: string;
   actionLabel: string;
-  timeLabel: string;
+  timeSeconds: number;
   onClick: () => void;
   icon: React.ElementType;
   className?: string;
@@ -33,7 +33,7 @@ interface CompactModeCardProps {
 }
 
 const CompactModeCard = ({
-  title, subtitle, actionLabel, timeLabel, onClick, icon: Icon,
+  title, subtitle, actionLabel, timeSeconds, onClick, icon: Icon,
   className, iconWrapClass, iconClass, actionClass,
 }: CompactModeCardProps) => (
   <button
@@ -58,7 +58,14 @@ const CompactModeCard = ({
       {actionLabel}
     </div>
     <div className="mt-3">
-      <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-none">{timeLabel}</p>
+      <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-none">
+        {Math.floor(timeSeconds / 60)}
+        <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">m</span>
+        <span className="ml-2">
+          {timeSeconds % 60}
+          <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">s</span>
+        </span>
+      </p>
       <p className="text-[9px] md:text-[10px] text-muted-foreground font-sans uppercase tracking-[0.14em] mt-1">Time Limit</p>
     </div>
   </button>
@@ -230,7 +237,7 @@ export default function DashboardPage() {
             title="Lemon Technique"
             subtitle={`${toMMSS(LEMON_MIN_TOTAL_SECONDS)} pressure speak`}
             actionLabel="Random word"
-            timeLabel={toMMSS(LEMON_MIN_TOTAL_SECONDS)}
+            timeSeconds={LEMON_MIN_TOTAL_SECONDS}
             className="bg-gradient-to-b from-ember-200/14 to-surface-primary border border-ember-500/40 shadow-card"
             iconWrapClass="bg-ember-200/35 border-ember-500/35"
             iconClass="text-ember-600"
@@ -242,7 +249,7 @@ export default function DashboardPage() {
             title="Topic Score"
             subtitle={`${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} critical thinking`}
             actionLabel="Random topic"
-            timeLabel={toMMSS(TOPIC_MIN_TOTAL_SECONDS)}
+            timeSeconds={TOPIC_MIN_TOTAL_SECONDS}
             className="bg-gradient-to-b from-cyan-500/12 to-surface-primary border border-cyan-400/40 shadow-card"
             iconWrapClass="bg-cyan-500/18 border-cyan-400/35"
             iconClass="text-cyan-300"
