@@ -23,11 +23,10 @@ import {
 } from '@/components/ui/dialog';
 
 function formatDuration(seconds: number): string {
-  if (!seconds || seconds <= 0) return '0m';
-  if (seconds < 60) return `${seconds}s`;
+  if (!seconds || seconds <= 0) return '0m 0s';
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  return `${mins}m ${secs}s`;
 }
 
 function formatDate(isoString?: string): string {
@@ -238,7 +237,7 @@ export default function StatsPage() {
       </Dialog>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-        <OverviewCard icon={Flame} label="Current Streak" value={isRemoteStreakLoading ? '...' : backendCurrentStreak} sub={`Best: ${backendBestStreak}`} />
+        <OverviewCard icon={Flame} label="Current Streak" value={isRemoteStreakLoading ? '...' : `${backendCurrentStreak}/${backendBestStreak}`} />
         <OverviewCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendScoredSessions} />
         <OverviewCard icon={Clock} label="Practice Time" value={isRemoteStatsLoading ? '...' : formatDuration(backendTotalPracticeTime)} />
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : backendAvgFlowScore} />
