@@ -51,16 +51,16 @@ export const getUserStats = query({
     const totalPauses = sessions.reduce((sum, session) => sum + session.pauses, 0);
     const averagePausesPerSession =
       totalSessions === 0 ? 0 : totalPauses / totalSessions;
-    const scoredSessions = sessions.filter((session) => {
-      if (session.flowScore === undefined || session.flowScore <= 0) return false;
+    const statsSessions = sessions.filter((session) => {
       const mode = (session.mode || "").toLowerCase();
       return mode === "lemon" || mode === "topic";
     });
-    const totalSpeakingTime = scoredSessions.reduce(
-      (sum, session) => sum + (session.speakingTime ?? 0),
+    const scoredSessions = statsSessions.filter((session) => session.flowScore != null);
+    const totalSpeakingTime = sessions.reduce(
+      (sum, session) => sum + (session.duration ?? 0),
       0,
     );
-    const flowScoredSessions = scoredSessions;
+    const flowScoredSessions = statsSessions;
     // Duration-weighted average: longer sessions carry more weight,
     // capped at 300s (5 min) to prevent outlier dominance.
     const MAX_WEIGHT = 300;
@@ -98,13 +98,12 @@ export const getSessions = query({
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .collect();
 
-    const scoredSessions = sessions.filter((session) => {
-      if (session.flowScore === undefined || session.flowScore <= 0) return false;
+    const recentSessions = sessions.filter((session) => {
       const mode = (session.mode || "").toLowerCase();
       return mode === "lemon" || mode === "topic";
     });
 
-    scoredSessions.sort((a, b) => b.createdAt - a.createdAt);
-    return scoredSessions.slice(0, 20);
+    recentSessions.sort((a, b) => b.createdAt - a.createdAt);
+    return recentSessions.slice(0, 20);
   },
 });

@@ -115,14 +115,14 @@ export function ResultPanel({
             Scoring rule: speak for at least {toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} with a {toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session.
           </p>
         )}
-        <div className={cn('grid gap-3', (mode === 'free' || !lastResults.isCompleted) ? 'grid-cols-2' : 'grid-cols-3')}>
+        <div className={cn('grid gap-3', mode === 'free' ? 'grid-cols-2' : 'grid-cols-3')}>
           <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
             <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
             <p className="text-3xl md:text-4xl font-serif font-medium text-primary">
               {formatMMSS(lastResults.totalSessionTime)}
             </p>
           </div>
-          {mode !== 'free' && lastResults.isCompleted && (
+          {mode !== 'free' && (
             <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
               <p className="text-xs text-muted-foreground font-sans mb-1.5">Flow Score</p>
               <p className="text-3xl md:text-4xl font-serif font-medium text-primary">{lastResults.flowScore}</p>
