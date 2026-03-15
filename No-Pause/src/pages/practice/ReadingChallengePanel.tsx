@@ -131,9 +131,9 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     }
 
     if (userId) {
-      const transcriptWordCount = transcriptText.length > 0 ? transcriptText.split(/\s+/).length : 0;
-      const estimatedWordCount = Math.max(0, Math.round(speakingTimeSec * 2.2));
-      const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
+      const words = transcriptText.trim().length > 0
+        ? transcriptText.trim().split(/\s+/).filter(Boolean).length
+        : null;
       try {
         await saveSession({
           userId,

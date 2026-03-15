@@ -36,6 +36,7 @@ export function ResultPanel({
   setCopied,
 }: ResultPanelProps) {
   const navigate = useNavigate();
+  const showWordCount = typeof lastResults.wordCount === 'number' && lastResults.wordCount > 0;
   const renderDurationValue = (seconds: number) => {
     const safeSeconds = Math.max(0, Math.floor(seconds || 0));
     const mins = Math.floor(safeSeconds / 60);
@@ -130,7 +131,18 @@ export function ResultPanel({
             Scoring rule: speak for at least {toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} with a {toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session.
           </p>
         )}
-        <div className={cn('grid gap-3', mode === 'free' ? 'grid-cols-2' : 'grid-cols-3')}>
+        <div
+          className={cn(
+            'grid gap-3',
+            mode === 'free'
+              ? showWordCount
+                ? 'grid-cols-3'
+                : 'grid-cols-2'
+              : showWordCount
+                ? 'grid-cols-4'
+                : 'grid-cols-3',
+          )}
+        >
           <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
             <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
             <p className="text-3xl md:text-4xl font-serif font-medium text-primary">
@@ -147,6 +159,12 @@ export function ResultPanel({
             <p className="text-xs text-muted-foreground font-sans mb-1.5">Hesitations</p>
             <p className="text-3xl md:text-4xl font-serif font-medium text-ember-600">{lastResults.hesitationCount}</p>
           </div>
+          {showWordCount && (
+            <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+              <p className="text-xs text-muted-foreground font-sans mb-1.5">Words</p>
+              <p className="text-3xl md:text-4xl font-serif font-medium text-primary">{lastResults.wordCount}</p>
+            </div>
+          )}
         </div>
         <div className="mt-4 p-4 md:p-5 night-panel rounded-2xl md:rounded-3xl text-left">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Speaking Time</p>

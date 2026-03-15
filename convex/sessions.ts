@@ -8,7 +8,7 @@ export const saveSession = mutation({
     duration: v.number(),
     speakingTime: v.optional(v.number()),
     pauses: v.number(),
-    words: v.number(),
+    words: v.optional(v.union(v.number(), v.null())),
     mode: v.string(),
     flowScore: v.optional(v.union(v.number(), v.null())),
     completed: v.optional(v.boolean()),

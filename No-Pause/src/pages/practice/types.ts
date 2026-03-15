@@ -20,7 +20,7 @@ export interface SessionResult {
   analysisFeedbackError?: string;
   transcriptionLoading?: boolean;
   transcriptionError?: string;
-  wordCount: number;
+  wordCount: number | null;
   isCompleted: boolean;
   statusNote?: string;
 }

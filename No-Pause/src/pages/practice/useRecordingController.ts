@@ -89,9 +89,9 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       const transcriptHasSpeech = Boolean(results.transcript && results.transcript !== 'No speech detected.' && results.transcript.trim().length > 0);
       const hasSpeechEvidence = transcriptHasSpeech || results.hesitationCount > 0 || results.totalSpeakingTime > 0;
-      const transcriptWordCount = transcriptHasSpeech ? results.transcript.trim().split(/\s+/).length : 0;
-      const estimatedWordCount = hasSpeechEvidence ? Math.max(1, Math.round(results.totalSpeakingTime * 2.2)) : 0;
-      const words = transcriptWordCount > 0 ? transcriptWordCount : estimatedWordCount;
+      const words = results.transcript && results.transcript.trim().length > 0
+        ? results.transcript.trim().split(/\s+/).filter(Boolean).length
+        : null;
 
       const scoreResult = AudioAnalyzer.calculateFlowScore(results.hesitationCount, {
         mode: normalizedMode,
@@ -199,7 +199,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         flowScore: lastResults.flowScore,
         hesitationCount: lastResults.hesitationCount,
         speakingTime: lastResults.totalSpeakingTime,
-        wordCount: lastResults.wordCount,
+        wordCount: lastResults.wordCount ?? undefined,
         mode: lastResults.mode,
       });
       setLastResults((prev) => {
