@@ -71,20 +71,9 @@ export const transcribeAudio = action({
       const transcript = String(data?.text ?? "").trim();
       if (!transcript) return "";
       const normalized = transcript.toLowerCase().trim();
-      const HALLUCINATIONS = [
-        "thank you",
-        "thanks",
-        "you",
-        "bye",
-        "goodbye",
-        "please subscribe",
-        "thank you for watching",
-        "thanks for watching",
-        ".",
-        "..",
-        "...",
-      ];
-      if (HALLUCINATIONS.includes(normalized)) return "";
+      // If transcript is 3 words or fewer, it's almost certainly a hallucination — discard it
+      const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+      if (wordCount <= 3) return "";
       return transcript;
     } catch (error) {
       console.error("Groq transcription action failed", {
