@@ -14,9 +14,11 @@ describe('usePracticeState', () => {
         totalSpeakingTime: 0,
         totalSessionTime: 60,
         hesitationCount: 3,
+        hesitationLog: [],
         mode: 'lemon',
         audioBlob: null,
         transcript: '',
+        wordCount: null,
         isCompleted: false,
       });
     });

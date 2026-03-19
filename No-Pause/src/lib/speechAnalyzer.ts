@@ -697,7 +697,7 @@ export class AudioAnalyzer {
     const delta = now - (this.lastFrameTime || now);
     this.lastFrameTime = now;
 
-    this.analyser.getFloatTimeDomainData(this.dataArray);
+    this.analyser.getFloatTimeDomainData(this.dataArray as Float32Array<ArrayBuffer>);
     let sumSquares = 0;
     let maxSample = 0;
     for (let i = 0; i < this.dataArray.length; i++) {

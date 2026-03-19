@@ -1,7 +1,18 @@
+import type { ReactNode } from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useRecordingController } from '@/pages/practice/useRecordingController';
 import type { PracticeStateStore } from '@/pages/practice/types';
+
+vi.mock('@clerk/clerk-react', () => ({
+  useAuth: () => ({ userId: 'user_test' }),
+  useUser: () => ({ user: { primaryEmailAddress: { emailAddress: 'test@example.com' } } }),
+}));
+
+vi.mock('convex/react', () => ({
+  useConvex: () => ({ action: vi.fn() }),
+  useMutation: () => vi.fn(),
+}));
 
 vi.mock('@/lib/micService', () => ({
   micService: {
@@ -13,6 +24,11 @@ vi.mock('@/lib/micService', () => ({
     ensureAudioContextRunning: vi.fn(),
   },
 }));
+
+const MockClerkProvider = ({ children }: { children: ReactNode }) => children;
+
+const wrapper = ({ children }: { children: ReactNode }) =>
+  MockClerkProvider({ children });
 
 describe('useRecordingController', () => {
   it('resets setup state on retry for lemon mode', () => {
@@ -59,7 +75,7 @@ describe('useRecordingController', () => {
       mode: 'lemon',
       navigate: vi.fn(),
       state: mockState,
-    }));
+    }), { wrapper });
 
     act(() => {
       result.current.handleRetry();

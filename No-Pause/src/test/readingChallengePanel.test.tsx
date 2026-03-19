@@ -1,13 +1,22 @@
+import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { ReadingChallengePanel } from '@/pages/practice/ReadingChallengePanel';
 
 const actionMock = vi.hoisted(() => vi.fn().mockResolvedValue('Hello world'));
+const saveSessionMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
+vi.mock('@clerk/clerk-react', () => ({
+  useAuth: () => ({ userId: 'user_test' }),
+  useUser: () => ({ user: { primaryEmailAddress: { emailAddress: 'test@example.com' } } }),
+}));
 
 vi.mock('convex/react', () => ({
   useConvex: () => ({
     action: actionMock,
   }),
+  useMutation: () => saveSessionMock,
 }));
 
 vi.mock('@/lib/micService', () => ({
@@ -50,9 +59,17 @@ vi.mock('@/components/VoicePlayer', () => ({
   VoicePlayer: () => <div data-testid="voice-player" />,
 }));
 
+const MockClerkProvider = ({ children }: { children: ReactNode }) => children;
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <MockClerkProvider>
+    <MemoryRouter>{children}</MemoryRouter>
+  </MockClerkProvider>
+);
+
 describe('ReadingChallengePanel', () => {
   it('forces English language for transcription', async () => {
-    render(<ReadingChallengePanel onExit={vi.fn()} />);
+    render(<ReadingChallengePanel onExit={vi.fn()} />, { wrapper });
 
     fireEvent.click(screen.getByRole('button', { name: /start/i }));
     await waitFor(() => expect(createAudioAnalyzerMock).toHaveBeenCalled());

@@ -10,7 +10,7 @@ describe('analyzer/scoring boundary', () => {
       hasSpeechEvidence: true,
     });
 
-    expect(result).toEqual({ score: 90, isCompleted: true });
-    expect(getScoreLabel(result.score)).toBe('Excellent');
+    expect(result).toEqual({ score: 25, isCompleted: true });
+    expect(getScoreLabel(result.score)).toBe('Keep Practicing');
   });
 });

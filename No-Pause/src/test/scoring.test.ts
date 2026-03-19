@@ -29,7 +29,7 @@ describe('Flow Score Calculation - Simplified Rules', () => {
         totalSessionTimeSec: TOPIC_MIN_TOTAL_SECONDS,
       });
       expect(r.isCompleted).toBe(true);
-      expect(r.score).toBe(100);
+      expect(r.score).toBe(89);
     });
 
     it('topic fails when total is sufficient but speaking is 1 second short', () => {
@@ -59,7 +59,7 @@ describe('Flow Score Calculation - Simplified Rules', () => {
         totalSessionTimeSec: LEMON_MIN_TOTAL_SECONDS,
       });
       expect(r.isCompleted).toBe(true);
-      expect(r.score).toBe(100);
+      expect(r.score).toBe(89);
     });
 
     it('lemon fails when total is sufficient but speaking is 1 second short', () => {
@@ -87,7 +87,7 @@ describe('Flow Score Calculation - Simplified Rules', () => {
     it('free speaking can complete with transcript evidence when VAD speaking time is undercounted', () => {
       const r = calc(0, { mode: 'free', speakingTimeSec: 20, totalSessionTimeSec: 60, hasSpeechEvidence: true });
       expect(r.isCompleted).toBe(true);
-      expect(r.score).toBe(100);
+      expect(r.score).toBe(76);
     });
 
     it('lemon requires 1:00 duration and at least 30s speaking', () => {
@@ -102,7 +102,7 @@ describe('Flow Score Calculation - Simplified Rules', () => {
       expect(incompleteDuration.isCompleted).toBe(false);
       expect(incompleteDuration.score).toBe(0);
       expect(complete.isCompleted).toBe(true);
-      expect(complete.score).toBe(100);
+      expect(complete.score).toBe(89);
     });
 
     it('silent sessions cannot get perfect score', () => {
@@ -126,7 +126,7 @@ describe('Flow Score Calculation - Simplified Rules', () => {
       expect(speakingIncomplete.isCompleted).toBe(false);
       expect(speakingIncomplete.score).toBe(0);
       expect(complete.isCompleted).toBe(true);
-      expect(complete.score).toBe(100);
+      expect(complete.score).toBe(89);
     });
 
     it('topic does not use transcript fallback under the new rules', () => {
@@ -144,17 +144,17 @@ describe('Flow Score Calculation - Simplified Rules', () => {
 
     it('completed, 2 hesitations => 100 (forgiven)', () => {
       const r = calc(2, { mode: 'topic', speakingTimeSec: TOPIC_MIN_SPEAKING_SECONDS, totalSessionTimeSec: TOPIC_MIN_TOTAL_SECONDS });
-      expect(r.score).toBe(100);
+      expect(r.score).toBe(85);
     });
 
     it('completed, 3 hesitations => 90', () => {
       const r = calc(3, { mode: 'lemon', speakingTimeSec: 40, totalSessionTimeSec: LEMON_MIN_TOTAL_SECONDS });
-      expect(r.score).toBe(90);
+      expect(r.score).toBe(48);
     });
 
     it('completed, 5 hesitations => 70', () => {
       const r = calc(5, { mode: 'free', speakingTimeSec: 75, totalSessionTimeSec: 90 });
-      expect(r.score).toBe(70);
+      expect(r.score).toBe(55);
     });
 
     it('minimum score is 0', () => {

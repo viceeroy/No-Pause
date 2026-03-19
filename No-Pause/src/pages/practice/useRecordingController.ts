@@ -396,7 +396,11 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         onHesitation: () => { },
         onCalibrated: () => { },
         onStartError: (error) => {
-          setTranscriptError(`Microphone error: ${error?.name || 'unknown'}`);
+          const errorName =
+            error && typeof error === 'object' && 'name' in error
+              ? String((error as { name?: unknown }).name ?? 'unknown')
+              : 'unknown';
+          setTranscriptError(`Microphone error: ${errorName}`);
         },
       });
 

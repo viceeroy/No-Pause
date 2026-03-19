@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { createAudioAnalyzer } from '@/lib/audioRecording';
 import { micService } from '@/lib/micService';
-import type { AudioDataPayload } from '@/lib/speechAnalyzer';
+import type { AudioAnalyzer, AudioDataPayload } from '@/lib/speechAnalyzer';
 import { VoicePlayer } from '@/components/VoicePlayer';
 import { VoiceVisualizer } from '@/components/VoiceVisualizer';
 import { shufflePassages, readingChallengePassages, type ReadingChallengePassage } from '@/lib/readingTexts';
@@ -322,7 +322,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
         <div className="shrink-0 pt-2">
           {phase === 'recording' ? (
             <button
-              onClick={finishSession}
+              onClick={() => void finishSession()}
               className="w-full md:w-auto px-16 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-lg btn-press shadow-soft night-glow flex items-center justify-center gap-4"
             >
               <Square size={20} fill="white" className="rounded-sm" /> Finish
