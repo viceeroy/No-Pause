@@ -387,8 +387,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const analyzer = createAudioAnalyzer({
         enableTranscription: true,
         hesitationMinDurationMs,
-        transcribeAudio: async ({ audioBase64, mimeType }) =>
-          convex.action(api.transcribe.transcribeAudio, { audioBase64, mimeType }),
+        transcribeAudio: async ({ audioBase64, mimeType, durationSec }) =>
+          convex.action(api.transcribe.transcribeAudio, { audioBase64, mimeType, durationSec }),
         onData: (data) => {
           setAudioData(data);
           if (data.rms > 0.01) soundDetectedRef.current = true;
