@@ -3,6 +3,10 @@ import {
   LEMON_MIN_TOTAL_SECONDS,
   TOPIC_MIN_SPEAKING_SECONDS,
   TOPIC_MIN_TOTAL_SECONDS,
+  GRACE_RATE,
+  PENALTY_PER_HPM,
+  MIN_RATIO_FOR_UNCAPPED,
+  CAP_AT_MIN_RATIO,
 } from '@/lib/scoringConstants';
 
 const IS_DEV = import.meta.env.DEV;
@@ -104,17 +108,9 @@ export function calculateFlowScore(
 
   // Grace zone: up to 1.0 hesitations/min scores a perfect 100.
   // Each additional hesitation/min above the grace costs 15 points.
-  const GRACE_RATE = 1.0;
-  const PENALTY_PER_HPM = 15;
   const excessRate = Math.max(0, hesitationsPerMinute - GRACE_RATE);
   let finalScore = Math.max(0, Math.round(100 - excessRate * PENALTY_PER_HPM));
-
-  // Speaking fluency cap: the maximum achievable score scales with how much
-  // of the session was actual speech. This prevents users who barely spoke
-  // from getting 100 just because they had few hesitations.
-  // 25% ratio → capped at 70, 65%+ ratio → uncapped (100)
-  const MIN_RATIO_FOR_UNCAPPED = 0.65;
-  const CAP_AT_MIN_RATIO = 70;
+  
   if (speakingRatio < MIN_RATIO_FOR_UNCAPPED) {
     // Linear interpolation: 0.25→70, 0.65→100
     const ratioRange = MIN_RATIO_FOR_UNCAPPED - 0.25;

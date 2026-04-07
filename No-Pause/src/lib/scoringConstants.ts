@@ -19,3 +19,9 @@ export const PAUSE_THRESHOLD_BY_LEVEL: Record<PauseThresholdLevel, number> = {
   intermediate: THRESHOLD_INTERMEDIATE,
   advanced: THRESHOLD_ADVANCED,
 };
+
+// Flow Score Calculation Constants
+export const GRACE_RATE = 1.0;
+export const PENALTY_PER_HPM = 15;
+export const MIN_RATIO_FOR_UNCAPPED = 0.65;
+export const CAP_AT_MIN_RATIO = 70;
