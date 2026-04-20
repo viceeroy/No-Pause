@@ -4,8 +4,8 @@ import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import App from "./App.tsx";
 import "./index.css";
-import { ServiceWorkerUpdateProvider } from "@/contexts/ServiceWorkerUpdateContext";
-import { PWAInstallProvider } from "@/contexts/PWAInstallContext";
+import { ServiceWorkerUpdateProvider } from "@/providers/ServiceWorkerUpdateContext";
+import { PWAInstallProvider } from "@/providers/PWAInstallContext";
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
 const convex = new ConvexReactClient(convexUrl);

@@ -6,7 +6,7 @@ import {
   TOPIC_CATEGORIES,
   type TopicDifficulty,
   type TopicPrompt,
-} from '@/lib/promptService';
+} from '@/features/practice/lib/promptService';
 
 export default function PromptsPage() {
   const navigate = useNavigate();

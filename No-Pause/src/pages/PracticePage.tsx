@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { SetupCountdownPanel } from '@/pages/practice/SetupCountdownPanel';
-import { RecordingPanel } from '@/pages/practice/RecordingPanel';
-import { ResultPanel } from '@/pages/practice/ResultPanel';
-import { usePracticeState } from '@/pages/practice/usePracticeState';
-import { usePromptLoader } from '@/pages/practice/usePromptLoader';
-import { useRecordingController } from '@/pages/practice/useRecordingController';
-import { ReadingChallengePanel } from '@/pages/practice/ReadingChallengePanel';
+import { cn } from '@/shared/lib/utils';
+import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPanel';
+import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
+import { ResultPanel } from '@/features/practice/pages/ResultPanel';
+import { usePracticeState } from '@/features/practice/pages/usePracticeState';
+import { usePromptLoader } from '@/features/practice/pages/usePromptLoader';
+import { useRecordingController } from '@/features/practice/pages/useRecordingController';
+import { ReadingChallengePanel } from '@/features/practice/pages/ReadingChallengePanel';
 
 export default function PracticePage() {
   const navigate = useNavigate();

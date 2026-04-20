@@ -1,23 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/shared/components/ui/toaster";
+import { Toaster as Sonner } from "@/shared/components/ui/sonner";
+import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Navbar } from "@/components/Navbar";
-import { useServiceWorkerUpdate } from "@/contexts/ServiceWorkerUpdateContext";
-import { getRouteSeoConfig, seoDefaults } from "@/seo/routeSeo";
-import { getNavTabIndex, navTabs } from "@/lib/navTabs";
-import DashboardPage from "./pages/DashboardPage";
+import { Navbar } from "@/shared/components/Navbar";
+import { useServiceWorkerUpdate } from "@/providers/ServiceWorkerUpdateContext";
+import { getRouteSeoConfig, seoDefaults } from "@/shared/seo/routeSeo";
+import { getNavTabIndex, navTabs } from "@/shared/lib/navTabs";
+import DashboardPage from "@/features/stats/pages/DashboardPage";
 import PracticePage from "./pages/PracticePage";
 import PromptsPage from "./pages/PromptsPage";
-import StatsPage from "./pages/StatsPage";
-import BlogListPage from "./pages/BlogListPage";
-import BlogPostPage from "./pages/BlogPostPage";
-import AuthPage from "./pages/AuthPage";
-import SignUpPage from "./pages/SignUpPage";
+import StatsPage from "@/features/stats/pages/StatsPage";
+import BlogListPage from "@/features/blog/pages/BlogListPage";
+import BlogPostPage from "@/features/blog/pages/BlogPostPage";
+import AuthPage from "@/features/auth/pages/AuthPage";
+import SignUpPage from "@/features/auth/pages/SignUpPage";
 import NotFound from "./pages/NotFound";
 
 const upsertMetaTag = (selector: string, attributes: Record<string, string>) => {
