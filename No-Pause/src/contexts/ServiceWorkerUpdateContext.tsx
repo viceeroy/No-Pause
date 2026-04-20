@@ -79,15 +79,11 @@ export function ServiceWorkerUpdateProvider({ children }: { children: React.Reac
     setWaitingWorker(null);
 
     let completed = false;
-    let fallbackTimeoutId: number | undefined;
 
     const onControllerChange = () => {
       if (completed) return;
       completed = true;
       applyingRef.current = false;
-      if (fallbackTimeoutId !== undefined) {
-        window.clearTimeout(fallbackTimeoutId);
-      }
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
       window.location.reload();
     };
@@ -103,7 +99,7 @@ export function ServiceWorkerUpdateProvider({ children }: { children: React.Reac
       return;
     }
 
-    fallbackTimeoutId = window.setTimeout(() => {
+    const fallbackTimeoutId = window.setTimeout(() => {
       if (completed) return;
       completed = true;
       applyingRef.current = false;

@@ -12,19 +12,6 @@ const getPostIcon = (slug: string) => {
   return Mic;
 };
 
-const estimateReadTime = (post: (typeof blogPosts)[number]) => {
-  const rawText = [
-    post.title,
-    post.description,
-    post.shortAnswer,
-    post.takeaway,
-    ...post.sections.map((section) => `${section.heading} ${section.content} ${(section.bullets || []).join(' ')}`),
-  ].join(' ');
-
-  const words = rawText.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round(words / 220));
-};
-
 export default function BlogListPage() {
   return (
     <main className="min-h-screen bg-surface-base pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-4xl mx-auto">

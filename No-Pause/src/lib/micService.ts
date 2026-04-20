@@ -84,13 +84,17 @@ class MicService {
   reset() {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => {
-        try { track.stop(); } catch { }
+        try { track.stop(); } catch (e) {
+          debugWarn('[MicDebug] Error stopping track', e);
+        }
       });
     }
     this.stream = null;
     this.initializing = null;
     if (this.audioContext && this.audioContext.state !== 'closed') {
-      try { this.audioContext.close(); } catch { }
+      try { this.audioContext.close(); } catch (e) {
+        debugWarn('[MicDebug] Error closing AudioContext', e);
+      }
     }
     this.audioContext = null;
     debugLog('[MicDebug] MicService reset complete');
@@ -202,7 +206,9 @@ class MicService {
 
   private async replaceAudioContextForStream(stream: MediaStream): Promise<AudioContext> {
     if (this.audioContext && this.audioContext.state !== 'closed') {
-      try { await this.audioContext.close(); } catch { }
+      try { await this.audioContext.close(); } catch (e) {
+        debugWarn('[MicDebug] Error closing AudioContext during replacement', e);
+      }
     }
 
     return this.createBestAudioContext(stream);

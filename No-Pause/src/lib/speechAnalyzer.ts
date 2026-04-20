@@ -35,6 +35,8 @@ const WEBM_AUDIO_MIME_TYPE = 'audio/webm';
 const MAX_TRANSCRIBE_BYTES = 15 * 1024 * 1024;
 const EMPTY_TRANSCRIPT = 'No speech detected.';
 
+const FILLER_WORDS = ['um', 'uh', 'like', 'you know', 'basically', 'literally', 'actually', 'right', 'so', 'well'];
+
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: unknown[]) => { if (IS_DEV) console.log(...args); };
 const debugWarn = (...args: unknown[]) => { if (IS_DEV) console.warn(...args); };
@@ -124,6 +126,7 @@ export interface AnalyzerResults {
   totalSilenceTime: number;
   hesitationSilenceTime: number;
   hesitationCount: number;
+  fillerWordCount: number;
   hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[];
   longestFlowStreak: number;
   frameCount: number;
@@ -202,6 +205,7 @@ export class AudioAnalyzer {
   private totalSilenceTimeMs = 0;
   private hesitationSilenceTime = 0;
   private hesitationCount = 0;
+  private fillerWordCount = 0;
   private currentSilenceStart: number | null = null;
   private isSpeaking = false;
   private hasSpokeAtLeastOnce = false;
@@ -308,7 +312,7 @@ export class AudioAnalyzer {
       }
 
       // Verify stream has active tracks (fixes iOS silent recording)
-      let audioTracks = this.stream.getAudioTracks();
+      const audioTracks = this.stream.getAudioTracks();
       const primaryTrack = audioTracks[0];
       const trackSettings = primaryTrack?.getSettings?.() || {};
       const trackSettingsWithExtras = trackSettings as MediaTrackSettings & {
@@ -603,6 +607,7 @@ export class AudioAnalyzer {
     this.recognition.lang = 'en-US';
     this.isListening = true;
     this._recognitionRestartCount = 0;
+    this.fillerWordCount = 0; // Reset filler word count
 
     let lastResultIndex = 0;
 
@@ -621,7 +626,10 @@ export class AudioAnalyzer {
       if (newFinal) {
         this.finalTranscript += newFinal;
       }
-      this.transcript = (this.finalTranscript + interim).trim();
+      const currentRawTranscript = (this.finalTranscript + interim).trim();
+      const { processedTranscript, count } = this._processTranscriptForFillerWords(currentRawTranscript);
+      this.transcript = processedTranscript;
+      this.fillerWordCount = count;
       debugLog('[Transcript] onresult:', this.transcript.slice(-80));
     };
 
@@ -681,6 +689,27 @@ export class AudioAnalyzer {
     } catch (err) {
       debugError('[Transcript] Failed to start:', err);
     }
+  }
+
+  private _processTranscriptForFillerWords(rawTranscript: string): { processedTranscript: string; count: number } {
+    let count = 0;
+    let processedTranscript = rawTranscript;
+
+    for (const filler of FILLER_WORDS) {
+      const regex = new RegExp(`\b(${filler})\b`, 'gi'); // Whole word, case-insensitive
+      let match;
+      while ((match = regex.exec(processedTranscript)) !== null) {
+        count++;
+        // Replace with flagged version, preserving original casing if possible
+        const originalWord = match[1];
+        processedTranscript = processedTranscript.substring(0, match.index) +
+                              `**${originalWord}**` +
+                              processedTranscript.substring(match.index + originalWord.length);
+        // Adjust regex lastIndex to account for added asterisks
+        regex.lastIndex += 4; // ** + ** = 4 extra characters
+      }
+    }
+    return { processedTranscript, count };
   }
 
   private _analyze() {
@@ -835,9 +864,15 @@ export class AudioAnalyzer {
     try {
       if (!this.audioContext || !this.stream || !this.isRunning) return;
 
-      try { this.source?.disconnect(); } catch { }
-      try { this.analyser?.disconnect(); } catch { }
-      try { this.analyserSink?.disconnect(); } catch { }
+      try { this.source?.disconnect(); } catch (e) {
+        debugWarn('[Audio] Source disconnect failed', e);
+      }
+      try { this.analyser?.disconnect(); } catch (e) {
+        debugWarn('[Audio] Analyser disconnect failed', e);
+      }
+      try { this.analyserSink?.disconnect(); } catch (e) {
+        debugWarn('[Audio] AnalyserSink disconnect failed', e);
+      }
 
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = 2048;
@@ -871,9 +906,15 @@ export class AudioAnalyzer {
         return;
       }
 
-      try { this.source?.disconnect(); } catch { }
-      try { this.analyser?.disconnect(); } catch { }
-      try { this.analyserSink?.disconnect(); } catch { }
+      try { this.source?.disconnect(); } catch (e) {
+        debugWarn('[Audio] Source disconnect failed (rebind)', e);
+      }
+      try { this.analyser?.disconnect(); } catch (e) {
+        debugWarn('[Audio] Analyser disconnect failed (rebind)', e);
+      }
+      try { this.analyserSink?.disconnect(); } catch (e) {
+        debugWarn('[Audio] AnalyserSink disconnect failed (rebind)', e);
+      }
 
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = 2048;
@@ -916,7 +957,9 @@ export class AudioAnalyzer {
       this._recognitionRestartTimer = null;
     }
     if (this.recognition) {
-      try { this.recognition.stop(); } catch { }
+      try { this.recognition.stop(); } catch (e) {
+        debugWarn('[Transcript] stop failed', e);
+      }
       this.recognition = null;
       debugLog('[Transcript] Stopped');
       debugLog('[Transcript] Saved to session:', this.transcript.slice(0, 120) || '(empty)');
@@ -1078,15 +1121,21 @@ export class AudioAnalyzer {
     // The stream and context are managed by the caller (PracticePage) so they
     // can be reused across sessions without re-prompting for mic permission.
     if (this.source) {
-      try { this.source.disconnect(); } catch { }
+      try { this.source.disconnect(); } catch (e) {
+        debugWarn('[Audio] Source disconnect failed (destroy)', e);
+      }
       this.source = null;
     }
     if (this.analyser) {
-      try { this.analyser.disconnect(); } catch { }
+      try { this.analyser.disconnect(); } catch (e) {
+        debugWarn('[Audio] Analyser disconnect failed (destroy)', e);
+      }
       this.analyser = null;
     }
     if (this.analyserSink) {
-      try { this.analyserSink.disconnect(); } catch { }
+      try { this.analyserSink.disconnect(); } catch (e) {
+        debugWarn('[Audio] AnalyserSink disconnect failed (destroy)', e);
+      }
       this.analyserSink = null;
     }
 
@@ -1097,6 +1146,7 @@ export class AudioAnalyzer {
       totalSilenceTime: Math.round(this.totalSilenceTimeMs / 1000),
       hesitationSilenceTime: Math.round(filteredHesitationSilenceTime),
       hesitationCount: filteredHesitationCount,
+      fillerWordCount: this.fillerWordCount,
       hesitationLog: finalizedMicState.filteredHesitations,
       longestFlowStreak: this.longestFlowStreak,
       frameCount: this.frameCount,
@@ -1133,22 +1183,33 @@ export class AudioAnalyzer {
       this._recognitionRestartTimer = null;
     }
     if (this.recognition) {
-      try { this.recognition.stop(); } catch { }
+      try { this.recognition.stop(); } catch (e) {
+        debugWarn('[Audio] Recognition stop failed (destroy full)', e);
+      }
       this.recognition = null;
     }
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      try { this.mediaRecorder.stop(); } catch { }
+      try { this.mediaRecorder.stop(); } catch (e) {
+        debugWarn('[Audio] Recorder stop failed (destroy full)', e);
+      }
+      this.mediaRecorder = null;
     }
     if (this.source) {
-      try { this.source.disconnect(); } catch { }
+      try { this.source.disconnect(); } catch (e) {
+        debugWarn('[Audio] Source disconnect failed (destroy full)', e);
+      }
       this.source = null;
     }
     if (this.analyser) {
-      try { this.analyser.disconnect(); } catch { }
+      try { this.analyser.disconnect(); } catch (e) {
+        debugWarn('[Audio] Analyser disconnect failed (destroy full)', e);
+      }
       this.analyser = null;
     }
     if (this.analyserSink) {
-      try { this.analyserSink.disconnect(); } catch { }
+      try { this.analyserSink.disconnect(); } catch (e) {
+        debugWarn('[Audio] AnalyserSink disconnect failed (destroy full)', e);
+      }
       this.analyserSink = null;
     }
     this.stream = null;

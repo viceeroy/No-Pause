@@ -25,6 +25,10 @@ type ResultPanelProps = {
   setCopied: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
+interface CustomWindow extends Window {
+  __nopauseExportLogs?: () => void;
+}
+
 export function ResultPanel({
   mode,
   lastResults,
@@ -183,7 +187,7 @@ export function ResultPanel({
             <button
               type="button"
               onClick={() => {
-                const exportFn = (window as any).__nopauseExportLogs;
+                const exportFn = (window as CustomWindow).__nopauseExportLogs;
                 if (typeof exportFn === 'function') exportFn();
               }}
               className="text-xs font-sans text-muted-foreground/80 hover:underline underline-offset-2 transition-colors"
@@ -327,7 +331,11 @@ export function ResultPanel({
             : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
           const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           if (isMobile && navigator.share) {
-            try { await navigator.share({ text: shareText }); } catch { }
+            try { await navigator.share({ text: shareText }); } catch (e) {
+              if (e instanceof Error && e.name !== 'AbortError') {
+                console.warn('Share failed:', e);
+              }
+            }
           } else {
             try {
               await navigator.clipboard.writeText(shareText);

@@ -65,12 +65,12 @@ export default function StatsPage() {
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
-  if (!isLoaded) return null;
-
   const remoteStats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
   const remoteRecentSessions = useQuery(api.sessions.getSessions, userId ? { userId, limit } : 'skip');
   const remoteModeBreakdown = useQuery(api.sessions.getModeBreakdown, userId ? { userId } : 'skip');
   const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
+
+  if (!isLoaded) return null;
 
   const isRemoteStatsLoading = remoteStats === undefined;
   const isRemoteStreakLoading = userId ? remoteStreak === undefined : false;

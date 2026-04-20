@@ -34,6 +34,10 @@ type RecordingControllerResult = {
   soundDetectedRef: React.MutableRefObject<boolean>;
 };
 
+interface CustomWindow extends Window {
+  __nopauseExportLogs?: () => void;
+}
+
 export function useRecordingController({ mode, navigate, state }: UseRecordingControllerOptions): RecordingControllerResult {
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -370,7 +374,11 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       micInitializingRef.current = true;
 
       try {
-        forceRetryMic ? await micService.retryInit() : await micService.init();
+        if (forceRetryMic) {
+          await micService.retryInit();
+        } else {
+          await micService.init();
+        }
       } catch {
         setTranscriptError('Mic not capturing audio');
         setShowMicRetry(true);
@@ -491,10 +499,10 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   }, [setTranscriptError, state.lastResults?.audioMimeType]);
 
   useEffect(() => {
-    (window as any).__nopauseExportLogs = exportDiagnosticsLogs;
+    (window as CustomWindow).__nopauseExportLogs = exportDiagnosticsLogs;
     return () => {
-      if ((window as any).__nopauseExportLogs === exportDiagnosticsLogs) {
-        delete (window as any).__nopauseExportLogs;
+      if ((window as CustomWindow).__nopauseExportLogs === exportDiagnosticsLogs) {
+        delete (window as CustomWindow).__nopauseExportLogs;
       }
     };
   }, [exportDiagnosticsLogs]);
@@ -502,7 +510,11 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   useEffect(() => {
     return () => {
       if (analyzerRef.current) {
-        try { analyzerRef.current.destroy(); } catch { }
+        try {
+          analyzerRef.current.destroy();
+        } catch (e) {
+          console.warn('Failed to destroy analyzer on unmount:', e);
+        }
         analyzerRef.current = null;
       }
       micService.setTracksEnabled(false);

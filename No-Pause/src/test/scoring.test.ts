@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AudioAnalyzer } from '../lib/speechAnalyzer';
+import { type FlowScoreOptions } from '@/lib/analyzer/scoring';
 import {
   TOPIC_MIN_TOTAL_SECONDS,
   TOPIC_MIN_SPEAKING_SECONDS,
@@ -8,7 +9,7 @@ import {
 } from '@/lib/scoringConstants';
 
 describe('Flow Score Calculation - Simplified Rules', () => {
-  const calc = (hesitations: number, opts: any) =>
+  const calc = (hesitations: number, opts: FlowScoreOptions) =>
     AudioAnalyzer.calculateFlowScore(hesitations, opts);
 
   describe('Completion requirements', () => {

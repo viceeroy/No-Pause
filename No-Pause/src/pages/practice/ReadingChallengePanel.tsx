@@ -18,6 +18,17 @@ type ReadingChallengePanelProps = {
   onExit: () => void;
 };
 
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+};
+
 export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const { userId } = useAuth();
   const { user } = useUser();
@@ -42,17 +53,6 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
   const audioMimeTypeRef = useRef<string | null>(null);
 
   const currentPassage = useMemo(() => passages[currentIndex], [passages, currentIndex]);
-
-  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode(...chunk);
-    }
-    return btoa(binary);
-  };
 
   const startSession = useCallback(async () => {
     setErrorMessage(null);
@@ -86,7 +86,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
 
   const finishSession = useCallback(async (sessionCompletedNaturally = true) => {
     setPhase('done');
-    let durationSec = Math.floor((Date.now() - (sessionStartRef.current ?? Date.now())) / 1000);
+    const durationSec = Math.floor((Date.now() - (sessionStartRef.current ?? Date.now())) / 1000);
     let speakingTimeSec = 0;
     let hesitationCount = 0;
     if (analyzerRef.current) {
