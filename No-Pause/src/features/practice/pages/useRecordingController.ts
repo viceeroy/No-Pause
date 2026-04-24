@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
-import { useConvex, useMutation } from 'convex/react';
-import { useAuth, useUser } from '@clerk/clerk-react';
-import { api } from '@convex/_generated/api';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/features/practice/lib/speechAnalyzer';
 import { micService } from '@/features/practice/lib/micService';
 import { storage } from '@/shared/lib/storage';
 import { createAudioAnalyzer } from '@/features/practice/lib/audioRecording';
+import { analyzeSpeech, saveSession, transcribeAudio, updateStreak } from '@/lib/practiceApi';
+import { useAuth } from '@/providers/AuthContext';
 import {
   LEMON_MIN_SPEAKING_SECONDS,
   LEMON_MIN_TOTAL_SECONDS,
@@ -46,12 +45,9 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   const micInitializingRef = useRef(false);
   const isRecordingRef = useRef(false);
 
-  const { userId } = useAuth();
-  const { user } = useUser();
-  const convex = useConvex();
-
-  const saveSession = useMutation(api.sessions.saveSession);
-  const updateStreak = useMutation(api.streaks.updateStreak);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const userEmail = user?.email;
 
   const {
     lemonPrompt,
@@ -80,7 +76,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
   const stopRecording = useCallback(async () => {
     if (analyzerRef.current && analyzerRef.current.isRunning) {
-      const results = await analyzerRef.current.stop();
+      const results = await analyzerRef.current.stop().finally(() => micService.reset());
       const duration = Math.floor((Date.now() - (sessionDataRef.current?.startTime || Date.now())) / 1000);
 
       if (timerRef.current) clearInterval(timerRef.current);
@@ -148,8 +144,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       try {
         await Promise.all([
           saveSession({
-            userId: userId!,
-            email: user?.primaryEmailAddress?.emailAddress,
+            userId,
+            email: userEmail,
             duration,
             speakingTime: results.totalSpeakingTime,
             pauses: results.hesitationCount,
@@ -159,22 +155,21 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             completed,
           }),
           updateStreak({
-            userId: userId!,
-            email: user?.primaryEmailAddress?.emailAddress,
+            userId,
+            email: userEmail,
             localDate: new Date().toLocaleDateString('en-CA'),
           }),
         ]);
       } catch (error) {
-        console.error('Failed to sync session to Convex:', error);
+        console.error('Failed to sync session during backend migration:', error);
       }
 
       setLastResults(sessionResult);
       setState('done');
       isRecordingRef.current = false;
-      micService.setTracksEnabled(false);
       setShowMicRetry(false);
     }
-  }, [mode, lemonPrompt, topicPrompt, saveSession, setLastResults, setState, setShowMicRetry, updateStreak, user, userId]);
+  }, [mode, lemonPrompt, topicPrompt, setLastResults, setState, setShowMicRetry, userEmail, userId]);
 
   const requestFeedback = useCallback(async () => {
     if (!lastResults) return;
@@ -198,7 +193,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     });
 
     try {
-      const feedback = await convex.action(api.analyze.analyzeSpeech, {
+      const feedback = await analyzeSpeech({
         transcript,
         flowScore: lastResults.flowScore,
         hesitationCount: lastResults.hesitationCount,
@@ -215,7 +210,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         };
       });
     } catch (error) {
-      console.error('Failed to analyze transcript:', error);
+      console.error('Failed to analyze transcript during backend migration:', error);
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String((error as { message?: unknown }).message)
@@ -229,7 +224,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         };
       });
     }
-  }, [convex, lastResults, setLastResults]);
+  }, [lastResults, setLastResults]);
 
   const requestTranscription = useCallback(async () => {
     if (!lastResults) return;
@@ -247,7 +242,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
     try {
       const base64Audio = arrayBufferToBase64(await lastResults.audioBlob.arrayBuffer());
-      const transcript = await convex.action(api.transcribe.transcribeAudio, {
+      const transcript = await transcribeAudio({
         audioBase64: base64Audio,
         mimeType: lastResults.audioMimeType || 'audio/webm',
         durationSec: lastResults.totalSessionTime,
@@ -279,7 +274,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         };
       });
     }
-  }, [convex, lastResults, setLastResults]);
+  }, [lastResults, setLastResults]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -297,7 +292,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         audioCtx || undefined,
       );
       if (!started) {
-        micService.setTracksEnabled(false);
+        await micService.reset();
         setTranscriptError('Mic not capturing audio');
         setShowMicRetry(true);
         setState('setup');
@@ -310,7 +305,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const streamOk = captureState.hasStream && captureState.streamActive;
       if (!streamOk || !trackOk || !recorderOk) {
         console.error('[MicDiag] Capture validation failed', captureState);
-        micService.setTracksEnabled(false);
+        await micService.reset();
         setTranscriptError('Mic not capturing audio');
         setShowMicRetry(true);
         setState('setup');
@@ -349,6 +344,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       }
     } catch (error) {
       console.error('Failed to start recording:', error);
+      await micService.reset();
       setTranscriptError('Failed to start recording. Please try again.');
       setState('setup');
     }
@@ -382,6 +378,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       } catch {
         setTranscriptError('Mic not capturing audio');
         setShowMicRetry(true);
+        await micService.reset();
         return;
       }
 
@@ -395,8 +392,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       const analyzer = createAudioAnalyzer({
         enableTranscription: true,
         hesitationMinDurationMs,
-        transcribeAudio: async ({ audioBase64, mimeType, durationSec }) =>
-          convex.action(api.transcribe.transcribeAudio, { audioBase64, mimeType, durationSec }),
+        transcribeAudio,
         onData: (data) => {
           setAudioData(data);
           if (data.rms > 0.01) soundDetectedRef.current = true;
@@ -452,7 +448,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
-    micService.setTracksEnabled(false);
+    void micService.reset();
     if (timerRef.current) clearInterval(timerRef.current);
     navigate('/');
   }, [navigate]);
@@ -517,7 +513,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         }
         analyzerRef.current = null;
       }
-      micService.setTracksEnabled(false);
+      void micService.reset();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);

@@ -1,7 +1,11 @@
-import { SignUp } from "@clerk/clerk-react";
+import { useState } from "react";
 import { Flame, Mic, TrendingUp } from "lucide-react";
+import { useAuth } from "@/providers/AuthContext";
 
 const SignUpPage = () => {
+  const [authError, setAuthError] = useState<string | null>(null);
+  const { signInWithGoogle } = useAuth();
+
   return (
     <div className="min-h-screen bg-surface-base flex flex-col items-center justify-center p-4 md:p-6 pb-20 relative overflow-hidden">
       <style>{`
@@ -77,31 +81,28 @@ const SignUpPage = () => {
 
           <hr className="border-border my-6 md:my-8" />
 
-          <SignUp
-            routing="path"
-            path="/auth/sign-up"
-            signInUrl="/auth"
-            appearance={{
-              elements: {
-                footer: "hidden",
-                footerAction: "hidden",
-                card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-0",
-                rootBox: "w-full",
-                headerTitle: "hidden",
-                headerSubtitle: "hidden",
-                formFieldRow: "hidden",
-                formButtonPrimary: "hidden",
-                dividerRow: "hidden",
-                socialButtonsBlockButton:
-                  "border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all min-h-[52px] h-14 shadow-sm hover:shadow-md",
-                socialButtonsBlockButtonText: "font-sans font-semibold text-base text-foreground",
-              },
+          <button
+            type="button"
+            onClick={() => {
+              setAuthError(null);
+              void signInWithGoogle().catch((error) => {
+                console.error("Supabase Google sign-up failed:", error);
+                setAuthError("Google sign-in failed. Please try again.");
+              });
             }}
-          />
+            className="w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all min-h-[52px] h-14 shadow-sm hover:shadow-md font-sans font-semibold text-base"
+          >
+            Continue with Google
+          </button>
 
           <p className="text-center text-xs text-muted-foreground mt-4 font-sans font-medium">
             No Pause only supports Google sign-up
           </p>
+          {authError ? (
+            <p className="text-center text-xs text-amber-200/90 mt-3 font-sans font-medium">
+              {authError}
+            </p>
+          ) : null}
 
         </div>
       </div>

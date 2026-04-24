@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
-import { useUser, useClerk, UserButton, useAuth } from '@clerk/clerk-react';
-import { useQuery } from 'convex/react';
-import { api } from '@convex/_generated/api';
 import { storage } from '@/shared/lib/storage';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
+import { useAuth } from '@/providers/AuthContext';
 import {
   THRESHOLD_ADVANCED,
   THRESHOLD_BEGINNER,
@@ -54,9 +52,7 @@ const THRESHOLD_OPTIONS: { level: PauseThresholdLevel; label: string; value: num
 
 export default function StatsPage() {
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { signOut } = useClerk();
-  const { userId, isLoaded } = useAuth();
+  const { user, signOut } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [limit, setLimit] = useState(15);
   const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
@@ -65,23 +61,21 @@ export default function StatsPage() {
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
-  const remoteStats = useQuery(api.sessions.getUserStats, userId ? { userId } : 'skip');
-  const remoteRecentSessions = useQuery(api.sessions.getSessions, userId ? { userId, limit } : 'skip');
-  const remoteModeBreakdown = useQuery(api.sessions.getModeBreakdown, userId ? { userId } : 'skip');
-  const remoteStreak = useQuery(api.streaks.getStreak, userId ? { userId } : 'skip');
+  const isRemoteStatsLoading = false;
+  const isRemoteStreakLoading = false;
+  const isRemoteRecentSessionsLoading = false;
 
-  if (!isLoaded) return null;
-
-  const isRemoteStatsLoading = remoteStats === undefined;
-  const isRemoteStreakLoading = userId ? remoteStreak === undefined : false;
-  const isRemoteRecentSessionsLoading = remoteRecentSessions === undefined;
-
-  const backendScoredSessions = remoteStats?.scoredSessions ?? 0;
-  const backendTotalPracticeTime = remoteStats?.totalSpeakingTime ?? 0;
-  const backendAvgFlowScore = remoteStats?.avgFlowScore ?? 0;
-  const backendCurrentStreak = remoteStreak?.currentStreak ?? 0;
-  const backendBestStreak = remoteStreak?.bestStreak ?? 0;
-  const modeBreakdown = remoteModeBreakdown ?? [];
+  const backendScoredSessions = 0;
+  const backendTotalPracticeTime = 0;
+  const backendAvgFlowScore = 0;
+  const backendCurrentStreak = 0;
+  const backendBestStreak = 0;
+  const modeBreakdown: Array<{
+    mode: string;
+    totalSessions: number;
+    totalDuration: number;
+    avgFlowScore: number | null;
+  }> = [];
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
     const normalizedMode = (mode || '').toLowerCase();
@@ -92,16 +86,25 @@ export default function StatsPage() {
     return false;
   };
 
-  const recentSessions = (remoteRecentSessions ?? []).map((session) => ({
-    id: session._id,
-    created_at: new Date(session.createdAt).toISOString(),
-    duration: session.duration,
-    hesitationCount: session.pauses,
-    flowScore: session.flowScore ?? null,
-    mode: session.mode || 'free',
-  }));
+  const recentSessions: Array<{
+    id: string;
+    created_at: string;
+    duration: number;
+    hesitationCount: number;
+    flowScore: number | null;
+    mode: string;
+  }> = [];
 
   const hasAnySession = recentSessions.length > 0;
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
+  const email = user?.email || '';
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
 
   const OverviewCard = ({ icon: Icon, label, value, sub, valueClassName }: {
     icon: React.ElementType;
@@ -178,29 +181,20 @@ export default function StatsPage() {
       <div className="w-full flex items-center justify-between rounded-[20px] bg-surface-elevated border border-border p-4 mb-8 shadow-card elevation-card max-h-[72px]">
         <div className="flex items-center gap-4">
           <div className="relative w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ring-2 ring-border overflow-hidden">
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonAvatarBox: "w-12 h-12",
-                  userButtonPopoverFooter: "hidden"
-                }
-              }}
-            />
-            {/* Fallback image manually defined underneath in case UserButton is overriding anything, but UserButton covers it. */}
-            <div className="absolute inset-0 pointer-events-none -z-10 bg-primary/20 flex items-center justify-center text-primary font-bold">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center text-primary font-bold">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                <>{user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}</>
+                <>{initials}</>
               )}
             </div>
           </div>
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-foreground text-base truncate leading-tight">
-              {user?.fullName || 'User'}
+              {displayName}
             </span>
             <span className="text-muted-foreground text-sm truncate leading-tight">
-              {user?.primaryEmailAddress?.emailAddress || ''}
+              {email}
             </span>
           </div>
         </div>
@@ -217,7 +211,9 @@ export default function StatsPage() {
           )}
           <button
             type="button"
-            onClick={() => signOut()}
+            onClick={() => {
+              void signOut();
+            }}
             className="p-2 md:px-4 md:py-2 rounded-full border border-border text-sm font-sans text-foreground hover:bg-surface-card transition-colors flex items-center justify-center"
             title="Sign out"
           >
@@ -389,7 +385,7 @@ export default function StatsPage() {
               );
             })}
           </div>
-          {remoteRecentSessions?.length === limit && (
+          {recentSessions.length === limit && (
             <button
               type="button"
               onClick={() => setLimit((prev) => prev + 15)}

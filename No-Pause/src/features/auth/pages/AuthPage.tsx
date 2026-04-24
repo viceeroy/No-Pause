@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { SignIn } from "@clerk/clerk-react";
 import { ArrowLeft, Flame, Mic, Sparkles, Target, TrendingUp } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { useAuth } from "@/providers/AuthContext";
 
 const AuthPage = () => {
   const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
   const [step, setStep] = useState(1);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const { signInWithGoogle } = useAuth();
 
   useEffect(() => {
     const seen = localStorage.getItem("onboarding_seen") === "true";
@@ -57,28 +59,24 @@ const AuthPage = () => {
 
   const SignInBlock = (
     <div className="w-full">
-      <SignIn
-        routing="path"
-        path="/auth"
-        signUpUrl="/auth/sign-up"
-        appearance={{
-          elements: {
-            footer: "hidden",
-            footerAction: "hidden",
-            card: "shadow-none border-none rounded-none bg-transparent w-full m-0 p-0",
-            rootBox: "w-full max-w-full",
-            headerTitle: "hidden",
-            headerSubtitle: "hidden",
-            formFieldRow: "hidden",
-            formButtonPrimary: "hidden",
-            dividerRow: "hidden",
-            socialButtonsBlockButton:
-              "w-full max-w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-full transition-all min-h-[48px] h-12 md:h-14 shadow-sm hover:shadow-md px-4",
-            socialButtonsBlockButtonText:
-              "font-sans font-semibold text-base text-foreground whitespace-normal text-center",
-          },
+      <button
+        type="button"
+        onClick={() => {
+          setAuthError(null);
+          void signInWithGoogle().catch((error) => {
+            console.error("Supabase Google sign-in failed:", error);
+            setAuthError("Google sign-in failed. Please try again.");
+          });
         }}
-      />
+        className="w-full max-w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-full transition-all min-h-[48px] h-12 md:h-14 shadow-sm hover:shadow-md px-4 font-sans font-semibold text-base"
+      >
+        Continue with Google
+      </button>
+      {authError ? (
+        <p className="text-center text-xs text-amber-200/90 mt-3 font-sans font-medium">
+          {authError}
+        </p>
+      ) : null}
       <p className="text-center text-xs text-muted-foreground mt-4 font-sans font-medium">
         No Pause only supports Google sign-in
       </p>

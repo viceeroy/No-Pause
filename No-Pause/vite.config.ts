@@ -17,8 +17,6 @@ export default defineConfig(() => ({
       output: {
         manualChunks: {
           vendor: ["react", "react-dom", "react-router-dom"],
-          clerk: ["@clerk/clerk-react"],
-          convex: ["convex", "convex/react", "convex/react-clerk"],
         },
       },
     },
@@ -26,11 +24,6 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@convex": path.resolve(__dirname, "../convex"),
-      "convex/server": path.resolve(
-        __dirname,
-        "./node_modules/convex/dist/esm/server/index.js",
-      ),
     },
   },
 }));

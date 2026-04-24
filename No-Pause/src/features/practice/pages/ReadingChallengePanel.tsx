@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, FileText, Mic, Play, Square, Volume2 } from 'lucide-react';
-import { useConvex, useMutation } from 'convex/react';
-import { useAuth, useUser } from '@clerk/clerk-react';
-import { api } from '@convex/_generated/api';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/shared/lib/utils';
 import { createAudioAnalyzer } from '../lib/audioRecording';
@@ -11,6 +8,8 @@ import type { AudioAnalyzer, AudioDataPayload } from '../lib/speechAnalyzer';
 import { VoicePlayer } from '../components/VoicePlayer';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import { shufflePassages, readingChallengePassages, type ReadingChallengePassage } from '../lib/readingTexts';
+import { saveSession, transcribeAudio } from '@/lib/practiceApi';
+import { useAuth } from '@/providers/AuthContext';
 
 type ReadingPhase = 'idle' | 'recording' | 'done';
 
@@ -30,10 +29,9 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 };
 
 export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
-  const { userId } = useAuth();
-  const { user } = useUser();
-  const convex = useConvex();
-  const saveSession = useMutation(api.sessions.saveSession);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const userEmail = user?.email;
   const navigate = useNavigate();
   const [phase, setPhase] = useState<ReadingPhase>('idle');
   const [passages, setPassages] = useState<ReadingChallengePassage[]>(() => shufflePassages(readingChallengePassages));
@@ -78,6 +76,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       await analyzer.start(micService.getStream() || undefined, micService.getAudioContext() || undefined);
     } catch (error) {
       console.error('Failed to start reading challenge session:', error);
+      await micService.reset();
       setErrorMessage('Microphone error. Please try again.');
       setPhase('idle');
       return;
@@ -100,7 +99,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       analyzerRef.current.destroy();
       analyzerRef.current = null;
     }
-    micService.setTracksEnabled(false);
+    await micService.reset();
     setTranscriptionLoading(true);
     setTranscriptionError(null);
     let transcriptText = '';
@@ -108,7 +107,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       try {
         const base64Audio = arrayBufferToBase64(await audioBlobRef.current.arrayBuffer());
         const mimeType = audioMimeTypeRef.current || audioBlobRef.current.type || 'audio/webm';
-        const text = await convex.action(api.transcribe.transcribeAudio, {
+        const text = await transcribeAudio({
           audioBase64: base64Audio,
           mimeType,
           language: 'en',
@@ -137,7 +136,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       try {
         await saveSession({
           userId,
-          email: user?.primaryEmailAddress?.emailAddress,
+          email: userEmail,
           duration: durationSec,
           speakingTime: speakingTimeSec,
           pauses: hesitationCount,
@@ -147,11 +146,11 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           completed: sessionCompletedNaturally,
         });
       } catch (error) {
-        console.error('Failed to sync reading challenge session to Convex:', error);
+        console.error('Failed to sync reading challenge session during backend migration:', error);
       }
     }
     sessionStartRef.current = null;
-  }, [arrayBufferToBase64, convex, saveSession, user?.primaryEmailAddress?.emailAddress, userId]);
+  }, [currentPassage, userEmail, userId]);
 
   const handleExit = useCallback(async () => {
     if (phase === 'recording') {
@@ -164,7 +163,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       analyzerRef.current = null;
     }
     sessionStartRef.current = null;
-    micService.setTracksEnabled(false);
+    void micService.reset();
     onExit();
   }, [finishSession, onExit, phase]);
 
@@ -190,7 +189,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
         analyzerRef.current = null;
       }
       sessionStartRef.current = null;
-      micService.setTracksEnabled(false);
+      void micService.reset();
     };
   }, []);
 

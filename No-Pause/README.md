@@ -11,14 +11,14 @@ No Pause is a real-time speaking analytics web application designed to help you 
   - **Topic Score**: Structured prompts categorized by difficulty to practice critical thinking and storytelling.
 - **Measurable Flow Score**: A customized algorithm evaluating hesitation rate (pauses/minute) and speaking ratio to penalize excessive silences and reward continuous flow.
 - **Configurable Sensitivities**: Granular settings (Beginner, Intermediate, Advanced) adjusting how long a silence must be to constitute a "hesitation".
-- **Progress Tracking**: Cloud-synced practice history, daily streaks, and aggregate flow metrics.
+- **Progress Tracking**: Authentication is powered by Supabase and practice analytics are in the middle of a backend migration.
 - **PWA Ready**: Installable as a progressive web app on desktop and mobile browsers for quick native-like access.
 
 ## 🛠 Technology Stack
 
 - **Frontend**: React 18, Vite, TypeScript
-- **Backend & Database**: Convex
-- **Authentication**: Clerk
+- **Backend & Database**: Supabase (migration in progress)
+- **Authentication**: Supabase Auth
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui + Radix UI Primitives
 - **Icons**: Lucide React
@@ -30,8 +30,7 @@ No Pause is a real-time speaking analytics web application designed to help you 
 
 - Node.js (v18 or higher)
 - npm or yarn
-- Convex account (for backend functions)
-- Clerk account (for authentication)
+- Supabase project
 
 ### Installation
 
@@ -42,28 +41,23 @@ cd No-Pause
 ```
 
 2. Install dependencies:
-Both in the root directory (for Convex) and the `No-Pause` directory.
+From the `No-Pause` directory.
 ```bash
-# Install frontend packages
 cd No-Pause
-npm install
-
-# Install backend packages
-cd ..
 npm install
 ```
 
 3. Set up environment variables:
-Create a `.env.local` file inside the `No-Pause` directory and add your Clerk publishable keys and Convex deployment URLs.
-Set the following Convex environment variables in the Convex dashboard:
-- `GROQ_API_KEY`
-- `OPENROUTER_API_KEY`
+Create a `.env` or `.env.local` file inside the `No-Pause` directory and add:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-4. Deploy Convex functions:
-From the root directory:
-```bash
-npx convex dev
-```
+4. Configure Google Auth in Supabase:
+- In your Supabase project, enable the `Google` provider under `Authentication -> Providers`.
+- In Google Cloud, create an OAuth client for your site and add Supabase's redirect URI from the provider setup screen.
+- In Supabase `Authentication -> URL Configuration`, add your app URLs, including the callback path used by the app:
+  - `http://localhost:5173/auth/callback`
+  - your production domain with `/auth/callback`
 
 5. Start the Vite development server:
 From the `No-Pause` directory:
@@ -76,7 +70,6 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-├── convex/                   # Backend API, schema, and queries
 ├── No-Pause/
 │   ├── src/
 │   │   ├── components/       # Reusable UI components
@@ -93,7 +86,7 @@ npm run dev
 
 ## 🔒 Privacy & Architecture
 
-No Pause is built with privacy in mind. Voice recording and analytical calculations happen entirely inside your browser tab using the `AudioContext` and `AnalyserNode` APIs. Raw audio data is **never** sent to our servers. The backend only syncs the resulting metrics (e.g., duration, hesitation count, and calculated Flow Score).
+No Pause is built with privacy in mind. Voice recording and analytical calculations happen entirely inside your browser tab using the `AudioContext` and `AnalyserNode` APIs. Raw audio data is **never** sent to our servers unless you explicitly use backend-powered features that are reintroduced later in the migration.
 
 ## 📄 License
 

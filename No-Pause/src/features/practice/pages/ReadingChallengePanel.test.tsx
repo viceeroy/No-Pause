@@ -4,25 +4,23 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { ReadingChallengePanel } from './ReadingChallengePanel';
 
-const actionMock = vi.hoisted(() => vi.fn().mockResolvedValue('Hello world'));
 const saveSessionMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const transcribeAudioMock = vi.hoisted(() => vi.fn().mockResolvedValue('Hello world'));
 
-vi.mock('@clerk/clerk-react', () => ({
-  useAuth: () => ({ userId: 'user_test' }),
-  useUser: () => ({ user: { primaryEmailAddress: { emailAddress: 'test@example.com' } } }),
+vi.mock('@/providers/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'user_test', email: 'test@example.com' } }),
 }));
 
-vi.mock('convex/react', () => ({
-  useConvex: () => ({
-    action: actionMock,
-  }),
-  useMutation: () => saveSessionMock,
+vi.mock('@/lib/practiceApi', () => ({
+  saveSession: saveSessionMock,
+  transcribeAudio: transcribeAudioMock,
 }));
 
 vi.mock('../lib/micService', () => ({
   micService: {
     init: vi.fn().mockResolvedValue(undefined),
     setTracksEnabled: vi.fn(),
+    reset: vi.fn().mockResolvedValue(undefined),
     ensureAudioContextRunning: vi.fn().mockResolvedValue(undefined),
     getStream: vi.fn(() => null),
     getAudioContext: vi.fn(() => null),
@@ -59,12 +57,12 @@ vi.mock('../components/VoicePlayer', () => ({
   VoicePlayer: () => <div data-testid="voice-player" />,
 }));
 
-const MockClerkProvider = ({ children }: { children: ReactNode }) => children;
+const MockAuthProvider = ({ children }: { children: ReactNode }) => children;
 
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <MockClerkProvider>
+  <MockAuthProvider>
     <MemoryRouter>{children}</MemoryRouter>
-  </MockClerkProvider>
+  </MockAuthProvider>
 );
 
 describe('ReadingChallengePanel', () => {
@@ -75,9 +73,9 @@ describe('ReadingChallengePanel', () => {
     await waitFor(() => expect(createAudioAnalyzerMock).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: /finish/i }));
 
-    await waitFor(() => expect(actionMock).toHaveBeenCalled());
+    await waitFor(() => expect(transcribeAudioMock).toHaveBeenCalled());
 
-    const payload = actionMock.mock.calls[0][1] as {
+    const payload = transcribeAudioMock.mock.calls[0][0] as {
       audioBase64: string;
       mimeType: string;
       language?: string;

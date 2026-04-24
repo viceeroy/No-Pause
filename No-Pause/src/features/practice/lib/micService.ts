@@ -45,7 +45,7 @@ class MicService {
           streamActive: this.stream.active,
           trackReadyState: track?.readyState,
         });
-        this.reset();
+        await this.reset();
       }
     }
 
@@ -74,14 +74,14 @@ class MicService {
    * Forces a fresh microphone initialization by clearing cached state first.
    */
   async retryInit(options: MicInitOptions = {}): Promise<MediaStream> {
-    this.reset();
+    await this.reset();
     return this.init(options);
   }
 
   /**
    * Releases the cached stream and audio context owned by the mic service.
    */
-  reset() {
+  async reset(): Promise<void> {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => {
         try { track.stop(); } catch (e) {
@@ -92,7 +92,7 @@ class MicService {
     this.stream = null;
     this.initializing = null;
     if (this.audioContext && this.audioContext.state !== 'closed') {
-      try { this.audioContext.close(); } catch (e) {
+      try { await this.audioContext.close(); } catch (e) {
         debugWarn('[MicDebug] Error closing AudioContext', e);
       }
     }

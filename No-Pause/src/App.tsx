@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Toaster } from "@/shared/components/ui/toaster";
 import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
@@ -18,7 +17,9 @@ import BlogListPage from "@/features/blog/pages/BlogListPage";
 import BlogPostPage from "@/features/blog/pages/BlogPostPage";
 import AuthPage from "@/features/auth/pages/AuthPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
+import AuthCallbackPage from "@/features/auth/pages/AuthCallbackPage";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "@/providers/AuthContext";
 
 const upsertMetaTag = (selector: string, attributes: Record<string, string>) => {
   let tag = document.head.querySelector<HTMLMetaElement>(selector);
@@ -192,53 +193,48 @@ const App = () => (
     <Toaster />
     <Sonner />
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/auth/sign-up/*"
-          element={(
-            <>
-              <SignedOut>
-                <SignUpPage />
-              </SignedOut>
-              <SignedIn>
-                <Navigate to="/" replace />
-              </SignedIn>
-            </>
-          )}
-        />
-        <Route
-          path="/auth/*"
-          element={(
-            <>
-              <SignedOut>
-                <AuthPage />
-              </SignedOut>
-              <SignedIn>
-                <Navigate to="/" replace />
-              </SignedIn>
-            </>
-          )}
-        />
-        <Route
-          path="/*"
-          element={(
-            <>
-              <SignedIn>
-                <div className="relative min-h-screen bg-background overflow-x-hidden">
-                  <AppRoutes />
-                </div>
-              </SignedIn>
-              <SignedOut>
-                <Navigate to="/auth" replace />
-              </SignedOut>
-            </>
-          )}
-        />
-      </Routes>
+      <AuthAwareRoutes />
     </BrowserRouter>
     <Analytics />
     <SpeedInsights />
   </TooltipProvider>
 );
+
+const AuthAwareRoutes = () => {
+  const { isLoading, session } = useAuth();
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  return (
+    <Routes>
+      <Route
+        path="/auth/callback"
+        element={<AuthCallbackPage />}
+      />
+      <Route
+        path="/auth/sign-up/*"
+        element={session ? <Navigate to="/" replace /> : <SignUpPage />}
+      />
+      <Route
+        path="/auth/*"
+        element={session ? <Navigate to="/" replace /> : <AuthPage />}
+      />
+      <Route
+        path="/*"
+        element={
+          session ? (
+            <div className="relative min-h-screen bg-background overflow-x-hidden">
+              <AppRoutes />
+            </div>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+    </Routes>
+  );
+};
 
 export default App;

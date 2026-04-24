@@ -69,7 +69,7 @@
   }
 }
 
-/* Prevent Tailwind base resets from breaking Clerk component styles */
+/* Preserve component defaults that rely on standard element styling */
 .cl-rootBox *,
 .cl-card *,
 .cl-signIn-root *,

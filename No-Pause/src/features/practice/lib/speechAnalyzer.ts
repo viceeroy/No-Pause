@@ -31,6 +31,7 @@ const ZERO_RMS_RECOVERY_WINDOW_MS = 2000;
 const SOURCE_REBIND_COOLDOWN_MS = 1500;
 const STREAM_HEALTH_INTERVAL_MS = 2000;
 const ANALYZER_HEALTH_INTERVAL_MS = 2500;
+const MEDIA_RECORDER_STOP_TIMEOUT_MS = 3000;
 const WEBM_AUDIO_MIME_TYPE = 'audio/webm';
 const MAX_TRANSCRIBE_BYTES = 15 * 1024 * 1024;
 const EMPTY_TRANSCRIPT = 'No speech detected.';
@@ -64,6 +65,7 @@ type SpeechRecognitionResultListLike = {
 };
 
 type SpeechRecognitionEventLike = Event & {
+  resultIndex: number;
   results: SpeechRecognitionResultListLike;
 };
 
@@ -609,16 +611,13 @@ export class AudioAnalyzer {
     this._recognitionRestartCount = 0;
     this.fillerWordCount = 0; // Reset filler word count
 
-    let lastResultIndex = 0;
-
     this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
       let interim = '';
       let newFinal = '';
-      for (let i = lastResultIndex; i < event.results.length; i++) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
           newFinal += result[0].transcript + ' ';
-          lastResultIndex = i + 1;
         } else {
           interim += result[0].transcript;
         }
@@ -635,7 +634,6 @@ export class AudioAnalyzer {
 
     this.recognition.onend = () => {
       debugLog('[Transcript] Recognition ended, transcript so far:', this.finalTranscript.slice(-60));
-      lastResultIndex = 0; // Reset for new session after restart
 
       // Only restart if still actively recording
       if (!this.isListening || !this.isRunning) {
@@ -1056,13 +1054,32 @@ export class AudioAnalyzer {
 
     const audioBlob = await new Promise<Blob | null>((resolve) => {
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-        this.mediaRecorder.onstop = () => {
-          debugLog('[MicDebug] MediaRecorder stop (from stop())', { state: this.mediaRecorder?.state || 'none' });
+        let stopTimeout: ReturnType<typeof setTimeout> | null = null;
+        let resolved = false;
+        const resolveWithChunks = (source: 'event' | 'timeout') => {
+          if (resolved) return;
+          resolved = true;
+          if (stopTimeout) clearTimeout(stopTimeout);
+          debugLog('[MicDebug] MediaRecorder stop resolved', {
+            source,
+            state: this.mediaRecorder?.state || 'none',
+            chunks: this.audioChunks.length,
+          });
           const blobType = this.mediaRecorderMimeType || this.mediaRecorder?.mimeType || WEBM_AUDIO_MIME_TYPE;
           resolve(new Blob(this.audioChunks, { type: blobType }));
         };
+        this.mediaRecorder.onstop = () => {
+          debugLog('[MicDebug] MediaRecorder stop (from stop())', { state: this.mediaRecorder?.state || 'none' });
+          resolveWithChunks('event');
+        };
+        stopTimeout = setTimeout(() => resolveWithChunks('timeout'), MEDIA_RECORDER_STOP_TIMEOUT_MS);
         debugLog('[MicDebug] MediaRecorder stop requested', { state: this.mediaRecorder.state });
-        this.mediaRecorder.stop();
+        try {
+          this.mediaRecorder.stop();
+        } catch (error) {
+          debugWarn('[MicDebug] MediaRecorder stop failed, resolving with existing chunks', error);
+          resolveWithChunks('timeout');
+        }
       } else {
         resolve(null);
       }

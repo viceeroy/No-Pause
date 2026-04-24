@@ -4,14 +4,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { useRecordingController } from './useRecordingController';
 import type { PracticeStateStore } from './types';
 
-vi.mock('@clerk/clerk-react', () => ({
-  useAuth: () => ({ userId: 'user_test' }),
-  useUser: () => ({ user: { primaryEmailAddress: { emailAddress: 'test@example.com' } } }),
+vi.mock('@/providers/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'user_test', email: 'test@example.com' } }),
 }));
 
-vi.mock('convex/react', () => ({
-  useConvex: () => ({ action: vi.fn() }),
-  useMutation: () => vi.fn(),
+vi.mock('@/lib/practiceApi', () => ({
+  analyzeSpeech: vi.fn(),
+  saveSession: vi.fn(),
+  transcribeAudio: vi.fn(),
+  updateStreak: vi.fn(),
 }));
 
 vi.mock('../lib/micService', () => ({
@@ -20,15 +21,16 @@ vi.mock('../lib/micService', () => ({
     setTracksEnabled: vi.fn(),
     init: vi.fn(),
     retryInit: vi.fn(),
+    reset: vi.fn().mockResolvedValue(undefined),
     getAudioContext: vi.fn(),
     ensureAudioContextRunning: vi.fn(),
   },
 }));
 
-const MockClerkProvider = ({ children }: { children: ReactNode }) => children;
+const MockAuthProvider = ({ children }: { children: ReactNode }) => children;
 
 const wrapper = ({ children }: { children: ReactNode }) =>
-  MockClerkProvider({ children });
+  MockAuthProvider({ children });
 
 describe('useRecordingController', () => {
   it('resets setup state on retry for lemon mode', () => {
