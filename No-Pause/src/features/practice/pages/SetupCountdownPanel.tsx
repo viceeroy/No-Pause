@@ -135,6 +135,12 @@ export function SetupCountdownPanel({
             <div className="w-20 h-20 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-4 night-glow">
               <Mic size={36} className="text-primary" />
             </div>
+            {topicPrompt && (
+              <div className="bg-surface-card border border-border/80 rounded-[28px] shadow-card p-5 md:p-7 mb-5 max-w-xl mx-auto">
+                <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-2">Argue this:</p>
+                <p className="text-xl md:text-2xl font-serif font-medium text-foreground leading-snug">{topicPrompt.topicTitle}</p>
+              </div>
+            )}
             <p className="text-lg font-serif text-foreground max-w-md mx-auto leading-relaxed">
               Speak freely without time limits. Focus on continuous speech and minimizing pauses.
             </p>

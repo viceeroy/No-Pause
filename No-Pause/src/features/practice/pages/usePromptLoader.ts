@@ -75,7 +75,16 @@ export function usePromptLoader(state: PracticeStateStore): PromptLoaderResult {
 
     const initializePrompt = async () => {
       if (mode === 'free') {
-        if (active) setTimeLeft(0);
+        if (active) {
+          setTimeLeft(0);
+          setTopicPrompt(promptText ? {
+            id: 'free-speaking-topic',
+            topicTitle: decodeURIComponent(promptText),
+            category: 'EXPERIENCE',
+            difficulty: 'medium',
+            cueCard: [],
+          } : null);
+        }
         return;
       }
 

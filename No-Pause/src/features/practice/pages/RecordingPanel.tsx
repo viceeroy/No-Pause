@@ -76,7 +76,9 @@ export function RecordingPanel({
               </div>
             </div>
             <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">Free Speak</p>
-            <p className="text-lg font-serif text-foreground italic">"Maintain your flow and speak freely..."</p>
+            <p className="text-lg font-serif text-foreground italic">
+              "{topicPrompt?.topicTitle || 'Maintain your flow and speak freely...'}"
+            </p>
           </div>
         )}
       </div>
