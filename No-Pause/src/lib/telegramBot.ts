@@ -10,13 +10,7 @@ const MY_STATS_LABEL = "📈 My Stats";
 const GET_PROMPT_LABEL = "💡 Get Prompt";
 const ABOUT_LABEL = "ℹ️ About";
 const PROMPT_READY_ACTION = "prompt_ready";
-const TRY_AGAIN_PROMPT_ACTION = "try_again:prompt";
-const TRY_AGAIN_FREE_ACTION = "try_again:free_speaking";
-
-type LastInteraction = "prompt" | "free_speaking";
-type SessionMode = "telegram_prompt" | "free_speaking";
-
-const lastInteractionByTelegramId = new Map<number, LastInteraction>();
+const TRY_AGAIN_ACTION = "try_again:free_speaking";
 
 const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
@@ -32,7 +26,9 @@ const opinionPrompts = [
 ];
 
 type FlowAnalysis = {
-  score: number;
+  flowScore: number;
+  hesitationsPerMinute: number;
+  fillerWordsCount: number;
   coachingNote: string;
 };
 
@@ -73,18 +69,10 @@ function getRandomPrompt(): string {
   return opinionPrompts[Math.floor(Math.random() * opinionPrompts.length)];
 }
 
-function getSessionMode(telegramId: number): SessionMode {
-  return lastInteractionByTelegramId.get(telegramId) === "prompt" ? "telegram_prompt" : "free_speaking";
-}
-
-function getTryAgainAction(mode: SessionMode): string {
-  return mode === "telegram_prompt" ? TRY_AGAIN_PROMPT_ACTION : TRY_AGAIN_FREE_ACTION;
-}
-
-function getSessionActions(mode: SessionMode, sessionId: string) {
+function getSessionActions(sessionId: string) {
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback("🔄 Try Again", getTryAgainAction(mode)),
+      Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
       Markup.button.url("📊 View on NoPause", `${SITE_URL}/session/${sessionId}`),
     ],
   ]);
@@ -118,24 +106,41 @@ function addDaysToDateString(dateString: string, days: number): string {
   return formatLocalDate(date);
 }
 
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) {
+    return fallback;
+  }
+
+  return Math.max(min, Math.min(max, numberValue));
+}
+
 function parseFlowAnalysis(content: string): FlowAnalysis {
-  const scoreMatch = content.match(/(?:flow\s*score|score)[^\d]*(\d{1,3})/i) ?? content.match(/\b(\d{1,3})\s*\/\s*100\b/);
-  const rawScore = scoreMatch ? Number(scoreMatch[1]) : 0;
-  const score = Math.max(0, Math.min(100, Number.isFinite(rawScore) ? rawScore : 0));
-  const coachingNote = content
-    .replace(/(?:flow\s*score|score)[^\n.]*?(\d{1,3})(?:\s*\/\s*100)?[.\n-]*/i, "")
-    .replace(/\s+/g, " ")
+  const jsonText = content
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
     .trim();
+  const parsed = JSON.parse(jsonText) as {
+    flow_score?: unknown;
+    hesitations_per_minute?: unknown;
+    filler_words_count?: unknown;
+    coaching_note?: unknown;
+  };
 
   return {
-    score,
-    coachingNote: coachingNote || "Keep your next answer tighter by slowing your transitions and replacing fillers with a brief intentional pause.",
+    flowScore: clampNumber(parsed.flow_score, 0, 100, 0),
+    hesitationsPerMinute: clampNumber(parsed.hesitations_per_minute, 0, 999, 0),
+    fillerWordsCount: Math.round(clampNumber(parsed.filler_words_count, 0, 9999, 0)),
+    coachingNote:
+      typeof parsed.coaching_note === "string" && parsed.coaching_note.trim()
+        ? parsed.coaching_note.trim()
+        : "Keep your next answer tighter by slowing your transitions and replacing fillers with a brief intentional pause.",
   };
 }
 
-async function transcribeAudio(file: File): Promise<string> {
+async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", new Blob([audioBuffer], { type: "audio/ogg" }), "voice.ogg");
   formData.append("model", "whisper-large-v3-turbo");
 
   const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
@@ -164,11 +169,12 @@ async function analyzeTranscript(transcript: string): Promise<FlowAnalysis> {
     },
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content:
-            "You are a speech fluency coach. Analyze this transcript for hesitations, filler words, clarity, and confidence. Return a Flow Score 0-100 and one actionable coaching note in 2 sentences max.",
+            "You are a speech fluency coach. Analyze this transcript for hesitations, filler words (um, uh, like, you know, basically, literally, actually, right, so, well), clarity, and confidence. Return ONLY valid JSON: { \"flow_score\": <0-100>, \"hesitations_per_minute\": <number>, \"filler_words_count\": <number>, \"coaching_note\": \"<one actionable sentence>\" }",
         },
         {
           role: "user",
@@ -188,40 +194,55 @@ async function analyzeTranscript(transcript: string): Promise<FlowAnalysis> {
   return parseFlowAnalysis(content);
 }
 
-async function downloadTelegramVoice(bot: Telegraf["telegram"], fileId: string): Promise<File> {
-  const fileLink = await bot.getFileLink(fileId);
-  const response = await fetch(fileLink);
+async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
+  const token = getBotToken();
+  const fileResponse = await fetch(
+    `https://api.telegram.org/bot${token}/getFile?file_id=${encodeURIComponent(fileId)}`,
+  );
+
+  if (!fileResponse.ok) {
+    const errorText = await fileResponse.text();
+    throw new Error(`Telegram getFile failed: ${fileResponse.status} ${errorText.slice(0, 200)}`);
+  }
+
+  const fileData = await fileResponse.json();
+  const filePath = String(fileData?.result?.file_path ?? "");
+  if (!fileData?.ok || !filePath) {
+    throw new Error(`Telegram getFile returned no file_path: ${JSON.stringify(fileData).slice(0, 200)}`);
+  }
+
+  const response = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`);
 
   if (!response.ok) {
     throw new Error(`Telegram voice download failed: ${response.status}`);
   }
 
-  const buffer = await response.arrayBuffer();
-  return new File([buffer], "telegram-voice.ogg", { type: "audio/ogg" });
+  return response.arrayBuffer();
 }
 
 async function insertTelegramSession(input: {
   userId: string;
-  mode: SessionMode;
   transcript: string;
-  flowScore: number;
-  coachingNote: string;
+  analysis: FlowAnalysis;
   durationSec: number;
 }) {
   const today = formatLocalDate(new Date());
+  const estimatedHesitations = Math.round((input.analysis.hesitationsPerMinute * input.durationSec) / 60);
   const { data, error } = await supabaseServer
     .from("sessions")
     .insert({
       user_id: input.userId,
-      mode: input.mode,
+      mode: "free_speaking",
       transcript: input.transcript,
-      flow_score: input.flowScore,
-      analysis_feedback: input.coachingNote,
+      flow_score: input.analysis.flowScore,
+      hesitations_per_minute: input.analysis.hesitationsPerMinute,
+      filler_count: input.analysis.fillerWordsCount,
+      analysis_feedback: input.analysis.coachingNote,
       completed: true,
       scoring_version: "1.0",
       duration: input.durationSec,
       speaking_time: input.durationSec,
-      pauses: null,
+      pauses: estimatedHesitations,
       words: countWords(input.transcript),
     })
     .select("id")
@@ -257,11 +278,7 @@ async function insertTelegramSession(input: {
   return String(data.id);
 }
 
-async function replyWithPrompt(ctx: Context, telegramId?: number) {
-  if (telegramId) {
-    lastInteractionByTelegramId.set(telegramId, "prompt");
-  }
-
+async function replyWithPrompt(ctx: Context) {
   await ctx.reply(getRandomPrompt(), promptReadyKeyboard);
 }
 
@@ -306,10 +323,9 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
   await ctx.reply("Got it. Analyzing your voice note now...");
 
   try {
-    const mode = getSessionMode(telegramId);
     const voice = ctx.message.voice;
-    const file = await downloadTelegramVoice(ctx.telegram, voice.file_id);
-    const transcript = await transcribeAudio(file);
+    const audioBuffer = await downloadTelegramVoice(voice.file_id);
+    const transcript = await transcribeAudio(audioBuffer);
 
     if (!transcript) {
       await ctx.reply("I could not detect enough speech in that voice note. Try one more with a little more volume.");
@@ -319,16 +335,14 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     const analysis = await analyzeTranscript(transcript);
     const sessionId = await insertTelegramSession({
       userId: connection.userId,
-      mode,
       transcript,
-      flowScore: analysis.score,
-      coachingNote: analysis.coachingNote,
+      analysis,
       durationSec: estimateDurationSec(voice.duration),
     });
 
     await ctx.reply(
-      `🎯 Flow Score: ${analysis.score}/100\n💬 ${analysis.coachingNote}`,
-      getSessionActions(mode, sessionId),
+      `🎯 Flow Score: ${analysis.flowScore}/100\n⏱ Hesitations/min: ${analysis.hesitationsPerMinute}\n🧩 Fillers: ${analysis.fillerWordsCount}\n💬 ${analysis.coachingNote}`,
+      getSessionActions(sessionId),
     );
   } catch (error) {
     console.error("Telegram voice handling failed", error);
@@ -360,16 +374,10 @@ export function createTelegramBot() {
   });
 
   bot.command("prompt", async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    await replyWithPrompt(ctx, telegramId ?? undefined);
+    await replyWithPrompt(ctx);
   });
 
   bot.hears(FREE_SPEAKING_LABEL, async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    if (telegramId) {
-      lastInteractionByTelegramId.set(telegramId, "free_speaking");
-    }
-
     await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
   });
 
@@ -381,8 +389,7 @@ export function createTelegramBot() {
   });
 
   bot.hears(GET_PROMPT_LABEL, async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    await replyWithPrompt(ctx, telegramId ?? undefined);
+    await replyWithPrompt(ctx);
   });
 
   bot.hears(ABOUT_LABEL, async (ctx) => {
@@ -399,26 +406,10 @@ nopause.org`,
   });
 
   bot.action(PROMPT_READY_ACTION, async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    if (telegramId) {
-      lastInteractionByTelegramId.set(telegramId, "prompt");
-    }
-
-    await ctx.answerCbQuery("Prompt mode set. Send a voice note when you're ready.");
+    await ctx.answerCbQuery("Send a voice note when you're ready.");
   });
 
-  bot.action(TRY_AGAIN_PROMPT_ACTION, async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    await ctx.answerCbQuery();
-    await replyWithPrompt(ctx, telegramId ?? undefined);
-  });
-
-  bot.action(TRY_AGAIN_FREE_ACTION, async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    if (telegramId) {
-      lastInteractionByTelegramId.set(telegramId, "free_speaking");
-    }
-
+  bot.action(TRY_AGAIN_ACTION, async (ctx) => {
     await ctx.answerCbQuery();
     await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
   });
@@ -427,7 +418,7 @@ nopause.org`,
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
 
-    void handleVoiceMessage(ctx, telegramId);
+    await handleVoiceMessage(ctx, telegramId);
   });
 
   bot.catch((error) => {
