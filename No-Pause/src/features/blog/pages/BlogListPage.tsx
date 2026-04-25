@@ -14,7 +14,7 @@ const getPostIcon = (slug: string) => {
 
 export default function BlogListPage() {
   return (
-    <main className="min-h-screen bg-surface-base pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-4xl mx-auto">
+	    <main className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-4xl mx-auto">
       <header className="mb-8">
         <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Blogs</h1>
         <p className="text-base text-muted-foreground font-sans">
@@ -27,7 +27,7 @@ export default function BlogListPage() {
           const Icon = getPostIcon(post.slug);
           return (
             <Link key={post.slug} to={`/blog/${post.slug}`} className="block">
-              <article className="rounded-2xl bg-surface-elevated border border-border shadow-card p-6 card-hover cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+	              <article className="rounded-2xl bg-surface-elevated border border-border shadow-card p-4 md:p-6 card-hover cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface-card text-primary">
                     <Icon size={18} />
@@ -40,7 +40,7 @@ export default function BlogListPage() {
                   day: 'numeric',
                 })}
               </p>
-              <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-3">{post.title}</h2>
+	              <h2 className="text-xl md:text-3xl font-serif text-foreground mb-2 md:mb-3">{post.title}</h2>
               <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed mb-5">
                 {post.description}
               </p>

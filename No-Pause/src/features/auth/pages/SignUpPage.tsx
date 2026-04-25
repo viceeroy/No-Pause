@@ -90,7 +90,7 @@ const SignUpPage = () => {
                 setAuthError("Google sign-in failed. Please try again.");
               });
             }}
-            className="w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-[16px] transition-all min-h-[52px] h-14 shadow-sm hover:shadow-md font-sans font-semibold text-base"
+	            className="w-full border border-border bg-surface-base hover:bg-surface-card text-foreground rounded-full transition-all min-h-[48px] h-12 md:h-14 shadow-sm hover:shadow-md px-4 font-sans font-semibold text-base"
           >
             Continue with Google
           </button>

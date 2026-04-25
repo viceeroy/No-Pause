@@ -39,16 +39,16 @@ export function RecordingPanel({
             'bg-ember-200/10 border-2 border-ember-500/35 rounded-[28px] shadow-card relative overflow-hidden',
             isPromptMode ? 'p-4 md:p-8' : 'p-6 md:p-10'
           )}>
-            <div className={cn('absolute top-0 right-0', isPromptMode ? 'p-3 md:p-4' : 'p-4 md:p-6')}>
-              <div className={cn(
-                'flex items-center gap-2 bg-ember-500 text-slate-950 rounded-full font-bold font-sans shadow-sm',
-                isPromptMode ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
-              )}>
-                <Timer size={14} className="animate-pulse" /> {formatTime(timeLeft)}
-              </div>
-            </div>
-            <p className="text-[10px] text-ember-600 uppercase tracking-widest font-black mb-3">Topic focus:</p>
-            <div className="text-3xl md:text-4xl font-serif font-bold text-foreground">{lemonPrompt?.word}</div>
+	            <div className="mb-3 flex items-start justify-between gap-3">
+	              <p className="text-[10px] text-ember-600 uppercase tracking-widest font-black">Topic focus:</p>
+	              <div className={cn(
+	                'flex shrink-0 items-center gap-2 bg-ember-500 text-slate-950 rounded-full font-bold font-sans shadow-sm',
+	                isPromptMode ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
+	              )}>
+	                <Timer size={14} className="animate-pulse" /> {formatTime(timeLeft)}
+	              </div>
+	            </div>
+	            <div className="text-3xl md:text-4xl font-serif font-bold text-foreground">{lemonPrompt?.word}</div>
           </div>
         )}
         {mode === 'topic' && topicPrompt && (
@@ -56,27 +56,27 @@ export function RecordingPanel({
             'bg-cyan-500/10 border-2 border-cyan-400/35 rounded-[28px] shadow-card relative overflow-hidden',
             isPromptMode ? 'p-5 md:p-8' : 'p-10'
           )}>
-            <div className={cn('absolute top-0 right-0', isPromptMode ? 'p-3 md:p-4' : 'p-6')}>
-              <div className={cn(
-                'flex items-center gap-2 bg-cyan-500 text-slate-950 rounded-full font-bold font-sans shadow-sm',
-                isPromptMode ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
-              )}>
-                <Timer size={14} className="animate-pulse" /> {formatTime(timeLeft)}
-              </div>
-            </div>
-            <p className="text-[10px] text-cyan-300 uppercase tracking-widest font-black mb-3">Responding to:</p>
-            <div className="text-lg md:text-2xl font-serif font-medium text-foreground leading-snug">{topicPrompt.topicTitle}</div>
+	            <div className="mb-3 flex items-start justify-between gap-3">
+	              <p className="text-[10px] text-cyan-300 uppercase tracking-widest font-black">Responding to:</p>
+	              <div className={cn(
+	                'flex shrink-0 items-center gap-2 bg-cyan-500 text-slate-950 rounded-full font-bold font-sans shadow-sm',
+	                isPromptMode ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'
+	              )}>
+	                <Timer size={14} className="animate-pulse" /> {formatTime(timeLeft)}
+	              </div>
+	            </div>
+	            <div className="text-lg md:text-2xl font-serif font-medium text-foreground leading-snug">{topicPrompt.topicTitle}</div>
           </div>
         )}
         {mode === 'free' && (
           <div className="p-6 md:p-10 bg-surface-card border-2 border-border/70 rounded-[32px] shadow-card relative overflow-hidden text-center">
-            <div className="absolute top-0 right-0 p-4 md:p-6">
-              <div className="flex items-center gap-2 px-4 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-bold font-sans shadow-sm">
-                <Timer size={16} className="animate-pulse" /> {formatTime(elapsedTime)}
-              </div>
-            </div>
-            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-3">Free Speak</p>
-            <p className="text-lg font-serif text-foreground italic">
+	            <div className="mb-3 flex items-start justify-between gap-3">
+	              <p className="text-[10px] text-primary uppercase tracking-widest font-black">Free Speak</p>
+	              <div className="flex shrink-0 items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold font-sans shadow-sm">
+	                <Timer size={16} className="animate-pulse" /> {formatTime(elapsedTime)}
+	              </div>
+	            </div>
+	            <p className="text-lg font-serif text-foreground italic">
               "{topicPrompt?.topicTitle || 'Maintain your flow and speak freely...'}"
             </p>
           </div>
@@ -111,11 +111,11 @@ export function RecordingPanel({
           onClick={() => void stopRecording()}
           className={cn(
             'w-full md:w-auto rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press shadow-soft night-glow flex items-center justify-center gap-4',
-            isPromptMode ? 'px-10 py-3 text-base' : 'px-16 py-4 text-lg'
-          )}
-        >
-          <Square size={20} fill="white" className="rounded-sm" /> Finish & View Results
-        </button>
+	            isPromptMode ? 'px-8 py-3 text-sm sm:text-base' : 'px-10 sm:px-16 py-3 sm:py-4 text-base sm:text-lg'
+	          )}
+	        >
+	          <Square size={20} fill="white" className="rounded-sm" /> <span className="sm:hidden">Finish</span><span className="hidden sm:inline">Finish & View Results</span>
+	        </button>
       </div>
     </div>
   );

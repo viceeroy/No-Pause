@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/features/practice/lib/speechAnalyzer';
 import { micService } from '@/features/practice/lib/micService';
-import { storage } from '@/shared/lib/storage';
 import { createAudioAnalyzer } from '@/features/practice/lib/audioRecording';
 import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
 import { useAuth } from '@/providers/AuthContext';
@@ -43,7 +42,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
   const micInitializingRef = useRef(false);
   const isRecordingRef = useRef(false);
 
-  const { user } = useAuth();
+  const { user, difficultyLevel } = useAuth();
   const userId = user?.id ?? null;
   const userEmail = user?.email;
 
@@ -405,8 +404,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       await micService.ensureAudioContextRunning();
 
-      const prefs = storage.getPreferences();
-      const hesitationMinDurationMs = Math.round(PAUSE_THRESHOLD_BY_LEVEL[prefs.pauseThresholdLevel] * 1000);
+      const hesitationMinDurationMs = Math.round(PAUSE_THRESHOLD_BY_LEVEL[difficultyLevel] * 1000);
 
       const analyzer = createAudioAnalyzer({
         enableTranscription: true,
@@ -447,7 +445,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
     } finally {
       micInitializingRef.current = false;
     }
-  }, [setLastResults, setTranscriptError, setShowMicRetry, setAudioData, setState, setCountdown, startRecording]);
+  }, [difficultyLevel, setLastResults, setTranscriptError, setShowMicRetry, setAudioData, setState, setCountdown, startRecording]);
 
   const handleRetryMicrophone = useCallback(() => {
     void handleStart(true);

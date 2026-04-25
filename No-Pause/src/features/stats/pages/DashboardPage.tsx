@@ -39,26 +39,26 @@ const CompactModeCard = ({
   <button
     onClick={onClick}
     className={cn(
-      'rounded-[22px] p-4 md:p-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden',
-      'min-h-[220px] flex flex-col items-center justify-between',
+	      'rounded-[18px] md:rounded-[22px] p-3.5 md:p-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden',
+	      'min-h-[176px] md:min-h-[220px] flex flex-col items-center justify-between',
       className
     )}
   >
-    <div className={cn('p-2.5 rounded-2xl border', iconWrapClass)}>
-      <Icon size={18} className={iconClass} />
-    </div>
-    <div className="mt-3">
-      <h3 className="text-sm md:text-lg font-serif text-foreground leading-tight">{title}</h3>
-      <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight mt-1">{subtitle}</p>
-    </div>
-    <div className={cn(
-      'mt-3 px-3 py-1.5 rounded-full text-[11px] md:text-xs font-sans font-semibold border',
-      actionClass
-    )}>
+	    <div className={cn('p-2 md:p-2.5 rounded-xl md:rounded-2xl border', iconWrapClass)}>
+	      <Icon size={16} className={iconClass} />
+	    </div>
+	    <div className="mt-2 md:mt-3">
+	      <h3 className="text-sm md:text-lg font-serif text-foreground leading-tight">{title}</h3>
+	      <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight mt-1">{subtitle}</p>
+	    </div>
+	    <div className={cn(
+	      'mt-2 md:mt-3 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-sans font-semibold border',
+	      actionClass
+	    )}>
       {actionLabel}
     </div>
-    <div className="mt-3">
-      <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-none">
+	    <div className="mt-2 md:mt-3">
+	      <p className="text-base md:text-xl font-serif font-semibold text-foreground leading-none">
         {Math.floor(timeSeconds / 60)}
         <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">m</span>
         <span className="ml-2">
@@ -66,7 +66,7 @@ const CompactModeCard = ({
           <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">s</span>
         </span>
       </p>
-      <p className="text-[9px] md:text-[10px] text-muted-foreground font-sans uppercase tracking-[0.14em] mt-1">Time Limit</p>
+	      <p className="text-[9px] md:text-[10px] text-muted-foreground font-sans uppercase tracking-[0.14em] mt-1">Time Limit</p>
     </div>
   </button>
 );
@@ -116,22 +116,22 @@ export default function DashboardPage() {
   const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
 
   return (
-    <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
+	    <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-12">
-        <div className="text-left">
-          <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-4 tracking-tight">No Pause</h1>
-          <h2 className="text-lg md:text-2xl font-serif font-semibold text-foreground/95 tracking-tight">
-            Real-time speaking analytics tool.
-          </h2>
+	      <div className="flex items-start justify-between gap-3 mb-8 md:mb-12">
+	        <div className="text-left">
+	          <h1 className="text-3xl md:text-6xl font-serif font-medium text-foreground mb-2 md:mb-4 tracking-tight">No Pause</h1>
+	          <h2 className="text-base md:text-2xl font-serif font-semibold text-foreground/95 tracking-tight">
+	            Real-time speaking analytics tool.
+	          </h2>
         </div>
         <div className="flex items-center justify-center gap-2">
           {showInstallBanner && (
-            <div className="md:hidden flex items-center gap-2">
+	            <div className="md:hidden flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleInstallClick}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-border text-xs font-sans text-foreground hover:bg-surface-card transition-colors"
+	                className="inline-flex min-h-10 items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-border text-xs font-sans text-foreground hover:bg-surface-card transition-colors"
               >
                 <Download size={14} className="text-primary" />
                 Install
@@ -139,7 +139,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={handleDismissInstallBanner}
-                className="px-2.5 py-2 rounded-full border border-border text-[11px] font-sans text-muted-foreground hover:text-foreground hover:bg-surface-card transition-colors"
+	                className="min-h-10 min-w-10 px-2 py-1.5 rounded-full border border-border text-[11px] font-sans text-muted-foreground hover:text-foreground hover:bg-surface-card transition-colors"
               >
                 ✕
               </button>
@@ -217,17 +217,17 @@ export default function DashboardPage() {
       <div className="flex flex-col mb-4 md:mb-6">
         <div
           onClick={() => handleCardClick('free')}
-          className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-8 md:p-12 mb-4 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
+	          className="rounded-[20px] md:rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-5 md:p-12 mb-4 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
         >
-          <div className="flex justify-center mb-6">
-            <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
-              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
-              <Mic size={40} className="md:hidden text-primary relative z-10" />
+	          <div className="flex justify-center mb-4 md:mb-6">
+	            <div className="relative h-[72px] w-[72px] md:w-32 md:h-32 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
+	              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
+	              <Mic size={30} className="md:hidden text-primary relative z-10" />
               <Mic size={56} className="hidden md:block text-primary relative z-10" />
             </div>
           </div>
-          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Free Speaking</h3>
-          <p className="text-sm md:text-base text-muted-foreground font-sans">Practice continuous speaking without time limits</p>
+	          <h3 className="text-lg md:text-2xl font-serif text-foreground mb-1">Free Speaking</h3>
+	          <p className="text-xs md:text-base text-muted-foreground font-sans">Practice continuous speaking without time limits</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 md:gap-6">
@@ -259,21 +259,23 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-8">
-        <div
-          onClick={() => navigate('/practice?mode=readingchallenge')}
-          className="rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-6 md:p-8 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
-        >
-          <div className="flex justify-center mb-4">
-            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
-              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
-              <BookOpen size={32} className="md:hidden text-primary relative z-10" />
-              <BookOpen size={44} className="hidden md:block text-primary relative z-10" />
-            </div>
-          </div>
-          <h3 className="text-xl md:text-2xl font-serif text-foreground mb-1">Reading Challenge</h3>
-          <p className="text-sm md:text-base text-muted-foreground font-sans">Read a passage with clarity</p>
-        </div>
+	      <div className="mb-8">
+	        <div
+	          onClick={() => navigate('/practice?mode=readingchallenge')}
+	          className="rounded-[20px] md:rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-4 md:p-8 text-left md:text-center cursor-pointer card-hover btn-press relative overflow-hidden group flex items-center md:block gap-4"
+	        >
+	          <div className="flex justify-center md:mb-4 shrink-0">
+	            <div className="relative w-14 h-14 md:w-24 md:h-24 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
+	              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
+	              <BookOpen size={24} className="md:hidden text-primary relative z-10" />
+	              <BookOpen size={44} className="hidden md:block text-primary relative z-10" />
+	            </div>
+	          </div>
+	          <div className="min-w-0">
+	            <h3 className="text-lg md:text-2xl font-serif text-foreground mb-1">Reading Challenge</h3>
+	            <p className="text-xs md:text-base text-muted-foreground font-sans">Read a passage with clarity</p>
+	          </div>
+	        </div>
       </div>
 
       {/* Social Icons */}

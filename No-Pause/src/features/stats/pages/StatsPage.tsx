@@ -4,7 +4,7 @@ import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
-import { useAuth } from '@/providers/AuthContext';
+import { type DifficultyLevel, useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import {
   Dialog,
@@ -32,12 +32,20 @@ function formatDate(isoString?: string): string {
   });
 }
 
+const DIFFICULTY_OPTIONS: { level: DifficultyLevel; label: string; description: string }[] = [
+  { level: 'beginner', label: 'Beginner', description: 'Longer pauses are forgiven.' },
+  { level: 'intermediate', label: 'Intermediate', description: 'Balanced timing for steady practice.' },
+  { level: 'advanced', label: 'Advanced', description: 'Strict timing for sharper flow.' },
+];
+
 export default function StatsPage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, difficultyLevel, updateDifficultyLevel, signOut } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [limit, setLimit] = useState(15);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [difficultySaving, setDifficultySaving] = useState(false);
+  const [difficultyError, setDifficultyError] = useState<string | null>(null);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
     totalPracticeTime: 0,
@@ -90,8 +98,8 @@ export default function StatsPage() {
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
     const normalizedMode = (mode || '').toLowerCase();
-    if (normalizedMode === 'free' || normalizedMode === 'readingchallenge') return false;
-    if (normalizedMode === 'lemon' || normalizedMode === 'topic') {
+    if (normalizedMode === 'readingchallenge') return false;
+    if (normalizedMode === 'free' || normalizedMode === 'free-speak' || normalizedMode === 'lemon' || normalizedMode === 'topic') {
       return score !== null && score !== undefined && score > 0;
     }
     return false;
@@ -117,14 +125,14 @@ export default function StatsPage() {
     sub?: string;
     valueClassName?: string;
   }) => (
-    <div className="rounded-[20px] border shadow-card elevation-card p-4 md:p-5 min-h-[112px]">
-      <div className="flex items-start justify-between mb-2">
-        <p className="text-sm text-muted-foreground font-sans">{label}</p>
-        <div className="rounded-xl bg-surface-elevated border border-border p-1.5">
+	    <div className="rounded-[18px] md:rounded-[20px] border shadow-card elevation-card p-3.5 md:p-5 min-h-[92px] md:min-h-[112px]">
+	      <div className="flex items-start justify-between gap-2 mb-1.5 md:mb-2">
+	        <p className="text-xs md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
+	        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1.5">
           <Icon size={14} className="text-primary" />
         </div>
       </div>
-      <p className={cn('text-2xl md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
+	      <p className={cn('text-xl md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
     </div>
   );
@@ -173,7 +181,7 @@ export default function StatsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-base pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-6xl mx-auto">
+	    <div className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Stats</h1>
@@ -182,7 +190,7 @@ export default function StatsPage() {
       </div>
 
       {/* Profile Row */}
-      <div className="w-full flex items-center justify-between rounded-[20px] bg-surface-elevated border border-border p-4 mb-8 shadow-card elevation-card max-h-[72px]">
+	      <div className="w-full flex items-center justify-between rounded-[20px] bg-surface-elevated border border-border p-4 mb-8 shadow-card elevation-card min-h-[72px]">
         <div className="flex items-center gap-4">
           <div className="relative w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ring-2 ring-border overflow-hidden">
             <div className="absolute inset-0 bg-primary/20 flex items-center justify-center text-primary font-bold">
@@ -283,6 +291,52 @@ export default function StatsPage() {
         </div>
       )}
 
+      <div className="mb-8">
+        <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Difficulty</h2>
+        <div className="grid grid-cols-3 gap-2 md:gap-3">
+          {DIFFICULTY_OPTIONS.map((option) => {
+            const isActive = difficultyLevel === option.level;
+            return (
+              <button
+                key={option.level}
+                type="button"
+                disabled={difficultySaving}
+                onClick={async () => {
+                  if (difficultyLevel === option.level) return;
+                  setDifficultySaving(true);
+                  setDifficultyError(null);
+                  try {
+                    await updateDifficultyLevel(option.level);
+                  } catch (error) {
+                    const message =
+                      error && typeof error === 'object' && 'message' in error
+                        ? String((error as { message?: unknown }).message)
+                        : 'Failed to save difficulty.';
+                    setDifficultyError(message);
+                  } finally {
+                    setDifficultySaving(false);
+                  }
+                }}
+                className={cn(
+                  'rounded-2xl border p-3 md:p-4 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                  isActive
+                    ? 'bg-primary/15 border-primary/45 text-foreground'
+                    : 'bg-surface-base border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+                )}
+              >
+                <p className="text-xs md:text-sm font-sans font-semibold">{option.label}</p>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-sm text-muted-foreground font-sans mt-3">
+          {DIFFICULTY_OPTIONS.find((option) => option.level === difficultyLevel)?.description}
+        </p>
+        {difficultyError && (
+          <p className="text-sm text-amber-200/90 font-sans mt-2">{difficultyError}</p>
+        )}
+      </div>
+
       {modeBreakdown.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Practice Breakdown</h2>
@@ -295,7 +349,12 @@ export default function StatsPage() {
                   : item.mode === 'topic'
                     ? 'Topic'
                     : 'Reading Challenge';
-              const showScore = item.mode === 'lemon' || item.mode === 'topic';
+              const normalizedMode = item.mode.toLowerCase();
+              const showScore =
+                normalizedMode === 'free' ||
+                normalizedMode === 'free-speak' ||
+                normalizedMode === 'lemon' ||
+                normalizedMode === 'topic';
               return (
                 <div key={item.mode} className="rounded-[20px] border shadow-card elevation-card p-4 md:p-5 min-h-[112px]">
                   <p className="text-sm text-muted-foreground font-sans mb-2">{label}</p>
@@ -348,8 +407,11 @@ export default function StatsPage() {
                 <div key={session.id || session.created_at} className="rounded-2xl bg-surface-elevated border border-border shadow-card p-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm text-foreground font-sans font-semibold">{modeLabel}</p>
-                    <p className="text-xs text-muted-foreground font-sans">
-                      {formatDate(session.created_at)} • {renderDurationInline(session.duration || 0)} • {session.hesitationCount || 0} hesitations
+	                    <p className="text-xs text-muted-foreground font-sans truncate">
+	                      {formatDate(session.created_at)}
+	                    </p>
+	                    <p className="text-xs text-muted-foreground/85 font-sans truncate">
+	                      {renderDurationInline(session.duration || 0)} • {session.hesitationCount || 0} hesitations
                     </p>
                   </div>
                   {shouldShowScore(session.mode, session.flowScore) ? (
@@ -378,7 +440,7 @@ export default function StatsPage() {
         <div className="text-center py-12">
           <p className="text-lg font-serif text-foreground mb-2">No sessions yet</p>
           <p className="text-sm text-[#AAB2C5] font-sans mb-6">Complete a Lemon or Topic session to see scored stats.</p>
-          <button onClick={() => navigate('/')} className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-sans font-semibold text-sm btn-press hover:brightness-110 night-glow transition-all">
+	          <button onClick={() => navigate('/')} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-sans font-semibold text-sm btn-press hover:brightness-110 night-glow transition-all">
             Start Practicing
           </button>
         </div>

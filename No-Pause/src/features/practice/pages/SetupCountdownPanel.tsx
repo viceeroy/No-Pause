@@ -1,30 +1,12 @@
-import { useState } from 'react';
 import { AlertTriangle, Mic, Sparkles, Timer } from 'lucide-react';
-import { storage } from '@/shared/lib/storage';
 import { cn } from '@/shared/lib/utils';
 import {
   LEMON_MIN_TOTAL_SECONDS,
-  THRESHOLD_ADVANCED,
-  THRESHOLD_BEGINNER,
-  THRESHOLD_INTERMEDIATE,
   TOPIC_MIN_TOTAL_SECONDS,
-  type PauseThresholdLevel,
 } from '../lib/scoringConstants';
 import type { LemonPrompt, TopicPrompt } from '../lib/promptService';
-import type { PracticeState, TopicDifficultyMode } from './types';
+import type { PracticeState } from './types';
 import { toMMSS } from './time';
-
-const THRESHOLD_DESCRIPTIONS: Record<PauseThresholdLevel, string> = {
-  beginner: 'Relaxed timing — longer pauses are forgiven.',
-  intermediate: 'Normal timing — keep momentum without rushing.',
-  advanced: 'Strict timing — minimal pauses between thoughts.',
-};
-
-const THRESHOLD_OPTIONS: { level: PauseThresholdLevel; label: string; value: number }[] = [
-  { level: 'beginner', label: 'Relaxed', value: THRESHOLD_BEGINNER },
-  { level: 'intermediate', label: 'Normal', value: THRESHOLD_INTERMEDIATE },
-  { level: 'advanced', label: 'Strict', value: THRESHOLD_ADVANCED },
-];
 
 type SetupCountdownPanelProps = {
   mode: string;
@@ -34,8 +16,6 @@ type SetupCountdownPanelProps = {
   handleRetryMicrophone: () => void;
   lemonPrompt: LemonPrompt | null;
   topicPrompt: TopicPrompt | null;
-  topicDifficultyMode: TopicDifficultyMode;
-  handleTopicDifficultySelect: (difficultyMode: TopicDifficultyMode) => Promise<void>;
   promptLoading: boolean;
   handleRandomPrompt: () => Promise<void>;
   canStart: boolean;
@@ -51,8 +31,6 @@ export function SetupCountdownPanel({
   handleRetryMicrophone,
   lemonPrompt,
   topicPrompt,
-  topicDifficultyMode,
-  handleTopicDifficultySelect,
   promptLoading,
   handleRandomPrompt,
   canStart,
@@ -60,14 +38,11 @@ export function SetupCountdownPanel({
   countdown,
 }: SetupCountdownPanelProps) {
   const isPromptMode = mode === 'lemon' || mode === 'topic';
-  const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
-    () => storage.getPreferences().pauseThresholdLevel
-  );
 
   return (
     <div className={cn(
       'text-center flex-1 flex flex-col justify-start',
-      isPromptMode ? 'overflow-hidden pb-10' : 'overflow-y-auto pb-28'
+	      isPromptMode ? 'overflow-y-auto pb-10' : 'overflow-y-auto pb-28'
     )}>
       {transcriptError && (
         <div className="mb-4 p-3 bg-orange-950/40 border border-orange-500/40 rounded-2xl w-full max-w-md mx-auto shrink-0">
@@ -119,34 +94,14 @@ export function SetupCountdownPanel({
                 <Timer size={12} /> {toMMSS(TOPIC_MIN_TOTAL_SECONDS)}
               </span>
             </div>
-            <div className="mt-4 text-left max-w-xl mx-auto">
-              <p className="text-[10px] text-cyan-300 uppercase tracking-widest font-bold mb-2">You should say:</p>
-              <ul className="space-y-1">
-                {topicPrompt.cueCard.map((step) => (
-                  <li key={step} className="text-xs text-muted-foreground font-sans">• {step}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-4">
-              <p className="text-[10px] text-cyan-300 uppercase tracking-widest font-bold mb-2">Difficulty Mode</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {(['random', 'easy', 'medium'] as const).map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => void handleTopicDifficultySelect(level)}
-                    disabled={promptLoading || state !== 'setup'}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider border transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                      topicDifficultyMode === level
-                        ? 'bg-cyan-500 text-slate-950 border-cyan-500'
-                        : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35 hover:bg-cyan-500/30'
-                    )}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-            </div>
+	            <div className="mt-3 text-left max-w-xl mx-auto">
+	              <p className="text-[10px] text-cyan-300 uppercase tracking-widest font-bold mb-2">You should say:</p>
+	              <ul className="space-y-0.5">
+	                {topicPrompt.cueCard.map((step) => (
+	                  <li key={step} className="text-xs text-muted-foreground font-sans leading-snug">• {step}</li>
+	                ))}
+	              </ul>
+	            </div>
           </div>
         )}
 
@@ -175,38 +130,6 @@ export function SetupCountdownPanel({
       <div className="shrink-0 pt-3">
         {state === 'setup' ? (
           <div className="flex flex-col items-center justify-center gap-3 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="w-full max-w-xl">
-              <div className="grid grid-cols-3 gap-2 md:gap-3">
-                {THRESHOLD_OPTIONS.map((option) => {
-                  const isActive = pauseThresholdLevel === option.level;
-                  return (
-                    <button
-                      key={option.level}
-                      type="button"
-                      onClick={() => {
-                        setPauseThresholdLevel(option.level);
-                        storage.savePreferences({ pauseThresholdLevel: option.level });
-                      }}
-                      className={cn(
-                        'rounded-2xl border p-3 md:p-4 text-center transition-colors',
-                        isActive
-                          ? 'bg-primary/15 border-primary/45 text-foreground'
-                          : 'bg-surface-base border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
-                      )}
-                    >
-                      <p className="text-xs md:text-sm font-sans font-semibold">{option.label}</p>
-                      <p className={cn('text-lg md:text-xl font-serif mt-1', isActive ? 'text-primary' : 'text-foreground')}>
-                        {option.value.toFixed(1)}s
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-sm text-muted-foreground font-sans mt-3">
-                {THRESHOLD_DESCRIPTIONS[pauseThresholdLevel]}
-              </p>
-            </div>
-
             <div className="flex flex-col md:flex-row items-center justify-center gap-3 w-full">
               {(mode === 'lemon' || mode === 'topic') && (
                 <button
@@ -214,7 +137,7 @@ export function SetupCountdownPanel({
                   disabled={promptLoading}
                   className={cn(
                     'w-full md:w-auto rounded-full bg-surface-card border border-border hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed text-foreground font-sans font-bold btn-press flex items-center justify-center gap-2 shadow-card',
-                    isPromptMode ? 'px-6 py-3 text-sm' : 'px-8 py-4'
+	                    isPromptMode ? 'min-h-11 px-6 py-2.5 text-sm' : 'min-h-11 px-8 py-3'
                   )}
                 >
                   <Sparkles size={18} className="text-primary" /> Randomize
@@ -225,7 +148,7 @@ export function SetupCountdownPanel({
                 disabled={!canStart || promptLoading}
                 className={cn(
                   'w-full md:w-auto rounded-full bg-primary hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-sans font-bold btn-press flex items-center justify-center gap-2 shadow-soft night-glow',
-                  isPromptMode ? 'px-8 py-3 text-sm' : 'px-10 py-4'
+	                  isPromptMode ? 'min-h-11 px-8 py-2.5 text-sm' : 'min-h-11 px-10 py-3'
                 )}
               >
                 <Mic size={20} /> Start Speaking

@@ -406,10 +406,7 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   if (streakError) throw streakError;
 
   const records = (sessions ?? []) as SessionRecord[];
-  const scored = records.filter((session) => {
-    const mode = session.mode?.toLowerCase() ?? "";
-    return (mode === "lemon" || mode === "topic") && session.flow_score !== null && session.flow_score !== undefined;
-  });
+  const scored = records.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
   const totalScoreWeight = scored.reduce((sum, session) => sum + Number(session.duration || 0), 0);
   const weightedScore = scored.reduce(
     (sum, session) => sum + Number(session.flow_score || 0) * Number(session.duration || 0),

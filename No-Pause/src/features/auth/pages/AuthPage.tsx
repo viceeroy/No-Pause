@@ -222,8 +222,8 @@ const AuthPage = () => {
           )}
         </div>
 
-        <div className="rounded-[24px] border border-border bg-surface-elevated/80 p-6 md:p-8 shadow-card elevation-card">
-            <div className={cn(step === 4 ? "min-h-0" : "min-h-[360px] md:min-h-[420px]", "flex flex-col")}>
+	        <div className="rounded-[24px] border border-border bg-surface-elevated/80 p-5 md:p-8 shadow-card elevation-card">
+	            <div className={cn(step === 4 ? "min-h-0" : "min-h-[300px] md:min-h-[380px]", "flex flex-col")}>
             <div className="flex-1">
               <div className={cn("transition-all duration-300", step === 1 ? "opacity-100" : "opacity-0 hidden")}>
                 <div className="text-center mb-6">
@@ -244,7 +244,7 @@ const AuthPage = () => {
 
               <div className={cn("transition-all duration-300", step === 2 ? "opacity-100" : "opacity-0 hidden")}>
                 <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-4">Choose how you practice</h2>
-                <div className="grid grid-cols-2 gap-3 mb-6">
+	                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                   <ModeCard
                     icon={Mic}
                     title="Free Speaking"

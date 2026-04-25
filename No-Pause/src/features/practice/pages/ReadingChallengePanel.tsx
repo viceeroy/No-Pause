@@ -225,7 +225,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
             <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
               <FileText size={20} className="text-primary" /> Your Passage
             </h3>
-            <div className="p-8 night-panel rounded-3xl">
+	            <div className="p-5 sm:p-8 night-panel rounded-2xl sm:rounded-3xl">
               <p className="text-foreground font-sans leading-relaxed text-left">
                 {passageText}
               </p>
@@ -236,7 +236,7 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
             <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
               <FileText size={20} className="text-primary" /> Your Transcript
             </h3>
-            <div className="p-8 night-panel rounded-3xl">
+	            <div className="p-5 sm:p-8 night-panel rounded-2xl sm:rounded-3xl">
               {transcriptionLoading ? (
                 <p className="text-foreground font-sans leading-relaxed text-left">Transcribing…</p>
               ) : transcriptionError ? (
@@ -268,17 +268,17 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4">
-            <button
-              onClick={resetSession}
-              className="px-10 py-4 rounded-full bg-surface-card border border-border text-foreground font-sans font-black text-lg btn-press shadow-card"
-            >
-              Read Another Passage
-            </button>
+	          <div className="flex w-full flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+	            <button
+	              onClick={resetSession}
+	              className="w-full rounded-full bg-primary px-6 py-3 text-primary-foreground font-sans font-black text-sm btn-press shadow-card sm:w-auto sm:px-10 sm:py-4 sm:text-lg"
+	            >
+	              Read Another Passage
+	            </button>
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-10 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-semibold btn-press transition-all duration-300"
+	              className="w-full rounded-full bg-surface-card border border-border px-6 py-3 hover:bg-surface-elevated text-foreground font-sans font-semibold text-sm btn-press transition-all duration-300 sm:w-auto sm:px-10 sm:py-4 sm:text-base"
             >
               Home
             </button>
@@ -300,10 +300,10 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           <p className="text-sm md:text-base text-muted-foreground font-sans">Read the passage with emotion and clarity.</p>
         </div>
         <div className="w-full text-center mb-6">
-          <div className="p-6 md:p-8 bg-surface-card border-2 border-border/70 rounded-[32px] shadow-card">
+	          <div className="p-4 md:p-8 bg-surface-card border md:border-2 border-border/70 rounded-[22px] md:rounded-[32px] shadow-card">
             <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-2">Reading Challenge Passage</p>
             <p className="text-xs text-muted-foreground font-sans mb-3">{currentPassage?.category}</p>
-            <p className="text-lg md:text-2xl font-serif text-foreground leading-relaxed">
+	            <p className="text-base md:text-2xl font-serif text-foreground leading-relaxed">
               {currentPassage?.text}
             </p>
           </div>
@@ -333,14 +333,14 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           {phase === 'recording' ? (
             <button
               onClick={() => void finishSession()}
-              className="w-full md:w-auto px-16 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-lg btn-press shadow-soft night-glow flex items-center justify-center gap-4"
+	              className="w-full md:w-auto px-10 md:px-16 py-3 md:py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-base md:text-lg btn-press shadow-soft night-glow flex items-center justify-center gap-3 md:gap-4"
             >
               <Square size={20} fill="white" className="rounded-sm" /> Finish
             </button>
           ) : (
             <button
               onClick={() => void startSession()}
-              className="w-full md:w-auto px-16 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-lg btn-press shadow-soft night-glow flex items-center justify-center gap-4"
+	              className="w-full md:w-auto px-10 md:px-16 py-3 md:py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black text-base md:text-lg btn-press shadow-soft night-glow flex items-center justify-center gap-3 md:gap-4"
             >
               <Play size={20} fill="white" className="rounded-sm" /> Start
             </button>

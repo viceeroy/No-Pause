@@ -123,10 +123,10 @@ export function ResultPanel({
         </p>
       </div>
 
-      <div className="mb-12 space-y-5 sm:space-y-6">
-        <section className="night-panel rounded-3xl px-5 py-8 sm:px-8 sm:py-10">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Flow Score</p>
-          <p className="text-7xl sm:text-8xl md:text-9xl font-serif font-medium leading-none text-primary">
+	      <div className="mb-10 sm:mb-12 space-y-4 sm:space-y-6">
+	        <section className="night-panel rounded-2xl sm:rounded-3xl px-5 py-6 sm:px-8 sm:py-10">
+	          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Flow Score</p>
+	          <p className="text-6xl sm:text-8xl md:text-9xl font-serif font-medium leading-none text-primary">
             {lastResults.flowScore}
           </p>
           <p className="mt-2 text-sm sm:text-base font-sans text-muted-foreground">out of 100</p>
@@ -147,18 +147,18 @@ export function ResultPanel({
 
         <section>
           <h3 className="text-lg font-serif font-medium text-foreground mb-4 text-left">Performance Stats</h3>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+	          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
               <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
               <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">
                 {renderDurationValue(lastResults.totalSessionTime)}
               </p>
             </div>
-            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
               <p className="text-xs text-muted-foreground font-sans mb-1.5">Hesitations</p>
               <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-ember-600">{lastResults.hesitationCount}</p>
             </div>
-            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
               <p className="text-xs text-muted-foreground font-sans mb-1.5">Words</p>
               <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">{showWordCount ? lastResults.wordCount : 0}</p>
             </div>
@@ -244,7 +244,7 @@ export function ResultPanel({
             <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
               <FileText size={20} className="text-primary" /> Speech Transcript
             </h3>
-            <div className="p-8 night-panel rounded-3xl">
+	            <div className="p-5 sm:p-8 night-panel rounded-2xl sm:rounded-3xl">
               <p className="text-foreground font-sans leading-relaxed text-left">{lastResults.transcript}</p>
             </div>
             {!lastResults.analysisFeedback && (
@@ -275,7 +275,7 @@ export function ResultPanel({
           <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
             <MessageSquare size={20} className="text-primary" /> AI Feedback
           </h3>
-          <div className="p-8 night-panel rounded-3xl">
+	          <div className="p-5 sm:p-8 night-panel rounded-2xl sm:rounded-3xl">
             {lastResults.analysisFeedbackLoading ? (
               <p className="text-foreground font-sans leading-relaxed text-left">
                 Generating feedback…
@@ -291,54 +291,61 @@ export function ResultPanel({
         </div>
       )}
 
-
-      <div className="flex flex-wrap justify-center gap-4">
-        <button onClick={handleRetry} className="px-8 py-4 rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press night-glow">
-          Practice Again
-        </button>
-        <button onClick={async () => {
-          const transcript = lastResults.transcript || '';
-          const shareText = mode === 'free'
-            ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
-            : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
-          const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-          if (isMobile && navigator.share) {
-            try { await navigator.share({ text: shareText }); } catch (e) {
-              if (e instanceof Error && e.name !== 'AbortError') {
-                console.warn('Share failed:', e);
+      <div className="mx-auto w-full max-w-[520px] pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:flex sm:max-w-none sm:items-center sm:justify-center sm:pt-0 sm:pb-0">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
+          <button
+            onClick={handleRetry}
+            className="min-h-[50px] rounded-full bg-primary px-2.5 py-3 text-[13px] font-sans font-black leading-tight text-primary-foreground night-glow btn-press hover:brightness-110 sm:min-h-0 sm:px-8 sm:py-4 sm:text-base"
+          >
+            Practice Again
+          </button>
+          <button
+            onClick={async () => {
+              const transcript = lastResults.transcript || '';
+              const shareText = mode === 'free'
+                ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
+                : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+              const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+              if (isMobile && navigator.share) {
+                try { await navigator.share({ text: shareText }); } catch (e) {
+                  if (e instanceof Error && e.name !== 'AbortError') {
+                    console.warn('Share failed:', e);
+                  }
+                }
+              } else {
+                try {
+                  await navigator.clipboard.writeText(shareText);
+                } catch {
+                  const ta = document.createElement('textarea');
+                  ta.value = shareText;
+                  ta.style.position = 'fixed';
+                  ta.style.opacity = '0';
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(ta);
+                }
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
               }
-            }
-          } else {
-            try {
-              await navigator.clipboard.writeText(shareText);
-            } catch {
-              const ta = document.createElement('textarea');
-              ta.value = shareText;
-              ta.style.position = 'fixed';
-              ta.style.opacity = '0';
-              document.body.appendChild(ta);
-              ta.select();
-              document.execCommand('copy');
-              document.body.removeChild(ta);
-            }
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }
-        }} className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press flex items-center gap-2 justify-center transition-all duration-300">
-          {copied ? (
-            <span className="flex items-center gap-2 animate-scale-in">
-              <Check size={18} className="text-green-400" /> Copied!
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Share2 size={18} /> Share Results
-            </span>
-          )}
-        </button>
+            }}
+            className="min-h-[50px] rounded-full border border-border bg-surface-card px-2.5 py-3 text-[13px] font-sans font-black leading-tight text-foreground transition-all duration-300 btn-press hover:bg-surface-elevated sm:min-h-0 sm:px-8 sm:py-4 sm:text-base"
+          >
+            {copied ? (
+              <span className="flex items-center justify-center gap-1 animate-scale-in sm:gap-2">
+                <Check size={16} className="text-green-400 sm:size-[18px]" /> Copied!
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-1 sm:gap-2">
+                <Share2 size={16} className="shrink-0 sm:size-[18px]" /> Share Results
+              </span>
+            )}
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="px-8 py-4 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press transition-all duration-300"
+          className="mt-3 min-h-[50px] min-w-[136px] rounded-full border border-border bg-surface-card px-8 py-3 text-[13px] font-sans font-black text-foreground transition-all duration-300 btn-press hover:bg-surface-elevated sm:mt-0 sm:ml-4 sm:min-h-0 sm:px-8 sm:py-4 sm:text-base"
         >
           Home
         </button>

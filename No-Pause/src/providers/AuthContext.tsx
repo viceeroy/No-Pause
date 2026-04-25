@@ -9,10 +9,14 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
+
 type AuthContextValue = {
   isLoading: boolean;
   session: Session | null;
   user: User | null;
+  difficultyLevel: DifficultyLevel;
+  updateDifficultyLevel: (level: DifficultyLevel) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -20,10 +24,23 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const GOOGLE_REDIRECT_URL = "https://www.nopause.org/auth/callback";
+const DEFAULT_DIFFICULTY_LEVEL: DifficultyLevel = "beginner";
+
+const isDifficultyLevel = (value: unknown): value is DifficultyLevel =>
+  value === "beginner" || value === "intermediate" || value === "advanced";
+
+const getDifficultyFromUser = (user: User | null | undefined): DifficultyLevel => {
+  const metadata = user?.user_metadata ?? {};
+  if (isDifficultyLevel(metadata.difficulty)) return metadata.difficulty;
+  if (isDifficultyLevel(metadata.difficultyLevel)) return metadata.difficultyLevel;
+  if (isDifficultyLevel(metadata.pauseThresholdLevel)) return metadata.pauseThresholdLevel;
+  return DEFAULT_DIFFICULTY_LEVEL;
+};
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>(DEFAULT_DIFFICULTY_LEVEL);
 
   useEffect(() => {
     let isMounted = true;
@@ -34,6 +51,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
       if (!isMounted) return;
       setSession(data.session ?? null);
+      setDifficultyLevel(getDifficultyFromUser(data.session?.user));
       setIsLoading(false);
     });
 
@@ -41,6 +59,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      setDifficultyLevel(getDifficultyFromUser(nextSession?.user));
       setIsLoading(false);
     });
 
@@ -55,6 +74,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoading,
       session,
       user: session?.user ?? null,
+      difficultyLevel,
+      updateDifficultyLevel: async (level: DifficultyLevel) => {
+        setDifficultyLevel(level);
+        if (!session?.user) return;
+
+        const { error } = await supabase.auth.updateUser({
+          data: {
+            difficulty: level,
+            difficultyLevel: level,
+          },
+        });
+        if (error) {
+          setDifficultyLevel(getDifficultyFromUser(session.user));
+          throw error;
+        }
+      },
       signInWithGoogle: async () => {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
@@ -73,7 +108,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       },
     }),
-    [isLoading, session],
+    [difficultyLevel, isLoading, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

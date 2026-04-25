@@ -48,13 +48,13 @@ export default function PracticePage() {
         ? state.state === 'recording'
           ? 'h-[100dvh] flex flex-col overflow-hidden'
           : isPromptMode
-            ? 'h-[100dvh] flex flex-col overflow-hidden pt-2 pb-4'
+	            ? 'h-[100dvh] flex flex-col overflow-hidden pt-2 pb-4'
             : 'min-h-screen flex flex-col pb-28 pt-2'
         : 'min-h-screen pb-32 pt-8'
     )}>
       {state.isFixedScreen && <div className="shrink-0 pt-6" />}
-      <button onClick={recording.handleBack} className={cn(
-        'flex items-center gap-1 text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0',
+	      <button onClick={recording.handleBack} className={cn(
+	        'min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0',
         state.isFixedScreen ? 'mb-3' : 'mb-8'
       )}>
         <ChevronLeft size={16} /> Back
@@ -76,8 +76,6 @@ export default function PracticePage() {
           handleRetryMicrophone={recording.handleRetryMicrophone}
           lemonPrompt={state.lemonPrompt}
           topicPrompt={state.topicPrompt}
-          topicDifficultyMode={state.topicDifficultyMode}
-          handleTopicDifficultySelect={prompt.handleTopicDifficultySelect}
           promptLoading={state.promptLoading}
           handleRandomPrompt={prompt.handleRandomPrompt}
           canStart={canStart}

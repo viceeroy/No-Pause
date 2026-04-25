@@ -38,7 +38,7 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <main className="min-h-screen bg-surface-base pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-4xl mx-auto">
+	    <main className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-4xl mx-auto">
         <div className="rounded-2xl border border-border bg-surface-elevated p-6 md:p-8">
           <h1 className="text-3xl md:text-4xl font-serif text-foreground mb-3">Post not found</h1>
           <p className="text-sm md:text-base text-muted-foreground font-sans mb-6">
@@ -56,14 +56,14 @@ export default function BlogPostPage() {
   }
 
   return (
-    <main className="min-h-screen bg-surface-base pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-4xl mx-auto">
+	    <main className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-4xl mx-auto">
       <div className="fixed top-0 left-0 right-0 z-[70] h-[3px] bg-surface-card/60">
         <div
           className="h-full bg-primary transition-[width] duration-150 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <article className="rounded-2xl border border-border bg-surface-elevated p-6 md:p-8 shadow-card">
+	      <article className="mx-auto max-w-3xl">
         <button
           type="button"
           onClick={handleBack}
@@ -80,7 +80,7 @@ export default function BlogPostPage() {
           })}
         </p>
         <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">{post.title}</h1>
-        <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed mb-8">
+	        <p className="text-sm md:text-base text-muted-foreground font-sans leading-relaxed mb-8">
           {post.description}
         </p>
 

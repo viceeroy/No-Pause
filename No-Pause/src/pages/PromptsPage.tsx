@@ -49,25 +49,25 @@ export default function PromptsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen pb-32 px-6 md:px-12 lg:px-20 pt-8 max-w-4xl mx-auto">
+	    <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground">Speaking Prompts</h1>
       </div>
 
       <div className="mb-10">
         <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">Argue This</h2>
-        <div className="-mx-6 md:-mx-12 lg:-mx-20 px-6 md:px-12 lg:px-20 overflow-x-auto pb-3">
-          <div className="flex gap-4 min-w-max">
+	        <div className="-mx-5 md:-mx-12 lg:-mx-20 px-5 md:px-12 lg:px-20 overflow-x-auto pb-3">
+	          <div className="flex gap-3 md:gap-4 min-w-max">
             {arguePrompts.map((prompt) => (
               <button
                 key={prompt}
                 onClick={() => {
                   navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(prompt)}`);
                 }}
-                className="w-72 md:w-80 min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-5 text-left card-hover btn-press flex flex-col justify-between"
-              >
-                <span className="text-xl md:text-2xl font-serif font-medium text-foreground leading-snug">{prompt}</span>
-                <span className="mt-5 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">
+	                className="w-60 md:w-80 min-h-32 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-4 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
+	              >
+	                <span className="text-lg md:text-2xl font-serif font-medium text-foreground leading-snug">{prompt}</span>
+	                <span className="mt-4 md:mt-5 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">
                   <Play size={16} fill="currentColor" />
                 </span>
               </button>
@@ -94,7 +94,7 @@ export default function PromptsPage() {
                 onClick={() => {
                   navigate(`/practice?mode=topic&prompt=${encodeURIComponent(item.id)}`);
                 }}
-                className="flex-shrink-0 w-10 h-10 rounded-full bg-surface-interactive border border-border text-cyan-400 flex items-center justify-center btn-press hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
+	                className="flex-shrink-0 w-11 h-11 rounded-full bg-surface-interactive border border-border text-cyan-400 flex items-center justify-center btn-press hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
               >
                 <Play size={16} fill="currentColor" />
               </button>
