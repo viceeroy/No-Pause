@@ -17,7 +17,7 @@ type AuthContextValue = {
   user: User | null;
   difficultyLevel: DifficultyLevel;
   updateDifficultyLevel: (level: DifficultyLevel) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (returnTo?: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -90,11 +90,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
           throw error;
         }
       },
-      signInWithGoogle: async () => {
+      signInWithGoogle: async (returnTo?: string) => {
+        const nextPath = returnTo?.startsWith("/") ? returnTo : null;
+        const redirectTo =
+          nextPath && typeof window !== "undefined"
+            ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+            : GOOGLE_REDIRECT_URL;
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: GOOGLE_REDIRECT_URL,
+            redirectTo,
           },
         });
         if (error) {

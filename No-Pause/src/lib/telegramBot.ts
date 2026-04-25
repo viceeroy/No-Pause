@@ -1,5 +1,6 @@
 import { Markup, Telegraf } from "telegraf";
 import type { Context } from "telegraf";
+import { calculateFlowScore } from "../features/practice/lib/analyzer/scoring.js";
 import { getTelegramConnection } from "./telegramAuth.js";
 import { supabaseServer } from "./supabaseServer.js";
 
@@ -11,6 +12,8 @@ const GET_PROMPT_LABEL = "💡 Get Prompt";
 const ABOUT_LABEL = "ℹ️ About";
 const PROMPT_READY_ACTION = "prompt_ready";
 const TRY_AGAIN_ACTION = "try_again:free_speaking";
+const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
+const sessionTranscriptsByTelegramId = new Map<number, Map<string, string>>();
 
 const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
@@ -27,9 +30,9 @@ const opinionPrompts = [
 
 type FlowAnalysis = {
   flowScore: number;
-  hesitationsPerMinute: number;
-  fillerWordsCount: number;
-  coachingNote: string;
+  hesitationCount: number;
+  speakingTimeSec: number;
+  isCompleted: boolean;
 };
 
 const replyKeyboard = Markup.keyboard([
@@ -73,8 +76,9 @@ function getSessionActions(sessionId: string) {
   return Markup.inlineKeyboard([
     [
       Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
-      Markup.button.url("📊 View on NoPause", `${SITE_URL}/session/${sessionId}`),
+      Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${sessionId}`),
     ],
+    [Markup.button.url("📊 View on NoPause", `${SITE_URL}/sessions`)],
   ]);
 }
 
@@ -88,6 +92,17 @@ function estimateDurationSec(voiceDuration?: number): number {
 
 function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
+}
+
+function getHesitationsPerMinute(hesitationCount: number, speakingTimeSec: number): number {
+  const speakingMinutes = Math.max(speakingTimeSec / 60, 0.5);
+  return hesitationCount / speakingMinutes;
+}
+
+function storeSessionTranscript(telegramId: number, sessionId: string, transcript: string) {
+  const transcripts = sessionTranscriptsByTelegramId.get(telegramId) ?? new Map<string, string>();
+  transcripts.set(sessionId, transcript);
+  sessionTranscriptsByTelegramId.set(telegramId, transcripts);
 }
 
 function formatLocalDate(date: Date): string {
@@ -115,32 +130,22 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   return Math.max(min, Math.min(max, numberValue));
 }
 
-function parseFlowAnalysis(content: string): FlowAnalysis {
+function parseHesitationAnalysis(content: string): number {
   const jsonText = content
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
   const parsed = JSON.parse(jsonText) as {
-    flow_score?: unknown;
-    hesitations_per_minute?: unknown;
-    filler_words_count?: unknown;
-    coaching_note?: unknown;
+    hesitation_count?: unknown;
   };
 
-  return {
-    flowScore: clampNumber(parsed.flow_score, 0, 100, 0),
-    hesitationsPerMinute: clampNumber(parsed.hesitations_per_minute, 0, 999, 0),
-    fillerWordsCount: Math.round(clampNumber(parsed.filler_words_count, 0, 9999, 0)),
-    coachingNote:
-      typeof parsed.coaching_note === "string" && parsed.coaching_note.trim()
-        ? parsed.coaching_note.trim()
-        : "Keep your next answer tighter by slowing your transitions and replacing fillers with a brief intentional pause.",
-  };
+  return Math.round(clampNumber(parsed.hesitation_count, 0, 9999, 0));
 }
 
 async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
   const formData = new FormData();
-  formData.append("file", new Blob([audioBuffer], { type: "audio/ogg" }), "voice.ogg");
+  const audioFile = new File([audioBuffer], "voice.ogg", { type: "audio/ogg" });
+  formData.append("file", audioFile);
   formData.append("model", "whisper-large-v3-turbo");
 
   const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
@@ -157,10 +162,13 @@ async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
   }
 
   const data = await response.json();
-  return String(data?.text ?? "").trim();
+  console.log("Groq Whisper response:", data);
+  const transcript = String(data?.text ?? "").trim();
+  console.log("transcript:", transcript);
+  return transcript;
 }
 
-async function analyzeTranscript(transcript: string): Promise<FlowAnalysis> {
+async function analyzeTranscript(transcript: string, speakingTimeSec: number): Promise<FlowAnalysis> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -174,7 +182,7 @@ async function analyzeTranscript(transcript: string): Promise<FlowAnalysis> {
         {
           role: "system",
           content:
-            "You are a speech fluency coach. Analyze this transcript for hesitations, filler words (um, uh, like, you know, basically, literally, actually, right, so, well), clarity, and confidence. Return ONLY valid JSON: { \"flow_score\": <0-100>, \"hesitations_per_minute\": <number>, \"filler_words_count\": <number>, \"coaching_note\": \"<one actionable sentence>\" }",
+            "You are a speech fluency coach. Analyze this transcript for pauses and hesitations. Return ONLY valid JSON: { \"hesitation_count\": <number of pauses/hesitations detected> }",
         },
         {
           role: "user",
@@ -191,7 +199,53 @@ async function analyzeTranscript(transcript: string): Promise<FlowAnalysis> {
 
   const data = await response.json();
   const content = String(data?.choices?.[0]?.message?.content ?? "").trim();
-  return parseFlowAnalysis(content);
+  const hesitationCount = parseHesitationAnalysis(content);
+  const scoreResult = calculateFlowScore(hesitationCount, {
+    mode: "free",
+    speakingTimeSec,
+    totalSessionTimeSec: speakingTimeSec,
+    hasSpeechEvidence: transcript.trim().length > 0 || hesitationCount > 0,
+  });
+
+  return {
+    flowScore: Number.isFinite(scoreResult.score) ? scoreResult.score : 0,
+    hesitationCount,
+    speakingTimeSec,
+    isCompleted: scoreResult.isCompleted,
+  };
+}
+
+async function generateAiFeedback(transcript: string): Promise<string> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getGroqApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a speech fluency coach. Give specific, actionable feedback on this speech transcript in 3-4 sentences. Focus on clarity, confidence, and areas to improve.",
+        },
+        {
+          role: "user",
+          content: transcript,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Groq feedback failed: ${response.status} ${errorText.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  const feedback = String(data?.choices?.[0]?.message?.content ?? "").trim();
+  return feedback || "I could not generate feedback for that transcript right now.";
 }
 
 async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
@@ -217,17 +271,22 @@ async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
     throw new Error(`Telegram voice download failed: ${response.status}`);
   }
 
-  return response.arrayBuffer();
+  const audioBuffer = await response.arrayBuffer();
+  console.log("Telegram voice audio bytes:", audioBuffer.byteLength);
+  if (audioBuffer.byteLength === 0) {
+    throw new Error("Telegram voice download returned an empty audio buffer");
+  }
+
+  return audioBuffer;
 }
 
 async function insertTelegramSession(input: {
   userId: string;
   transcript: string;
   analysis: FlowAnalysis;
-  durationSec: number;
 }) {
   const today = formatLocalDate(new Date());
-  const estimatedHesitations = Math.round((input.analysis.hesitationsPerMinute * input.durationSec) / 60);
+  const hesitationsPerMinute = getHesitationsPerMinute(input.analysis.hesitationCount, input.analysis.speakingTimeSec);
   const { data, error } = await supabaseServer
     .from("sessions")
     .insert({
@@ -235,14 +294,12 @@ async function insertTelegramSession(input: {
       mode: "free_speaking",
       transcript: input.transcript,
       flow_score: input.analysis.flowScore,
-      hesitations_per_minute: input.analysis.hesitationsPerMinute,
-      filler_count: input.analysis.fillerWordsCount,
-      analysis_feedback: input.analysis.coachingNote,
-      completed: true,
+      hesitations_per_minute: hesitationsPerMinute,
+      completed: input.analysis.isCompleted,
       scoring_version: "1.0",
-      duration: input.durationSec,
-      speaking_time: input.durationSec,
-      pauses: estimatedHesitations,
+      duration: input.analysis.speakingTimeSec,
+      speaking_time: input.analysis.speakingTimeSec,
+      pauses: input.analysis.hesitationCount,
       words: countWords(input.transcript),
     })
     .select("id")
@@ -327,21 +384,22 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
     const transcript = await transcribeAudio(audioBuffer);
 
-    if (!transcript) {
-      await ctx.reply("I could not detect enough speech in that voice note. Try one more with a little more volume.");
+    if (!transcript.trim()) {
+      await ctx.reply("Couldn't hear anything. Make sure your mic is on and try again 🎤");
       return;
     }
 
-    const analysis = await analyzeTranscript(transcript);
+    const speakingTimeSec = estimateDurationSec(voice.duration);
+    const analysis = await analyzeTranscript(transcript, speakingTimeSec);
     const sessionId = await insertTelegramSession({
       userId: connection.userId,
       transcript,
       analysis,
-      durationSec: estimateDurationSec(voice.duration),
     });
+    storeSessionTranscript(telegramId, sessionId, transcript);
 
     await ctx.reply(
-      `🎯 Flow Score: ${analysis.flowScore}/100\n⏱ Hesitations/min: ${analysis.hesitationsPerMinute}\n🧩 Fillers: ${analysis.fillerWordsCount}\n💬 ${analysis.coachingNote}`,
+      `🎤 Free Speaking Result\n\n📝 Transcript:\n${transcript}\n\n🎯 Flow Score: ${analysis.flowScore}\n⏸ Pauses: ${analysis.hesitationCount}\n🕐 Speaking time: ${analysis.speakingTimeSec}s`,
       getSessionActions(sessionId),
     );
   } catch (error) {
@@ -412,6 +470,31 @@ nopause.org`,
   bot.action(TRY_AGAIN_ACTION, async (ctx) => {
     await ctx.answerCbQuery();
     await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
+  });
+
+  bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    await ctx.answerCbQuery();
+    const telegramId = getTelegramId(ctx);
+    const sessionId = ctx.match[1];
+
+    if (!telegramId) {
+      await ctx.reply("I could not identify your Telegram account for feedback.");
+      return;
+    }
+
+    const transcript = sessionTranscriptsByTelegramId.get(telegramId)?.get(sessionId);
+    if (!transcript) {
+      await ctx.reply("I could not find the transcript for that session in memory. Send a new voice note and try again.");
+      return;
+    }
+
+    try {
+      const feedback = await generateAiFeedback(transcript);
+      await ctx.reply(`🤖 AI Feedback\n${feedback}`);
+    } catch (error) {
+      console.error("Telegram AI feedback failed", error);
+      await ctx.reply("I could not generate feedback right now. Please try again in a moment.");
+    }
   });
 
   bot.on("voice", async (ctx) => {

@@ -38,7 +38,17 @@ const DIFFICULTY_OPTIONS: { level: DifficultyLevel; label: string; description: 
   { level: 'advanced', label: 'Advanced', description: 'Strict timing for sharper flow.' },
 ];
 
-export default function StatsPage() {
+type StatsPageProps = {
+  emptyStateTitle?: string;
+  emptyStateMessage?: string;
+  showEmptyStateAction?: boolean;
+};
+
+export default function StatsPage({
+  emptyStateTitle = 'No sessions yet',
+  emptyStateMessage = 'Complete a Lemon or Topic session to see scored stats.',
+  showEmptyStateAction = true,
+}: StatsPageProps) {
   const navigate = useNavigate();
   const { user, difficultyLevel, updateDifficultyLevel, signOut } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
@@ -438,11 +448,13 @@ export default function StatsPage() {
 
       {!isRemoteRecentSessionsLoading && !hasAnySession && (
         <div className="text-center py-12">
-          <p className="text-lg font-serif text-foreground mb-2">No sessions yet</p>
-          <p className="text-sm text-[#AAB2C5] font-sans mb-6">Complete a Lemon or Topic session to see scored stats.</p>
-	          <button onClick={() => navigate('/')} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-sans font-semibold text-sm btn-press hover:brightness-110 night-glow transition-all">
-            Start Practicing
-          </button>
+          <p className="text-lg font-serif text-foreground mb-2">{emptyStateTitle}</p>
+          <p className="text-sm text-[#AAB2C5] font-sans mb-6">{emptyStateMessage}</p>
+          {showEmptyStateAction && (
+	            <button onClick={() => navigate('/')} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-sans font-semibold text-sm btn-press hover:brightness-110 night-glow transition-all">
+              Start Practicing
+            </button>
+          )}
         </div>
       )}
     </div>

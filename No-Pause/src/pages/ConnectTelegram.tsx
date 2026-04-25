@@ -101,7 +101,7 @@ const ConnectTelegram = () => {
     success: {
       icon: CheckCircle2,
       title: "Telegram connected",
-      body: "You can return to Telegram and send a voice note for a Flow Score.",
+      body: "✅ Connected! Go back to @NoPauseAI_bot and send a voice message.",
     },
     error: {
       icon: ShieldAlert,
@@ -125,6 +125,14 @@ const ConnectTelegram = () => {
         </div>
         <h1 className="mb-3 text-3xl font-serif font-medium text-foreground">{content.title}</h1>
         <p className="font-sans text-sm leading-relaxed text-muted-foreground">{content.body}</p>
+        {state === "success" && (
+          <a
+            href="https://t.me/NoPauseAI_bot"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2.5 font-sans text-sm font-semibold text-primary-foreground transition-all hover:brightness-110"
+          >
+            Open Telegram
+          </a>
+        )}
       </section>
     </main>
   );

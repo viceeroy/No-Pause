@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Flame, Mic, Sparkles, Target, TrendingUp } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/providers/AuthContext";
 
 const AuthPage = () => {
+  const location = useLocation();
   const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
   const [step, setStep] = useState(1);
   const [authError, setAuthError] = useState<string | null>(null);
   const { signInWithGoogle } = useAuth();
+  const returnTo = new URLSearchParams(location.search).get("returnTo");
 
   useEffect(() => {
     const seen = localStorage.getItem("onboarding_seen") === "true";
@@ -63,7 +66,7 @@ const AuthPage = () => {
         type="button"
         onClick={() => {
           setAuthError(null);
-          void signInWithGoogle().catch((error) => {
+          void signInWithGoogle(returnTo ?? undefined).catch((error) => {
             console.error("Supabase Google sign-in failed:", error);
             setAuthError("Google sign-in failed. Please try again.");
           });

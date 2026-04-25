@@ -7,8 +7,9 @@ import {
   CAP_AT_MIN_RATIO,
 } from '../scoringConstants';
 
-const IS_DEV = import.meta.env.DEV;
-const IS_TEST = Boolean(import.meta.env.VITEST) || import.meta.env.MODE === 'test';
+const viteEnv = import.meta.env;
+const IS_DEV = Boolean(viteEnv?.DEV);
+const IS_TEST = Boolean(viteEnv?.VITEST) || viteEnv?.MODE === 'test';
 const MIN_SPEAKING_RATIO_FOR_SCORE = 0.5;
 
 const debugScoreBreakdown = (details: Record<string, unknown>) => {

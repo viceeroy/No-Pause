@@ -19,6 +19,7 @@ import AuthPage from "@/features/auth/pages/AuthPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
 import AuthCallbackPage from "@/features/auth/pages/AuthCallbackPage";
 import ConnectTelegram from "./pages/ConnectTelegram";
+import Sessions from "./pages/Sessions";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "@/providers/AuthContext";
 
@@ -203,9 +204,16 @@ const App = () => (
 
 const AuthAwareRoutes = () => {
   const { isLoading, session } = useAuth();
+  const location = useLocation();
+  const returnTo = new URLSearchParams(location.search).get("returnTo");
+  const safeReturnTo = returnTo?.startsWith("/") ? returnTo : "/";
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background" />;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -223,8 +231,16 @@ const AuthAwareRoutes = () => {
         element={session ? <Navigate to="/" replace /> : <AuthPage />}
       />
       <Route
+        path="/login/*"
+        element={session ? <Navigate to={safeReturnTo} replace /> : <AuthPage />}
+      />
+      <Route
         path="/connect"
         element={<ConnectTelegram />}
+      />
+      <Route
+        path="/sessions"
+        element={<Sessions />}
       />
       <Route
         path="/*"
