@@ -1,17 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
-import { storage } from '@/shared/lib/storage';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
-import {
-  THRESHOLD_ADVANCED,
-  THRESHOLD_BEGINNER,
-  THRESHOLD_INTERMEDIATE,
-  type PauseThresholdLevel,
-} from '@/features/practice/lib/scoringConstants';
+import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import {
   Dialog,
   DialogContent,
@@ -38,44 +32,61 @@ function formatDate(isoString?: string): string {
   });
 }
 
-const THRESHOLD_DESCRIPTIONS: Record<PauseThresholdLevel, string> = {
-  beginner: 'Relaxed timing — longer pauses are forgiven.',
-  intermediate: 'Normal timing — keep momentum without rushing.',
-  advanced: 'Strict timing — minimal pauses between thoughts.',
-};
-
-const THRESHOLD_OPTIONS: { level: PauseThresholdLevel; label: string; value: number }[] = [
-  { level: 'beginner', label: 'Relaxed', value: THRESHOLD_BEGINNER },
-  { level: 'intermediate', label: 'Normal', value: THRESHOLD_INTERMEDIATE },
-  { level: 'advanced', label: 'Strict', value: THRESHOLD_ADVANCED },
-];
-
 export default function StatsPage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [limit, setLimit] = useState(15);
-  const [pauseThresholdLevel, setPauseThresholdLevel] = useState<PauseThresholdLevel>(
-    () => storage.getPreferences().pauseThresholdLevel
-  );
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [stats, setStats] = useState<PracticeStats>({
+    scoredSessions: 0,
+    totalPracticeTime: 0,
+    avgFlowScore: 0,
+    currentStreak: 0,
+    bestStreak: 0,
+    modeBreakdown: [],
+    recentSessions: [],
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
-  const isRemoteStatsLoading = false;
-  const isRemoteStreakLoading = false;
-  const isRemoteRecentSessionsLoading = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const backendScoredSessions = 0;
-  const backendTotalPracticeTime = 0;
-  const backendAvgFlowScore = 0;
-  const backendCurrentStreak = 0;
-  const backendBestStreak = 0;
-  const modeBreakdown: Array<{
-    mode: string;
-    totalSessions: number;
-    totalDuration: number;
-    avgFlowScore: number | null;
-  }> = [];
+    setStatsLoading(true);
+    setStatsError(null);
+    getPracticeStats(user?.id ?? null, limit)
+      .then((nextStats) => {
+        if (!cancelled) setStats(nextStats);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        const message =
+          error && typeof error === 'object' && 'message' in error
+            ? String((error as { message?: unknown }).message)
+            : 'Failed to load Supabase stats.';
+        setStatsError(message);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [limit, user?.id]);
+
+  const isRemoteStatsLoading = statsLoading;
+  const isRemoteStreakLoading = statsLoading;
+  const isRemoteRecentSessionsLoading = statsLoading;
+
+  const backendScoredSessions = stats.scoredSessions;
+  const backendTotalPracticeTime = stats.totalPracticeTime;
+  const backendAvgFlowScore = stats.avgFlowScore;
+  const backendCurrentStreak = stats.currentStreak;
+  const backendBestStreak = stats.bestStreak;
+  const modeBreakdown = stats.modeBreakdown;
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
     const normalizedMode = (mode || '').toLowerCase();
@@ -86,14 +97,7 @@ export default function StatsPage() {
     return false;
   };
 
-  const recentSessions: Array<{
-    id: string;
-    created_at: string;
-    duration: number;
-    hesitationCount: number;
-    flowScore: number | null;
-    mode: string;
-  }> = [];
+  const recentSessions = stats.recentSessions;
 
   const hasAnySession = recentSessions.length > 0;
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
@@ -273,38 +277,11 @@ export default function StatsPage() {
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : backendAvgFlowScore} />
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Pause Threshold</h2>
-        <div className="grid grid-cols-3 gap-2 md:gap-3">
-          {THRESHOLD_OPTIONS.map((option) => {
-            const isActive = pauseThresholdLevel === option.level;
-            return (
-              <button
-                key={option.level}
-                type="button"
-                onClick={() => {
-                  setPauseThresholdLevel(option.level);
-                  storage.savePreferences({ pauseThresholdLevel: option.level });
-                }}
-                className={cn(
-                  'rounded-2xl border p-3 md:p-4 text-center transition-colors',
-                  isActive
-                    ? 'bg-primary/15 border-primary/45 text-foreground'
-                    : 'bg-surface-base border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
-                )}
-              >
-                <p className="text-xs md:text-sm font-sans font-semibold">{option.label}</p>
-                <p className={cn('text-lg md:text-xl font-serif mt-1', isActive ? 'text-primary' : 'text-foreground')}>
-                  {option.value.toFixed(1)}s
-                </p>
-              </button>
-            );
-          })}
+      {statsError && (
+        <div className="mb-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100 font-sans">
+          {statsError}
         </div>
-        <p className="text-sm text-muted-foreground font-sans mt-3">
-          {THRESHOLD_DESCRIPTIONS[pauseThresholdLevel]}
-        </p>
-      </div>
+      )}
 
       {modeBreakdown.length > 0 && (
         <div className="mb-8">

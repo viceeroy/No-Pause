@@ -2,12 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from './scoring';
 
 describe('analyzer/scoring boundary', () => {
-  it('returns completed score in free mode with transcript fallback evidence', () => {
+  it('returns completed score in free mode at exactly 50% speaking ratio', () => {
     const result = calculateFlowScore(3, {
       mode: 'free',
-      speakingTimeSec: 20,
+      speakingTimeSec: 30,
       totalSessionTimeSec: 60,
-      hasSpeechEvidence: true,
     });
 
     expect(result).toEqual({ score: 25, isCompleted: true });

@@ -1,7 +1,5 @@
 import {
-  LEMON_MIN_SPEAKING_SECONDS,
   LEMON_MIN_TOTAL_SECONDS,
-  TOPIC_MIN_SPEAKING_SECONDS,
   TOPIC_MIN_TOTAL_SECONDS,
   GRACE_RATE,
   PENALTY_PER_HPM,
@@ -11,6 +9,7 @@ import {
 
 const IS_DEV = import.meta.env.DEV;
 const IS_TEST = Boolean(import.meta.env.VITEST) || import.meta.env.MODE === 'test';
+const MIN_SPEAKING_RATIO_FOR_SCORE = 0.5;
 
 const debugScoreBreakdown = (details: Record<string, unknown>) => {
   if (IS_DEV && !IS_TEST) {
@@ -41,6 +40,7 @@ export function calculateFlowScore(
   const totalSession = options?.totalSessionTimeSec ?? 0;
   const mode = options?.mode ?? 'free';
   const hesitationCount = rawHesitationCount ?? 0;
+  const speakingRatio = totalSession > 0 ? speakingTime / totalSession : 0;
 
   if (totalSession <= 0) return { score: 0, isCompleted: false, reason: 'duration' };
 
@@ -51,7 +51,7 @@ export function calculateFlowScore(
     const durationComplete = totalSession >= LEMON_MIN_TOTAL_SECONDS;
     if (!durationComplete) {
       reason = 'duration';
-    } else if (speakingTime < LEMON_MIN_SPEAKING_SECONDS) {
+    } else if (speakingRatio < MIN_SPEAKING_RATIO_FOR_SCORE) {
       reason = 'speaking';
     } else {
       isCompleted = true;
@@ -60,14 +60,13 @@ export function calculateFlowScore(
     const durationComplete = totalSession >= TOPIC_MIN_TOTAL_SECONDS;
     if (!durationComplete) {
       reason = 'duration';
-    } else if (speakingTime < TOPIC_MIN_SPEAKING_SECONDS) {
+    } else if (speakingRatio < MIN_SPEAKING_RATIO_FOR_SCORE) {
       reason = 'speaking';
     } else {
       isCompleted = true;
     }
   } else {
-    const speechEvidenceFallback = Boolean(options?.hasSpeechEvidence);
-    isCompleted = totalSession >= 60 && (speakingTime >= 45 || speechEvidenceFallback);
+    isCompleted = totalSession >= 60 && speakingRatio >= MIN_SPEAKING_RATIO_FOR_SCORE;
     if (!isCompleted) reason = totalSession < 60 ? 'duration' : 'speaking';
   }
 
@@ -84,22 +83,6 @@ export function calculateFlowScore(
     return { score: 0, isCompleted: false, reason };
   }
 
-  // Speaking ratio gate: if the user spoke less than 25% of the session,
-  // the session doesn't count as a real attempt.
-  const speakingRatio = totalSession > 0 ? speakingTime / totalSession : 0;
-  if (speakingRatio < 0.25) {
-    debugScoreBreakdown({
-      mode,
-      speakingTime: `${speakingTime}s`,
-      totalSession: `${totalSession}s`,
-      speakingRatio: `${(speakingRatio * 100).toFixed(0)}%`,
-      reason: 'speaking',
-      completed: false,
-      finalScore: 0,
-    });
-    return { score: 0, isCompleted: false, reason: 'speaking' };
-  }
-
   // --- Rate-based scoring ---
   // Hesitations per minute of speaking time, with a 30s floor to avoid
   // division spikes on sessions that barely qualify.
@@ -112,9 +95,9 @@ export function calculateFlowScore(
   let finalScore = Math.max(0, Math.round(100 - excessRate * PENALTY_PER_HPM));
   
   if (speakingRatio < MIN_RATIO_FOR_UNCAPPED) {
-    // Linear interpolation: 0.25→70, 0.65→100
-    const ratioRange = MIN_RATIO_FOR_UNCAPPED - 0.25;
-    const ratioProgress = Math.min(1, (speakingRatio - 0.25) / ratioRange);
+    // Linear interpolation: 0.50→70, 0.65→100
+    const ratioRange = MIN_RATIO_FOR_UNCAPPED - MIN_SPEAKING_RATIO_FOR_SCORE;
+    const ratioProgress = Math.min(1, (speakingRatio - MIN_SPEAKING_RATIO_FOR_SCORE) / ratioRange);
     const maxScore = Math.round(CAP_AT_MIN_RATIO + ratioProgress * (100 - CAP_AT_MIN_RATIO));
     finalScore = Math.min(finalScore, maxScore);
   }

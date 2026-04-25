@@ -11,13 +11,13 @@ No Pause is a real-time speaking analytics web application designed to help you 
   - **Topic Score**: Structured prompts categorized by difficulty to practice critical thinking and storytelling.
 - **Measurable Flow Score**: A customized algorithm evaluating hesitation rate (pauses/minute) and speaking ratio to penalize excessive silences and reward continuous flow.
 - **Configurable Sensitivities**: Granular settings (Beginner, Intermediate, Advanced) adjusting how long a silence must be to constitute a "hesitation".
-- **Progress Tracking**: Authentication is powered by Supabase and practice analytics are in the middle of a backend migration.
+- **Progress Tracking**: Authentication, sessions, streaks, transcripts, hesitation logs, and feedback notes are stored in Supabase.
 - **PWA Ready**: Installable as a progressive web app on desktop and mobile browsers for quick native-like access.
 
 ## 🛠 Technology Stack
 
 - **Frontend**: React 18, Vite, TypeScript
-- **Backend & Database**: Supabase (migration in progress)
+- **Backend & Database**: Supabase
 - **Authentication**: Supabase Auth
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui + Radix UI Primitives

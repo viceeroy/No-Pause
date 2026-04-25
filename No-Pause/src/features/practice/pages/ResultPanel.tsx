@@ -4,15 +4,8 @@ import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-rea
 import ReactMarkdown from 'react-markdown';
 import { VoicePlayer } from '../components/VoicePlayer';
 import Confetti from '@/shared/components/Confetti';
-import { cn } from '@/shared/lib/utils';
-import {
-  LEMON_MIN_SPEAKING_SECONDS,
-  LEMON_MIN_TOTAL_SECONDS,
-  TOPIC_MIN_SPEAKING_SECONDS,
-  TOPIC_MIN_TOTAL_SECONDS,
-} from '../lib/scoringConstants';
 import type { SessionResult } from './types';
-import { formatMMSS, toMMSS } from './time';
+import { formatMMSS } from './time';
 
 type ResultPanelProps = {
   mode: string;
@@ -67,6 +60,13 @@ export function ResultPanel({
     if (score >= 40) return 'Keep Practicing!';
     return 'Just Getting Started!';
   };
+  const getCoachingNote = () => {
+    if (lastResults.flowScore === 0) return 'Speak for at least 1 minute to earn a score';
+    if (lastResults.hesitationCount > 5) return 'Try to reduce hesitations — aim for fewer pauses';
+    if (speakingTargetPercent < 50) return 'Try to fill more of the session with speech';
+    if (lastResults.flowScore > 80) return 'Great flow — keep it up';
+    return 'Keep building steady, continuous speech';
+  };
 
   const speakingTargetPercent = useMemo(() => {
     if (!lastResults.totalSessionTime || lastResults.totalSessionTime <= 0) return 0;
@@ -99,9 +99,9 @@ export function ResultPanel({
   }, [speakingTargetPercent, lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
 
   return (
-    <div className="text-center">
+    <div className="w-full max-w-full overflow-hidden text-center">
       {lastResults.flowScore === 100 && <Confetti />}
-      <div className="mb-12">
+      <div className="mb-8 sm:mb-10">
         <div className="w-20 h-20 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-6 night-glow">
           <Zap size={32} className="text-primary" />
         </div>
@@ -123,56 +123,18 @@ export function ResultPanel({
         </p>
       </div>
 
-      <div className="mb-12">
-        <h3 className="text-lg font-serif font-medium text-foreground mb-4 text-left">Performance Stats</h3>
-        {mode === 'lemon' && !lastResults.statusNote && (
-          <p className="text-xs font-sans mb-3 text-left text-muted-foreground">
-            Scoring rule: speak for at least {toMMSS(LEMON_MIN_SPEAKING_SECONDS)} with a {toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session.
+      <div className="mb-12 space-y-5 sm:space-y-6">
+        <section className="night-panel rounded-3xl px-5 py-8 sm:px-8 sm:py-10">
+          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Flow Score</p>
+          <p className="text-7xl sm:text-8xl md:text-9xl font-serif font-medium leading-none text-primary">
+            {lastResults.flowScore}
           </p>
-        )}
-        {mode === 'topic' && !lastResults.statusNote && (
-          <p className="text-xs font-sans mb-3 text-left text-muted-foreground">
-            Scoring rule: speak for at least {toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} with a {toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session.
-          </p>
-        )}
-        <div
-          className={cn(
-            'grid gap-3',
-            mode === 'free'
-              ? showWordCount
-                ? 'grid-cols-3'
-                : 'grid-cols-2'
-              : showWordCount
-                ? 'grid-cols-4'
-                : 'grid-cols-3',
-          )}
-        >
-          <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
-            <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
-            <p className="text-3xl md:text-4xl font-serif font-medium text-primary">
-              {renderDurationValue(lastResults.totalSessionTime)}
-            </p>
-          </div>
-          {mode !== 'free' && (
-            <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
-              <p className="text-xs text-muted-foreground font-sans mb-1.5">Flow Score</p>
-              <p className="text-3xl md:text-4xl font-serif font-medium text-primary">{lastResults.flowScore}</p>
-            </div>
-          )}
-          <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
-            <p className="text-xs text-muted-foreground font-sans mb-1.5">Hesitations</p>
-            <p className="text-3xl md:text-4xl font-serif font-medium text-ember-600">{lastResults.hesitationCount}</p>
-          </div>
-          {showWordCount && (
-            <div className="p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
-              <p className="text-xs text-muted-foreground font-sans mb-1.5">Words</p>
-              <p className="text-3xl md:text-4xl font-serif font-medium text-primary">{lastResults.wordCount}</p>
-            </div>
-          )}
-        </div>
-        <div className="mt-4 p-4 md:p-5 night-panel rounded-2xl md:rounded-3xl text-left">
+          <p className="mt-2 text-sm sm:text-base font-sans text-muted-foreground">out of 100</p>
+        </section>
+
+        <section className="p-4 sm:p-5 night-panel rounded-2xl sm:rounded-3xl text-left">
           <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Speaking Time</p>
-          <p className="text-sm md:text-base text-foreground font-sans mb-3">
+          <p className="text-sm sm:text-base text-foreground font-sans mb-3">
             You spoke {Math.round(animatedSpeakingPercent)}% of the time
           </p>
           <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
@@ -181,9 +143,34 @@ export function ResultPanel({
               style={{ width: `${animatedSpeakingPercent}%` }}
             />
           </div>
-        </div>
+        </section>
+
+        <section>
+          <h3 className="text-lg font-serif font-medium text-foreground mb-4 text-left">Performance Stats</h3>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+              <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">
+                {renderDurationValue(lastResults.totalSessionTime)}
+              </p>
+            </div>
+            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+              <p className="text-xs text-muted-foreground font-sans mb-1.5">Hesitations</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-ember-600">{lastResults.hesitationCount}</p>
+            </div>
+            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-col items-center justify-center">
+              <p className="text-xs text-muted-foreground font-sans mb-1.5">Words</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">{showWordCount ? lastResults.wordCount : 0}</p>
+            </div>
+          </div>
+        </section>
+
+        <p className="p-4 night-panel rounded-2xl text-sm sm:text-base text-foreground font-sans text-left">
+          {getCoachingNote()}
+        </p>
+
         {showResultsDebugExport && (
-          <div className="mt-2 md:mt-3 text-left">
+          <div className="text-left">
             <button
               type="button"
               onClick={() => {
@@ -195,21 +182,6 @@ export function ResultPanel({
               Having issues? Export debug file
             </button>
           </div>
-        )}
-        {mode === 'free' && (
-          <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
-            💡 Free Speaking is practice only — no flow score is awarded in this mode.
-          </p>
-        )}
-        {mode === 'lemon' && (!lastResults.isCompleted || lastResults.flowScore === 0) && (
-          <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
-            💡 To earn a flow score, you need to complete the full 1:00 and speak for at least 30 seconds.
-          </p>
-        )}
-        {mode === 'topic' && (!lastResults.isCompleted || lastResults.flowScore === 0) && (
-          <p className="mt-3 text-xs text-muted-foreground font-sans text-left">
-            💡 To earn a flow score, you need to complete the full 2:00 and speak for at least 60 seconds.
-          </p>
         )}
       </div>
 

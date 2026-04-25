@@ -4,13 +4,11 @@ import { AudioAnalyzer, type AnalyzerDiagnosticsSnapshot } from '@/features/prac
 import { micService } from '@/features/practice/lib/micService';
 import { storage } from '@/shared/lib/storage';
 import { createAudioAnalyzer } from '@/features/practice/lib/audioRecording';
-import { analyzeSpeech, saveSession, transcribeAudio, updateStreak } from '@/lib/practiceApi';
+import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
 import { useAuth } from '@/providers/AuthContext';
 import {
-  LEMON_MIN_SPEAKING_SECONDS,
   LEMON_MIN_TOTAL_SECONDS,
   PAUSE_THRESHOLD_BY_LEVEL,
-  TOPIC_MIN_SPEAKING_SECONDS,
   TOPIC_MIN_TOTAL_SECONDS,
 } from '@/features/practice/lib/scoringConstants';
 import type { PracticeStateStore, SessionResult } from './types';
@@ -100,29 +98,32 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         hasSpeechEvidence,
       });
       const completed = scoreResult.isCompleted;
-      const flowScore = normalizedMode === 'free' ? 0 : scoreResult.score;
+      const flowScore = scoreResult.score;
       const safeFlowScore = Number.isFinite(flowScore) ? flowScore : 0;
 
       let statusNote: string | undefined;
-      if (normalizedMode === 'free') {
-        statusNote = 'Free Speaking tracks stats only. Lemon and Topic give score when completed.';
-      } else if (!scoreResult.isCompleted) {
+      if (!scoreResult.isCompleted) {
         if (scoreResult.reason === 'duration') {
           if (normalizedMode === 'lemon') {
-            statusNote = `Lemon requires ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session and ${toMMSS(LEMON_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
+            statusNote = `Lemon requires ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session and at least 50% speaking time. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
+          } else if (normalizedMode === 'topic') {
+            statusNote = `Topic requires ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session and at least 50% speaking time. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
           } else {
-            statusNote = `Topic requires ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session and ${toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
+            statusNote = `Free Speaking requires at least 1:00 total session and 50% speaking time. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
           }
         } else if (normalizedMode === 'lemon') {
-          statusNote = `Lemon requires ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session and ${toMMSS(LEMON_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
+          statusNote = `Lemon requires ${toMMSS(LEMON_MIN_TOTAL_SECONDS)} total session and at least 50% speaking time. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
+        } else if (normalizedMode === 'topic') {
+          statusNote = `Topic requires ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session and at least 50% speaking time. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
         } else {
-          statusNote = `Topic requires ${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} total session and ${toMMSS(TOPIC_MIN_SPEAKING_SECONDS)} speaking. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
+          statusNote = `Free Speaking requires at least 1:00 total session and 50% speaking time. You spoke for ${formatMMSS(results.totalSpeakingTime)} this session.`;
         }
       } else if (flowScore === 0 && results.hesitationCount > 2) {
         statusNote = 'Session completed, but score is 0 because hesitation units were too high.';
       }
 
       const sessionResult: SessionResult = {
+        sessionId: null,
         flowScore: safeFlowScore,
         totalSpeakingTime: results.totalSpeakingTime,
         totalSessionTime: totalSessionTimeSec,
@@ -142,7 +143,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         statusNote,
       };
       try {
-        await Promise.all([
+        const [sessionId] = await Promise.all([
           saveSession({
             userId,
             email: userEmail,
@@ -153,6 +154,8 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             mode: normalizedMode,
             flowScore: safeFlowScore,
             completed,
+            hesitationLog: results.hesitationLog,
+            transcript: results.transcript,
           }),
           updateStreak({
             userId,
@@ -160,8 +163,9 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
             localDate: new Date().toLocaleDateString('en-CA'),
           }),
         ]);
+        sessionResult.sessionId = sessionId;
       } catch (error) {
-        console.error('Failed to sync session during backend migration:', error);
+        console.error('Failed to sync session to Supabase:', error);
       }
 
       setLastResults(sessionResult);
@@ -201,6 +205,11 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         wordCount: lastResults.wordCount ?? undefined,
         mode: lastResults.mode,
       });
+      await updateSession({
+        sessionId: lastResults.sessionId,
+        userId,
+        analysisFeedback: feedback,
+      });
       setLastResults((prev) => {
         if (!prev) return prev;
         return {
@@ -210,7 +219,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         };
       });
     } catch (error) {
-      console.error('Failed to analyze transcript during backend migration:', error);
+      console.error('Failed to analyze transcript:', error);
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String((error as { message?: unknown }).message)
@@ -247,11 +256,21 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         mimeType: lastResults.audioMimeType || 'audio/webm',
         durationSec: lastResults.totalSessionTime,
       });
+      const words = transcript.trim().length > 0
+        ? transcript.trim().split(/\s+/).filter(Boolean).length
+        : null;
+      await updateSession({
+        sessionId: lastResults.sessionId,
+        userId,
+        transcript,
+        words,
+      });
       setLastResults((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           transcript,
+          wordCount: words,
           transcriptionLoading: false,
           transcriptionError: undefined,
           analysisFeedback: undefined,
@@ -274,7 +293,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
         };
       });
     }
-  }, [lastResults, setLastResults]);
+  }, [lastResults, setLastResults, userId]);
 
   const startRecording = useCallback(async () => {
     try {

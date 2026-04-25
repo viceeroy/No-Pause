@@ -127,11 +127,12 @@ export const finalizeMicState = (
   const endBufferCutoff = totalRecordingTime - input.endBufferMs;
 
   if (!state.isSpeaking && state.currentSilenceStart) {
-    const trailingSilenceDuration = input.now - state.currentSilenceStart;
+    const trailingSilenceEnd = input.recordingStartTime + Math.max(input.startBufferMs, endBufferCutoff);
+    const trailingSilenceDuration = Math.max(0, trailingSilenceEnd - state.currentSilenceStart);
     if (trailingSilenceDuration >= input.microPauseFilter && trailingSilenceDuration >= input.hesitationMinDuration) {
       const trailingUnits = Math.floor(trailingSilenceDuration / input.hesitationMinDuration);
       state.hesitationLog.push({
-        timestamp: input.now - input.recordingStartTime,
+        timestamp: trailingSilenceEnd - input.recordingStartTime,
         duration: trailingSilenceDuration,
         units: trailingUnits,
         trailing: true,
@@ -141,7 +142,7 @@ export const finalizeMicState = (
   }
 
   const filteredHesitations = state.hesitationLog.filter(
-    (h) => h.trailing || (h.timestamp >= input.startBufferMs && h.timestamp <= endBufferCutoff),
+    (h) => h.timestamp >= input.startBufferMs && h.timestamp <= endBufferCutoff,
   );
   const filteredHesitationSilenceTime = filteredHesitations.reduce((sum, h) => sum + h.duration, 0);
   const filteredHesitationCount = filteredHesitations.reduce((sum, h) => sum + h.units, 0);

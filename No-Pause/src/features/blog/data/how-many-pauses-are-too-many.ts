@@ -22,7 +22,7 @@ export const howManyPausesAreTooManyPost: BlogPost = {
     {
       heading: 'Practical benchmark in No Pause',
       content:
-        'Completed sessions forgive the first two hesitations in Flow Score. If you are frequently far above that and score drops, your current pace or structure needs adjustment. In practice, the fastest gains come from one clear adjustment, then immediate retesting in your next speaking session.',
+        'Completed sessions use a rate-based grace zone: up to 1.0 hesitation unit per minute of speaking time can still earn a perfect Flow Score. Above that, each extra hesitation per minute lowers the score. If your hesitation rate is frequently above the grace zone, your current pace or structure needs adjustment.',
       bullets: [
         'Keep transitions short',
         'Reduce sentence complexity',

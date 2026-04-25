@@ -66,7 +66,8 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
       micService.setTracksEnabled(true);
       await micService.ensureAudioContextRunning();
       const analyzer = createAudioAnalyzer({
-        enableTranscription: false,
+        enableTranscription: true,
+        transcribeAudio,
         onData: (data) => {
           setAudioData(data);
           if (data.rms > 0.01) setSoundDetected(true);
@@ -88,10 +89,14 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     const durationSec = Math.floor((Date.now() - (sessionStartRef.current ?? Date.now())) / 1000);
     let speakingTimeSec = 0;
     let hesitationCount = 0;
+    let hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[] = [];
+    let browserTranscript = '';
     if (analyzerRef.current) {
       const results = await analyzerRef.current.stop();
       speakingTimeSec = results.totalSpeakingTime || 0;
       hesitationCount = results.hesitationCount || 0;
+      hesitationLog = results.hesitationLog || [];
+      browserTranscript = results.transcript || '';
       audioBlobRef.current = results.audioBlob || null;
       audioMimeTypeRef.current = results.audioMimeType || null;
       setAudioBlob(results.audioBlob || null);
@@ -103,7 +108,11 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
     setTranscriptionLoading(true);
     setTranscriptionError(null);
     let transcriptText = '';
-    if (audioBlobRef.current) {
+    if (browserTranscript.trim() && browserTranscript !== 'No speech detected.') {
+      transcriptText = browserTranscript.trim();
+      setTranscript(transcriptText);
+      setTranscriptionLoading(false);
+    } else if (audioBlobRef.current) {
       try {
         const base64Audio = arrayBufferToBase64(await audioBlobRef.current.arrayBuffer());
         const mimeType = audioMimeTypeRef.current || audioBlobRef.current.type || 'audio/webm';
@@ -144,9 +153,11 @@ export function ReadingChallengePanel({ onExit }: ReadingChallengePanelProps) {
           mode: 'readingchallenge',
           flowScore: null,
           completed: sessionCompletedNaturally,
+          hesitationLog,
+          transcript: transcriptText,
         });
       } catch (error) {
-        console.error('Failed to sync reading challenge session during backend migration:', error);
+        console.error('Failed to sync reading challenge session to Supabase:', error);
       }
     }
     sessionStartRef.current = null;

@@ -6,6 +6,7 @@ export type PracticeState = 'setup' | 'countdown' | 'recording' | 'done';
 export type TopicDifficultyMode = 'random' | TopicDifficulty;
 
 export interface SessionResult {
+  sessionId?: string | null;
   flowScore: number;
   totalSpeakingTime: number;
   totalSessionTime: number;

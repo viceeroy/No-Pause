@@ -15,8 +15,26 @@ export default defineConfig(() => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom", "react-router-dom"],
+        manualChunks(id) {
+          if (id.includes("/src/features/practice/")) {
+            return "practice";
+          }
+
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("/node_modules/react/") ||
+              id.includes("/node_modules/react-dom/") ||
+              id.includes("/node_modules/scheduler/")
+            ) {
+              return "react";
+            }
+
+            if (id.includes("/node_modules/@supabase/")) {
+              return "supabase";
+            }
+
+            return "vendor";
+          }
         },
       },
     },

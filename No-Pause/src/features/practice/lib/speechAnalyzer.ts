@@ -20,6 +20,8 @@ import {
 
 const SPEECH_THRESHOLD = 0.01;
 const SPEECH_OFF_MULTIPLIER = 0.7;
+const CALIBRATION_NOISE_MULTIPLIER = 3;
+const MAX_CALIBRATED_SPEECH_THRESHOLD = 0.06;
 const HESITATION_MIN_DURATION = 1800;
 const MICRO_PAUSE_IGNORE = 300;
 const SMOOTHING_WINDOW = 10;
@@ -144,7 +146,7 @@ export type { AnalyzerDiagnosticsSnapshot } from './analyzer/diagnostics';
 
 export class AudioAnalyzer {
   private readonly START_BUFFER_MS = 0;  // Count from first frame
-  private readonly END_BUFFER_MS = 0;    // Count until final frame
+  private readonly END_BUFFER_MS = 1000; // Ignore final click/settling silence
   private speechOnThreshold: number;
   private speechOffThreshold: number;
   private hesitationMinDuration: number;
@@ -694,7 +696,8 @@ export class AudioAnalyzer {
     let processedTranscript = rawTranscript;
 
     for (const filler of FILLER_WORDS) {
-      const regex = new RegExp(`\b(${filler})\b`, 'gi'); // Whole word, case-insensitive
+      const escapedFiller = filler.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      const regex = new RegExp(`\\b(${escapedFiller})\\b`, 'gi');
       let match;
       while ((match = regex.exec(processedTranscript)) !== null) {
         count++;
@@ -776,6 +779,11 @@ export class AudioAnalyzer {
         this.isCalibrating = false;
         const avgNoise = this.calibrationSamples.reduce((a, b) => a + b, 0) / this.calibrationSamples.length;
         this.noiseFloor = avgNoise;
+        this.speechOnThreshold = Math.min(
+          MAX_CALIBRATED_SPEECH_THRESHOLD,
+          Math.max(SPEECH_THRESHOLD, avgNoise * CALIBRATION_NOISE_MULTIPLIER),
+        );
+        this.speechOffThreshold = this.speechOnThreshold * SPEECH_OFF_MULTIPLIER;
         if (this.onCalibrated) this.onCalibrated(avgNoise, this.speechOnThreshold);
       }
     }
