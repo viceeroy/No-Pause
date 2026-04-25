@@ -8,6 +8,7 @@ const AuthCallbackPage = () => {
   const { isLoading, session } = useAuth();
   const searchParams = new URLSearchParams(location.search);
   const authError = searchParams.get("error_description") ?? searchParams.get("error");
+  const nextPath = searchParams.get("next");
 
   useEffect(() => {
     if (isLoading || authError) {
@@ -15,12 +16,12 @@ const AuthCallbackPage = () => {
     }
 
     if (session) {
-      navigate("/", { replace: true });
+      navigate(nextPath?.startsWith("/") ? nextPath : "/", { replace: true });
       return;
     }
 
     navigate("/auth", { replace: true });
-  }, [authError, isLoading, navigate, session]);
+  }, [authError, isLoading, navigate, nextPath, session]);
 
   return (
     <div className="min-h-screen bg-surface-base flex items-center justify-center p-6">

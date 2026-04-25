@@ -1,0 +1,133 @@
+import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Loader2, MessageCircle, ShieldAlert } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/providers/AuthContext";
+
+type ConnectState = "missing" | "signing-in" | "connecting" | "success" | "error";
+
+const ConnectTelegram = () => {
+  const location = useLocation();
+  const { isLoading, session, user } = useAuth();
+  const [state, setState] = useState<ConnectState>("connecting");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const telegramId = useMemo(() => {
+    const value = new URLSearchParams(location.search).get("tg");
+    return value && /^\d+$/.test(value) ? value : null;
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!telegramId) {
+      setState("missing");
+      return;
+    }
+
+    if (isLoading) {
+      return;
+    }
+
+    if (!session || !user) {
+      setState("signing-in");
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+        `/connect?tg=${telegramId}`,
+      )}`;
+
+      void supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+        },
+      }).catch((error) => {
+        console.error("Telegram connect sign-in failed:", error);
+        setErrorMessage("Google sign-in failed. Please try again from Telegram.");
+        setState("error");
+      });
+      return;
+    }
+
+    let isCancelled = false;
+    setState("connecting");
+
+    void fetch("/api/telegram/connect", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        telegram_id: Number(telegramId),
+        user_id: user.id,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.error ?? "Telegram connection failed");
+        }
+      })
+      .then(() => {
+        if (!isCancelled) setState("success");
+      })
+      .catch((error) => {
+        console.error("Telegram connect failed:", error);
+        if (!isCancelled) {
+          setErrorMessage("Could not connect Telegram. Please try the link again.");
+          setState("error");
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoading, session, telegramId, user]);
+
+  const content = {
+    missing: {
+      icon: ShieldAlert,
+      title: "Telegram link missing",
+      body: "Open the connect link from the No Pause Telegram bot so we can identify your Telegram account.",
+    },
+    "signing-in": {
+      icon: Loader2,
+      title: "Opening Google sign-in",
+      body: "After sign-in, you will come right back here to finish connecting Telegram.",
+    },
+    connecting: {
+      icon: Loader2,
+      title: "Connecting Telegram",
+      body: "We are securely linking your Telegram account to No Pause.",
+    },
+    success: {
+      icon: CheckCircle2,
+      title: "Telegram connected",
+      body: "You can return to Telegram and send a voice note for a Flow Score.",
+    },
+    error: {
+      icon: ShieldAlert,
+      title: "Connection failed",
+      body: errorMessage ?? "Could not connect Telegram. Please try again.",
+    },
+  }[state];
+
+  const Icon = content.icon;
+  const isLoadingState = state === "signing-in" || state === "connecting";
+
+  return (
+    <main className="min-h-screen bg-surface-base flex items-center justify-center p-5">
+      <section className="w-full max-w-md rounded-[24px] border border-border bg-surface-elevated/90 p-7 text-center shadow-card">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-card text-primary">
+          {isLoadingState ? <Icon className="animate-spin" size={24} /> : <Icon size={24} />}
+        </div>
+        <div className="mb-5 flex items-center justify-center gap-2 text-sm font-sans font-semibold text-muted-foreground">
+          <MessageCircle size={16} />
+          Telegram
+        </div>
+        <h1 className="mb-3 text-3xl font-serif font-medium text-foreground">{content.title}</h1>
+        <p className="font-sans text-sm leading-relaxed text-muted-foreground">{content.body}</p>
+      </section>
+    </main>
+  );
+};
+
+export default ConnectTelegram;

@@ -124,6 +124,18 @@ export const getRouteSeoConfig = (pathname: string, search: string): RouteSeoCon
     };
   }
 
+  if (pathname === "/connect") {
+    const title = "Connect Telegram | No Pause";
+    const description = "Connect your Telegram account to No Pause and get Flow Scores from voice notes.";
+    return {
+      title,
+      description,
+      canonicalPath: "/connect",
+      robots: "noindex, nofollow",
+      structuredData: buildWebPageSchema(title, description, "/connect"),
+    };
+  }
+
   if (pathname === "/blog") {
     const title = "No Pause Blog | Speaking Analytics and Fluency Tips";
     const description =

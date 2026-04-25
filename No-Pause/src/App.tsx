@@ -18,6 +18,7 @@ import BlogPostPage from "@/features/blog/pages/BlogPostPage";
 import AuthPage from "@/features/auth/pages/AuthPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
 import AuthCallbackPage from "@/features/auth/pages/AuthCallbackPage";
+import ConnectTelegram from "./pages/ConnectTelegram";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "@/providers/AuthContext";
 
@@ -220,6 +221,10 @@ const AuthAwareRoutes = () => {
       <Route
         path="/auth/*"
         element={session ? <Navigate to="/" replace /> : <AuthPage />}
+      />
+      <Route
+        path="/connect"
+        element={<ConnectTelegram />}
       />
       <Route
         path="/*"
