@@ -5,9 +5,9 @@ import {
   PENALTY_PER_HPM,
   MIN_RATIO_FOR_UNCAPPED,
   CAP_AT_MIN_RATIO,
-} from '../scoringConstants';
+} from '../scoringConstants.js';
 
-const viteEnv = import.meta.env;
+const viteEnv = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env;
 const IS_DEV = Boolean(viteEnv?.DEV);
 const IS_TEST = Boolean(viteEnv?.VITEST) || viteEnv?.MODE === 'test';
 const MIN_SPEAKING_RATIO_FOR_SCORE = 0.5;
