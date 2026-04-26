@@ -766,7 +766,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     }
 
     await ctx.reply(
-      `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
+      `🎤 Free Speaking Result\n\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.pauseCount} | Hesitations: ${analysis.hesitationCount} | Speaking time: ${analysis.speakingTimeSec}s\n\n📝 Transcript:\n${escapeTelegramHtml(transcript)}`,
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {
