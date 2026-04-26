@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { supabaseServer } from "../../src/lib/supabaseServer.js";
 import { upsertTelegramConnection } from "../../src/lib/telegramAuth.js";
+import { escapeTelegramHtml } from "../../src/lib/core/utils.js";
 
 const SITE_URL = "https://nopause.org";
 
@@ -18,10 +19,6 @@ function sendJson(res: ServerResponse, statusCode: number, body: unknown) {
   res.statusCode = statusCode;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(body));
-}
-
-function escapeTelegramHtml(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function getFirstName(userMetadata: Record<string, unknown> | undefined) {

@@ -61,6 +61,8 @@ export default function StatsPage({
     scoredSessions: 0,
     totalPracticeTime: 0,
     avgFlowScore: 0,
+    bestFlowScore: 0,
+    lastSessionDate: null,
     currentStreak: 0,
     bestStreak: 0,
     modeBreakdown: [],
@@ -414,7 +416,7 @@ export default function StatsPage({
 	                      {formatDate(session.created_at)}
 	                    </p>
 	                    <p className="text-xs text-muted-foreground/85 font-sans truncate">
-	                      {renderDurationInline(session.duration || 0)} • {session.hesitationCount || 0} hesitations
+	                      {renderDurationInline(session.duration || 0)} • {session.hesitationCount || 0} pauses
                     </p>
                   </div>
                   {shouldShowScore(normalizedMode, session.flowScore) ? (

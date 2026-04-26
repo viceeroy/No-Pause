@@ -33,6 +33,9 @@ export type InsertSessionInput = {
   userId: string | null;
   duration: number;
   pauses: number;
+  pauseCount?: number | null;
+  fillerCount?: number | null;
+  hesitationsPerMinute?: number | null;
   mode?: string;
   speakingTime?: number | null;
   flowScore?: number | null;
@@ -69,6 +72,17 @@ export function addDaysToDateString(dateString: string, days: number): string {
   return formatLocalDate(date);
 }
 
+function isMissingSessionAnalysisColumnError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null;
+  return (
+    maybeError?.code === "PGRST204" ||
+    maybeError?.code === "42703" ||
+    maybeError?.message?.includes("pause_count") === true ||
+    maybeError?.message?.includes("filler_count") === true ||
+    maybeError?.message?.includes("hesitations_per_minute") === true
+  );
+}
+
 export async function insertSession(
   supabase: SupabaseLike,
   input: InsertSessionInput,
@@ -77,13 +91,14 @@ export async function insertSession(
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert({
+  const values = {
       user_id: input.userId,
       speaking_time: input.speakingTime,
       flow_score: input.flowScore,
       pauses: input.pauses,
+      pause_count: input.pauseCount ?? input.pauses,
+      filler_count: input.fillerCount ?? null,
+      hesitations_per_minute: input.hesitationsPerMinute ?? null,
       words: input.words,
       mode: normalizeSessionMode(input.mode ?? "free"),
       duration: input.duration,
@@ -92,11 +107,30 @@ export async function insertSession(
       transcript: input.transcript ?? null,
       analysis_feedback: input.analysisFeedback ?? null,
       scoring_version: input.scoringVersion ?? SCORING_VERSION,
-    })
+    };
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .insert(values)
     .select("id")
     .single();
 
   if (error) {
+    if (isMissingSessionAnalysisColumnError(error)) {
+      const { pause_count: _pauseCount, filler_count: _fillerCount, hesitations_per_minute: _hpm, ...legacyValues } = values;
+      const { data: legacyData, error: legacyError } = await supabase
+        .from("sessions")
+        .insert(legacyValues)
+        .select("id")
+        .single();
+
+      if (legacyError) {
+        throw legacyError;
+      }
+
+      return String(legacyData?.id ?? "");
+    }
+
     throw error;
   }
 

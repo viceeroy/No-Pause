@@ -1,16 +1,9 @@
 import { supabase } from "./supabase";
 import { insertSession, updateStreak as updateCoreStreak } from "./core/session";
-import { getAIFeedback, transcribeAudio as transcribeGroqAudio } from "./core/groq";
+import { getAIFeedback, transcribeBase64Audio, type Base64TranscriptionInput } from "./core/groq";
 import { buildPracticeStats, type PracticeStats, type SessionRecord, type StreakRecord } from "./core/queries";
 
 export type { PracticeStats, SessionRecord } from "./core/queries";
-
-type TranscribeAudioInput = {
-  audioBase64: string;
-  mimeType: string;
-  language?: string;
-  durationSec?: number;
-};
 
 type AnalyzeSpeechInput = {
   transcript: string;
@@ -30,14 +23,14 @@ const buildPrompt = (input: {
 }) =>
   `You are a speech analysis expert. The user just completed a speaking session with these stats:
 - Flow Score: ${input.flowScore}/100
-- Hesitations: ${input.hesitationCount}
+- Pauses: ${input.hesitationCount}
 - Speaking Time: ${input.speakingTime} seconds
 - Word Count: ${input.wordCount}
 - Transcript: ${input.transcript}
 
 Return feedback in markdown with:
 - A short punchy header (e.g. ## 🎯 Your Session Breakdown)
-- Bold the key stats when mentioned (flow score, hesitation count)
+- Bold the key stats when mentioned (flow score, pause count)
 - 2-3 short sections with emoji headers like ### 💪 What You Did Well and ### 🎯 Focus On This
 - End with a single motivational sentence under ### 🚀 Next Time
 Keep it under 200 words, punchy and energetic in tone — not corporate or boring.`;
@@ -47,66 +40,8 @@ const buildVoiceActingPrompt = (transcript: string) =>
 
 Transcript: ${transcript}`;
 
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return new Blob([bytes], { type: mimeType });
-}
-
-export async function transcribeAudio(input: TranscribeAudioInput): Promise<string> {
-  try {
-    const safeMimeType = input.mimeType.split(";")[0] || "audio/webm";
-    const audioByteLength = Math.floor((input.audioBase64.length * 3) / 4);
-    const MAX_BYTES = 15 * 1024 * 1024;
-    const MIN_BYTES = 5 * 1024;
-    if (audioByteLength === 0) {
-      throw new Error("Audio payload is empty");
-    }
-    if (input.durationSec !== undefined && input.durationSec < 1) {
-      return "";
-    }
-    if (audioByteLength < MIN_BYTES) {
-      return "";
-    }
-    if (audioByteLength > MAX_BYTES) {
-      throw new Error(`Audio payload too large: ${audioByteLength} bytes`);
-    }
-
-    const audioBlob = base64ToBlob(input.audioBase64, safeMimeType);
-
-    const extensionByMime: Record<string, string> = {
-      "audio/webm": "webm",
-      "audio/wav": "wav",
-      "audio/mpeg": "mp3",
-      "audio/mp3": "mp3",
-      "audio/mp4": "mp4",
-      "audio/m4a": "m4a",
-      "audio/ogg": "ogg",
-    };
-    const fileExt = extensionByMime[safeMimeType] || "webm";
-
-    const audioFile = new File([audioBlob], `recording.${fileExt}`, { type: safeMimeType });
-    const transcript = await transcribeGroqAudio(audioFile);
-    if (!transcript) return "";
-    const normalized = transcript.toLowerCase().trim();
-    // If transcript is 3 words or fewer, it's almost certainly a hallucination — discard it
-    const wordCount = normalized.split(/\s+/).filter(Boolean).length;
-    if (wordCount <= 3) return "";
-    return transcript;
-  } catch (error) {
-    console.error("Groq transcription action failed", {
-      message: error instanceof Error ? error.message : String(error),
-      mimeType: input.mimeType,
-      language: input.language ?? null,
-      durationSec: input.durationSec ?? null,
-      base64Length: input.audioBase64.length,
-    });
-    throw error;
-  }
+export async function transcribeAudio(input: Base64TranscriptionInput): Promise<string> {
+  return transcribeBase64Audio(input);
 }
 
 export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<string> {
@@ -226,6 +161,8 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
       scoredSessions: 0,
       totalPracticeTime: 0,
       avgFlowScore: 0,
+      bestFlowScore: 0,
+      lastSessionDate: null,
       currentStreak: 0,
       bestStreak: 0,
       modeBreakdown: [],

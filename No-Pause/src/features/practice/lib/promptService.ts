@@ -159,11 +159,6 @@ export async function getTopicPromptById(id: string): Promise<TopicPrompt | null
   return prompts.find((p) => p.id === id) || null;
 }
 
-export async function getLemonPromptById(id: string): Promise<LemonPrompt | null> {
-  const prompts = await getLemonPrompts();
-  return prompts.find((p) => p.id === id) || null;
-}
-
 export async function getRandomTopicPrompt(options?: { difficulty?: TopicDifficulty }): Promise<TopicPrompt> {
   const prompts = await getTopicPrompts();
   const byDifficulty = options?.difficulty

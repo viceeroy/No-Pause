@@ -62,7 +62,7 @@ export function ResultPanel({
   };
   const getCoachingNote = () => {
     if (lastResults.flowScore === 0) return 'Speak for at least 1 minute to earn a score';
-    if (lastResults.hesitationCount > 5) return 'Try to reduce hesitations — aim for fewer pauses';
+    if (lastResults.hesitationCount > 5) return 'Try to reduce pauses — aim for fewer silence gaps';
     if (speakingTargetPercent < 50) return 'Try to fill more of the session with speech';
     if (lastResults.flowScore > 80) return 'Great flow — keep it up';
     return 'Keep building steady, continuous speech';
@@ -114,12 +114,12 @@ export function ResultPanel({
             : lastResults.flowScore >= 90
               ? `Spoke smoothly with just ${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''} — nearly perfect!`
               : lastResults.flowScore >= 75
-                ? `Solid flow with only ${lastResults.hesitationCount} hesitation${lastResults.hesitationCount !== 1 ? 's' : ''}.`
+                ? `Solid flow with only ${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''}.`
                 : lastResults.flowScore >= 60
-                  ? `${lastResults.hesitationCount} hesitation${lastResults.hesitationCount !== 1 ? 's' : ''} detected — you're getting there!`
+                  ? `${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''} detected — you're getting there!`
                   : lastResults.flowScore >= 40
                     ? `Try to reduce pauses and keep your speech continuous.`
-                    : `Focus on speaking continuously — ${lastResults.hesitationCount} hesitation${lastResults.hesitationCount !== 1 ? 's' : ''} slowed you down`}
+                    : `Focus on speaking continuously — ${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''} slowed you down`}
         </p>
       </div>
 
@@ -155,7 +155,7 @@ export function ResultPanel({
               </p>
             </div>
 	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
-              <p className="text-xs text-muted-foreground font-sans mb-1.5">Hesitations</p>
+              <p className="text-xs text-muted-foreground font-sans mb-1.5">Pauses</p>
               <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-ember-600">{lastResults.hesitationCount}</p>
             </div>
 	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
@@ -303,8 +303,8 @@ export function ResultPanel({
             onClick={async () => {
               const transcript = lastResults.transcript || '';
               const shareText = mode === 'free'
-                ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
-                : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nHesitations: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+                ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
+                : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {

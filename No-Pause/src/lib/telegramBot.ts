@@ -1,13 +1,18 @@
 import { Markup, Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { APP_URL, SCORING_VERSION, TELEGRAM_MIN_DURATION } from "./core/constants.js";
-import { normalizeMode } from "./core/modes.js";
 import { getRandomPrompt } from "./core/prompts.js";
-import { getSessions, getStreak } from "./core/queries.js";
-import { calculateFlowScore } from "./core/scoring.js";
+import { buildPracticeStats, getSessions, getStreak } from "./core/queries.js";
+import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD_MS } from "./core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak } from "./core/session.js";
 import type { SupabaseLike } from "./core/session.js";
-import { analyzeSpeech as analyzeGroqSpeech, getAIFeedback, transcribeAudio as transcribeGroqAudio } from "./core/groq.js";
+import { escapeTelegramHtml } from "./core/utils.js";
+import {
+  analyzeSpeech as analyzeGroqSpeech,
+  getAIFeedback,
+  transcribeAudioVerbose,
+  type TranscribedWord,
+} from "./core/groq.js";
 import { resolveTelegramUser } from "./core/user.js";
 import { supabaseServer } from "./supabaseServer.js";
 
@@ -45,9 +50,12 @@ const CHALLENGES_TABLE_SQL = `create table if not exists public.challenges (
 
 type FlowAnalysis = {
   flowScore: number;
+  pauseCount: number;
   hesitationCount: number;
   speakingTimeSec: number;
+  totalSessionTimeSec: number;
   isCompleted: boolean;
+  pauseLog: Array<{ timestamp: number; duration: number; units: number }>;
 };
 
 type GroupChallengePending = {
@@ -82,21 +90,6 @@ type FriendChallengePending = {
 type FriendChallengeResult = FriendChallengePending & {
   friendUsername: string;
   analysis: FlowAnalysis;
-};
-
-type StatsSession = {
-  id: string;
-  created_at: string | null;
-  duration: number | null;
-  speaking_time: number | null;
-  pauses: number | null;
-  words: number | null;
-  flow_score: number | null;
-  mode: string | null;
-  completed: boolean | null;
-  hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
-  transcript: string | null;
-  analysis_feedback: string | null;
 };
 
 const STATS_SESSION_LIMIT = 15;
@@ -195,7 +188,7 @@ function getGroupResultText(input: {
   topic: string;
   analysis: FlowAnalysis;
 }): string {
-  return `🎤 Group Challenge Result\n\nSpeaker:\n${input.username}\n\nTopic:\n${input.topic}\n\nFlow Score:\n${input.analysis.flowScore}\n\nPauses:\n${input.analysis.hesitationCount}\n\nSpeaking time:\n${input.analysis.speakingTimeSec}s`;
+  return `🎤 Group Challenge Result\n\nSpeaker:\n${input.username}\n\nTopic:\n${input.topic}\n\nFlow Score:\n${input.analysis.flowScore}\n\nPauses:\n${input.analysis.pauseCount}\n\nHesitations:\n${input.analysis.hesitationCount}\n\nSpeaking time:\n${input.analysis.speakingTimeSec}s`;
 }
 
 function getGroupShareResultMessage(input: {
@@ -206,7 +199,7 @@ function getGroupShareResultMessage(input: {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
 
-  return `🎤 <b>Group Challenge Result</b>\n\n<b>Speaker:</b>\n${nameLine}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
+  return `🎤 <b>Group Challenge Result</b>\n\n<b>Speaker:</b>\n${nameLine}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
 }
 
 function getResultShareUrl(resultText: string): string {
@@ -227,10 +220,10 @@ function getChallengeShareActions(challengeId: string, topic: string) {
   return Markup.inlineKeyboard([
     [
       Markup.button.url(
-        "📨 Share Challenge",
+        "⚔️ Share Challenge",
         getTelegramShareUrl({
           url: getChallengeDeepLink(challengeId),
-          text: `⚔️ Challenge from NoPause\n\nTopic:\n${topic}\n\nJust send a voice note and let's see what you've got 🎤`,
+          text: `I challenged you on NoPause! Topic: ${topic}`,
         }),
       ),
     ],
@@ -244,7 +237,7 @@ function getFriendChallengeResultActions(creatorUsername: string) {
 }
 
 function getChallengeResultMessage(input: { topic: string; analysis: FlowAnalysis }): string {
-  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
+  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
 }
 
 function getChallengeCreatorNotification(input: FriendChallengeResult): string {
@@ -275,10 +268,6 @@ const groupTryAgainKeyboard = Markup.inlineKeyboard([
   Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
 ]);
 
-const openNoPauseKeyboard = Markup.inlineKeyboard([
-  [Markup.button.url("📊 Open NoPause", SITE_URL)],
-]);
-
 function getConnectAccountKeyboard(telegramId: number) {
   return Markup.inlineKeyboard([
     [Markup.button.url("🔑 Connect Account", getConnectUrl(telegramId))],
@@ -304,41 +293,55 @@ function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
 }
 
-function escapeTelegramHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function getSpeakingTimeSec(words: TranscribedWord[], fallbackDurationSec: number): number {
+  const speakingSeconds = words.reduce((sum, word) => {
+    const duration = Math.max(0, word.end - word.start);
+    return sum + duration;
+  }, 0);
+
+  if (speakingSeconds > 0) {
+    return Math.max(1, Math.round(speakingSeconds));
+  }
+
+  return fallbackDurationSec;
+}
+
+function detectPausesFromWordTimestamps(words: TranscribedWord[]) {
+  const orderedWords = [...words]
+    .filter((word) => Number.isFinite(word.start) && Number.isFinite(word.end) && word.end >= word.start)
+    .sort((a, b) => a.start - b.start);
+  const thresholdSec = DEFAULT_PAUSE_THRESHOLD_MS / 1000;
+
+  return orderedWords.slice(1).reduce(
+    (result, word, index) => {
+      const previousWord = orderedWords[index];
+      const gapSec = Math.max(0, word.start - previousWord.end);
+      if (gapSec < thresholdSec) {
+        return result;
+      }
+
+      const units = Math.floor(gapSec / thresholdSec);
+      const duration = Math.round(gapSec * 1000);
+      return {
+        pauseCount: result.pauseCount + units,
+        pauseLog: [
+          ...result.pauseLog,
+          {
+            timestamp: Math.round(word.start * 1000),
+            duration,
+            units,
+          },
+        ],
+      };
+    },
+    { pauseCount: 0, pauseLog: [] as Array<{ timestamp: number; duration: number; units: number }> },
+  );
 }
 
 function storeSessionTranscript(telegramId: number, sessionId: string, transcript: string) {
   const transcripts = sessionTranscriptsByTelegramId.get(telegramId) ?? new Map<string, string>();
   transcripts.set(sessionId, transcript);
   sessionTranscriptsByTelegramId.set(telegramId, transcripts);
-}
-
-function averageFlowScore(sessions: StatsSession[]): number | null {
-  const scores = sessions
-    .map((session) => Number(session.flow_score))
-    .filter((score) => Number.isFinite(score));
-
-  if (scores.length === 0) {
-    return null;
-  }
-
-  return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-}
-
-function getScoredSessions(sessions: StatsSession[]) {
-  return sessions.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
-}
-
-function getWeightedAverageFlowScore(sessions: StatsSession[]): number {
-  const scoredSessions = getScoredSessions(sessions);
-  const totalScoreWeight = scoredSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0);
-  const weightedScore = scoredSessions.reduce(
-    (sum, session) => sum + Number(session.flow_score || 0) * Number(session.duration || 0),
-    0,
-  );
-
-  return totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0;
 }
 
 function formatAverageFlowScore(score: number | null): string {
@@ -378,27 +381,37 @@ function formatRelativeDate(dateText: string | null): string {
   return `${daysAgo} days ago`;
 }
 
-async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
+async function transcribeAudio(audioBuffer: ArrayBuffer) {
   const audioFile = new File([audioBuffer], "voice.ogg", { type: "audio/ogg" });
-  const transcript = await transcribeGroqAudio(audioFile);
-  console.log("transcript:", transcript);
-  return transcript;
+  const transcription = await transcribeAudioVerbose(audioFile);
+  console.log("transcript:", transcription.text);
+  console.log("transcript words:", transcription.words.length);
+  return transcription;
 }
 
-async function analyzeTranscript(transcript: string, speakingTimeSec: number): Promise<FlowAnalysis> {
+async function analyzeTranscript(
+  transcript: string,
+  words: TranscribedWord[],
+  totalSessionTimeSec: number,
+): Promise<FlowAnalysis> {
   const { hesitation_count: hesitationCount } = await analyzeGroqSpeech(transcript);
-  const scoreResult = calculateFlowScore(hesitationCount, {
+  const speakingTimeSec = getSpeakingTimeSec(words, totalSessionTimeSec);
+  const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words);
+  const scoreResult = calculateFlowScore(pauseCount, {
     mode: "free",
     speakingTimeSec,
-    totalSessionTimeSec: speakingTimeSec,
-    hasSpeechEvidence: transcript.trim().length > 0 || hesitationCount > 0,
+    totalSessionTimeSec,
+    hasSpeechEvidence: transcript.trim().length > 0 || words.length > 0 || pauseCount > 0,
   });
 
   return {
     flowScore: Number.isFinite(scoreResult.score) ? scoreResult.score : 0,
+    pauseCount,
     hesitationCount,
     speakingTimeSec,
+    totalSessionTimeSec,
     isCompleted: scoreResult.isCompleted,
+    pauseLog,
   };
 }
 
@@ -450,9 +463,16 @@ async function insertTelegramSession(input: {
     flowScore: input.analysis.flowScore,
     completed: input.analysis.isCompleted,
     scoringVersion: SCORING_VERSION,
-    duration: input.analysis.speakingTimeSec,
+    duration: input.analysis.totalSessionTimeSec,
     speakingTime: input.analysis.speakingTimeSec,
-    pauses: input.analysis.hesitationCount,
+    pauses: input.analysis.pauseCount,
+    pauseCount: input.analysis.pauseCount,
+    fillerCount: input.analysis.hesitationCount,
+    hesitationsPerMinute:
+      input.analysis.speakingTimeSec > 0
+        ? input.analysis.pauseCount / (input.analysis.speakingTimeSec / 60)
+        : null,
+    hesitationLog: input.analysis.pauseLog,
     words: countWords(input.transcript),
   });
 
@@ -538,45 +558,33 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   }
   console.log("resolved user_id:", userId);
 
-  let streak;
-  let records: StatsSession[];
+  let stats;
   try {
-    [streak, records] = await Promise.all([
+    const [streak, records] = await Promise.all([
       getStreak(userId),
       getSessions(userId, STATS_SESSION_LIMIT),
     ]);
+    stats = buildPracticeStats(records, streak);
   } catch (error) {
     console.error("Telegram stats lookup failed", error);
     await ctx.reply("⚠️ <b>Stats error</b>\n\n<b>Status:</b>\nI could not load your stats right now.\n\n<b>Action:</b>\nPlease try again in a moment.", { ...replyKeyboard, parse_mode: "HTML" });
     return;
   }
 
-  if (records.length === 0) {
+  if (stats.recentSessions.length === 0) {
     await ctx.reply("📊 <b>No sessions yet</b>\n\n<b>Status:</b>\nYou do not have any practice sessions yet.\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤", { ...replyKeyboard, parse_mode: "HTML" });
     return;
   }
 
-  const scoredSessions = getScoredSessions(records);
-  const totalSeconds = records.reduce((sum, session) => sum + Number(session.duration || 0), 0);
-  const practiceTime = getPracticeTimeParts(totalSeconds);
-  const overallFlow = getWeightedAverageFlowScore(records);
-  const bestScore = scoredSessions
-    .map((session) => Number(session.flow_score))
-    .filter((score) => Number.isFinite(score))
-    .reduce((best, score) => Math.max(best, score), 0);
-  const lastSessionDate =
-    records
-      .map((session) => session.created_at)
-      .filter((createdAt): createdAt is string => Boolean(createdAt))
-      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
-  const sessionsByMode = {
-    free: records.filter((session) => normalizeMode(session.mode ?? "free") === "free"),
-    lemon: records.filter((session) => normalizeMode(session.mode ?? "free") === "lemon"),
-    topic: records.filter((session) => normalizeMode(session.mode ?? "free") === "topic"),
+  const practiceTime = getPracticeTimeParts(stats.totalPracticeTime);
+  const modeStats = {
+    free: stats.modeBreakdown.find((item) => item.mode === "free"),
+    lemon: stats.modeBreakdown.find((item) => item.mode === "lemon"),
+    topic: stats.modeBreakdown.find((item) => item.mode === "topic"),
   };
 
   await ctx.reply(
-    `📊 <b>Your NoPause Stats</b>\n\n<b>Current streak:</b>\n${Number(streak?.current_streak ?? 0)} day(s)\n\n<b>Best streak:</b>\n${Number(streak?.longest_streak ?? 0)} day(s)\n\n<b>Overall Flow:</b>\n${overallFlow}\n\n<b>Scored sessions:</b>\n${scoredSessions.length}\n\n<b>Practice time:</b>\n${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown</b>\n\n<b>Free Speaking sessions:</b>\n${sessionsByMode.free.length}\n\n<b>Free Speaking average flow:</b>\n${formatAverageFlowScore(averageFlowScore(sessionsByMode.free))}\n\n<b>Lemon sessions:</b>\n${sessionsByMode.lemon.length}\n\n<b>Lemon average flow:</b>\n${formatAverageFlowScore(averageFlowScore(sessionsByMode.lemon))}\n\n<b>Topic sessions:</b>\n${sessionsByMode.topic.length}\n\n<b>Topic average flow:</b>\n${formatAverageFlowScore(averageFlowScore(sessionsByMode.topic))}\n\n🏆 <b>Highlights</b>\n\n<b>Best Flow Score:</b>\n${bestScore}\n\n<b>Last session:</b>\n${formatRelativeDate(lastSessionDate)}`,
+    `📊 <b>Your NoPause Stats</b>\n\n<b>Current streak:</b>\n${stats.currentStreak} day(s)\n\n<b>Best streak:</b>\n${stats.bestStreak} day(s)\n\n<b>Overall Flow:</b>\n${stats.avgFlowScore}\n\n<b>Scored sessions:</b>\n${stats.scoredSessions}\n\n<b>Practice time:</b>\n${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown</b>\n\n<b>Free Speaking sessions:</b>\n${modeStats.free?.totalSessions ?? 0}\n\n<b>Free Speaking average flow:</b>\n${formatAverageFlowScore(modeStats.free?.avgFlowScore ?? null)}\n\n<b>Lemon sessions:</b>\n${modeStats.lemon?.totalSessions ?? 0}\n\n<b>Lemon average flow:</b>\n${formatAverageFlowScore(modeStats.lemon?.avgFlowScore ?? null)}\n\n<b>Topic sessions:</b>\n${modeStats.topic?.totalSessions ?? 0}\n\n<b>Topic average flow:</b>\n${formatAverageFlowScore(modeStats.topic?.avgFlowScore ?? null)}\n\n🏆 <b>Highlights</b>\n\n<b>Best Flow Score:</b>\n${stats.bestFlowScore}\n\n<b>Last session:</b>\n${formatRelativeDate(stats.lastSessionDate)}`,
     { ...replyKeyboard, parse_mode: "HTML" },
   );
 }
@@ -595,7 +603,7 @@ async function replyWithNewFriendChallenge(ctx: Context, telegramId: number) {
     lastPromptByTelegramId.set(telegramId, topic);
 
     await ctx.reply(
-      `⚔️ <b>Challenge your friends</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nShare this challenge and see what they've got 🎤`,
+      `⚔️ <b>Challenge your friends</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}`,
       {
         ...getChallengeShareActions(challengeId, topic),
         parse_mode: "HTML",
@@ -671,15 +679,16 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
   try {
     const voice = ctx.message.voice;
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
-    const transcript = await transcribeAudio(audioBuffer);
+    const transcription = await transcribeAudio(audioBuffer);
+    const transcript = transcription.text;
 
     if (!transcript.trim()) {
       await ctx.reply("⚠️ <b>No speech detected</b>\n\n<b>Status:</b>\nI could not hear anything clearly.\n\n<b>Action:</b>\nCheck your mic and send another voice note 🎤", { parse_mode: "HTML" });
       return;
     }
 
-    const speakingTimeSec = estimateDurationSec(voice.duration);
-    const analysis = await analyzeTranscript(transcript, speakingTimeSec);
+    const totalSessionTimeSec = estimateDurationSec(voice.duration);
+    const analysis = await analyzeTranscript(transcript, transcription.words, totalSessionTimeSec);
     const sessionId = await insertTelegramSession({
       userId,
       transcript,
@@ -692,7 +701,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
 
     if (groupChat) {
       await ctx.reply(
-        `🎤 <b>Voice Result</b>\n\n<b>Speaker:</b>\n${escapeTelegramHtml(username)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s`,
+        `🎤 <b>Voice Result</b>\n\n<b>Speaker:</b>\n${escapeTelegramHtml(username)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s`,
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
@@ -746,7 +755,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
       pendingGroupChallengesByTelegramId.delete(telegramId);
 
       await ctx.reply(
-        `⚔️ <b>Group Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(pendingGroupChallenge.topic)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
+        `⚔️ <b>Group Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(pendingGroupChallenge.topic)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
         {
           ...getGroupChallengeResultActions(resultText),
           parse_mode: "HTML",
@@ -756,7 +765,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     }
 
     await ctx.reply(
-      `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
+      `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {

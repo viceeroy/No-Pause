@@ -13,7 +13,7 @@ import {
 } from './analyzer/micStateMachine';
 import {
   calculateFlowScore,
-  getScoreLabel,
+  DEFAULT_PAUSE_THRESHOLD_MS,
   type FlowScoreOptions,
   type FlowScoreResult,
 } from './analyzer/scoring';
@@ -22,7 +22,7 @@ const SPEECH_THRESHOLD = 0.01;
 const SPEECH_OFF_MULTIPLIER = 0.7;
 const CALIBRATION_NOISE_MULTIPLIER = 3;
 const MAX_CALIBRATED_SPEECH_THRESHOLD = 0.06;
-const HESITATION_MIN_DURATION = 1800;
+const HESITATION_MIN_DURATION = DEFAULT_PAUSE_THRESHOLD_MS;
 const MICRO_PAUSE_IGNORE = 300;
 const SMOOTHING_WINDOW = 10;
 const CALIBRATION_DURATION = 1500;
@@ -1247,13 +1247,6 @@ export class AudioAnalyzer {
     options?: FlowScoreOptions,
   ): FlowScoreResult {
     return calculateFlowScore(hesitationCount, options);
-  }
-
-  /**
-   * Maps a numeric score to a human-readable label.
-   */
-  static getScoreLabel(score: number): string {
-    return getScoreLabel(score);
   }
 
   /**

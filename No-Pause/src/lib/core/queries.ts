@@ -7,6 +7,8 @@ export type SessionRecord = {
   duration: number;
   speaking_time: number | null;
   pauses: number | null;
+  pause_count?: number | null;
+  filler_count?: number | null;
   words: number | null;
   flow_score: number | null;
   completed: boolean | null;
@@ -25,6 +27,8 @@ export type PracticeStats = {
   scoredSessions: number;
   totalPracticeTime: number;
   avgFlowScore: number;
+  bestFlowScore: number;
+  lastSessionDate: string | null;
   currentStreak: number;
   bestStreak: number;
   modeBreakdown: Array<{
@@ -44,7 +48,19 @@ export type PracticeStats = {
 };
 
 const SESSION_COLUMNS =
+  "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
+const LEGACY_SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
+
+function isMissingSessionAnalysisColumnError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null;
+  return (
+    maybeError?.code === "PGRST204" ||
+    maybeError?.code === "42703" ||
+    maybeError?.message?.includes("pause_count") === true ||
+    maybeError?.message?.includes("filler_count") === true
+  );
+}
 
 async function getServerSupabase() {
   const { supabaseServer } = await import("../supabaseServer.js");
@@ -61,6 +77,21 @@ export async function getSessions(userId: string, limit = 15): Promise<SessionRe
     .limit(limit);
 
   if (error) {
+    if (isMissingSessionAnalysisColumnError(error)) {
+      const { data: legacyData, error: legacyError } = await supabase
+        .from("sessions")
+        .select(LEGACY_SESSION_COLUMNS)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (legacyError) {
+        throw legacyError;
+      }
+
+      return (legacyData ?? []) as SessionRecord[];
+    }
+
     throw error;
   }
 
@@ -80,15 +111,6 @@ export async function getStreak(userId: string): Promise<StreakRecord | null> {
   }
 
   return data as StreakRecord | null;
-}
-
-export async function getStats(userId: string, limit = 15): Promise<PracticeStats> {
-  const [sessions, streak] = await Promise.all([
-    getSessions(userId, limit),
-    getStreak(userId),
-  ]);
-
-  return buildPracticeStats(sessions, streak);
 }
 
 export function buildPracticeStats(
@@ -111,6 +133,15 @@ export function buildPracticeStats(
     scoredSessions: scored.length,
     totalPracticeTime: sessions.reduce((sum, session) => sum + Number(session.duration || 0), 0),
     avgFlowScore: totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0,
+    bestFlowScore: scored
+      .map((session) => Number(session.flow_score))
+      .filter((score) => Number.isFinite(score))
+      .reduce((best, score) => Math.max(best, score), 0),
+    lastSessionDate:
+      sessions
+        .map((session) => session.created_at)
+        .filter((createdAt): createdAt is string => Boolean(createdAt))
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null,
     currentStreak: Number(streak?.current_streak ?? 0),
     bestStreak: Number(streak?.longest_streak ?? 0),
     modeBreakdown: Object.entries(byMode).map(([mode, modeSessions]) => {
@@ -131,7 +162,7 @@ export function buildPracticeStats(
       id: session.id,
       created_at: session.created_at,
       duration: Number(session.duration || 0),
-      hesitationCount: Number(session.pauses || 0),
+      hesitationCount: Number(session.pause_count ?? session.pauses ?? 0),
       flowScore: session.flow_score === null || session.flow_score === undefined ? null : Number(session.flow_score),
       mode: normalizeMode((session.mode || "free").toLowerCase()),
     })),
