@@ -5,12 +5,14 @@ import { normalizeMode } from "./core/modes.js";
 import { getRandomPrompt } from "./core/prompts.js";
 import { calculateFlowScore } from "./core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak } from "./core/session.js";
+import type { SupabaseLike } from "./core/session.js";
 import { getTelegramConnection } from "./telegramAuth.js";
 import { supabaseServer } from "./supabaseServer.js";
 
 const SITE_URL = APP_URL;
 const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const sessionSupabase = supabaseServer as unknown as SupabaseLike;
 const CHALLENGE_LABEL = "⚔️ Challenge";
 const MY_STATS_LABEL = "📈 My Stats";
 const GET_PROMPT_LABEL = "💡 Get Prompt";
@@ -530,7 +532,7 @@ async function insertTelegramSession(input: {
   transcript: string;
   analysis: FlowAnalysis;
 }) {
-  const sessionId = await insertSession(supabaseServer, {
+  const sessionId = await insertSession(sessionSupabase, {
     userId: input.userId,
     mode: "free",
     transcript: input.transcript,
@@ -543,7 +545,7 @@ async function insertTelegramSession(input: {
     words: countWords(input.transcript),
   });
 
-  await updateStreak(supabaseServer, {
+  await updateStreak(sessionSupabase, {
     userId: input.userId,
     localDate: formatLocalDate(new Date()),
   });
