@@ -5,8 +5,9 @@ import { getTelegramConnection } from "./telegramAuth.js";
 import { supabaseServer } from "./supabaseServer.js";
 
 const SITE_URL = "https://nopause.org";
+const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const FREE_SPEAKING_LABEL = "🎤 Free Speaking";
+const CHALLENGE_LABEL = "⚔️ Challenge";
 const MY_STATS_LABEL = "📈 My Stats";
 const GET_PROMPT_LABEL = "💡 Get Prompt";
 const ABOUT_LABEL = "ℹ️ About";
@@ -14,6 +15,7 @@ const CHANGE_PROMPT_ACTION = "change_prompt";
 const CHANGE_GROUP_TOPIC_ACTION = "change_group_topic";
 const SPEAK_GROUP_TOPIC_ACTION = "speak_group_topic";
 const SHARE_TO_GROUP_ACTION = "share_to_group";
+const SEND_CHALLENGE_RESULT_ACTION = "send_challenge_result";
 const TRY_AGAIN_ACTION = "try_again:free_speaking";
 const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 const sessionTranscriptsByTelegramId = new Map<number, Map<string, string>>();
@@ -21,6 +23,18 @@ const lastPromptByTelegramId = new Map<number, string>();
 const groupChallengeTopicsByMessage = new Map<string, string>();
 const pendingGroupChallengesByTelegramId = new Map<number, GroupChallengePending>();
 const groupChallengeResultsByTelegramId = new Map<number, GroupChallengeResult>();
+const creatorUsernameByChallengeId = new Map<string, string>();
+const pendingFriendChallengesByTelegramId = new Map<number, FriendChallengePending>();
+const friendChallengeResultsByTelegramId = new Map<number, FriendChallengeResult>();
+
+const CHALLENGES_TABLE_SQL = `create table if not exists public.challenges (
+  id text primary key,
+  topic text not null,
+  creator_telegram_id bigint not null,
+  creator_score integer,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);`;
 
 const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
@@ -64,6 +78,28 @@ type GroupChallengeResult = GroupChallengePending & {
   resultText?: string;
 };
 
+type FriendChallengeRecord = {
+  id: string;
+  topic: string;
+  creator_telegram_id: number;
+  creator_score: number | null;
+  status: string;
+  created_at: string | null;
+};
+
+type FriendChallengePending = {
+  challengeId: string;
+  topic: string;
+  creatorTelegramId: number;
+  creatorUsername: string;
+  creatorScore: number | null;
+};
+
+type FriendChallengeResult = FriendChallengePending & {
+  friendUsername: string;
+  analysis: FlowAnalysis;
+};
+
 type StatsSession = {
   id: string;
   created_at: string | null;
@@ -82,7 +118,7 @@ type StatsSession = {
 const STATS_SESSION_LIMIT = 15;
 
 const replyKeyboard = Markup.keyboard([
-  [FREE_SPEAKING_LABEL, MY_STATS_LABEL, GET_PROMPT_LABEL],
+  [CHALLENGE_LABEL, MY_STATS_LABEL, GET_PROMPT_LABEL],
   [ABOUT_LABEL],
 ]).resize();
 
@@ -125,6 +161,42 @@ function getTelegramUsername(ctx: Context): string {
   return ctx.from?.username ? `@${ctx.from.username}` : "@there";
 }
 
+function getPlainTelegramUsername(ctx: Context): string {
+  return ctx.from?.username ?? String(ctx.from?.id ?? "there");
+}
+
+function createChallengeId(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+}
+
+function getChallengeDeepLink(challengeId: string): string {
+  return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=challenge_${encodeURIComponent(challengeId)}`;
+}
+
+function getTelegramShareUrl(input: { url: string; text?: string }): string {
+  const params = new URLSearchParams({ url: input.url });
+  if (input.text) {
+    params.set("text", input.text);
+  }
+
+  return `https://t.me/share/url?${params.toString()}`;
+}
+
+function getStartPayload(ctx: Context): string {
+  const text = "text" in (ctx.message ?? {}) ? String(ctx.message.text ?? "") : "";
+  const [, payload = ""] = text.split(/\s+/, 2);
+  return payload.trim();
+}
+
+function isMissingChallengesTableError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null;
+  return maybeError?.code === "42P01" || maybeError?.message?.includes("challenges") === true;
+}
+
+function getChallengesTableMissingMessage(): string {
+  return `I could not find the Supabase challenges table. Create it with:\n\n<pre>${escapeTelegramHtml(CHALLENGES_TABLE_SQL)}</pre>`;
+}
+
 function getMessageTopicKey(chatId: number, messageId: number): string {
   return `${chatId}:${messageId}`;
 }
@@ -157,7 +229,7 @@ function getGroupShareResultMessage(input: {
 }
 
 function getResultShareUrl(resultText: string): string {
-  return `https://t.me/share/url?url=${encodeURIComponent(SITE_URL)}&text=${encodeURIComponent(resultText)}`;
+  return getTelegramShareUrl({ url: SITE_URL, text: resultText });
 }
 
 function getGroupChallengeResultActions(resultText: string) {
@@ -168,6 +240,40 @@ function getGroupChallengeResultActions(resultText: string) {
     ],
     [Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION)],
   ]);
+}
+
+function getChallengeShareActions(challengeId: string) {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.url(
+        "📨 Share Challenge",
+        getTelegramShareUrl({
+          url: getChallengeDeepLink(challengeId),
+          text: "I challenged you on NoPause. Tap to accept.",
+        }),
+      ),
+    ],
+  ]);
+}
+
+function getFriendChallengeResultActions(creatorUsername: string) {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback(`📤 Send Result to @${creatorUsername}`, SEND_CHALLENGE_RESULT_ACTION)],
+  ]);
+}
+
+function getChallengeResultMessage(input: { topic: string; analysis: FlowAnalysis }): string {
+  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b> ${escapeTelegramHtml(input.topic)}\n<b>Flow Score:</b> ${input.analysis.flowScore}\n<b>Pauses:</b> ${input.analysis.hesitationCount}\n<b>Speaking time:</b> ${input.analysis.speakingTimeSec}s`;
+}
+
+function getChallengeCreatorNotification(input: FriendChallengeResult): string {
+  const friend = escapeTelegramHtml(input.friendUsername);
+  const topic = escapeTelegramHtml(input.topic);
+  if (input.creatorScore === null || input.creatorScore === undefined) {
+    return `⚔️ @${friend} completed your challenge!\n<b>Topic:</b> ${topic}\n<b>Their Flow Score:</b> ${input.analysis.flowScore}\n\nSend a voice note to compete! 🎤`;
+  }
+
+  return `⚔️ @${friend} accepted your challenge!\n<b>Topic:</b> ${topic}\n<b>Their Flow Score:</b> ${input.analysis.flowScore} | <b>Yours:</b> ${input.creatorScore}`;
 }
 
 function getConnectUrl(telegramId: number): string {
@@ -540,6 +646,59 @@ async function insertTelegramSession(input: {
   return String(data.id);
 }
 
+async function createFriendChallenge(input: {
+  id: string;
+  topic: string;
+  creatorTelegramId: number;
+}): Promise<FriendChallengeRecord> {
+  const { data, error } = await supabaseServer
+    .from("challenges")
+    .insert({
+      id: input.id,
+      topic: input.topic,
+      creator_telegram_id: input.creatorTelegramId,
+      creator_score: null,
+      status: "pending",
+      created_at: new Date().toISOString(),
+    })
+    .select("id, topic, creator_telegram_id, creator_score, status, created_at")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as FriendChallengeRecord;
+}
+
+async function getFriendChallenge(challengeId: string): Promise<FriendChallengeRecord | null> {
+  const { data, error } = await supabaseServer
+    .from("challenges")
+    .select("id, topic, creator_telegram_id, creator_score, status, created_at")
+    .eq("id", challengeId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as FriendChallengeRecord | null;
+}
+
+async function updateFriendChallengeCreatorScore(challengeId: string, score: number) {
+  const { error } = await supabaseServer
+    .from("challenges")
+    .update({
+      creator_score: score,
+      status: "completed",
+    })
+    .eq("id", challengeId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 async function replyWithPrompt(ctx: Context) {
   const telegramId = getTelegramId(ctx);
   const prompt = getRandomPrompt(telegramId ? lastPromptByTelegramId.get(telegramId) : undefined);
@@ -610,12 +769,87 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   );
 }
 
+async function replyWithNewFriendChallenge(ctx: Context, telegramId: number) {
+  const topic = getRandomPrompt(lastPromptByTelegramId.get(telegramId));
+  const challengeId = createChallengeId();
+
+  try {
+    await createFriendChallenge({
+      id: challengeId,
+      topic,
+      creatorTelegramId: telegramId,
+    });
+    creatorUsernameByChallengeId.set(challengeId, getPlainTelegramUsername(ctx));
+    lastPromptByTelegramId.set(telegramId, topic);
+
+    await ctx.reply(
+      `⚔️ Challenge your friends on this topic:\n'${escapeTelegramHtml(topic)}'`,
+      {
+        ...getChallengeShareActions(challengeId),
+        parse_mode: "HTML",
+      },
+    );
+  } catch (error) {
+    console.error("Telegram challenge creation failed", error);
+    if (isMissingChallengesTableError(error)) {
+      await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
+      return;
+    }
+
+    await ctx.reply("I could not create a challenge right now. Please try again in a moment.", replyKeyboard);
+  }
+}
+
+async function handleChallengeDeepLink(ctx: Context, telegramId: number, challengeId: string): Promise<boolean> {
+  try {
+    const challenge = await getFriendChallenge(challengeId);
+    if (!challenge) {
+      await ctx.reply("I could not find that challenge. Ask your friend to send a fresh challenge link.", replyKeyboard);
+      return true;
+    }
+
+    let creatorUsername = creatorUsernameByChallengeId.get(challengeId);
+    if (!creatorUsername) {
+      try {
+        const creatorChat = (await ctx.telegram.getChat(Number(challenge.creator_telegram_id))) as { username?: string };
+        creatorUsername = creatorChat.username;
+      } catch (error) {
+        console.error("Telegram creator username lookup failed", error);
+      }
+    }
+    creatorUsername ??= String(challenge.creator_telegram_id);
+    pendingFriendChallengesByTelegramId.set(telegramId, {
+      challengeId: challenge.id,
+      topic: challenge.topic,
+      creatorTelegramId: Number(challenge.creator_telegram_id),
+      creatorUsername,
+      creatorScore: challenge.creator_score,
+    });
+
+    await ctx.reply(
+      `@${escapeTelegramHtml(creatorUsername)} challenged you!\n<b>Topic:</b> ${escapeTelegramHtml(challenge.topic)}\nSend a voice note to accept 🎤`,
+      { parse_mode: "HTML" },
+    );
+    return true;
+  } catch (error) {
+    console.error("Telegram challenge deep link failed", error);
+    if (isMissingChallengesTableError(error)) {
+      await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
+      return true;
+    }
+
+    await ctx.reply("I could not load that challenge right now. Please try again in a moment.", replyKeyboard);
+    return true;
+  }
+}
+
 async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: string; duration?: number } } }, telegramId: number) {
+  const pendingFriendChallenge = pendingFriendChallengesByTelegramId.get(telegramId);
   const pendingGroupChallenge = pendingGroupChallengesByTelegramId.get(telegramId);
   const connection = await getTelegramConnection(telegramId);
   const groupChat = isGroupChat(ctx);
   const username = getTelegramUsername(ctx);
-  if (!connection && !groupChat && !pendingGroupChallenge) {
+  if (!connection && !groupChat && !pendingGroupChallenge && !pendingFriendChallenge) {
     await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`);
     return;
   }
@@ -655,6 +889,39 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
         `🎤 ${username}\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.hesitationCount}\nSpeaking time: ${analysis.speakingTimeSec}s`,
         groupTryAgainKeyboard,
       );
+      return;
+    }
+
+    if (pendingFriendChallenge) {
+      pendingFriendChallengesByTelegramId.delete(telegramId);
+
+      if (pendingFriendChallenge.creatorTelegramId === telegramId) {
+        try {
+          await updateFriendChallengeCreatorScore(pendingFriendChallenge.challengeId, analysis.flowScore);
+        } catch (error) {
+          console.error("Telegram challenge creator score update failed", error);
+          if (isMissingChallengesTableError(error)) {
+            await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
+            return;
+          }
+        }
+
+        await ctx.reply(getChallengeResultMessage({ topic: pendingFriendChallenge.topic, analysis }), {
+          parse_mode: "HTML",
+        });
+        return;
+      }
+
+      friendChallengeResultsByTelegramId.set(telegramId, {
+        ...pendingFriendChallenge,
+        friendUsername: getPlainTelegramUsername(ctx),
+        analysis,
+      });
+
+      await ctx.reply(getChallengeResultMessage({ topic: pendingFriendChallenge.topic, analysis }), {
+        ...getFriendChallengeResultActions(pendingFriendChallenge.creatorUsername),
+        parse_mode: "HTML",
+      });
       return;
     }
 
@@ -702,6 +969,12 @@ export function createTelegramBot() {
       return;
     }
 
+    const startPayload = getStartPayload(ctx);
+    if (startPayload.startsWith("challenge_")) {
+      const handled = await handleChallengeDeepLink(ctx, telegramId, startPayload.replace(/^challenge_/, ""));
+      if (handled) return;
+    }
+
     await ctx.reply(
       `Welcome to No Pause. Connect your account here:\n${getConnectUrl(telegramId)}\n\nThen send me a voice message to get a Flow Score.`,
       replyKeyboard,
@@ -742,8 +1015,11 @@ export function createTelegramBot() {
     groupChallengeTopicsByMessage.set(getMessageTopicKey(chatId, sentMessage.message_id), prompt);
   });
 
-  bot.hears(FREE_SPEAKING_LABEL, async (ctx) => {
-    await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
+  bot.hears(CHALLENGE_LABEL, async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) return;
+
+    await replyWithNewFriendChallenge(ctx, telegramId);
   });
 
   bot.hears(MY_STATS_LABEL, async (ctx) => {
@@ -836,6 +1112,36 @@ nopause.org`,
       await ctx.answerCbQuery("Open @NoPauseAI_bot and press Start first, then tap Speak again.", {
         show_alert: true,
       });
+    }
+  });
+
+  bot.action(SEND_CHALLENGE_RESULT_ACTION, async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    const result = telegramId ? friendChallengeResultsByTelegramId.get(telegramId) : undefined;
+    if (!telegramId || !result) {
+      await ctx.answerCbQuery("I could not find your challenge result.", { show_alert: true });
+      return;
+    }
+
+    try {
+      await ctx.telegram.sendMessage(result.creatorTelegramId, getChallengeCreatorNotification(result), {
+        parse_mode: "HTML",
+      });
+
+      if (result.creatorScore === null || result.creatorScore === undefined) {
+        pendingFriendChallengesByTelegramId.set(result.creatorTelegramId, {
+          challengeId: result.challengeId,
+          topic: result.topic,
+          creatorTelegramId: result.creatorTelegramId,
+          creatorUsername: result.creatorUsername,
+          creatorScore: result.creatorScore,
+        });
+      }
+
+      await ctx.answerCbQuery("Sent to the challenger.");
+    } catch (error) {
+      console.error("Telegram challenge result send failed", error);
+      await ctx.answerCbQuery("I could not send that result right now.", { show_alert: true });
     }
   });
 
