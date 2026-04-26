@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
-import { normalizeMode } from "./core/modes";
 import { insertSession, updateStreak as updateCoreStreak } from "./core/session";
+import { getAIFeedback, transcribeAudio as transcribeGroqAudio } from "./core/groq";
+import { buildPracticeStats, type PracticeStats, type SessionRecord, type StreakRecord } from "./core/queries";
+
+export type { PracticeStats, SessionRecord } from "./core/queries";
 
 type TranscribeAudioInput = {
   audioBase64: string;
@@ -17,8 +20,6 @@ type AnalyzeSpeechInput = {
   wordCount?: number;
   mode?: string;
 };
-
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 const buildPrompt = (input: {
   transcript: string;
@@ -46,14 +47,6 @@ const buildVoiceActingPrompt = (transcript: string) =>
 
 Transcript: ${transcript}`;
 
-function requireGroqApiKey(): string {
-  if (!GROQ_API_KEY) {
-    throw new Error("VITE_GROQ_API_KEY is not set");
-  }
-
-  return GROQ_API_KEY;
-}
-
 function base64ToBlob(base64: string, mimeType: string): Blob {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -64,46 +57,8 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([bytes], { type: mimeType });
 }
 
-export type SessionRecord = {
-  id: string;
-  created_at: string;
-  mode: string;
-  duration: number;
-  speaking_time: number | null;
-  pauses: number | null;
-  words: number | null;
-  flow_score: number | null;
-  completed: boolean | null;
-  hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
-  transcript: string | null;
-  analysis_feedback: string | null;
-};
-
-export type PracticeStats = {
-  scoredSessions: number;
-  totalPracticeTime: number;
-  avgFlowScore: number;
-  currentStreak: number;
-  bestStreak: number;
-  modeBreakdown: Array<{
-    mode: string;
-    totalSessions: number;
-    totalDuration: number;
-    avgFlowScore: number | null;
-  }>;
-  recentSessions: Array<{
-    id: string;
-    created_at: string;
-    duration: number;
-    hesitationCount: number;
-    flowScore: number | null;
-    mode: string;
-  }>;
-};
-
 export async function transcribeAudio(input: TranscribeAudioInput): Promise<string> {
   try {
-    const apiKey = requireGroqApiKey();
     const safeMimeType = input.mimeType.split(";")[0] || "audio/webm";
     const audioByteLength = Math.floor((input.audioBase64.length * 3) / 4);
     const MAX_BYTES = 15 * 1024 * 1024;
@@ -134,28 +89,8 @@ export async function transcribeAudio(input: TranscribeAudioInput): Promise<stri
     };
     const fileExt = extensionByMime[safeMimeType] || "webm";
 
-    const formData = new FormData();
-    formData.append("file", audioBlob, `recording.${fileExt}`);
-    formData.append("model", "whisper-large-v3-turbo");
-    if (input.language) {
-      formData.append("language", input.language);
-    }
-
-    const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq transcription failed: ${response.status} ${errorText.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const transcript = String(data?.text ?? "").trim();
+    const audioFile = new File([audioBlob], `recording.${fileExt}`, { type: safeMimeType });
+    const transcript = await transcribeGroqAudio(audioFile);
     if (!transcript) return "";
     const normalized = transcript.toLowerCase().trim();
     // If transcript is 3 words or fewer, it's almost certainly a hallucination — discard it
@@ -176,7 +111,6 @@ export async function transcribeAudio(input: TranscribeAudioInput): Promise<stri
 
 export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<string> {
   try {
-    const apiKey = requireGroqApiKey();
     const trimmed = input.transcript.trim();
     if (!trimmed) {
       throw new Error("Transcript is empty");
@@ -197,39 +131,18 @@ export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<string> 
       mode,
     });
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: mode === "voiceacting"
-              ? buildVoiceActingPrompt(trimmed)
-              : buildPrompt({
-                transcript: trimmed,
-                flowScore,
-                hesitationCount,
-                speakingTime,
-                wordCount,
-              }),
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq analysis failed: ${response.status} ${errorText.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content ?? "";
-    const output = String(content).trim();
+    const output = await getAIFeedback(
+      trimmed,
+      mode === "voiceacting"
+        ? buildVoiceActingPrompt(trimmed)
+        : buildPrompt({
+          transcript: trimmed,
+          flowScore,
+          hesitationCount,
+          speakingTime,
+          wordCount,
+        }),
+    );
     console.log("analyzeSpeech response", {
       responseLength: output.length,
     });
@@ -337,44 +250,5 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   if (sessionsError) throw sessionsError;
   if (streakError) throw streakError;
 
-  const records = (sessions ?? []) as SessionRecord[];
-  const scored = records.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
-  const totalScoreWeight = scored.reduce((sum, session) => sum + Number(session.duration || 0), 0);
-  const weightedScore = scored.reduce(
-    (sum, session) => sum + Number(session.flow_score || 0) * Number(session.duration || 0),
-    0,
-  );
-  const byMode = records.reduce<Record<string, SessionRecord[]>>((acc, session) => {
-    const mode = normalizeMode((session.mode || "free").toLowerCase());
-    acc[mode] = acc[mode] ? [...acc[mode], session] : [session];
-    return acc;
-  }, {});
-
-  return {
-    scoredSessions: scored.length,
-    totalPracticeTime: records.reduce((sum, session) => sum + Number(session.duration || 0), 0),
-    avgFlowScore: totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0,
-    currentStreak: Number(streak?.current_streak ?? 0),
-    bestStreak: Number(streak?.longest_streak ?? 0),
-    modeBreakdown: Object.entries(byMode).map(([mode, modeSessions]) => {
-      const modeScoredIncludingZero = modeSessions.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
-      return {
-        mode,
-        totalSessions: modeSessions.length,
-        totalDuration: modeSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0),
-        avgFlowScore:
-          modeScoredIncludingZero.length > 0
-            ? Math.round(modeScoredIncludingZero.reduce((sum, session) => sum + Number(session.flow_score || 0), 0) / modeScoredIncludingZero.length)
-            : null,
-      };
-    }),
-    recentSessions: records.map((session) => ({
-      id: session.id,
-      created_at: session.created_at,
-      duration: Number(session.duration || 0),
-      hesitationCount: Number(session.pauses || 0),
-      flowScore: session.flow_score === null || session.flow_score === undefined ? null : Number(session.flow_score),
-      mode: normalizeMode((session.mode || "free").toLowerCase()),
-    })),
-  };
+  return buildPracticeStats((sessions ?? []) as SessionRecord[], streak as StreakRecord | null);
 }

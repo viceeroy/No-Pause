@@ -1,17 +1,9 @@
 import { supabaseServer } from "./supabaseServer.js";
+import { resolveTelegramUser } from "./core/user.js";
 
 export async function getTelegramConnection(telegramId: number) {
-  const { data, error } = await supabaseServer
-    .from("telegram_connections")
-    .select("user_id")
-    .eq("telegram_id", telegramId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data?.user_id ? { userId: String(data.user_id) } : null;
+  const userId = await resolveTelegramUser(telegramId);
+  return userId ? { userId } : null;
 }
 
 export async function upsertTelegramConnection(input: { telegramId: number; userId: string }) {

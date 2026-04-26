@@ -3,15 +3,16 @@ import type { Context } from "telegraf";
 import { APP_URL, SCORING_VERSION, TELEGRAM_MIN_DURATION } from "./core/constants.js";
 import { normalizeMode } from "./core/modes.js";
 import { getRandomPrompt } from "./core/prompts.js";
+import { getSessions, getStreak } from "./core/queries.js";
 import { calculateFlowScore } from "./core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak } from "./core/session.js";
 import type { SupabaseLike } from "./core/session.js";
-import { getTelegramConnection } from "./telegramAuth.js";
+import { analyzeSpeech as analyzeGroqSpeech, getAIFeedback, transcribeAudio as transcribeGroqAudio } from "./core/groq.js";
+import { resolveTelegramUser } from "./core/user.js";
 import { supabaseServer } from "./supabaseServer.js";
 
 const SITE_URL = APP_URL;
 const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const sessionSupabase = supabaseServer as unknown as SupabaseLike;
 const CHALLENGE_LABEL = "⚔️ Challenge";
 const MY_STATS_LABEL = "📈 My Stats";
@@ -126,10 +127,6 @@ function requireEnv(value: string | undefined, name: string): string {
 
 function getBotToken(): string {
   return requireEnv(process.env.TELEGRAM_BOT_TOKEN, "TELEGRAM_BOT_TOKEN");
-}
-
-function getGroqApiKey(): string {
-  return requireEnv(GROQ_API_KEY, "GROQ_API_KEY");
 }
 
 function getTelegramId(ctx: Context): number | null {
@@ -282,6 +279,23 @@ const openNoPauseKeyboard = Markup.inlineKeyboard([
   [Markup.button.url("📊 Open NoPause", SITE_URL)],
 ]);
 
+function getConnectAccountKeyboard(telegramId: number) {
+  return Markup.inlineKeyboard([
+    [Markup.button.url("🔑 Connect Account", getConnectUrl(telegramId))],
+  ]);
+}
+
+function getWelcomeBannerUrl(): string {
+  return `${SITE_URL}/telegram-welcome.png`;
+}
+
+async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
+  await ctx.reply(
+    "👋 Connect your NoPause account first to get your Flow Score.",
+    getConnectAccountKeyboard(telegramId),
+  );
+}
+
 function estimateDurationSec(voiceDuration?: number): number {
   if (!voiceDuration || voiceDuration < TELEGRAM_MIN_DURATION) {
     return TELEGRAM_MIN_DURATION;
@@ -368,85 +382,15 @@ function formatRelativeDate(dateText: string | null): string {
   return `${daysAgo} days ago`;
 }
 
-function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
-  const numberValue = Number(value);
-  if (!Number.isFinite(numberValue)) {
-    return fallback;
-  }
-
-  return Math.max(min, Math.min(max, numberValue));
-}
-
-function parseHesitationAnalysis(content: string): number {
-  const jsonText = content
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const parsed = JSON.parse(jsonText) as {
-    hesitation_count?: unknown;
-  };
-
-  return Math.round(clampNumber(parsed.hesitation_count, 0, 9999, 0));
-}
-
 async function transcribeAudio(audioBuffer: ArrayBuffer): Promise<string> {
-  const formData = new FormData();
   const audioFile = new File([audioBuffer], "voice.ogg", { type: "audio/ogg" });
-  formData.append("file", audioFile);
-  formData.append("model", "whisper-large-v3-turbo");
-
-  const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getGroqApiKey()}`,
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Groq transcription failed: ${response.status} ${errorText.slice(0, 200)}`);
-  }
-
-  const data = await response.json();
-  console.log("Groq Whisper response:", data);
-  const transcript = String(data?.text ?? "").trim();
+  const transcript = await transcribeGroqAudio(audioFile);
   console.log("transcript:", transcript);
   return transcript;
 }
 
 async function analyzeTranscript(transcript: string, speakingTimeSec: number): Promise<FlowAnalysis> {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getGroqApiKey()}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a speech fluency coach. Analyze this transcript for pauses and hesitations. Return ONLY valid JSON: { \"hesitation_count\": <number of pauses/hesitations detected> }",
-        },
-        {
-          role: "user",
-          content: transcript,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Groq analysis failed: ${response.status} ${errorText.slice(0, 200)}`);
-  }
-
-  const data = await response.json();
-  const content = String(data?.choices?.[0]?.message?.content ?? "").trim();
-  const hesitationCount = parseHesitationAnalysis(content);
+  const { hesitation_count: hesitationCount } = await analyzeGroqSpeech(transcript);
   const scoreResult = calculateFlowScore(hesitationCount, {
     mode: "free",
     speakingTimeSec,
@@ -463,36 +407,7 @@ async function analyzeTranscript(transcript: string, speakingTimeSec: number): P
 }
 
 async function generateAiFeedback(transcript: string): Promise<string> {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getGroqApiKey()}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a speech fluency coach. Give specific, actionable feedback on this speech transcript in 3-4 sentences. Focus on clarity, confidence, and areas to improve.",
-        },
-        {
-          role: "user",
-          content: transcript,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Groq feedback failed: ${response.status} ${errorText.slice(0, 200)}`);
-  }
-
-  const data = await response.json();
-  const feedback = String(data?.choices?.[0]?.message?.content ?? "").trim();
-  return feedback || "I could not generate feedback for that transcript right now.";
+  return getAIFeedback(transcript);
 }
 
 async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
@@ -618,34 +533,26 @@ async function replyWithPrompt(ctx: Context) {
 }
 
 async function replyWithStatus(ctx: Context, telegramId: number) {
-  const connection = await getTelegramConnection(telegramId);
-  if (!connection) {
+  const userId = await resolveTelegramUser(telegramId);
+  if (!userId) {
     await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`, replyKeyboard);
     return;
   }
-  console.log("resolved user_id:", connection.userId);
+  console.log("resolved user_id:", userId);
 
-  const [{ data: streak, error: streakError }, { data: sessions, error: sessionsError }] = await Promise.all([
-    supabaseServer
-      .from("streaks")
-      .select("current_streak, longest_streak")
-      .eq("user_id", connection.userId)
-      .maybeSingle(),
-    supabaseServer
-      .from("sessions")
-      .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
-      .eq("user_id", connection.userId)
-      .order("created_at", { ascending: false })
-      .limit(STATS_SESSION_LIMIT),
-  ]);
-
-  if (streakError || sessionsError) {
-    console.error("Telegram stats lookup failed", { streakError, sessionsError });
+  let streak;
+  let records: StatsSession[];
+  try {
+    [streak, records] = await Promise.all([
+      getStreak(userId),
+      getSessions(userId, STATS_SESSION_LIMIT),
+    ]);
+  } catch (error) {
+    console.error("Telegram stats lookup failed", error);
     await ctx.reply("I could not load your stats right now. Please try again in a moment.", replyKeyboard);
     return;
   }
 
-  const records = (sessions ?? []) as StatsSession[];
   if (records.length === 0) {
     await ctx.reply("No sessions yet. Send a voice message to get started 🎤", replyKeyboard);
     return;
@@ -753,19 +660,15 @@ async function handleChallengeDeepLink(ctx: Context, telegramId: number, challen
 async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: string; duration?: number } } }, telegramId: number) {
   const pendingFriendChallenge = pendingFriendChallengesByTelegramId.get(telegramId);
   const pendingGroupChallenge = pendingGroupChallengesByTelegramId.get(telegramId);
-  const connection = await getTelegramConnection(telegramId);
+  const userId = await resolveTelegramUser(telegramId);
   const groupChat = isGroupChat(ctx);
   const username = getTelegramUsername(ctx);
-  if (!connection && !groupChat && !pendingGroupChallenge && !pendingFriendChallenge) {
-    await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`);
+  if (!userId) {
+    await replyWithConnectPrompt(ctx, telegramId);
     return;
   }
 
-  if (!connection && groupChat) {
-    await ctx.reply(`${username} connect your account first → t.me/NoPauseAI_bot`);
-  } else {
-    await ctx.reply("Got it. Analyzing your voice note now...");
-  }
+  await ctx.reply("Got it. Analyzing your voice note now...");
 
   try {
     const voice = ctx.message.voice;
@@ -779,13 +682,11 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
 
     const speakingTimeSec = estimateDurationSec(voice.duration);
     const analysis = await analyzeTranscript(transcript, speakingTimeSec);
-    const sessionId = connection
-      ? await insertTelegramSession({
-        userId: connection.userId,
-        transcript,
-        analysis,
-      })
-      : null;
+    const sessionId = await insertTelegramSession({
+      userId,
+      transcript,
+      analysis,
+    });
 
     if (sessionId) {
       storeSessionTranscript(telegramId, sessionId, transcript);
@@ -872,7 +773,7 @@ export function createTelegramBot() {
   bot.start(async (ctx) => {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
-      await ctx.reply("Welcome to No Pause. Open nopause.org/connect from Telegram to connect your account.", replyKeyboard);
+      await ctx.reply("Welcome to NoPause. I could not identify your Telegram account.");
       return;
     }
 
@@ -882,11 +783,11 @@ export function createTelegramBot() {
       if (handled) return;
     }
 
+    await ctx.replyWithPhoto({ url: getWelcomeBannerUrl() });
     await ctx.reply(
-      `Welcome to No Pause. Connect your account here:\n${getConnectUrl(telegramId)}\n\nThen send me a voice message to get a Flow Score.`,
-      replyKeyboard,
+      "👋 Welcome to NoPause!\n\nTrack your speaking fluency, reduce pauses, and improve your Flow Score.\n\nConnect your account to get started:",
+      getConnectAccountKeyboard(telegramId),
     );
-    await ctx.reply("Open your NoPause dashboard:", openNoPauseKeyboard);
   });
 
   bot.command("status", async (ctx) => {
