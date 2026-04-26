@@ -183,7 +183,8 @@ function getTelegramShareUrl(input: { url: string; text?: string }): string {
 }
 
 function getStartPayload(ctx: Context): string {
-  const text = "text" in (ctx.message ?? {}) ? String(ctx.message.text ?? "") : "";
+  const message = ctx.message as { text?: unknown } | undefined;
+  const text = typeof message?.text === "string" ? message.text : "";
   const [, payload = ""] = text.split(/\s+/, 2);
   return payload.trim();
 }
