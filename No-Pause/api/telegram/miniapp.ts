@@ -11,6 +11,11 @@ type MiniAppSession = {
   mode: string | null;
   pauses: number | null;
   speaking_time: number | null;
+  words: number | null;
+  completed: boolean | null;
+  hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
+  transcript: string | null;
+  analysis_feedback: string | null;
 };
 
 type TelegramInitUser = {
@@ -79,16 +84,21 @@ function verifyTelegramInitData(initData: string, botToken: string) {
   return Number.isSafeInteger(user.id) && user.id ? user : null;
 }
 
-function averageFlowScore(sessions: MiniAppSession[]): number | null {
-  const scores = sessions
-    .map((session) => Number(session.flow_score))
-    .filter((score) => Number.isFinite(score) && score > 0);
+const STATS_SESSION_LIMIT = 15;
 
-  if (scores.length === 0) {
-    return null;
-  }
+function getScoredSessions(sessions: MiniAppSession[]) {
+  return sessions.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
+}
 
-  return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+function getWeightedAverageFlowScore(sessions: MiniAppSession[]) {
+  const scoredSessions = getScoredSessions(sessions);
+  const totalScoreWeight = scoredSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0);
+  const weightedScore = scoredSessions.reduce(
+    (sum, session) => sum + Number(session.flow_score || 0) * Number(session.duration || 0),
+    0,
+  );
+
+  return totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0;
 }
 
 function serializeSession(session: MiniAppSession) {
@@ -144,10 +154,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         .maybeSingle(),
       supabaseServer
         .from("sessions")
-        .select("id, created_at, duration, flow_score, mode, pauses, speaking_time")
+        .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
         .eq("user_id", connection.userId)
-        .eq("completed", true)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(STATS_SESSION_LIMIT),
     ]);
 
     if (streakError || sessionsError) {
@@ -156,8 +166,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const completedSessions = (sessions ?? []) as MiniAppSession[];
-    const latestSession = completedSessions[0] ?? null;
+    const records = (sessions ?? []) as MiniAppSession[];
+    const scoredSessions = getScoredSessions(records);
+    const latestSession = records[0] ?? null;
 
     sendJson(res, 200, {
       connected: true,
@@ -165,11 +176,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       stats: {
         currentStreak: Number(streak?.current_streak ?? 0),
         longestStreak: Number(streak?.longest_streak ?? 0),
-        totalSessions: completedSessions.length,
-        totalPracticeTime: completedSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0),
-        overallFlow: averageFlowScore(completedSessions),
+        totalSessions: scoredSessions.length,
+        totalPracticeTime: records.reduce((sum, session) => sum + Number(session.duration || 0), 0),
+        overallFlow: getWeightedAverageFlowScore(records),
         latestSession: latestSession ? serializeSession(latestSession) : null,
-        recentSessions: completedSessions.slice(0, 12).map(serializeSession),
+        recentSessions: records.map(serializeSession),
       },
     });
   } catch (error) {
