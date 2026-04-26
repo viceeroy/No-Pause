@@ -11,10 +11,15 @@ const MY_STATS_LABEL = "📈 My Stats";
 const GET_PROMPT_LABEL = "💡 Get Prompt";
 const ABOUT_LABEL = "ℹ️ About";
 const CHANGE_PROMPT_ACTION = "change_prompt";
+const CHANGE_GROUP_TOPIC_ACTION = "change_group_topic";
+const SPEAK_GROUP_TOPIC_ACTION = "speak_group_topic";
+const SHARE_TO_GROUP_ACTION = "share_to_group";
 const TRY_AGAIN_ACTION = "try_again:free_speaking";
 const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 const sessionTranscriptsByTelegramId = new Map<number, Map<string, string>>();
 const lastPromptByTelegramId = new Map<number, string>();
+const groupChallengeTopicsByMessage = new Map<string, string>();
+const groupChallengeSessionsByTelegramId = new Map<number, GroupChallengeSession>();
 
 const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
@@ -46,6 +51,13 @@ type FlowAnalysis = {
   isCompleted: boolean;
 };
 
+type GroupChallengeSession = {
+  groupId: number;
+  topic: string;
+  username: string;
+  resultText?: string;
+};
+
 type StatsSession = {
   id: string;
   created_at: string | null;
@@ -72,6 +84,13 @@ const changePromptKeyboard = Markup.inlineKeyboard([
   Markup.button.callback("🔄 Change Prompt", CHANGE_PROMPT_ACTION),
 ]);
 
+const groupChallengeKeyboard = Markup.inlineKeyboard([
+  [
+    Markup.button.callback("🗣 Speak", SPEAK_GROUP_TOPIC_ACTION),
+    Markup.button.callback("🔄 Change Topic", CHANGE_GROUP_TOPIC_ACTION),
+  ],
+]);
+
 function requireEnv(value: string | undefined, name: string): string {
   if (!value) {
     throw new Error(`${name} is not set`);
@@ -90,6 +109,38 @@ function getGroqApiKey(): string {
 
 function getTelegramId(ctx: Context): number | null {
   return ctx.from?.id ?? null;
+}
+
+function isGroupChat(ctx: Context): boolean {
+  return ctx.chat?.type === "group" || ctx.chat?.type === "supergroup";
+}
+
+function getTelegramUsername(ctx: Context): string {
+  return ctx.from?.username ? `@${ctx.from.username}` : "@there";
+}
+
+function getMessageTopicKey(chatId: number, messageId: number): string {
+  return `${chatId}:${messageId}`;
+}
+
+function getGroupChallengeMessage(topic: string): string {
+  return `🎤 NoPause is here and ready to listen! Who wants to practice?\n\n<b>Topic:</b> ${escapeTelegramHtml(topic)}`;
+}
+
+function getPrivateChallengeMessage(topic: string): string {
+  return `🎤 <b>Group Challenge Topic</b>\n\n${escapeTelegramHtml(topic)}\n\nSend me a voice note when you're ready.`;
+}
+
+function getGroupResultText(input: {
+  username: string;
+  topic: string;
+  analysis: FlowAnalysis;
+}): string {
+  return `${input.username} spoke about: ${input.topic}\nFlow Score: ${input.analysis.flowScore} | Pauses: ${input.analysis.hesitationCount} | Speaking time: ${input.analysis.speakingTimeSec}s`;
+}
+
+function getResultShareUrl(resultText: string): string {
+  return `https://t.me/share/url?url=${encodeURIComponent(SITE_URL)}&text=${encodeURIComponent(resultText)}`;
 }
 
 function getConnectUrl(telegramId: number): string {
@@ -118,6 +169,10 @@ function getSessionActions(sessionId: string) {
     [Markup.button.url("📊 View on NoPause", SITE_URL)],
   ]);
 }
+
+const groupTryAgainKeyboard = Markup.inlineKeyboard([
+  Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
+]);
 
 const openNoPauseKeyboard = Markup.inlineKeyboard([
   [Markup.button.url("📊 Open NoPause", SITE_URL)],
@@ -465,7 +520,8 @@ async function replyWithPrompt(ctx: Context) {
     lastPromptByTelegramId.set(telegramId, prompt);
   }
 
-  await ctx.reply(prompt, changePromptKeyboard);
+  const message = isGroupChat(ctx) ? `💬 Prompt for ${getTelegramUsername(ctx)}:\n${prompt}` : prompt;
+  await ctx.reply(message, changePromptKeyboard);
 }
 
 async function replyWithStatus(ctx: Context, telegramId: number) {
@@ -529,12 +585,19 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
 
 async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: string; duration?: number } } }, telegramId: number) {
   const connection = await getTelegramConnection(telegramId);
-  if (!connection) {
+  const groupChat = isGroupChat(ctx);
+  const username = getTelegramUsername(ctx);
+  const groupChallengeSession = groupChat ? undefined : groupChallengeSessionsByTelegramId.get(telegramId);
+  if (!connection && !groupChat && !groupChallengeSession) {
     await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`);
     return;
   }
 
-  await ctx.reply("Got it. Analyzing your voice note now...");
+  if (!connection && groupChat) {
+    await ctx.reply(`${username} connect your account first → t.me/NoPauseAI_bot`);
+  } else {
+    await ctx.reply("Got it. Analyzing your voice note now...");
+  }
 
   try {
     const voice = ctx.message.voice;
@@ -548,16 +611,53 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
 
     const speakingTimeSec = estimateDurationSec(voice.duration);
     const analysis = await analyzeTranscript(transcript, speakingTimeSec);
-    const sessionId = await insertTelegramSession({
-      userId: connection.userId,
-      transcript,
-      analysis,
-    });
-    storeSessionTranscript(telegramId, sessionId, transcript);
+    const sessionId = connection
+      ? await insertTelegramSession({
+        userId: connection.userId,
+        transcript,
+        analysis,
+      })
+      : null;
+
+    if (sessionId) {
+      storeSessionTranscript(telegramId, sessionId, transcript);
+    }
+
+    if (groupChat) {
+      await ctx.reply(
+        `🎤 ${username}\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.hesitationCount}\nSpeaking time: ${analysis.speakingTimeSec}s`,
+        groupTryAgainKeyboard,
+      );
+      return;
+    }
+
+    if (groupChallengeSession) {
+      const resultText = getGroupResultText({
+        username: groupChallengeSession.username,
+        topic: groupChallengeSession.topic,
+        analysis,
+      });
+      groupChallengeSessionsByTelegramId.set(telegramId, {
+        ...groupChallengeSession,
+        resultText,
+      });
+
+      await ctx.reply(
+        `🎤 <b>Group Challenge Result</b>\n\n<b>Topic:</b> ${escapeTelegramHtml(groupChallengeSession.topic)}\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
+        {
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback("📤 Share to Group", SHARE_TO_GROUP_ACTION)],
+            [Markup.button.url("👥 Share to Friends", getResultShareUrl(resultText))],
+          ]),
+          parse_mode: "HTML",
+        },
+      );
+      return;
+    }
 
     await ctx.reply(
       `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
-      { ...getSessionActions(sessionId), parse_mode: "HTML" },
+      { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {
     console.error("Telegram voice handling failed", error);
@@ -583,6 +683,11 @@ export function createTelegramBot() {
   });
 
   bot.command("status", async (ctx) => {
+    if (isGroupChat(ctx)) {
+      await ctx.reply("Stats are private. Open @NoPauseAI_bot directly to view your stats.");
+      return;
+    }
+
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
 
@@ -593,11 +698,33 @@ export function createTelegramBot() {
     await replyWithPrompt(ctx);
   });
 
+  bot.command("nopause", async (ctx) => {
+    if (!isGroupChat(ctx)) {
+      await ctx.reply("Go ahead — send a voice note!", replyKeyboard);
+      return;
+    }
+
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+
+    const prompt = getRandomPrompt();
+    const sentMessage = await ctx.reply(getGroupChallengeMessage(prompt), {
+      ...groupChallengeKeyboard,
+      parse_mode: "HTML",
+    });
+    groupChallengeTopicsByMessage.set(getMessageTopicKey(chatId, sentMessage.message_id), prompt);
+  });
+
   bot.hears(FREE_SPEAKING_LABEL, async (ctx) => {
     await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
   });
 
   bot.hears(MY_STATS_LABEL, async (ctx) => {
+    if (isGroupChat(ctx)) {
+      await ctx.reply("Stats are private. Open @NoPauseAI_bot directly to view your stats.");
+      return;
+    }
+
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
 
@@ -632,6 +759,75 @@ nopause.org`,
     );
   });
 
+  bot.action(CHANGE_GROUP_TOPIC_ACTION, async (ctx) => {
+    const chatId = ctx.chat?.id;
+    const message = "message" in ctx.callbackQuery ? ctx.callbackQuery.message : undefined;
+    const messageId = message?.message_id;
+    if (!chatId || !messageId) {
+      await ctx.answerCbQuery("I could not update this challenge.");
+      return;
+    }
+
+    const key = getMessageTopicKey(chatId, messageId);
+    const prompt = getRandomPrompt(groupChallengeTopicsByMessage.get(key));
+    groupChallengeTopicsByMessage.set(key, prompt);
+
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(getGroupChallengeMessage(prompt), {
+      ...groupChallengeKeyboard,
+      parse_mode: "HTML",
+    });
+  });
+
+  bot.action(SPEAK_GROUP_TOPIC_ACTION, async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    const groupId = ctx.chat?.id;
+    const message = "message" in ctx.callbackQuery ? ctx.callbackQuery.message : undefined;
+    const messageId = message?.message_id;
+    if (!telegramId || !groupId || !messageId) {
+      await ctx.answerCbQuery("I could not start a private challenge.");
+      return;
+    }
+
+    const topic = groupChallengeTopicsByMessage.get(getMessageTopicKey(groupId, messageId));
+    if (!topic) {
+      await ctx.answerCbQuery("This challenge topic expired. Run /nopause again.", { show_alert: true });
+      return;
+    }
+
+    try {
+      await ctx.telegram.sendMessage(telegramId, getPrivateChallengeMessage(topic), { parse_mode: "HTML" });
+      groupChallengeSessionsByTelegramId.set(telegramId, {
+        groupId,
+        topic,
+        username: getTelegramUsername(ctx),
+      });
+      await ctx.answerCbQuery("I sent you the topic privately.");
+    } catch (error) {
+      console.error("Telegram group challenge DM failed", error);
+      await ctx.answerCbQuery("Open @NoPauseAI_bot and press Start first, then tap Speak again.", {
+        show_alert: true,
+      });
+    }
+  });
+
+  bot.action(SHARE_TO_GROUP_ACTION, async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    const session = telegramId ? groupChallengeSessionsByTelegramId.get(telegramId) : undefined;
+    if (!telegramId || !session?.resultText) {
+      await ctx.answerCbQuery("I could not find a recent group challenge result.", { show_alert: true });
+      return;
+    }
+
+    try {
+      await ctx.telegram.sendMessage(session.groupId, session.resultText);
+      await ctx.answerCbQuery("Shared to the group.");
+    } catch (error) {
+      console.error("Telegram share to group failed", error);
+      await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
+    }
+  });
+
   bot.action(CHANGE_PROMPT_ACTION, async (ctx) => {
     const telegramId = getTelegramId(ctx);
     const prompt = getRandomPrompt(telegramId ? lastPromptByTelegramId.get(telegramId) : undefined);
@@ -640,11 +836,17 @@ nopause.org`,
     }
 
     await ctx.answerCbQuery();
-    await ctx.editMessageText(prompt, changePromptKeyboard);
+    const message = isGroupChat(ctx) ? `💬 Prompt for ${getTelegramUsername(ctx)}:\n${prompt}` : prompt;
+    await ctx.editMessageText(message, changePromptKeyboard);
   });
 
   bot.action(TRY_AGAIN_ACTION, async (ctx) => {
     await ctx.answerCbQuery();
+    if (isGroupChat(ctx)) {
+      await ctx.reply(`🎤 ${getTelegramUsername(ctx)}, go ahead — send a voice note!`);
+      return;
+    }
+
     await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
   });
 
