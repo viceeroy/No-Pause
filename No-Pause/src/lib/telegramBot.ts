@@ -5,16 +5,16 @@ import { getTelegramConnection } from "./telegramAuth.js";
 import { supabaseServer } from "./supabaseServer.js";
 
 const SITE_URL = "https://nopause.org";
-const TELEGRAM_MINI_APP_URL = `${SITE_URL}/telegram`;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const FREE_SPEAKING_LABEL = "🎤 Free Speaking";
 const MY_STATS_LABEL = "📈 My Stats";
 const GET_PROMPT_LABEL = "💡 Get Prompt";
 const ABOUT_LABEL = "ℹ️ About";
-const PROMPT_READY_ACTION = "prompt_ready";
+const CHANGE_PROMPT_ACTION = "change_prompt";
 const TRY_AGAIN_ACTION = "try_again:free_speaking";
 const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 const sessionTranscriptsByTelegramId = new Map<number, Map<string, string>>();
+const lastPromptByTelegramId = new Map<number, string>();
 
 const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
@@ -27,6 +27,16 @@ const opinionPrompts = [
   "Is failure overrated as a teacher?",
   "Should AI tools be allowed in classrooms?",
   "Is a busy schedule a sign of ambition or poor boundaries?",
+  "Should everyone learn how to tell a good story?",
+  "Is it better to plan your life carefully or leave room for surprise?",
+  "Should companies shorten meetings by default?",
+  "Is silence in conversation awkward or useful?",
+  "Should people practice disagreeing more respectfully?",
+  "Is curiosity more important than discipline?",
+  "Should public speaking be judged more on clarity or charisma?",
+  "Is it better to speak slowly and precisely or quickly and energetically?",
+  "Should adults keep learning new hobbies even when they are busy?",
+  "Is confidence built more through preparation or repeated exposure?",
 ];
 
 type FlowAnalysis = {
@@ -58,8 +68,8 @@ const replyKeyboard = Markup.keyboard([
   [ABOUT_LABEL],
 ]).resize();
 
-const promptReadyKeyboard = Markup.inlineKeyboard([
-  Markup.button.callback("✅ Got it, recording...", PROMPT_READY_ACTION),
+const changePromptKeyboard = Markup.inlineKeyboard([
+  Markup.button.callback("🔄 Change Prompt", CHANGE_PROMPT_ACTION),
 ]);
 
 function requireEnv(value: string | undefined, name: string): string {
@@ -86,8 +96,17 @@ function getConnectUrl(telegramId: number): string {
   return `${SITE_URL}/connect?tg=${encodeURIComponent(String(telegramId))}`;
 }
 
-function getRandomPrompt(): string {
-  return opinionPrompts[Math.floor(Math.random() * opinionPrompts.length)];
+function getRandomPrompt(previousPrompt?: string): string {
+  if (opinionPrompts.length <= 1) {
+    return opinionPrompts[0] ?? "Talk about something you care about.";
+  }
+
+  let prompt = opinionPrompts[Math.floor(Math.random() * opinionPrompts.length)];
+  while (prompt === previousPrompt) {
+    prompt = opinionPrompts[Math.floor(Math.random() * opinionPrompts.length)];
+  }
+
+  return prompt;
 }
 
 function getSessionActions(sessionId: string) {
@@ -96,12 +115,12 @@ function getSessionActions(sessionId: string) {
       Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
       Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${sessionId}`),
     ],
-    [Markup.button.webApp("📊 Open Mini App", TELEGRAM_MINI_APP_URL)],
+    [Markup.button.url("📊 View on NoPause", SITE_URL)],
   ]);
 }
 
-const openMiniAppKeyboard = Markup.inlineKeyboard([
-  [Markup.button.webApp("📊 Open NoPause Mini App", TELEGRAM_MINI_APP_URL)],
+const openNoPauseKeyboard = Markup.inlineKeyboard([
+  [Markup.button.url("📊 Open NoPause", SITE_URL)],
 ]);
 
 function estimateDurationSec(voiceDuration?: number): number {
@@ -440,7 +459,13 @@ async function insertTelegramSession(input: {
 }
 
 async function replyWithPrompt(ctx: Context) {
-  await ctx.reply(getRandomPrompt(), promptReadyKeyboard);
+  const telegramId = getTelegramId(ctx);
+  const prompt = getRandomPrompt(telegramId ? lastPromptByTelegramId.get(telegramId) : undefined);
+  if (telegramId) {
+    lastPromptByTelegramId.set(telegramId, prompt);
+  }
+
+  await ctx.reply(prompt, changePromptKeyboard);
 }
 
 async function replyWithStatus(ctx: Context, telegramId: number) {
@@ -531,7 +556,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     storeSessionTranscript(telegramId, sessionId, transcript);
 
     await ctx.reply(
-      `🎤 <b>Free Speaking Result</b>\n\n🎯 <b>Flow Score: ${analysis.flowScore}</b>\n⏸ <b>Pauses:</b> ${analysis.hesitationCount}\n🕐 <b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
+      `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
       { ...getSessionActions(sessionId), parse_mode: "HTML" },
     );
   } catch (error) {
@@ -554,7 +579,7 @@ export function createTelegramBot() {
       `Welcome to No Pause. Connect your account here:\n${getConnectUrl(telegramId)}\n\nThen send me a voice message to get a Flow Score.`,
       replyKeyboard,
     );
-    await ctx.reply("Open your NoPause dashboard inside Telegram:", openMiniAppKeyboard);
+    await ctx.reply("Open your NoPause dashboard:", openNoPauseKeyboard);
   });
 
   bot.command("status", async (ctx) => {
@@ -592,8 +617,8 @@ NoPause is your Telegram speaking coach.
 🎤 <b>Send a voice message</b>
 Practice speaking naturally. I transcribe your speech, measure pauses, and give you a Flow Score.
 
-📊 <b>Open Mini App</b>
-Record inside Telegram, review your dashboard, and see session history.
+📊 <b>Open NoPause</b>
+Review your dashboard and session history.
 
 💡 <b>Get a Prompt</b>
 Receive a speaking topic when you want something to practice.
@@ -607,8 +632,15 @@ nopause.org`,
     );
   });
 
-  bot.action(PROMPT_READY_ACTION, async (ctx) => {
-    await ctx.answerCbQuery("Send a voice note when you're ready.");
+  bot.action(CHANGE_PROMPT_ACTION, async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    const prompt = getRandomPrompt(telegramId ? lastPromptByTelegramId.get(telegramId) : undefined);
+    if (telegramId) {
+      lastPromptByTelegramId.set(telegramId, prompt);
+    }
+
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(prompt, changePromptKeyboard);
   });
 
   bot.action(TRY_AGAIN_ACTION, async (ctx) => {

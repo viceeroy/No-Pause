@@ -58,7 +58,7 @@ Here's what you can do with <b>@NoPauseAI_bot</b>:
 
 🎤 <b>Send a voice message</b> — speak freely and get instant feedback on your fluency, pauses, and Flow Score.
 
-📊 <b>Open Mini App</b> — view your full stats, session history, and progress dashboard inside Telegram.
+📊 <b>Open NoPause</b> — view your full stats, session history, and progress dashboard.
 
 💡 <b>Get a Prompt</b> — receive a speaking topic and practice on the spot.
 
