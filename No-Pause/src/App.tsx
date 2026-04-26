@@ -20,6 +20,7 @@ import SignUpPage from "@/features/auth/pages/SignUpPage";
 import AuthCallbackPage from "@/features/auth/pages/AuthCallbackPage";
 import ConnectTelegram from "./pages/ConnectTelegram";
 import Sessions from "./pages/Sessions";
+import TelegramMiniApp from "./pages/TelegramMiniApp";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "@/providers/AuthContext";
 
@@ -237,6 +238,10 @@ const AuthAwareRoutes = () => {
       <Route
         path="/connect"
         element={<ConnectTelegram />}
+      />
+      <Route
+        path="/telegram"
+        element={<TelegramMiniApp />}
       />
       <Route
         path="/sessions"

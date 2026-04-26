@@ -5,6 +5,7 @@ import { getTelegramConnection } from "./telegramAuth.js";
 import { supabaseServer } from "./supabaseServer.js";
 
 const SITE_URL = "https://nopause.org";
+const TELEGRAM_MINI_APP_URL = `${SITE_URL}/telegram`;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const FREE_SPEAKING_LABEL = "🎤 Free Speaking";
 const MY_STATS_LABEL = "📈 My Stats";
@@ -33,6 +34,13 @@ type FlowAnalysis = {
   hesitationCount: number;
   speakingTimeSec: number;
   isCompleted: boolean;
+};
+
+type StatsSession = {
+  created_at: string | null;
+  duration: number | null;
+  flow_score: number | null;
+  mode: string | null;
 };
 
 const replyKeyboard = Markup.keyboard([
@@ -78,9 +86,13 @@ function getSessionActions(sessionId: string) {
       Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
       Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${sessionId}`),
     ],
-    [Markup.button.url("📊 View on NoPause", `${SITE_URL}/sessions`)],
+    [Markup.button.webApp("📊 Open Mini App", TELEGRAM_MINI_APP_URL)],
   ]);
 }
+
+const openMiniAppKeyboard = Markup.inlineKeyboard([
+  [Markup.button.webApp("📊 Open NoPause Mini App", TELEGRAM_MINI_APP_URL)],
+]);
 
 function estimateDurationSec(voiceDuration?: number): number {
   if (!voiceDuration || voiceDuration < 1) {
@@ -94,6 +106,10 @@ function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
 }
 
+function escapeTelegramHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function getHesitationsPerMinute(hesitationCount: number, speakingTimeSec: number): number {
   const speakingMinutes = Math.max(speakingTimeSec / 60, 0.5);
   return hesitationCount / speakingMinutes;
@@ -103,6 +119,69 @@ function storeSessionTranscript(telegramId: number, sessionId: string, transcrip
   const transcripts = sessionTranscriptsByTelegramId.get(telegramId) ?? new Map<string, string>();
   transcripts.set(sessionId, transcript);
   sessionTranscriptsByTelegramId.set(telegramId, transcripts);
+}
+
+function averageFlowScore(sessions: StatsSession[]): number | null {
+  const scores = sessions
+    .map((session) => Number(session.flow_score))
+    .filter((score) => Number.isFinite(score) && score > 0);
+
+  if (scores.length === 0) {
+    return null;
+  }
+
+  return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+}
+
+function formatAverageFlowScore(score: number | null): string {
+  return score === null ? "N/A" : String(score);
+}
+
+function normalizeStatsMode(mode: string | null): "free" | "lemon" | "topic" | null {
+  const normalizedMode = (mode ?? "").toLowerCase();
+  if (normalizedMode === "free" || normalizedMode === "free_speaking" || normalizedMode === "free-speak") {
+    return "free";
+  }
+  if (normalizedMode === "lemon") {
+    return "lemon";
+  }
+  if (normalizedMode === "topic") {
+    return "topic";
+  }
+  return null;
+}
+
+function getPracticeTimeParts(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.round(totalSeconds));
+  return {
+    minutes: Math.floor(safeSeconds / 60),
+    seconds: safeSeconds % 60,
+  };
+}
+
+function formatRelativeDate(dateText: string | null): string {
+  if (!dateText) {
+    return "N/A";
+  }
+
+  const date = new Date(dateText);
+  if (Number.isNaN(date.getTime())) {
+    return "N/A";
+  }
+
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const daysAgo = Math.max(0, Math.floor((todayStart - dateStart) / 86_400_000));
+
+  if (daysAgo === 0) {
+    return "today";
+  }
+  if (daysAgo === 1) {
+    return "yesterday";
+  }
+
+  return `${daysAgo} days ago`;
 }
 
 function formatLocalDate(date: Date): string {
@@ -346,7 +425,7 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     return;
   }
 
-  const [{ data: streak }, { data: session }] = await Promise.all([
+  const [{ data: streak, error: streakError }, { data: sessions, error: sessionsError }] = await Promise.all([
     supabaseServer
       .from("streaks")
       .select("current_streak")
@@ -354,19 +433,44 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
       .maybeSingle(),
     supabaseServer
       .from("sessions")
-      .select("flow_score")
+      .select("created_at, duration, flow_score, mode")
       .eq("user_id", connection.userId)
-      .not("flow_score", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .eq("completed", true),
   ]);
 
+  if (streakError || sessionsError) {
+    console.error("Telegram stats lookup failed", { streakError, sessionsError });
+    await ctx.reply("I could not load your stats right now. Please try again in a moment.", replyKeyboard);
+    return;
+  }
+
+  const completedSessions = (sessions ?? []) as StatsSession[];
+  if (completedSessions.length === 0) {
+    await ctx.reply("No sessions yet. Send a voice message to get started 🎤", replyKeyboard);
+    return;
+  }
+
+  const totalSeconds = completedSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0);
+  const practiceTime = getPracticeTimeParts(totalSeconds);
+  const overallFlow = averageFlowScore(completedSessions);
+  const bestScore = completedSessions
+    .map((session) => Number(session.flow_score))
+    .filter((score) => Number.isFinite(score))
+    .reduce((best, score) => Math.max(best, score), 0);
+  const lastSessionDate =
+    completedSessions
+      .map((session) => session.created_at)
+      .filter((createdAt): createdAt is string => Boolean(createdAt))
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
+  const sessionsByMode = {
+    free: completedSessions.filter((session) => normalizeStatsMode(session.mode) === "free"),
+    lemon: completedSessions.filter((session) => normalizeStatsMode(session.mode) === "lemon"),
+    topic: completedSessions.filter((session) => normalizeStatsMode(session.mode) === "topic"),
+  };
+
   await ctx.reply(
-    `Current streak: ${Number(streak?.current_streak ?? 0)} day(s)\nLast Flow Score: ${
-      session?.flow_score ?? "No scored sessions yet"
-    }`,
-    replyKeyboard,
+    `📊 <b>Your NoPause Stats</b>\n\n🔥 <b>Streak:</b> ${Number(streak?.current_streak ?? 0)} day(s)\n🎯 <b>Overall Flow:</b> ${formatAverageFlowScore(overallFlow)}\n📋 <b>Total Sessions:</b> ${completedSessions.length}\n🕐 <b>Practice Time:</b> ${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown:</b>\n- <b>Free Speaking:</b> ${sessionsByMode.free.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.free))}\n- <b>Lemon:</b> ${sessionsByMode.lemon.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.lemon))}\n- <b>Topic:</b> ${sessionsByMode.topic.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.topic))}\n\n🏆 <b>Best Flow Score:</b> ${bestScore}\n📅 <b>Last session:</b> ${formatRelativeDate(lastSessionDate)}`,
+    { ...replyKeyboard, parse_mode: "HTML" },
   );
 }
 
@@ -399,8 +503,8 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     storeSessionTranscript(telegramId, sessionId, transcript);
 
     await ctx.reply(
-      `🎤 Free Speaking Result\n\n📝 Transcript:\n${transcript}\n\n🎯 Flow Score: ${analysis.flowScore}\n⏸ Pauses: ${analysis.hesitationCount}\n🕐 Speaking time: ${analysis.speakingTimeSec}s`,
-      getSessionActions(sessionId),
+      `🎤 <b>Free Speaking Result</b>\n\n🎯 <b>Flow Score: ${analysis.flowScore}</b>\n⏸ <b>Pauses:</b> ${analysis.hesitationCount}\n🕐 <b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
+      { ...getSessionActions(sessionId), parse_mode: "HTML" },
     );
   } catch (error) {
     console.error("Telegram voice handling failed", error);
@@ -422,6 +526,7 @@ export function createTelegramBot() {
       `Welcome to No Pause. Connect your account here:\n${getConnectUrl(telegramId)}\n\nThen send me a voice message to get a Flow Score.`,
       replyKeyboard,
     );
+    await ctx.reply("Open your NoPause dashboard inside Telegram:", openMiniAppKeyboard);
   });
 
   bot.command("status", async (ctx) => {
@@ -490,7 +595,7 @@ nopause.org`,
 
     try {
       const feedback = await generateAiFeedback(transcript);
-      await ctx.reply(`🤖 AI Feedback\n${feedback}`);
+      await ctx.reply(`🤖 <b>AI Feedback</b>\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
     } catch (error) {
       console.error("Telegram AI feedback failed", error);
       await ctx.reply("I could not generate feedback right now. Please try again in a moment.");
