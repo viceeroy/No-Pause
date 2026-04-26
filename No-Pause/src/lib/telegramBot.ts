@@ -10,6 +10,7 @@ import { escapeTelegramHtml } from "./core/utils.js";
 import {
   analyzeSpeech as analyzeGroqSpeech,
   getAIFeedback,
+  isUsableTranscript,
   transcribeAudioVerbose,
   type TranscribedWord,
 } from "./core/groq.js";
@@ -682,8 +683,8 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;
 
-    if (!transcript.trim()) {
-      await ctx.reply("⚠️ <b>No speech detected</b>\n\n<b>Status:</b>\nI could not hear anything clearly.\n\n<b>Action:</b>\nCheck your mic and send another voice note 🎤", { parse_mode: "HTML" });
+    if (!isUsableTranscript(transcript)) {
+      await ctx.reply("Couldn't hear anything clearly. Please speak louder and try again 🎤");
       return;
     }
 

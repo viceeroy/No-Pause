@@ -11,6 +11,7 @@ export type TranscribedWord = {
   word: string;
   start: number;
   end: number;
+  no_speech_prob?: number;
 };
 
 export type VerboseTranscription = {
@@ -98,21 +99,48 @@ function parseTranscribedWords(words: unknown): TranscribedWord[] {
   }
 
   return words.flatMap((word) => {
-    const maybeWord = word as { word?: unknown; start?: unknown; end?: unknown };
+    const maybeWord = word as { word?: unknown; start?: unknown; end?: unknown; no_speech_prob?: unknown };
     const start = Number(maybeWord.start);
     const end = Number(maybeWord.end);
+    const noSpeechProb = Number(maybeWord.no_speech_prob);
     if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
       return [];
     }
 
-    return [
-      {
-        word: String(maybeWord.word ?? "").trim(),
-        start,
-        end,
-      },
-    ];
+    return [{
+      word: String(maybeWord.word ?? "").trim(),
+      start,
+      end,
+      ...(Number.isFinite(noSpeechProb) ? { no_speech_prob: noSpeechProb } : {}),
+    }];
   });
+}
+
+function getNoSpeechProb(data: unknown, words: TranscribedWord[]): number | undefined {
+  const maybeData = data as { no_speech_prob?: unknown; segments?: unknown } | null;
+  const wordProb = words[0]?.no_speech_prob;
+  if (typeof wordProb === "number") {
+    return wordProb;
+  }
+
+  const segments = maybeData?.segments;
+  if (Array.isArray(segments)) {
+    const segmentProb = Number((segments[0] as { no_speech_prob?: unknown } | undefined)?.no_speech_prob);
+    if (Number.isFinite(segmentProb)) {
+      return segmentProb;
+    }
+  }
+
+  const topLevelProb = Number(maybeData?.no_speech_prob);
+  return Number.isFinite(topLevelProb) ? topLevelProb : undefined;
+}
+
+function getWordCount(transcript: string): number {
+  return transcript.trim().split(/\s+/).filter(Boolean).length;
+}
+
+export function isUsableTranscript(transcript: string): boolean {
+  return getWordCount(transcript) >= 3;
 }
 
 export async function transcribeAudio(audio: File | Blob): Promise<string> {
@@ -139,7 +167,8 @@ export async function transcribeAudio(audio: File | Blob): Promise<string> {
     }
 
     const data = await response.json();
-    return String(data?.text ?? "").trim();
+    const transcript = String(data?.text ?? "").trim();
+    return isUsableTranscript(transcript) ? transcript : "";
   } catch (error) {
     console.error("Groq transcription failed", {
       message: error instanceof Error ? error.message : String(error),
@@ -172,10 +201,6 @@ export async function transcribeBase64Audio(input: Base64TranscriptionInput): Pr
     const audioBlob = base64ToBlob(input.audioBase64, safeMimeType);
     const transcript = await transcribeAudio(audioBlob);
     if (!transcript) return "";
-
-    const normalized = transcript.toLowerCase().trim();
-    const wordCount = normalized.split(/\s+/).filter(Boolean).length;
-    if (wordCount <= 3) return "";
 
     return transcript;
   } catch (error) {
@@ -216,9 +241,19 @@ export async function transcribeAudioVerbose(audio: File | Blob): Promise<Verbos
     }
 
     const data = await response.json();
+    const words = parseTranscribedWords(data?.words);
+    const noSpeechProb = getNoSpeechProb(data, words);
+    const wordsWithNoSpeechProb =
+      typeof noSpeechProb === "number" && words[0] && words[0].no_speech_prob === undefined
+        ? [{ ...words[0], no_speech_prob: noSpeechProb }, ...words.slice(1)]
+        : words;
+    console.log("no_speech_prob:", wordsWithNoSpeechProb?.[0]?.no_speech_prob);
+    const text = String(data?.text ?? "").trim();
+    const isHighNoSpeechProb = typeof noSpeechProb === "number" && noSpeechProb > 0.8;
+
     return {
-      text: String(data?.text ?? "").trim(),
-      words: parseTranscribedWords(data?.words),
+      text: isHighNoSpeechProb || !isUsableTranscript(text) ? "" : text,
+      words: wordsWithNoSpeechProb,
     };
   } catch (error) {
     console.error("Groq verbose transcription failed", {
