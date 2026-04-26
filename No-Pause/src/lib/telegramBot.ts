@@ -19,7 +19,8 @@ const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 const sessionTranscriptsByTelegramId = new Map<number, Map<string, string>>();
 const lastPromptByTelegramId = new Map<number, string>();
 const groupChallengeTopicsByMessage = new Map<string, string>();
-const groupChallengeSessionsByTelegramId = new Map<number, GroupChallengeSession>();
+const pendingGroupChallengesByTelegramId = new Map<number, GroupChallengePending>();
+const groupChallengeResultsByTelegramId = new Map<number, GroupChallengeResult>();
 
 const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
@@ -51,10 +52,15 @@ type FlowAnalysis = {
   isCompleted: boolean;
 };
 
-type GroupChallengeSession = {
+type GroupChallengePending = {
   groupId: number;
+  messageId: number;
   topic: string;
   username: string;
+};
+
+type GroupChallengeResult = GroupChallengePending & {
+  analysis: FlowAnalysis;
   resultText?: string;
 };
 
@@ -139,8 +145,29 @@ function getGroupResultText(input: {
   return `${input.username} spoke about: ${input.topic}\nFlow Score: ${input.analysis.flowScore} | Pauses: ${input.analysis.hesitationCount} | Speaking time: ${input.analysis.speakingTimeSec}s`;
 }
 
+function getGroupShareResultMessage(input: {
+  firstName: string;
+  username?: string;
+  analysis: FlowAnalysis;
+}): string {
+  const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
+  const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
+
+  return `🎤 <b>Group Challenge Result</b>\n\n${nameLine}\n\n<b>Flow Score:</b> ${input.analysis.flowScore}\n<b>Pauses:</b> ${input.analysis.hesitationCount}\n<b>Speaking time:</b> ${input.analysis.speakingTimeSec}s`;
+}
+
 function getResultShareUrl(resultText: string): string {
   return `https://t.me/share/url?url=${encodeURIComponent(SITE_URL)}&text=${encodeURIComponent(resultText)}`;
+}
+
+function getGroupChallengeResultActions(resultText: string) {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback("📤 Share to Group", SHARE_TO_GROUP_ACTION),
+      Markup.button.url("👥 Share to Friends", getResultShareUrl(resultText)),
+    ],
+    [Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION)],
+  ]);
 }
 
 function getConnectUrl(telegramId: number): string {
@@ -584,11 +611,11 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
 }
 
 async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: string; duration?: number } } }, telegramId: number) {
+  const pendingGroupChallenge = pendingGroupChallengesByTelegramId.get(telegramId);
   const connection = await getTelegramConnection(telegramId);
   const groupChat = isGroupChat(ctx);
   const username = getTelegramUsername(ctx);
-  const groupChallengeSession = groupChat ? undefined : groupChallengeSessionsByTelegramId.get(telegramId);
-  if (!connection && !groupChat && !groupChallengeSession) {
+  if (!connection && !groupChat && !pendingGroupChallenge) {
     await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`);
     return;
   }
@@ -631,24 +658,24 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
       return;
     }
 
-    if (groupChallengeSession) {
+    if (pendingGroupChallenge) {
       const resultText = getGroupResultText({
-        username: groupChallengeSession.username,
-        topic: groupChallengeSession.topic,
+        username: pendingGroupChallenge.username,
+        topic: pendingGroupChallenge.topic,
         analysis,
       });
-      groupChallengeSessionsByTelegramId.set(telegramId, {
-        ...groupChallengeSession,
+
+      groupChallengeResultsByTelegramId.set(telegramId, {
+        ...pendingGroupChallenge,
+        analysis,
         resultText,
       });
+      pendingGroupChallengesByTelegramId.delete(telegramId);
 
       await ctx.reply(
-        `🎤 <b>Group Challenge Result</b>\n\n<b>Topic:</b> ${escapeTelegramHtml(groupChallengeSession.topic)}\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
+        `🎤 <b>Group Challenge Result</b>\n\n<b>Topic:</b> ${escapeTelegramHtml(pendingGroupChallenge.topic)}\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
         {
-          ...Markup.inlineKeyboard([
-            [Markup.button.callback("📤 Share to Group", SHARE_TO_GROUP_ACTION)],
-            [Markup.button.url("👥 Share to Friends", getResultShareUrl(resultText))],
-          ]),
+          ...getGroupChallengeResultActions(resultText),
           parse_mode: "HTML",
         },
       );
@@ -797,8 +824,9 @@ nopause.org`,
 
     try {
       await ctx.telegram.sendMessage(telegramId, getPrivateChallengeMessage(topic), { parse_mode: "HTML" });
-      groupChallengeSessionsByTelegramId.set(telegramId, {
+      pendingGroupChallengesByTelegramId.set(telegramId, {
         groupId,
+        messageId,
         topic,
         username: getTelegramUsername(ctx),
       });
@@ -813,14 +841,22 @@ nopause.org`,
 
   bot.action(SHARE_TO_GROUP_ACTION, async (ctx) => {
     const telegramId = getTelegramId(ctx);
-    const session = telegramId ? groupChallengeSessionsByTelegramId.get(telegramId) : undefined;
+    const session = telegramId ? groupChallengeResultsByTelegramId.get(telegramId) : undefined;
     if (!telegramId || !session?.resultText) {
       await ctx.answerCbQuery("I could not find a recent group challenge result.", { show_alert: true });
       return;
     }
 
     try {
-      await ctx.telegram.sendMessage(session.groupId, session.resultText);
+      await ctx.telegram.sendMessage(
+        session.groupId,
+        getGroupShareResultMessage({
+          firstName: ctx.from?.first_name ?? "Someone",
+          username: ctx.from?.username,
+          analysis: session.analysis,
+        }),
+        { parse_mode: "HTML" },
+      );
       await ctx.answerCbQuery("Shared to the group.");
     } catch (error) {
       console.error("Telegram share to group failed", error);
@@ -844,6 +880,19 @@ nopause.org`,
     await ctx.answerCbQuery();
     if (isGroupChat(ctx)) {
       await ctx.reply(`🎤 ${getTelegramUsername(ctx)}, go ahead — send a voice note!`);
+      return;
+    }
+
+    const telegramId = getTelegramId(ctx);
+    const lastGroupResult = telegramId ? groupChallengeResultsByTelegramId.get(telegramId) : undefined;
+    if (telegramId && lastGroupResult) {
+      pendingGroupChallengesByTelegramId.set(telegramId, {
+        groupId: lastGroupResult.groupId,
+        messageId: lastGroupResult.messageId,
+        topic: lastGroupResult.topic,
+        username: lastGroupResult.username,
+      });
+      await ctx.reply(getPrivateChallengeMessage(lastGroupResult.topic), { parse_mode: "HTML" });
       return;
     }
 
