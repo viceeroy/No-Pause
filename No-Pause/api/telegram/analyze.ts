@@ -222,7 +222,7 @@ async function insertTelegramSession(input: {
     .from("sessions")
     .insert({
       user_id: input.userId,
-      mode: "free_speaking",
+      mode: "free",
       transcript: input.transcript,
       flow_score: input.analysis.flowScore,
       hesitations_per_minute: hesitationsPerMinute,

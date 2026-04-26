@@ -145,6 +145,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       });
       return;
     }
+    console.log("resolved user_id:", connection.userId);
 
     const [{ data: streak, error: streakError }, { data: sessions, error: sessionsError }] = await Promise.all([
       supabaseServer

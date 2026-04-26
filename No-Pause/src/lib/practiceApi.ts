@@ -99,6 +99,8 @@ export type PracticeStats = {
   }>;
 };
 
+const normalizeMode = (m: string) => m === "free_speaking" ? "free" : m;
+
 export async function transcribeAudio(input: TranscribeAudioInput): Promise<string> {
   try {
     const apiKey = requireGroqApiKey();
@@ -299,7 +301,7 @@ export async function saveSession(input: SaveSessionInput): Promise<string | nul
       flow_score: input.flowScore,
       pauses: input.pauses,
       words: input.words,
-      mode: input.mode,
+      mode: normalizeMode(input.mode),
       duration: input.duration,
       completed: input.completed ?? false,
       hesitation_log: input.hesitationLog ?? null,
@@ -413,7 +415,7 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
     0,
   );
   const byMode = records.reduce<Record<string, SessionRecord[]>>((acc, session) => {
-    const mode = session.mode || "free";
+    const mode = normalizeMode((session.mode || "free").toLowerCase());
     acc[mode] = acc[mode] ? [...acc[mode], session] : [session];
     return acc;
   }, {});
@@ -442,7 +444,7 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
       duration: Number(session.duration || 0),
       hesitationCount: Number(session.pauses || 0),
       flowScore: session.flow_score === null || session.flow_score === undefined ? null : Number(session.flow_score),
-      mode: session.mode,
+      mode: normalizeMode((session.mode || "free").toLowerCase()),
     })),
   };
 }

@@ -38,6 +38,8 @@ const DIFFICULTY_OPTIONS: { level: DifficultyLevel; label: string; description: 
   { level: 'advanced', label: 'Advanced', description: 'Strict timing for sharper flow.' },
 ];
 
+const normalizeMode = (m: string) => m === 'free_speaking' ? 'free' : m;
+
 type StatsPageProps = {
   emptyStateTitle?: string;
   emptyStateMessage?: string;
@@ -107,7 +109,7 @@ export default function StatsPage({
   const modeBreakdown = stats.modeBreakdown;
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
-    const normalizedMode = (mode || '').toLowerCase();
+    const normalizedMode = normalizeMode((mode || '').toLowerCase());
     if (normalizedMode === 'readingchallenge') return false;
     if (normalizedMode === 'free' || normalizedMode === 'free-speak' || normalizedMode === 'lemon' || normalizedMode === 'topic') {
       return score !== null && score !== undefined && score > 0;
@@ -352,14 +354,14 @@ export default function StatsPage({
           <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Practice Breakdown</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {modeBreakdown.map((item) => {
-              const label = item.mode === 'free'
+              const normalizedMode = normalizeMode(item.mode.toLowerCase());
+              const label = normalizedMode === 'free'
                 ? 'Free Speaking'
-                : item.mode === 'lemon'
+                : normalizedMode === 'lemon'
                   ? 'Lemon'
-                  : item.mode === 'topic'
+                  : normalizedMode === 'topic'
                     ? 'Topic'
                     : 'Reading Challenge';
-              const normalizedMode = item.mode.toLowerCase();
               const showScore =
                 normalizedMode === 'free' ||
                 normalizedMode === 'free-speak' ||
@@ -406,11 +408,12 @@ export default function StatsPage({
           <h2 className="text-xl font-serif text-foreground mb-3">Recent Activity</h2>
           <div className="space-y-3">
             {recentSessions.map((session) => {
-              const modeLabel = session.mode === 'lemon'
+              const normalizedMode = normalizeMode((session.mode || '').toLowerCase());
+              const modeLabel = normalizedMode === 'lemon'
                 ? 'Lemon'
-                : session.mode === 'topic'
+                : normalizedMode === 'topic'
                   ? 'Topic'
-                  : session.mode === 'readingchallenge'
+                  : normalizedMode === 'readingchallenge'
                     ? 'Reading Challenge'
                     : 'Free';
               return (
@@ -424,7 +427,7 @@ export default function StatsPage({
 	                      {renderDurationInline(session.duration || 0)} • {session.hesitationCount || 0} hesitations
                     </p>
                   </div>
-                  {shouldShowScore(session.mode, session.flowScore) ? (
+                  {shouldShowScore(normalizedMode, session.flowScore) ? (
                     <div className="text-right flex-shrink-0">
                       <p className="text-xl font-serif text-primary">{session.flowScore}</p>
                       <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-sans">Flow</p>

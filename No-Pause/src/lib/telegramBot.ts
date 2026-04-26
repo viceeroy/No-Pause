@@ -37,11 +37,21 @@ type FlowAnalysis = {
 };
 
 type StatsSession = {
+  id: string;
   created_at: string | null;
   duration: number | null;
+  speaking_time: number | null;
+  pauses: number | null;
+  words: number | null;
   flow_score: number | null;
   mode: string | null;
+  completed: boolean | null;
+  hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
+  transcript: string | null;
+  analysis_feedback: string | null;
 };
+
+const STATS_SESSION_LIMIT = 15;
 
 const replyKeyboard = Markup.keyboard([
   [FREE_SPEAKING_LABEL, MY_STATS_LABEL, GET_PROMPT_LABEL],
@@ -124,13 +134,28 @@ function storeSessionTranscript(telegramId: number, sessionId: string, transcrip
 function averageFlowScore(sessions: StatsSession[]): number | null {
   const scores = sessions
     .map((session) => Number(session.flow_score))
-    .filter((score) => Number.isFinite(score) && score > 0);
+    .filter((score) => Number.isFinite(score));
 
   if (scores.length === 0) {
     return null;
   }
 
   return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+}
+
+function getScoredSessions(sessions: StatsSession[]) {
+  return sessions.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
+}
+
+function getWeightedAverageFlowScore(sessions: StatsSession[]): number {
+  const scoredSessions = getScoredSessions(sessions);
+  const totalScoreWeight = scoredSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0);
+  const weightedScore = scoredSessions.reduce(
+    (sum, session) => sum + Number(session.flow_score || 0) * Number(session.duration || 0),
+    0,
+  );
+
+  return totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0;
 }
 
 function formatAverageFlowScore(score: number | null): string {
@@ -370,7 +395,7 @@ async function insertTelegramSession(input: {
     .from("sessions")
     .insert({
       user_id: input.userId,
-      mode: "free_speaking",
+      mode: "free",
       transcript: input.transcript,
       flow_score: input.analysis.flowScore,
       hesitations_per_minute: hesitationsPerMinute,
@@ -424,18 +449,20 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`, replyKeyboard);
     return;
   }
+  console.log("resolved user_id:", connection.userId);
 
   const [{ data: streak, error: streakError }, { data: sessions, error: sessionsError }] = await Promise.all([
     supabaseServer
       .from("streaks")
-      .select("current_streak")
+      .select("current_streak, longest_streak")
       .eq("user_id", connection.userId)
       .maybeSingle(),
     supabaseServer
       .from("sessions")
-      .select("created_at, duration, flow_score, mode")
+      .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
       .eq("user_id", connection.userId)
-      .eq("completed", true),
+      .order("created_at", { ascending: false })
+      .limit(STATS_SESSION_LIMIT),
   ]);
 
   if (streakError || sessionsError) {
@@ -444,32 +471,33 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     return;
   }
 
-  const completedSessions = (sessions ?? []) as StatsSession[];
-  if (completedSessions.length === 0) {
+  const records = (sessions ?? []) as StatsSession[];
+  if (records.length === 0) {
     await ctx.reply("No sessions yet. Send a voice message to get started 🎤", replyKeyboard);
     return;
   }
 
-  const totalSeconds = completedSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0);
+  const scoredSessions = getScoredSessions(records);
+  const totalSeconds = records.reduce((sum, session) => sum + Number(session.duration || 0), 0);
   const practiceTime = getPracticeTimeParts(totalSeconds);
-  const overallFlow = averageFlowScore(completedSessions);
-  const bestScore = completedSessions
+  const overallFlow = getWeightedAverageFlowScore(records);
+  const bestScore = scoredSessions
     .map((session) => Number(session.flow_score))
     .filter((score) => Number.isFinite(score))
     .reduce((best, score) => Math.max(best, score), 0);
   const lastSessionDate =
-    completedSessions
+    records
       .map((session) => session.created_at)
       .filter((createdAt): createdAt is string => Boolean(createdAt))
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
   const sessionsByMode = {
-    free: completedSessions.filter((session) => normalizeStatsMode(session.mode) === "free"),
-    lemon: completedSessions.filter((session) => normalizeStatsMode(session.mode) === "lemon"),
-    topic: completedSessions.filter((session) => normalizeStatsMode(session.mode) === "topic"),
+    free: records.filter((session) => normalizeStatsMode(session.mode) === "free"),
+    lemon: records.filter((session) => normalizeStatsMode(session.mode) === "lemon"),
+    topic: records.filter((session) => normalizeStatsMode(session.mode) === "topic"),
   };
 
   await ctx.reply(
-    `📊 <b>Your NoPause Stats</b>\n\n🔥 <b>Streak:</b> ${Number(streak?.current_streak ?? 0)} day(s)\n🎯 <b>Overall Flow:</b> ${formatAverageFlowScore(overallFlow)}\n📋 <b>Total Sessions:</b> ${completedSessions.length}\n🕐 <b>Practice Time:</b> ${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown:</b>\n- <b>Free Speaking:</b> ${sessionsByMode.free.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.free))}\n- <b>Lemon:</b> ${sessionsByMode.lemon.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.lemon))}\n- <b>Topic:</b> ${sessionsByMode.topic.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.topic))}\n\n🏆 <b>Best Flow Score:</b> ${bestScore}\n📅 <b>Last session:</b> ${formatRelativeDate(lastSessionDate)}`,
+    `📊 <b>Your NoPause Stats</b>\n\n🔥 <b>Streak:</b> ${Number(streak?.current_streak ?? 0)}/${Number(streak?.longest_streak ?? 0)} day(s)\n🎯 <b>Overall Flow:</b> ${overallFlow}\n📋 <b>Scored Sessions:</b> ${scoredSessions.length}\n🕐 <b>Practice Time:</b> ${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown:</b>\n- <b>Free Speaking:</b> ${sessionsByMode.free.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.free))}\n- <b>Lemon:</b> ${sessionsByMode.lemon.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.lemon))}\n- <b>Topic:</b> ${sessionsByMode.topic.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.topic))}\n\n🏆 <b>Best Flow Score:</b> ${bestScore}\n📅 <b>Last session:</b> ${formatRelativeDate(lastSessionDate)}`,
     { ...replyKeyboard, parse_mode: "HTML" },
   );
 }
