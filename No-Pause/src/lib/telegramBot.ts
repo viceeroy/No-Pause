@@ -31,7 +31,6 @@ const SHARE_TO_GROUP_ACTION = "share_to_group";
 const SEND_CHALLENGE_RESULT_ACTION = "send_challenge_result";
 const TRY_AGAIN_ACTION = "try_again:free_speaking";
 const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
-const sessionTranscriptsByTelegramId = new Map<number, Map<string, string>>();
 const lastPromptByTelegramId = new Map<number, string>();
 const groupChallengeTopicsByMessage = new Map<string, string>();
 const pendingGroupChallengesByTelegramId = new Map<number, GroupChallengePending>();
@@ -339,12 +338,6 @@ function detectPausesFromWordTimestamps(words: TranscribedWord[]) {
   );
 }
 
-function storeSessionTranscript(telegramId: number, sessionId: string, transcript: string) {
-  const transcripts = sessionTranscriptsByTelegramId.get(telegramId) ?? new Map<string, string>();
-  transcripts.set(sessionId, transcript);
-  sessionTranscriptsByTelegramId.set(telegramId, transcripts);
-}
-
 function formatAverageFlowScore(score: number | null): string {
   return score === null ? "N/A" : String(score);
 }
@@ -483,6 +476,25 @@ async function insertTelegramSession(input: {
   });
 
   return String(sessionId);
+}
+
+async function getTelegramSessionTranscript(input: {
+  userId: string;
+  sessionId: string;
+}): Promise<string | null> {
+  const { data, error } = await supabaseServer
+    .from("sessions")
+    .select("transcript")
+    .eq("id", input.sessionId)
+    .eq("user_id", input.userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const transcript = typeof data?.transcript === "string" ? data.transcript.trim() : "";
+  return transcript || null;
 }
 
 async function createFriendChallenge(input: {
@@ -695,10 +707,6 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
       transcript,
       analysis,
     });
-
-    if (sessionId) {
-      storeSessionTranscript(telegramId, sessionId, transcript);
-    }
 
     if (groupChat) {
       await ctx.reply(
@@ -1056,16 +1064,22 @@ nopause.org`,
       return;
     }
 
-    const transcript = sessionTranscriptsByTelegramId.get(telegramId)?.get(sessionId);
-    if (!transcript) {
-      await ctx.reply(
-        "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not find the transcript for that session in memory.\n\n<b>Action:</b>\nSend a new voice note and try again.",
-        { parse_mode: "HTML" },
-      );
-      return;
-    }
-
     try {
+      const userId = await resolveTelegramUser(telegramId);
+      if (!userId) {
+        await replyWithConnectPrompt(ctx, telegramId);
+        return;
+      }
+
+      const transcript = await getTelegramSessionTranscript({ userId, sessionId });
+      if (!transcript) {
+        await ctx.reply(
+          "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not find the transcript for that session.\n\n<b>Action:</b>\nSend a new voice note and try again.",
+          { parse_mode: "HTML" },
+        );
+        return;
+      }
+
       const feedback = await generateAiFeedback(transcript);
       await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
     } catch (error) {
