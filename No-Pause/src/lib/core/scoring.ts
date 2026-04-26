@@ -19,7 +19,7 @@ export const PAUSE_THRESHOLD_BY_LEVEL: Record<PauseThresholdLevel, number> = {
 };
 
 export const GRACE_RATE = 1.0;
-export const PENALTY_PER_HPM = 15;
+export const PENALTY_PER_HPM = 10;
 export const MIN_RATIO_FOR_UNCAPPED = 0.65;
 export const CAP_AT_MIN_RATIO = 70;
 

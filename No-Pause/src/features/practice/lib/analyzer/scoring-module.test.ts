@@ -9,7 +9,7 @@ describe('analyzer/scoring boundary', () => {
       totalSessionTimeSec: 60,
     });
 
-    expect(result).toEqual({ score: 25, isCompleted: true });
-    expect(getScoreLabel(result.score)).toBe('Needs Practice');
+    expect(result).toEqual({ score: 50, isCompleted: true });
+    expect(getScoreLabel(result.score)).toBe('Getting There');
   });
 });

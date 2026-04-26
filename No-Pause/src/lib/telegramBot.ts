@@ -175,7 +175,7 @@ function isMissingChallengesTableError(error: unknown): boolean {
 }
 
 function getChallengesTableMissingMessage(): string {
-  return `I could not find the Supabase challenges table. Create it with:\n\n<pre>${escapeTelegramHtml(CHALLENGES_TABLE_SQL)}</pre>`;
+  return `⚠️ <b>Setup needed</b>\n\n<b>Issue:</b>\nI could not find the Supabase challenges table.\n\n<b>SQL:</b>\n<pre>${escapeTelegramHtml(CHALLENGES_TABLE_SQL)}</pre>`;
 }
 
 function getMessageTopicKey(chatId: number, messageId: number): string {
@@ -183,11 +183,11 @@ function getMessageTopicKey(chatId: number, messageId: number): string {
 }
 
 function getGroupChallengeMessage(topic: string): string {
-  return `🎤 NoPause is here and ready to listen! Who wants to practice?\n\n<b>Topic:</b> ${escapeTelegramHtml(topic)}`;
+  return `⚔️ <b>Group Challenge</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nTap Speak and I will send it privately 🎤`;
 }
 
 function getPrivateChallengeMessage(topic: string): string {
-  return `🎤 <b>Group Challenge Topic</b>\n\n${escapeTelegramHtml(topic)}\n\nSend me a voice note when you're ready.`;
+  return `⚔️ <b>Group Challenge</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`;
 }
 
 function getGroupResultText(input: {
@@ -195,7 +195,7 @@ function getGroupResultText(input: {
   topic: string;
   analysis: FlowAnalysis;
 }): string {
-  return `${input.username} spoke about: ${input.topic}\nFlow Score: ${input.analysis.flowScore} | Pauses: ${input.analysis.hesitationCount} | Speaking time: ${input.analysis.speakingTimeSec}s`;
+  return `🎤 Group Challenge Result\n\nSpeaker:\n${input.username}\n\nTopic:\n${input.topic}\n\nFlow Score:\n${input.analysis.flowScore}\n\nPauses:\n${input.analysis.hesitationCount}\n\nSpeaking time:\n${input.analysis.speakingTimeSec}s`;
 }
 
 function getGroupShareResultMessage(input: {
@@ -206,7 +206,7 @@ function getGroupShareResultMessage(input: {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
 
-  return `🎤 <b>Group Challenge Result</b>\n\n${nameLine}\n\n<b>Flow Score:</b> ${input.analysis.flowScore}\n<b>Pauses:</b> ${input.analysis.hesitationCount}\n<b>Speaking time:</b> ${input.analysis.speakingTimeSec}s`;
+  return `🎤 <b>Group Challenge Result</b>\n\n<b>Speaker:</b>\n${nameLine}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
 }
 
 function getResultShareUrl(resultText: string): string {
@@ -223,14 +223,14 @@ function getGroupChallengeResultActions(resultText: string) {
   ]);
 }
 
-function getChallengeShareActions(challengeId: string) {
+function getChallengeShareActions(challengeId: string, topic: string) {
   return Markup.inlineKeyboard([
     [
       Markup.button.url(
         "📨 Share Challenge",
         getTelegramShareUrl({
           url: getChallengeDeepLink(challengeId),
-          text: "I challenged you on NoPause. Tap to accept.",
+          text: `⚔️ Challenge from NoPause\n\nTopic:\n${topic}\n\nJust send a voice note and let's see what you've got 🎤`,
         }),
       ),
     ],
@@ -244,17 +244,17 @@ function getFriendChallengeResultActions(creatorUsername: string) {
 }
 
 function getChallengeResultMessage(input: { topic: string; analysis: FlowAnalysis }): string {
-  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b> ${escapeTelegramHtml(input.topic)}\n<b>Flow Score:</b> ${input.analysis.flowScore}\n<b>Pauses:</b> ${input.analysis.hesitationCount}\n<b>Speaking time:</b> ${input.analysis.speakingTimeSec}s`;
+  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
 }
 
 function getChallengeCreatorNotification(input: FriendChallengeResult): string {
   const friend = escapeTelegramHtml(input.friendUsername);
   const topic = escapeTelegramHtml(input.topic);
   if (input.creatorScore === null || input.creatorScore === undefined) {
-    return `⚔️ @${friend} completed your challenge!\n<b>Topic:</b> ${topic}\n<b>Their Flow Score:</b> ${input.analysis.flowScore}\n\nSend a voice note to compete! 🎤`;
+    return `⚔️ <b>Challenge update</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n<b>Their Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Action:</b>\nSend a voice note and let's see what you've got 🎤`;
   }
 
-  return `⚔️ @${friend} accepted your challenge!\n<b>Topic:</b> ${topic}\n<b>Their Flow Score:</b> ${input.analysis.flowScore} | <b>Yours:</b> ${input.creatorScore}`;
+  return `⚔️ <b>Challenge update</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n<b>Their Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
 }
 
 function getConnectUrl(telegramId: number): string {
@@ -285,14 +285,10 @@ function getConnectAccountKeyboard(telegramId: number) {
   ]);
 }
 
-function getWelcomeBannerUrl(): string {
-  return `${SITE_URL}/telegram-welcome.png`;
-}
-
 async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
   await ctx.reply(
-    "👋 Connect your NoPause account first to get your Flow Score.",
-    getConnectAccountKeyboard(telegramId),
+    "👋 <b>Connect your account</b>\n\n<b>Status:</b>\nYour NoPause account is not connected yet.\n\n<b>Action:</b>\nConnect first to get your Flow Score.",
+    { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" },
   );
 }
 
@@ -528,14 +524,16 @@ async function replyWithPrompt(ctx: Context) {
     lastPromptByTelegramId.set(telegramId, prompt);
   }
 
-  const message = isGroupChat(ctx) ? `💬 Prompt for ${getTelegramUsername(ctx)}:\n${prompt}` : prompt;
-  await ctx.reply(message, changePromptKeyboard);
+  const formattedMessage = isGroupChat(ctx)
+    ? `💬 <b>Prompt</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`
+    : `💬 <b>Prompt</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`;
+  await ctx.reply(formattedMessage, { ...changePromptKeyboard, parse_mode: "HTML" });
 }
 
 async function replyWithStatus(ctx: Context, telegramId: number) {
   const userId = await resolveTelegramUser(telegramId);
   if (!userId) {
-    await ctx.reply(`Connect your account first -> ${getConnectUrl(telegramId)}`, replyKeyboard);
+    await replyWithConnectPrompt(ctx, telegramId);
     return;
   }
   console.log("resolved user_id:", userId);
@@ -549,12 +547,12 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     ]);
   } catch (error) {
     console.error("Telegram stats lookup failed", error);
-    await ctx.reply("I could not load your stats right now. Please try again in a moment.", replyKeyboard);
+    await ctx.reply("⚠️ <b>Stats error</b>\n\n<b>Status:</b>\nI could not load your stats right now.\n\n<b>Action:</b>\nPlease try again in a moment.", { ...replyKeyboard, parse_mode: "HTML" });
     return;
   }
 
   if (records.length === 0) {
-    await ctx.reply("No sessions yet. Send a voice message to get started 🎤", replyKeyboard);
+    await ctx.reply("📊 <b>No sessions yet</b>\n\n<b>Status:</b>\nYou do not have any practice sessions yet.\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤", { ...replyKeyboard, parse_mode: "HTML" });
     return;
   }
 
@@ -578,7 +576,7 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   };
 
   await ctx.reply(
-    `📊 <b>Your NoPause Stats</b>\n\n🔥 <b>Streak:</b> ${Number(streak?.current_streak ?? 0)}/${Number(streak?.longest_streak ?? 0)} day(s)\n🎯 <b>Overall Flow:</b> ${overallFlow}\n📋 <b>Scored Sessions:</b> ${scoredSessions.length}\n🕐 <b>Practice Time:</b> ${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown:</b>\n- <b>Free Speaking:</b> ${sessionsByMode.free.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.free))}\n- <b>Lemon:</b> ${sessionsByMode.lemon.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.lemon))}\n- <b>Topic:</b> ${sessionsByMode.topic.length} sessions, avg flow ${formatAverageFlowScore(averageFlowScore(sessionsByMode.topic))}\n\n🏆 <b>Best Flow Score:</b> ${bestScore}\n📅 <b>Last session:</b> ${formatRelativeDate(lastSessionDate)}`,
+    `📊 <b>Your NoPause Stats</b>\n\n<b>Current streak:</b>\n${Number(streak?.current_streak ?? 0)} day(s)\n\n<b>Best streak:</b>\n${Number(streak?.longest_streak ?? 0)} day(s)\n\n<b>Overall Flow:</b>\n${overallFlow}\n\n<b>Scored sessions:</b>\n${scoredSessions.length}\n\n<b>Practice time:</b>\n${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown</b>\n\n<b>Free Speaking sessions:</b>\n${sessionsByMode.free.length}\n\n<b>Free Speaking average flow:</b>\n${formatAverageFlowScore(averageFlowScore(sessionsByMode.free))}\n\n<b>Lemon sessions:</b>\n${sessionsByMode.lemon.length}\n\n<b>Lemon average flow:</b>\n${formatAverageFlowScore(averageFlowScore(sessionsByMode.lemon))}\n\n<b>Topic sessions:</b>\n${sessionsByMode.topic.length}\n\n<b>Topic average flow:</b>\n${formatAverageFlowScore(averageFlowScore(sessionsByMode.topic))}\n\n🏆 <b>Highlights</b>\n\n<b>Best Flow Score:</b>\n${bestScore}\n\n<b>Last session:</b>\n${formatRelativeDate(lastSessionDate)}`,
     { ...replyKeyboard, parse_mode: "HTML" },
   );
 }
@@ -597,9 +595,9 @@ async function replyWithNewFriendChallenge(ctx: Context, telegramId: number) {
     lastPromptByTelegramId.set(telegramId, topic);
 
     await ctx.reply(
-      `⚔️ Challenge your friends on this topic:\n'${escapeTelegramHtml(topic)}'`,
+      `⚔️ <b>Challenge your friends</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nShare this challenge and see what they've got 🎤`,
       {
-        ...getChallengeShareActions(challengeId),
+        ...getChallengeShareActions(challengeId, topic),
         parse_mode: "HTML",
       },
     );
@@ -610,7 +608,7 @@ async function replyWithNewFriendChallenge(ctx: Context, telegramId: number) {
       return;
     }
 
-    await ctx.reply("I could not create a challenge right now. Please try again in a moment.", replyKeyboard);
+    await ctx.reply("⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not create a challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.", { ...replyKeyboard, parse_mode: "HTML" });
   }
 }
 
@@ -618,7 +616,7 @@ async function handleChallengeDeepLink(ctx: Context, telegramId: number, challen
   try {
     const challenge = await getFriendChallenge(challengeId);
     if (!challenge) {
-      await ctx.reply("I could not find that challenge. Ask your friend to send a fresh challenge link.", replyKeyboard);
+      await ctx.reply("⚠️ <b>Challenge not found</b>\n\n<b>Status:</b>\nI could not find that challenge.\n\n<b>Action:</b>\nAsk your friend to send a fresh challenge link.", { ...replyKeyboard, parse_mode: "HTML" });
       return true;
     }
 
@@ -641,7 +639,7 @@ async function handleChallengeDeepLink(ctx: Context, telegramId: number, challen
     });
 
     await ctx.reply(
-      `@${escapeTelegramHtml(creatorUsername)} challenged you!\n<b>Topic:</b> ${escapeTelegramHtml(challenge.topic)}\nSend a voice note to accept 🎤`,
+      `⚔️ <b>Challenge received</b>\n\n<b>From:</b>\n@${escapeTelegramHtml(creatorUsername)}\n\n<b>Topic:</b>\n${escapeTelegramHtml(challenge.topic)}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`,
       { parse_mode: "HTML" },
     );
     return true;
@@ -652,7 +650,7 @@ async function handleChallengeDeepLink(ctx: Context, telegramId: number, challen
       return true;
     }
 
-    await ctx.reply("I could not load that challenge right now. Please try again in a moment.", replyKeyboard);
+    await ctx.reply("⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not load that challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.", { ...replyKeyboard, parse_mode: "HTML" });
     return true;
   }
 }
@@ -668,7 +666,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     return;
   }
 
-  await ctx.reply("Got it. Analyzing your voice note now...");
+  await ctx.reply("🎧 <b>Voice note received</b>\n\n<b>Status:</b>\nAnalyzing your voice note now.", { parse_mode: "HTML" });
 
   try {
     const voice = ctx.message.voice;
@@ -676,7 +674,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     const transcript = await transcribeAudio(audioBuffer);
 
     if (!transcript.trim()) {
-      await ctx.reply("Couldn't hear anything. Make sure your mic is on and try again 🎤");
+      await ctx.reply("⚠️ <b>No speech detected</b>\n\n<b>Status:</b>\nI could not hear anything clearly.\n\n<b>Action:</b>\nCheck your mic and send another voice note 🎤", { parse_mode: "HTML" });
       return;
     }
 
@@ -694,8 +692,8 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
 
     if (groupChat) {
       await ctx.reply(
-        `🎤 ${username}\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.hesitationCount}\nSpeaking time: ${analysis.speakingTimeSec}s`,
-        groupTryAgainKeyboard,
+        `🎤 <b>Voice Result</b>\n\n<b>Speaker:</b>\n${escapeTelegramHtml(username)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s`,
+        { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
     }
@@ -748,7 +746,7 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
       pendingGroupChallengesByTelegramId.delete(telegramId);
 
       await ctx.reply(
-        `🎤 <b>Group Challenge Result</b>\n\n<b>Topic:</b> ${escapeTelegramHtml(pendingGroupChallenge.topic)}\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
+        `⚔️ <b>Group Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(pendingGroupChallenge.topic)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
         {
           ...getGroupChallengeResultActions(resultText),
           parse_mode: "HTML",
@@ -758,12 +756,12 @@ async function handleVoiceMessage(ctx: Context & { message: { voice: { file_id: 
     }
 
     await ctx.reply(
-      `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b> ${analysis.flowScore}\n<b>Pauses:</b> ${analysis.hesitationCount}\n<b>Speaking time:</b> ${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n${escapeTelegramHtml(transcript)}`,
+      `🎤 <b>Free Speaking Result</b>\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {
     console.error("Telegram voice handling failed", error);
-    await ctx.reply("I hit an issue analyzing that voice note. Please try again in a moment.");
+    await ctx.reply("⚠️ <b>Analysis error</b>\n\n<b>Status:</b>\nI hit an issue analyzing that voice note.\n\n<b>Action:</b>\nPlease try again in a moment.", { parse_mode: "HTML" });
   }
 }
 
@@ -773,7 +771,7 @@ export function createTelegramBot() {
   bot.start(async (ctx) => {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
-      await ctx.reply("Welcome to NoPause. I could not identify your Telegram account.");
+      await ctx.reply("👋 <b>Welcome to NoPause</b>\n\n<b>Status:</b>\nI could not identify your Telegram account.", { parse_mode: "HTML" });
       return;
     }
 
@@ -783,16 +781,15 @@ export function createTelegramBot() {
       if (handled) return;
     }
 
-    await ctx.replyWithPhoto({ url: getWelcomeBannerUrl() });
     await ctx.reply(
-      "👋 Welcome to NoPause!\n\nTrack your speaking fluency, reduce pauses, and improve your Flow Score.\n\nConnect your account to get started:",
-      getConnectAccountKeyboard(telegramId),
+      "👋 <b>Welcome to NoPause</b>\n\n<b>What it does:</b>\nTrack your speaking fluency.\nReduce pauses.\nImprove your Flow Score.\n\n<b>Action:</b>\nConnect your account to get started.",
+      { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" },
     );
   });
 
   bot.command("status", async (ctx) => {
     if (isGroupChat(ctx)) {
-      await ctx.reply("Stats are private. Open @NoPauseAI_bot directly to view your stats.");
+      await ctx.reply("📊 <b>Stats are private</b>\n\n<b>Action:</b>\nOpen @NoPauseAI_bot directly to view your stats.", { parse_mode: "HTML" });
       return;
     }
 
@@ -808,7 +805,7 @@ export function createTelegramBot() {
 
   bot.command("nopause", async (ctx) => {
     if (!isGroupChat(ctx)) {
-      await ctx.reply("Go ahead — send a voice note!", replyKeyboard);
+      await ctx.reply("🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤", { ...replyKeyboard, parse_mode: "HTML" });
       return;
     }
 
@@ -832,7 +829,7 @@ export function createTelegramBot() {
 
   bot.hears(MY_STATS_LABEL, async (ctx) => {
     if (isGroupChat(ctx)) {
-      await ctx.reply("Stats are private. Open @NoPauseAI_bot directly to view your stats.");
+      await ctx.reply("📊 <b>Stats are private</b>\n\n<b>Action:</b>\nOpen @NoPauseAI_bot directly to view your stats.", { parse_mode: "HTML" });
       return;
     }
 
@@ -850,21 +847,39 @@ export function createTelegramBot() {
     await ctx.reply(
       `ℹ️ <b>About NoPause</b>
 
+<b>What it is:</b>
 NoPause is your Telegram speaking coach.
 
-🎤 <b>Send a voice message</b>
-Practice speaking naturally. I transcribe your speech, measure pauses, and give you a Flow Score.
+🎤 <b>Voice practice</b>
 
-📊 <b>Open NoPause</b>
+<b>Action:</b>
+Practice speaking naturally.
+I transcribe your speech.
+I measure pauses.
+I give you a Flow Score.
+
+📊 <b>Dashboard</b>
+
+<b>Action:</b>
 Review your dashboard and session history.
 
-💡 <b>Get a Prompt</b>
+💡 <b>Prompts</b>
+
+<b>Action:</b>
 Receive a speaking topic when you want something to practice.
 
-📈 <b>My Stats</b>
-Check your streak, practice time, recent sessions, and overall Flow Score.
+📈 <b>Stats</b>
 
-Your sessions are saved to your connected NoPause account:
+<b>Action:</b>
+Check your streak.
+Review your practice time.
+See recent sessions.
+Track your overall Flow Score.
+
+<b>Account:</b>
+Your sessions are saved to your connected NoPause account.
+
+<b>Website:</b>
 nopause.org`,
       { ...replyKeyboard, parse_mode: "HTML" },
     );
@@ -875,7 +890,7 @@ nopause.org`,
     const message = "message" in ctx.callbackQuery ? ctx.callbackQuery.message : undefined;
     const messageId = message?.message_id;
     if (!chatId || !messageId) {
-      await ctx.answerCbQuery("I could not update this challenge.");
+      await ctx.answerCbQuery("I could not update this challenge right now.");
       return;
     }
 
@@ -896,7 +911,7 @@ nopause.org`,
     const message = "message" in ctx.callbackQuery ? ctx.callbackQuery.message : undefined;
     const messageId = message?.message_id;
     if (!telegramId || !groupId || !messageId) {
-      await ctx.answerCbQuery("I could not start a private challenge.");
+      await ctx.answerCbQuery("I could not start this challenge right now.");
       return;
     }
 
@@ -917,7 +932,7 @@ nopause.org`,
       await ctx.answerCbQuery("I sent you the topic privately.");
     } catch (error) {
       console.error("Telegram group challenge DM failed", error);
-      await ctx.answerCbQuery("Open @NoPauseAI_bot and press Start first, then tap Speak again.", {
+      await ctx.answerCbQuery("Open @NoPauseAI_bot and press Start first. Then tap Speak again.", {
         show_alert: true,
       });
     }
@@ -927,7 +942,7 @@ nopause.org`,
     const telegramId = getTelegramId(ctx);
     const result = telegramId ? friendChallengeResultsByTelegramId.get(telegramId) : undefined;
     if (!telegramId || !result) {
-      await ctx.answerCbQuery("I could not find your challenge result.", { show_alert: true });
+      await ctx.answerCbQuery("I could not find your challenge result right now.", { show_alert: true });
       return;
     }
 
@@ -957,7 +972,7 @@ nopause.org`,
     const telegramId = getTelegramId(ctx);
     const session = telegramId ? groupChallengeResultsByTelegramId.get(telegramId) : undefined;
     if (!telegramId || !session?.resultText) {
-      await ctx.answerCbQuery("I could not find a recent group challenge result.", { show_alert: true });
+      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
       return;
     }
 
@@ -986,14 +1001,19 @@ nopause.org`,
     }
 
     await ctx.answerCbQuery();
-    const message = isGroupChat(ctx) ? `💬 Prompt for ${getTelegramUsername(ctx)}:\n${prompt}` : prompt;
-    await ctx.editMessageText(message, changePromptKeyboard);
+    const message = isGroupChat(ctx)
+      ? `💬 <b>Prompt</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`
+      : `💬 <b>Prompt</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`;
+    await ctx.editMessageText(message, { ...changePromptKeyboard, parse_mode: "HTML" });
   });
 
   bot.action(TRY_AGAIN_ACTION, async (ctx) => {
     await ctx.answerCbQuery();
     if (isGroupChat(ctx)) {
-      await ctx.reply(`🎤 ${getTelegramUsername(ctx)}, go ahead — send a voice note!`);
+      await ctx.reply(
+        `🎤 <b>Ready when you are</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`,
+        { parse_mode: "HTML" },
+      );
       return;
     }
 
@@ -1010,7 +1030,10 @@ nopause.org`,
       return;
     }
 
-    await ctx.reply("Go ahead, I'm listening 🎤", replyKeyboard);
+    await ctx.reply(
+      "🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
+      { ...replyKeyboard, parse_mode: "HTML" },
+    );
   });
 
   bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
@@ -1019,22 +1042,28 @@ nopause.org`,
     const sessionId = ctx.match[1];
 
     if (!telegramId) {
-      await ctx.reply("I could not identify your Telegram account for feedback.");
+      await ctx.reply("⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not identify your Telegram account.", { parse_mode: "HTML" });
       return;
     }
 
     const transcript = sessionTranscriptsByTelegramId.get(telegramId)?.get(sessionId);
     if (!transcript) {
-      await ctx.reply("I could not find the transcript for that session in memory. Send a new voice note and try again.");
+      await ctx.reply(
+        "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not find the transcript for that session in memory.\n\n<b>Action:</b>\nSend a new voice note and try again.",
+        { parse_mode: "HTML" },
+      );
       return;
     }
 
     try {
       const feedback = await generateAiFeedback(transcript);
-      await ctx.reply(`🤖 <b>AI Feedback</b>\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
+      await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
     } catch (error) {
       console.error("Telegram AI feedback failed", error);
-      await ctx.reply("I could not generate feedback right now. Please try again in a moment.");
+      await ctx.reply(
+        "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not generate feedback right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+        { parse_mode: "HTML" },
+      );
     }
   });
 

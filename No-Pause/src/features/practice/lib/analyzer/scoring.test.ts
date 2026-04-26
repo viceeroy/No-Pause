@@ -144,22 +144,22 @@ describe('Flow Score Calculation - Simplified Rules', () => {
     it('free mode returns a real score', () => {
       const r = calc(2, { mode: 'free', speakingTimeSec: 60, totalSessionTimeSec: 70 });
       expect(r.isCompleted).toBe(true);
-      expect(r.score).toBe(85);
+      expect(r.score).toBe(90);
     });
 
-    it('completed, 2 hesitations over 60s speaking => 85', () => {
+    it('completed, 2 hesitations over 60s speaking => 90', () => {
       const r = calc(2, { mode: 'free', speakingTimeSec: 60, totalSessionTimeSec: 70 });
-      expect(r.score).toBe(85);
+      expect(r.score).toBe(90);
     });
 
-    it('completed, 3 hesitations over 40s speaking => 48', () => {
+    it('completed, 3 hesitations over 40s speaking => 65', () => {
       const r = calc(3, { mode: 'lemon', speakingTimeSec: 40, totalSessionTimeSec: LEMON_MIN_TOTAL_SECONDS });
-      expect(r.score).toBe(48);
+      expect(r.score).toBe(65);
     });
 
-    it('completed, 5 hesitations over 75s speaking => 55', () => {
+    it('completed, 5 hesitations over 75s speaking => 70', () => {
       const r = calc(5, { mode: 'free', speakingTimeSec: 75, totalSessionTimeSec: 90 });
-      expect(r.score).toBe(55);
+      expect(r.score).toBe(70);
     });
 
     it('minimum score is 0', () => {
