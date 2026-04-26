@@ -557,14 +557,25 @@ export function createTelegramBot() {
 
   bot.hears(ABOUT_LABEL, async (ctx) => {
     await ctx.reply(
-      `📊 NoPause scores your speech on:
-- Flow Score (0–100) — fluency & rhythm
-- Hesitations Per Minute — um, uh, pauses
-- Filler words — like, you know, basically...
+      `ℹ️ <b>About NoPause</b>
 
-Speak naturally. The bot analyzes and logs every session to your NoPause account.
+NoPause is your Telegram speaking coach.
+
+🎤 <b>Send a voice message</b>
+Practice speaking naturally. I transcribe your speech, measure pauses, and give you a Flow Score.
+
+📊 <b>Open Mini App</b>
+Record inside Telegram, review your dashboard, and see session history.
+
+💡 <b>Get a Prompt</b>
+Receive a speaking topic when you want something to practice.
+
+📈 <b>My Stats</b>
+Check your streak, practice time, recent sessions, and overall Flow Score.
+
+Your sessions are saved to your connected NoPause account:
 nopause.org`,
-      replyKeyboard,
+      { ...replyKeyboard, parse_mode: "HTML" },
     );
   });
 
