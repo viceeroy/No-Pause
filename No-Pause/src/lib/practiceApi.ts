@@ -1,4 +1,6 @@
 import { supabase } from "./supabase";
+import { normalizeMode } from "./core/modes";
+import { insertSession, updateStreak as updateCoreStreak } from "./core/session";
 
 type TranscribeAudioInput = {
   audioBase64: string;
@@ -98,8 +100,6 @@ export type PracticeStats = {
     mode: string;
   }>;
 };
-
-const normalizeMode = (m: string) => m === "free_speaking" ? "free" : m;
 
 export async function transcribeAudio(input: TranscribeAudioInput): Promise<string> {
   try {
@@ -266,56 +266,20 @@ type UpdateSessionInput = {
   analysisFeedback?: string | null;
 };
 
-type UpdateStreakInput = {
-  userId: string | null;
-  email?: string | null;
-  localDate?: string;
-};
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function addDaysToDateString(dateString: string, days: number): string {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + days);
-
-  return formatLocalDate(date);
-}
-
 export async function saveSession(input: SaveSessionInput): Promise<string | null> {
-  if (!input.userId) {
-    return null;
-  }
-
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert({
-      user_id: input.userId,
-      speaking_time: input.speakingTime,
-      flow_score: input.flowScore,
-      pauses: input.pauses,
-      words: input.words,
-      mode: normalizeMode(input.mode),
-      duration: input.duration,
-      completed: input.completed ?? false,
-      hesitation_log: input.hesitationLog ?? null,
-      transcript: input.transcript ?? null,
-      analysis_feedback: input.analysisFeedback ?? null,
-    })
-    .select("id")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data.id as string;
+  return insertSession(supabase, {
+    userId: input.userId,
+    speakingTime: input.speakingTime,
+    flowScore: input.flowScore,
+    pauses: input.pauses,
+    words: input.words,
+    mode: input.mode,
+    duration: input.duration,
+    completed: input.completed,
+    hesitationLog: input.hesitationLog,
+    transcript: input.transcript,
+    analysisFeedback: input.analysisFeedback,
+  });
 }
 
 export async function updateSession(input: UpdateSessionInput): Promise<void> {
@@ -336,45 +300,11 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
   if (error) throw error;
 }
 
-export async function updateStreak(input: UpdateStreakInput): Promise<void> {
-  if (!input.userId) {
-    return;
-  }
-
-  const today = input.localDate ?? formatLocalDate(new Date());
-  const yesterday = addDaysToDateString(today, -1);
-
-  const { data: streak, error: fetchError } = await supabase
-    .from("streaks")
-    .select("current_streak, longest_streak, last_session_date")
-    .eq("user_id", input.userId)
-    .maybeSingle();
-
-  if (fetchError) {
-    throw fetchError;
-  }
-
-  if (streak?.last_session_date === today) {
-    return;
-  }
-
-  const currentStreak =
-    streak?.last_session_date === yesterday ? (streak.current_streak ?? 0) + 1 : 1;
-  const longestStreak = Math.max(currentStreak, streak?.longest_streak ?? 0);
-
-  const { error: upsertError } = await supabase.from("streaks").upsert(
-    {
-      user_id: input.userId,
-      current_streak: currentStreak,
-      longest_streak: longestStreak,
-      last_session_date: today,
-    },
-    { onConflict: "user_id" },
-  );
-
-  if (upsertError) {
-    throw upsertError;
-  }
+export async function updateStreak(input: { userId: string | null; email?: string | null; localDate?: string }): Promise<void> {
+  await updateCoreStreak(supabase, {
+    userId: input.userId,
+    localDate: input.localDate,
+  });
 }
 
 export async function getPracticeStats(userId: string | null, limit = 15): Promise<PracticeStats> {

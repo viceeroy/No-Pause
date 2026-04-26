@@ -10,6 +10,6 @@ describe('analyzer/scoring boundary', () => {
     });
 
     expect(result).toEqual({ score: 25, isCompleted: true });
-    expect(getScoreLabel(result.score)).toBe('Keep Practicing');
+    expect(getScoreLabel(result.score)).toBe('Needs Practice');
   });
 });

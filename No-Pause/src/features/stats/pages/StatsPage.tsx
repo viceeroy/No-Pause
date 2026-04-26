@@ -6,6 +6,7 @@ import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { type DifficultyLevel, useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
+import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import {
   Dialog,
   DialogContent,
@@ -37,8 +38,6 @@ const DIFFICULTY_OPTIONS: { level: DifficultyLevel; label: string; description: 
   { level: 'intermediate', label: 'Intermediate', description: 'Balanced timing for steady practice.' },
   { level: 'advanced', label: 'Advanced', description: 'Strict timing for sharper flow.' },
 ];
-
-const normalizeMode = (m: string) => m === 'free_speaking' ? 'free' : m;
 
 type StatsPageProps = {
   emptyStateTitle?: string;
@@ -109,8 +108,9 @@ export default function StatsPage({
   const modeBreakdown = stats.modeBreakdown;
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
-    const normalizedMode = normalizeMode((mode || '').toLowerCase());
-    if (normalizedMode === 'readingchallenge') return false;
+    const rawMode = (mode || '').toLowerCase();
+    if (rawMode === 'readingchallenge') return false;
+    const normalizedMode = normalizeMode(rawMode);
     if (normalizedMode === 'free' || normalizedMode === 'free-speak' || normalizedMode === 'lemon' || normalizedMode === 'topic') {
       return score !== null && score !== undefined && score > 0;
     }
@@ -354,14 +354,9 @@ export default function StatsPage({
           <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Practice Breakdown</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {modeBreakdown.map((item) => {
-              const normalizedMode = normalizeMode(item.mode.toLowerCase());
-              const label = normalizedMode === 'free'
-                ? 'Free Speaking'
-                : normalizedMode === 'lemon'
-                  ? 'Lemon'
-                  : normalizedMode === 'topic'
-                    ? 'Topic'
-                    : 'Reading Challenge';
+              const rawMode = item.mode.toLowerCase();
+              const normalizedMode = normalizeMode(rawMode);
+              const label = rawMode === 'readingchallenge' ? 'Reading Challenge' : MODE_LABELS[normalizedMode];
               const showScore =
                 normalizedMode === 'free' ||
                 normalizedMode === 'free-speak' ||
@@ -408,14 +403,9 @@ export default function StatsPage({
           <h2 className="text-xl font-serif text-foreground mb-3">Recent Activity</h2>
           <div className="space-y-3">
             {recentSessions.map((session) => {
-              const normalizedMode = normalizeMode((session.mode || '').toLowerCase());
-              const modeLabel = normalizedMode === 'lemon'
-                ? 'Lemon'
-                : normalizedMode === 'topic'
-                  ? 'Topic'
-                  : normalizedMode === 'readingchallenge'
-                    ? 'Reading Challenge'
-                    : 'Free';
+              const rawMode = (session.mode || '').toLowerCase();
+              const normalizedMode = normalizeMode(rawMode);
+              const modeLabel = rawMode === 'readingchallenge' ? 'Reading Challenge' : MODE_LABELS[normalizedMode];
               return (
                 <div key={session.id || session.created_at} className="rounded-2xl bg-surface-elevated border border-border shadow-card p-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">

@@ -1,10 +1,14 @@
 import { Markup, Telegraf } from "telegraf";
 import type { Context } from "telegraf";
-import { calculateFlowScore } from "../features/practice/lib/analyzer/scoring.js";
+import { APP_URL, SCORING_VERSION, TELEGRAM_MIN_DURATION } from "./core/constants.js";
+import { normalizeMode } from "./core/modes.js";
+import { getRandomPrompt } from "./core/prompts.js";
+import { calculateFlowScore } from "./core/scoring.js";
+import { formatLocalDate, insertSession, updateStreak } from "./core/session.js";
 import { getTelegramConnection } from "./telegramAuth.js";
 import { supabaseServer } from "./supabaseServer.js";
 
-const SITE_URL = "https://nopause.org";
+const SITE_URL = APP_URL;
 const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const CHALLENGE_LABEL = "⚔️ Challenge";
@@ -35,29 +39,6 @@ const CHALLENGES_TABLE_SQL = `create table if not exists public.challenges (
   status text not null default 'pending',
   created_at timestamptz not null default now()
 );`;
-
-const opinionPrompts = [
-  "Should schools teach public speaking as a core skill?",
-  "Is remote work better for creativity or focus?",
-  "Should people read more books or listen to more podcasts?",
-  "Is confidence something you build or something you choose?",
-  "Should social media platforms hide public like counts?",
-  "Is it better to be highly specialized or broadly skilled?",
-  "Should cities prioritize walking and cycling over cars?",
-  "Is failure overrated as a teacher?",
-  "Should AI tools be allowed in classrooms?",
-  "Is a busy schedule a sign of ambition or poor boundaries?",
-  "Should everyone learn how to tell a good story?",
-  "Is it better to plan your life carefully or leave room for surprise?",
-  "Should companies shorten meetings by default?",
-  "Is silence in conversation awkward or useful?",
-  "Should people practice disagreeing more respectfully?",
-  "Is curiosity more important than discipline?",
-  "Should public speaking be judged more on clarity or charisma?",
-  "Is it better to speak slowly and precisely or quickly and energetically?",
-  "Should adults keep learning new hobbies even when they are busy?",
-  "Is confidence built more through preparation or repeated exposure?",
-];
 
 type FlowAnalysis = {
   flowScore: number;
@@ -281,19 +262,6 @@ function getConnectUrl(telegramId: number): string {
   return `${SITE_URL}/connect?tg=${encodeURIComponent(String(telegramId))}`;
 }
 
-function getRandomPrompt(previousPrompt?: string): string {
-  if (opinionPrompts.length <= 1) {
-    return opinionPrompts[0] ?? "Talk about something you care about.";
-  }
-
-  let prompt = opinionPrompts[Math.floor(Math.random() * opinionPrompts.length)];
-  while (prompt === previousPrompt) {
-    prompt = opinionPrompts[Math.floor(Math.random() * opinionPrompts.length)];
-  }
-
-  return prompt;
-}
-
 function getSessionActions(sessionId: string) {
   return Markup.inlineKeyboard([
     [
@@ -313,8 +281,8 @@ const openNoPauseKeyboard = Markup.inlineKeyboard([
 ]);
 
 function estimateDurationSec(voiceDuration?: number): number {
-  if (!voiceDuration || voiceDuration < 1) {
-    return 1;
+  if (!voiceDuration || voiceDuration < TELEGRAM_MIN_DURATION) {
+    return TELEGRAM_MIN_DURATION;
   }
 
   return Math.round(voiceDuration);
@@ -326,11 +294,6 @@ function countWords(transcript: string): number {
 
 function escapeTelegramHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function getHesitationsPerMinute(hesitationCount: number, speakingTimeSec: number): number {
-  const speakingMinutes = Math.max(speakingTimeSec / 60, 0.5);
-  return hesitationCount / speakingMinutes;
 }
 
 function storeSessionTranscript(telegramId: number, sessionId: string, transcript: string) {
@@ -370,20 +333,6 @@ function formatAverageFlowScore(score: number | null): string {
   return score === null ? "N/A" : String(score);
 }
 
-function normalizeStatsMode(mode: string | null): "free" | "lemon" | "topic" | null {
-  const normalizedMode = (mode ?? "").toLowerCase();
-  if (normalizedMode === "free" || normalizedMode === "free_speaking" || normalizedMode === "free-speak") {
-    return "free";
-  }
-  if (normalizedMode === "lemon") {
-    return "lemon";
-  }
-  if (normalizedMode === "topic") {
-    return "topic";
-  }
-  return null;
-}
-
 function getPracticeTimeParts(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.round(totalSeconds));
   return {
@@ -415,22 +364,6 @@ function formatRelativeDate(dateText: string | null): string {
   }
 
   return `${daysAgo} days ago`;
-}
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function addDaysToDateString(dateString: string, days: number): string {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + days);
-
-  return formatLocalDate(date);
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
@@ -597,54 +530,25 @@ async function insertTelegramSession(input: {
   transcript: string;
   analysis: FlowAnalysis;
 }) {
-  const today = formatLocalDate(new Date());
-  const hesitationsPerMinute = getHesitationsPerMinute(input.analysis.hesitationCount, input.analysis.speakingTimeSec);
-  const { data, error } = await supabaseServer
-    .from("sessions")
-    .insert({
-      user_id: input.userId,
-      mode: "free",
-      transcript: input.transcript,
-      flow_score: input.analysis.flowScore,
-      hesitations_per_minute: hesitationsPerMinute,
-      completed: input.analysis.isCompleted,
-      scoring_version: "1.0",
-      duration: input.analysis.speakingTimeSec,
-      speaking_time: input.analysis.speakingTimeSec,
-      pauses: input.analysis.hesitationCount,
-      words: countWords(input.transcript),
-    })
-    .select("id")
-    .single();
+  const sessionId = await insertSession(supabaseServer, {
+    userId: input.userId,
+    mode: "free",
+    transcript: input.transcript,
+    flowScore: input.analysis.flowScore,
+    completed: input.analysis.isCompleted,
+    scoringVersion: SCORING_VERSION,
+    duration: input.analysis.speakingTimeSec,
+    speakingTime: input.analysis.speakingTimeSec,
+    pauses: input.analysis.hesitationCount,
+    words: countWords(input.transcript),
+  });
 
-  if (error) {
-    throw error;
-  }
+  await updateStreak(supabaseServer, {
+    userId: input.userId,
+    localDate: formatLocalDate(new Date()),
+  });
 
-  const { data: streak } = await supabaseServer
-    .from("streaks")
-    .select("current_streak, longest_streak, last_session_date")
-    .eq("user_id", input.userId)
-    .maybeSingle();
-
-  if (streak?.last_session_date !== today) {
-    const yesterday = addDaysToDateString(today, -1);
-    const currentStreak =
-      streak?.last_session_date === yesterday ? Number(streak.current_streak ?? 0) + 1 : 1;
-    const longestStreak = Math.max(currentStreak, Number(streak?.longest_streak ?? 0));
-
-    await supabaseServer.from("streaks").upsert(
-      {
-        user_id: input.userId,
-        current_streak: currentStreak,
-        longest_streak: longestStreak,
-        last_session_date: today,
-      },
-      { onConflict: "user_id" },
-    );
-  }
-
-  return String(data.id);
+  return String(sessionId);
 }
 
 async function createFriendChallenge(input: {
@@ -759,9 +663,9 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
       .filter((createdAt): createdAt is string => Boolean(createdAt))
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
   const sessionsByMode = {
-    free: records.filter((session) => normalizeStatsMode(session.mode) === "free"),
-    lemon: records.filter((session) => normalizeStatsMode(session.mode) === "lemon"),
-    topic: records.filter((session) => normalizeStatsMode(session.mode) === "topic"),
+    free: records.filter((session) => normalizeMode(session.mode ?? "free") === "free"),
+    lemon: records.filter((session) => normalizeMode(session.mode ?? "free") === "lemon"),
+    topic: records.filter((session) => normalizeMode(session.mode ?? "free") === "topic"),
   };
 
   await ctx.reply(
