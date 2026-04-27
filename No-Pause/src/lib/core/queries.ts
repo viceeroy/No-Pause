@@ -98,6 +98,39 @@ export async function getSessions(userId: string, limit = 15): Promise<SessionRe
   return (data ?? []) as SessionRecord[];
 }
 
+export async function getTelegramSessions(userId: string, limit = 15): Promise<SessionRecord[]> {
+  const supabase = await getServerSupabase();
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(SESSION_COLUMNS)
+    .eq("user_id", userId)
+    .eq("source", "telegram")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    if (isMissingSessionAnalysisColumnError(error)) {
+      const { data: legacyData, error: legacyError } = await supabase
+        .from("sessions")
+        .select(LEGACY_SESSION_COLUMNS)
+        .eq("user_id", userId)
+        .eq("source", "telegram")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (legacyError) {
+        throw legacyError;
+      }
+
+      return (legacyData ?? []) as SessionRecord[];
+    }
+
+    throw error;
+  }
+
+  return (data ?? []) as SessionRecord[];
+}
+
 export async function getStreak(userId: string): Promise<StreakRecord | null> {
   const supabase = await getServerSupabase();
   const { data, error } = await supabase

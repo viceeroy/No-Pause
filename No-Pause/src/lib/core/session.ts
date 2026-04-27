@@ -45,6 +45,7 @@ export type InsertSessionInput = {
   transcript?: string | null;
   analysisFeedback?: string | null;
   scoringVersion?: string;
+  source?: "web" | "telegram";
 };
 
 export type UpdateStreakInput = {
@@ -79,7 +80,8 @@ function isMissingSessionAnalysisColumnError(error: unknown): boolean {
     maybeError?.code === "42703" ||
     maybeError?.message?.includes("pause_count") === true ||
     maybeError?.message?.includes("filler_count") === true ||
-    maybeError?.message?.includes("hesitations_per_minute") === true
+    maybeError?.message?.includes("hesitations_per_minute") === true ||
+    maybeError?.message?.includes("source") === true
   );
 }
 
@@ -107,6 +109,7 @@ export async function insertSession(
       transcript: input.transcript ?? null,
       analysis_feedback: input.analysisFeedback ?? null,
       scoring_version: input.scoringVersion ?? SCORING_VERSION,
+      source: input.source ?? "web",
     };
 
   const { data, error } = await supabase
@@ -117,7 +120,13 @@ export async function insertSession(
 
   if (error) {
     if (isMissingSessionAnalysisColumnError(error)) {
-      const { pause_count: _pauseCount, filler_count: _fillerCount, hesitations_per_minute: _hpm, ...legacyValues } = values;
+      const {
+        pause_count: _pauseCount,
+        filler_count: _fillerCount,
+        hesitations_per_minute: _hpm,
+        source: _source,
+        ...legacyValues
+      } = values;
       const { data: legacyData, error: legacyError } = await supabase
         .from("sessions")
         .insert(legacyValues)

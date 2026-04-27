@@ -2,7 +2,7 @@ import { Markup, Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { APP_URL, SCORING_VERSION, TELEGRAM_MIN_DURATION } from "./core/constants.js";
 import { getRandomPrompt } from "./core/prompts.js";
-import { buildPracticeStats, getSessions, getStreak } from "./core/queries.js";
+import { buildPracticeStats, getStreak, getTelegramSessions } from "./core/queries.js";
 import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD_MS } from "./core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak } from "./core/session.js";
 import type { SupabaseLike } from "./core/session.js";
@@ -480,6 +480,7 @@ async function insertTelegramSession(input: {
     flowScore: input.analysis.flowScore,
     completed: input.analysis.isCompleted,
     scoringVersion: SCORING_VERSION,
+    source: "telegram",
     duration: input.analysis.totalSessionTimeSec,
     speakingTime: input.analysis.speakingTimeSec,
     pauses: input.analysis.pauseCount,
@@ -729,7 +730,7 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   try {
     const [streak, records] = await Promise.all([
       getStreak(userId),
-      getSessions(userId, STATS_SESSION_LIMIT),
+      getTelegramSessions(userId, STATS_SESSION_LIMIT),
     ]);
     stats = buildPracticeStats(records, streak);
   } catch (error) {
