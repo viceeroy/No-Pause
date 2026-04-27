@@ -22,7 +22,8 @@ Supabase
   |-- public.sessions: practice session metrics/transcripts/feedback
   |-- public.streaks: current/longest streak by user
   |-- public.telegram_connections: Telegram ID to Supabase user ID
-  |-- public.challenges: Telegram friend challenge state
+  |-- public.challenges: Telegram challenge records
+  |-- public.telegram_challenge_state: durable pending Telegram challenge state
 
 Telegram user
   |
@@ -104,19 +105,18 @@ Source of truth: `src/lib/core/scoring.ts`. `src/features/practice/lib/scoringCo
 
 - `SCORING_VERSION`: `1.0` in `src/lib/core/constants.ts`.
 - `TOPIC_MIN_TOTAL_SECONDS`: `120`.
-- `TOPIC_MIN_SPEAKING_SECONDS`: `60`.
 - `LEMON_MIN_TOTAL_SECONDS`: `60`.
-- `LEMON_MIN_SPEAKING_SECONDS`: `30`.
 - `THRESHOLD_BEGINNER`: `1.8` seconds.
 - `THRESHOLD_INTERMEDIATE`: `1.2` seconds.
 - `THRESHOLD_ADVANCED`: `0.8` seconds.
 - `DEFAULT_PAUSE_THRESHOLD_LEVEL`: `beginner`.
+- `DEFAULT_PAUSE_THRESHOLD_MS`: beginner threshold in milliseconds.
 - `GRACE_RATE`: `1.0`.
 - `PENALTY_PER_HPM`: `10`.
 - `MIN_RATIO_FOR_UNCAPPED`: `0.65`.
 - `CAP_AT_MIN_RATIO`: `70`.
 - Internal minimum speaking ratio for score: `0.5`.
-- Telegram hardcoded pause threshold: `TELEGRAM_PAUSE_THRESHOLD_MS = 1800`, matching the beginner web default.
+- Telegram uses `DEFAULT_PAUSE_THRESHOLD_MS` from core scoring for pause detection.
 
 ### Completion Rules
 
@@ -259,7 +259,8 @@ Bot username constant: `NoPauseAI_bot`.
   - Otherwise sends the account connection welcome message with a `Connect Account` button.
 - `/status`
   - Private chats only.
-  - Loads connected user's streak and sessions and sends stats.
+  - Loads only Telegram-originated free-speaking activity for the connected user.
+  - Sends current Telegram streak, total Telegram sessions, average Flow Score, and best Flow Score.
   - In groups, replies that stats are private.
 - `/prompt`
   - Sends a random speaking prompt.
@@ -269,7 +270,7 @@ Bot username constant: `NoPauseAI_bot`.
   - Group chat: creates a group challenge prompt message with `Speak` and `Change Topic` buttons.
 - `⚔️ Challenge`
   - Private keyboard button.
-  - Creates a friend challenge record in Supabase and sends a Telegram share URL.
+  - Creates a friend challenge record in Supabase and sends one Telegram share URL button.
 - `📈 My Stats`
   - Same behavior as `/status`.
 - `💡 Get Prompt`
@@ -291,21 +292,24 @@ Bot username constant: `NoPauseAI_bot`.
   - Action: `change_prompt`.
   - Replaces the current prompt text.
 - `🗣 Speak`
-  - Action: `speak_group_topic`.
-  - DMs the group challenge topic to the user and records pending group challenge memory.
+  - Action prefix: `sg:<challengeId>`.
+  - DMs the group challenge topic to the user and records pending group challenge state.
 - `🔄 Change Topic`
-  - Action: `change_group_topic`.
+  - Action prefix: `cg:<challengeId>`.
   - Changes the group challenge topic in-place.
-- `📨 Share Challenge`
+- `⚔️ Share Challenge`
   - URL button to Telegram share URL with the friend challenge deep link.
 - `📤 Share to Group`
-  - Action: `share_to_group`.
+  - Action prefix: `shg:<sessionId>:<chatId>`.
   - Posts a recent group challenge result back to the originating group.
 - `👥 Share to Friends`
   - URL button to Telegram share URL with a result text.
 - `📤 Send Result to @username`
-  - Action: `send_challenge_result`.
+  - Action prefix: `scr:<challengeId>:<creatorTelegramId>`.
   - Sends friend challenge result to the creator.
+- `🎯 Try Challenge`
+  - Action prefix: `tg:<challengeId>`.
+  - Sets pending friend challenge state for the creator to respond.
 - `🔄 Try Again`
   - Action: `try_again:free_speaking`.
   - Re-prompts group or private users to send another voice note.
@@ -324,7 +328,7 @@ Bot username constant: `NoPauseAI_bot`.
    - Calls Telegram `getFile`.
    - Fetches `https://api.telegram.org/file/bot<TOKEN>/<file_path>`.
 7. Bot sends audio to Groq Whisper verbose transcription.
-8. If transcript is blank, bot replies with no-speech message.
+8. If transcript is empty, under 3 words, or has high Whisper `no_speech_prob`, bot replies: `Couldn't hear anything clearly. Please speak louder and try again 🎤`.
 9. Bot computes:
    - `pauseCount` from timestamp gaps.
    - `hesitationCount` from Groq chat filler count.
@@ -348,13 +352,13 @@ Bot username constant: `NoPauseAI_bot`.
 ### Group Challenge Flow
 
 1. In a group, user runs `/nopause`.
-2. Bot posts a random topic with `Speak` and `Change Topic`.
-3. Topic is stored in memory keyed by `chatId:messageId`.
-4. `Change Topic` updates the in-memory topic and edits the group message.
+2. Bot creates a group challenge record in Supabase and posts a random topic with `Speak` and `Change Topic`.
+3. The challenge ID is carried in callback data.
+4. `Change Topic` updates the challenge topic in Supabase and edits the group message.
 5. `Speak` tries to DM the user with the topic.
-6. Pending group challenge is stored in memory by Telegram user ID.
+6. Pending group challenge is stored in `telegram_challenge_state` by Telegram user ID.
 7. User sends voice note in private chat.
-8. Bot analyzes voice, saves session, creates result text in memory, and replies privately.
+8. Bot analyzes voice, saves session, and replies privately with a share-to-group action.
 9. `Share to Group` posts the result into the original group.
 
 ### Friend Challenge Flow
@@ -362,16 +366,15 @@ Bot username constant: `NoPauseAI_bot`.
 1. User presses `⚔️ Challenge`.
 2. Bot creates a random topic and challenge ID.
 3. Bot inserts into `public.challenges`.
-4. Bot stores creator username in memory by challenge ID.
-5. Bot sends a Telegram share URL with deep link `/start challenge_<id>`.
+4. Bot sends the topic and one `⚔️ Share Challenge` URL button with deep link `/start challenge_<id>`.
 6. Friend opens deep link.
 7. Bot loads challenge from Supabase.
-8. Bot sets pending friend challenge in memory by friend Telegram ID.
+8. Bot sets pending friend challenge state in `telegram_challenge_state` by friend Telegram ID.
 9. Friend sends voice note.
 10. Bot analyzes and saves session.
 11. If the creator is responding to their own challenge, bot updates `creator_score`.
-12. Otherwise bot stores friend result in memory and offers `Send Result to @creator`.
-13. `Send Result` sends the creator a challenge update and may set pending challenge memory for the creator to respond.
+12. Otherwise bot offers `Send Result to @creator`.
+13. `Send Result` sends the creator a challenge update and can set pending challenge state for the creator to respond.
 
 ### Memory vs Supabase State
 
@@ -379,21 +382,16 @@ In-memory maps:
 
 - `sessionTranscriptsByTelegramId`: temporary transcripts for AI feedback buttons.
 - `lastPromptByTelegramId`: last prompt to avoid immediate repeats.
-- `groupChallengeTopicsByMessage`: group prompt by `chatId:messageId`.
-- `pendingGroupChallengesByTelegramId`: pending private group challenge.
-- `groupChallengeResultsByTelegramId`: recent group challenge result for sharing.
-- `creatorUsernameByChallengeId`: username lookup cache.
-- `pendingFriendChallengesByTelegramId`: pending friend challenge response.
-- `friendChallengeResultsByTelegramId`: result waiting to be sent to creator.
 
 Supabase state:
 
 - `telegram_connections`: durable Telegram account linking.
 - `sessions`: durable voice/practice session results.
 - `streaks`: durable streak counters.
-- `challenges`: durable friend challenge record and creator score.
+- `challenges`: durable Telegram challenge record, topic, creator, and creator score.
+- `telegram_challenge_state`: durable pending friend/group challenge context by Telegram user.
 
-Important: all in-memory maps are lost when serverless instances cold-start or scale.
+Important: AI feedback transcript cache and last prompt memory are still process-local and can disappear on serverless cold starts or scaling. Pending challenges are durable.
 
 ## Database Tables
 
@@ -497,7 +495,7 @@ Code:
 
 ### `public.challenges`
 
-SQL exists as a string in `src/lib/telegramBot.ts`, not as a migration file.
+Migration: `supabase/migrations/add_telegram_challenge_state.sql`.
 
 Columns:
 
@@ -510,14 +508,42 @@ Columns:
 
 RLS:
 
-- No migration or RLS policies are present in this repo.
-- Bot expects service-role access.
+- RLS enabled.
+- Policy `Service role manages challenges`: all operations for service role.
 
 Code:
 
 - Inserted by `createFriendChallenge`.
+- Inserted by `createGroupChallenge`.
 - Read by `getFriendChallenge`.
-- Updated by `updateFriendChallengeCreatorScore`.
+- Updated by `updateChallengeTopic` and `updateFriendChallengeCreatorScore`.
+
+### `public.telegram_challenge_state`
+
+Migration: `supabase/migrations/add_telegram_challenge_state.sql`.
+
+Columns:
+
+- `telegram_id bigint primary key`: Telegram user ID with pending challenge context.
+- `challenge_type text not null`: `friend` or `group`.
+- `challenge_id text references public.challenges(id) on delete cascade`.
+- `group_id bigint`: originating group chat ID for group challenges.
+- `group_message_id bigint`: originating group message ID for group challenges.
+- `participant_username text`: participant username when known.
+- `creator_username text`: creator username when known.
+- `created_at timestamptz not null default now()`: creation time.
+- `updated_at timestamptz not null default now()`: last state update time.
+
+RLS:
+
+- RLS enabled.
+- Policy `Service role manages telegram challenge state`: all operations for service role.
+
+Code:
+
+- Written by `upsertPendingChallenge`.
+- Read by `getPendingChallenge`.
+- Deleted by `deletePendingChallenge` after use.
 
 ## Core Library (`src/lib/core/`)
 
@@ -526,7 +552,6 @@ Code:
 Exports:
 
 - `SCORING_VERSION = "1.0"`.
-- `MIN_DURATION_SECONDS = 60`.
 - `TELEGRAM_MIN_DURATION = 1`.
 - `APP_URL = "https://nopause.org"`.
 
@@ -540,14 +565,18 @@ Exports:
 
 - `TranscribedWord`.
 - `VerboseTranscription`.
+- `Base64TranscriptionInput`.
 - `transcribeAudio(audio): Promise<string>`.
 - `transcribeAudioVerbose(audio): Promise<VerboseTranscription>`.
+- `transcribeBase64Audio(input): Promise<string>`.
+- `isUsableTranscript(transcript): boolean`.
 - `analyzeSpeech(transcript): Promise<{ hesitation_count: number }>` via inferred return type.
 - `getAIFeedback(transcript, systemPrompt?)`.
 
 Purpose:
 
 - Single Groq integration module for Whisper transcription, verbose word timestamps, filler hesitation analysis, and AI feedback.
+- Logs Whisper `no_speech_prob` and rejects empty, whitespace-only, or under-3-word transcripts before analysis.
 
 ### `modes.ts`
 
@@ -581,7 +610,6 @@ Exports:
 - `PracticeStats`.
 - `getSessions(userId, limit?)`.
 - `getStreak(userId)`.
-- `getStats(userId, limit?)`.
 - `buildPracticeStats(sessions, streak)`.
 
 Purpose:
@@ -712,15 +740,13 @@ Flow:
   - `calculateFlowScore` still accepts `rawHesitationCount`, but the penalized count should be interpreted as pause units.
 - `sessions.pauses` remains a legacy column name. `insertSession` now maps the same value to `pause_count` when that column exists.
 - The full base schema for `sessions` and `streaks` is not present in repo migrations.
-- `public.challenges` creation SQL is embedded in bot code instead of a migration.
-- RLS policies for `sessions`, `streaks`, and `challenges` are not present in repo migrations.
-- In-memory Telegram maps are not durable. Pending prompts/challenges/results and AI feedback transcript cache can disappear on serverless cold starts or scaling.
+- RLS policies for `sessions` and `streaks` are not present in repo migrations.
+- Telegram stats prefer `sessions.source = 'telegram'`; if that column is missing, the bot falls back to connected-user `mode = 'free'` sessions, which can include indistinguishable web free-speaking sessions.
+- AI feedback transcript cache can disappear on serverless cold starts or scaling.
 - Browser Groq usage can expose `VITE_GROQ_API_KEY` to clients. Consider moving browser transcription/feedback behind server routes if abuse or key exposure matters.
 - `supabase/.temp/cli-latest` is tracked in the repo even though it is generated Supabase CLI temp metadata.
 - `api/telegram/connect.ts` hardcodes `https://nopause.org` separately from `APP_URL`.
 - `AuthContext` hardcodes Google redirect to `https://www.nopause.org/auth/callback`.
 - Blog copy still says the penalty is 15 points in `src/features/blog/data/how-is-flow-score-calculated.ts`; the actual constant is now `10`.
-- Telegram challenge table missing message only outputs challenge table SQL, not RLS policy SQL.
 - `hasSpeechEvidence` exists in `FlowScoreOptions` and is passed in several places, but `calculateFlowScore` does not currently use it.
-- `MIN_DURATION_SECONDS` is exported but scoring uses literal `60` for free mode.
 - `ReadingChallengePanel` saves `pauses` from web analyzer and likely still follows legacy naming.
