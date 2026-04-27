@@ -122,6 +122,7 @@ export async function saveSession(input: SaveSessionInput): Promise<string | nul
     pauses: input.pauses,
     words: input.words,
     mode: input.mode,
+    source: "web",
     duration: input.duration,
     completed: input.completed,
     hesitationLog: input.hesitationLog,

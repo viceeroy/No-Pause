@@ -62,14 +62,6 @@ function isMissingSessionAnalysisColumnError(error: unknown): boolean {
   );
 }
 
-function isMissingSourceColumnError(error: unknown): boolean {
-  const maybeError = error as { code?: string; message?: string } | null;
-  return (
-    maybeError?.code === "42703" &&
-    maybeError?.message?.includes("sessions.source") === true
-  );
-}
-
 async function getServerSupabase() {
   const { supabaseServer } = await import("../supabaseServer.js");
   return supabaseServer;
@@ -117,10 +109,6 @@ export async function getTelegramSessions(userId: string, limit = 15): Promise<S
     .limit(limit);
 
   if (error) {
-    if (isMissingSourceColumnError(error)) {
-      return getSessions(userId, limit);
-    }
-
     if (isMissingSessionAnalysisColumnError(error)) {
       const { data: legacyData, error: legacyError } = await supabase
         .from("sessions")
@@ -131,10 +119,6 @@ export async function getTelegramSessions(userId: string, limit = 15): Promise<S
         .limit(limit);
 
       if (legacyError) {
-        if (isMissingSourceColumnError(legacyError)) {
-          return getSessions(userId, limit);
-        }
-
         throw legacyError;
       }
 

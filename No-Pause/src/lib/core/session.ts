@@ -80,8 +80,7 @@ function isMissingSessionAnalysisColumnError(error: unknown): boolean {
     maybeError?.code === "42703" ||
     maybeError?.message?.includes("pause_count") === true ||
     maybeError?.message?.includes("filler_count") === true ||
-    maybeError?.message?.includes("hesitations_per_minute") === true ||
-    maybeError?.message?.includes("source") === true
+    maybeError?.message?.includes("hesitations_per_minute") === true
   );
 }
 
@@ -124,7 +123,6 @@ export async function insertSession(
         pause_count: _pauseCount,
         filler_count: _fillerCount,
         hesitations_per_minute: _hpm,
-        source: _source,
         ...legacyValues
       } = values;
       const { data: legacyData, error: legacyError } = await supabase
