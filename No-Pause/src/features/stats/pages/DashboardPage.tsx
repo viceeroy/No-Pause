@@ -248,14 +248,23 @@ export default function DashboardPage() {
         </div>
 
         <div className="mb-3 md:mb-10">
-          <h2 className="text-lg md:text-3xl font-serif font-medium text-foreground mb-2 md:mb-4">Prompts</h2>
-          <div className="-mx-4 md:-mx-12 lg:-mx-20 px-4 md:px-12 lg:px-20 overflow-x-auto scrollbar-hidden pb-1 md:pb-3">
-            <div className="flex gap-3 md:gap-4 min-w-max">
+          <div className="mb-2 md:mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg md:text-3xl font-serif font-medium text-foreground">Prompts</h2>
+            <button
+              type="button"
+              onClick={() => navigate('/prompts')}
+              className="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs md:text-sm font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-card btn-press transition-colors"
+            >
+              View more
+            </button>
+          </div>
+          <div className="max-h-[116px] md:max-h-[168px] overflow-hidden">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
               {homepagePrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => handlePromptClick(prompt)}
-                  className="w-[76vw] max-w-64 md:w-80 md:max-w-none min-h-24 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
+                  className="min-h-24 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
                 >
                   <span className="text-base md:text-2xl font-serif font-medium text-foreground leading-snug">{prompt}</span>
                   <span className="mt-3 md:mt-5 w-9 h-9 md:w-11 md:h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">

@@ -17,6 +17,7 @@ type UseRecordingControllerOptions = {
   mode: string;
   navigate: NavigateFunction;
   state: PracticeStateStore;
+  selectedTimerSeconds?: number;
 };
 
 type RecordingControllerResult = {
@@ -34,7 +35,7 @@ interface CustomWindow extends Window {
   __nopauseExportLogs?: () => void;
 }
 
-export function useRecordingController({ mode, navigate, state }: UseRecordingControllerOptions): RecordingControllerResult {
+export function useRecordingController({ mode, navigate, state, selectedTimerSeconds = 0 }: UseRecordingControllerOptions): RecordingControllerResult {
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionDataRef = useRef<{ startTime: number; sessionId: string } | null>(null);
@@ -338,7 +339,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
 
       sessionDataRef.current = { startTime: Date.now(), sessionId };
 
-      const duration = mode === 'lemon' ? LEMON_MIN_TOTAL_SECONDS : (mode === 'topic' ? TOPIC_MIN_TOTAL_SECONDS : 0);
+      const duration = mode === 'lemon' ? LEMON_MIN_TOTAL_SECONDS : (mode === 'topic' ? TOPIC_MIN_TOTAL_SECONDS : selectedTimerSeconds);
       setTimeLeft(duration);
       setElapsedTime(0);
       setShowMicRetry(false);
@@ -366,7 +367,7 @@ export function useRecordingController({ mode, navigate, state }: UseRecordingCo
       setTranscriptError('Failed to start recording. Please try again.');
       setState('setup');
     }
-  }, [mode, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
+  }, [mode, selectedTimerSeconds, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
 
   const handleStart = useCallback(async (forceRetryMic = false) => {
     try {

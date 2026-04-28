@@ -9,6 +9,7 @@ type RecordingPanelProps = {
   mode: string;
   timeLeft: number;
   elapsedTime: number;
+  selectedTimerSeconds?: number;
   lemonPrompt: LemonPrompt | null;
   topicPrompt: TopicPrompt | null;
   audioData: AudioDataPayload | null;
@@ -20,6 +21,7 @@ export function RecordingPanel({
   mode,
   timeLeft,
   elapsedTime,
+  selectedTimerSeconds = 0,
   lemonPrompt,
   topicPrompt,
   audioData,
@@ -70,14 +72,14 @@ export function RecordingPanel({
         )}
         {mode === 'free' && (
           <div className="p-6 md:p-10 bg-surface-card border-2 border-border/70 rounded-[32px] shadow-card relative overflow-hidden text-center">
-	            <div className="mb-3 flex items-start justify-between gap-3">
-	              <p className="text-[10px] text-primary uppercase tracking-widest font-black">Free Speak</p>
-	              <div className="flex shrink-0 items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold font-sans shadow-sm">
-	                <Timer size={16} className="animate-pulse" /> {formatTime(elapsedTime)}
-	              </div>
-	            </div>
-	            <p className="text-lg font-serif text-foreground italic">
-              "{topicPrompt?.topicTitle || 'Maintain your flow and speak freely...'}"
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <p className="text-[10px] text-primary uppercase tracking-widest font-black">Free Speak</p>
+              <div className="flex shrink-0 items-center gap-2 px-3 md:px-4 py-1 md:py-1.5 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold font-sans shadow-sm">
+                <Timer size={16} className="animate-pulse" /> {formatTime(selectedTimerSeconds > 0 ? timeLeft : elapsedTime)}
+              </div>
+            </div>
+            <p className="text-lg font-serif text-foreground">
+              {topicPrompt?.topicTitle || 'Speak freely'}
             </p>
           </div>
         )}

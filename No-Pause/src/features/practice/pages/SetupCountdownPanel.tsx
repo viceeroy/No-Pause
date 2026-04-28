@@ -1,4 +1,4 @@
-import { AlertTriangle, Mic, Sparkles, Timer } from 'lucide-react';
+import { AlertTriangle, Clock, FileText, Mic, Shuffle, Sparkles, Timer } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import {
   LEMON_MIN_TOTAL_SECONDS,
@@ -18,6 +18,16 @@ type SetupCountdownPanelProps = {
   topicPrompt: TopicPrompt | null;
   promptLoading: boolean;
   handleRandomPrompt: () => Promise<void>;
+  handlePromptClick: () => void;
+  handleRandomFreePrompt: () => Promise<void>;
+  selectedTimerSeconds: number;
+  timerLabel: string;
+  timerMenuOpen: boolean;
+  setTimerMenuOpen: (open: boolean) => void;
+  setSelectedTimerSeconds: (seconds: number) => void;
+  timerOptions: { label: string; seconds: number }[];
+  promptText: string;
+  randomPromptLoading: boolean;
   canStart: boolean;
   handleStart: () => Promise<void>;
   countdown: number;
@@ -33,6 +43,16 @@ export function SetupCountdownPanel({
   topicPrompt,
   promptLoading,
   handleRandomPrompt,
+  handlePromptClick,
+  handleRandomFreePrompt,
+  selectedTimerSeconds,
+  timerLabel,
+  timerMenuOpen,
+  setTimerMenuOpen,
+  setSelectedTimerSeconds,
+  timerOptions,
+  promptText,
+  randomPromptLoading,
   canStart,
   handleStart,
   countdown,
@@ -110,18 +130,78 @@ export function SetupCountdownPanel({
         )}
 
         {mode === 'free' && (
-          <div className="py-6">
+          <div className="py-4 md:py-6">
+            {state === 'setup' && (
+              <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+                    className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                  >
+                    <Clock size={15} className="text-primary" />
+                    {timerLabel}
+                  </button>
+                  {timerMenuOpen && (
+                    <div className="absolute left-1/2 top-full z-20 mt-2 w-36 -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
+                      {timerOptions.map((option) => (
+                        <button
+                          key={option.seconds}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTimerSeconds(option.seconds);
+                            setTimerMenuOpen(false);
+                          }}
+                          className={cn(
+                            'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
+                            selectedTimerSeconds === option.seconds
+                              ? 'bg-primary/15 text-foreground'
+                              : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePromptClick}
+                  className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                >
+                  <FileText size={15} className="text-primary" />
+                  Prompt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRandomFreePrompt()}
+                  disabled={randomPromptLoading}
+                  className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-2"
+                >
+                  <Shuffle size={15} className="text-primary" />
+                  Random
+                </button>
+              </div>
+            )}
+            <div className="mb-4 min-h-[52px]">
+              {promptText ? (
+                <>
+                  <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
+                  <p className="text-xl md:text-2xl font-serif font-medium text-foreground leading-snug max-w-xl mx-auto">{promptText}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
+                  <p className="text-lg md:text-xl font-serif text-muted-foreground leading-snug">Speak freely</p>
+                </>
+              )}
+            </div>
             <div className="w-20 h-20 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-4 night-glow">
               <Mic size={36} className="text-primary" />
             </div>
-            {topicPrompt && (
-              <div className="bg-surface-card border border-border/80 rounded-[28px] shadow-card p-5 md:p-7 mb-5 max-w-xl mx-auto">
-                <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-2">Argue this:</p>
-                <p className="text-xl md:text-2xl font-serif font-medium text-foreground leading-snug">{topicPrompt.topicTitle}</p>
-              </div>
-            )}
-            <p className="text-lg font-serif text-foreground max-w-md mx-auto leading-relaxed">
-              Speak freely without time limits. Focus on continuous speech and minimizing pauses.
+            <p className="text-sm md:text-base font-serif text-foreground/90 max-w-md mx-auto leading-relaxed">
+              Focus on continuous speech and minimizing pauses.
             </p>
           </div>
         )}

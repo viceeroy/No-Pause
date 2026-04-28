@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/shared/lib/utils';
 import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPanel';
 import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
@@ -9,17 +9,51 @@ import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { usePromptLoader } from '@/features/practice/pages/usePromptLoader';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
 import { ReadingChallengePanel } from '@/features/practice/pages/ReadingChallengePanel';
+import { getRandomTopicPrompt } from '@/features/practice/lib/promptService';
+
+const timerOptions = [
+  { label: 'No timer', seconds: 0 },
+  { label: '1 min', seconds: 60 },
+  { label: '2 min', seconds: 120 },
+  { label: '3 min', seconds: 180 },
+  { label: '4 min', seconds: 240 },
+  { label: '5 min', seconds: 300 },
+];
 
 export default function PracticePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [selectedTimerSeconds, setSelectedTimerSeconds] = useState(0);
+  const [timerMenuOpen, setTimerMenuOpen] = useState(false);
+  const [randomPromptLoading, setRandomPromptLoading] = useState(false);
   const state = usePracticeState();
   const prompt = usePromptLoader(state);
   const recording = useRecordingController({
     mode: prompt.mode,
     navigate,
     state,
+    selectedTimerSeconds,
   });
   const isPromptMode = prompt.mode === 'lemon' || prompt.mode === 'topic';
+  const promptText = state.topicPrompt?.topicTitle || searchParams.get('prompt_text') || '';
+  const timerLabel = useMemo(
+    () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
+    [selectedTimerSeconds],
+  );
+
+  const handlePromptClick = () => {
+    navigate('/prompts');
+  };
+
+  const handleRandomFreePrompt = async () => {
+    setRandomPromptLoading(true);
+    try {
+      const picked = await getRandomTopicPrompt();
+      navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(picked.topicTitle)}`, { replace: true });
+    } finally {
+      setRandomPromptLoading(false);
+    }
+  };
 
   const canStart =
     prompt.mode === 'free' ||
@@ -78,6 +112,16 @@ export default function PracticePage() {
           topicPrompt={state.topicPrompt}
           promptLoading={state.promptLoading}
           handleRandomPrompt={prompt.handleRandomPrompt}
+          handlePromptClick={handlePromptClick}
+          handleRandomFreePrompt={handleRandomFreePrompt}
+          selectedTimerSeconds={selectedTimerSeconds}
+          timerLabel={timerLabel}
+          timerMenuOpen={timerMenuOpen}
+          setTimerMenuOpen={setTimerMenuOpen}
+          setSelectedTimerSeconds={setSelectedTimerSeconds}
+          timerOptions={timerOptions}
+          promptText={promptText}
+          randomPromptLoading={randomPromptLoading}
           canStart={canStart}
           handleStart={() => recording.handleStart()}
           countdown={state.countdown}
@@ -89,6 +133,7 @@ export default function PracticePage() {
           mode={prompt.mode}
           timeLeft={state.timeLeft}
           elapsedTime={state.elapsedTime}
+          selectedTimerSeconds={selectedTimerSeconds}
           lemonPrompt={state.lemonPrompt}
           topicPrompt={state.topicPrompt}
           audioData={state.audioData}
