@@ -131,78 +131,86 @@ export function SetupCountdownPanel({
 
         {mode === 'free' && (
           <div className="py-4 md:py-6">
-            {state === 'setup' && (
-              <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setTimerMenuOpen(!timerMenuOpen)}
-                    className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
-                  >
-                    <Clock size={15} className="text-primary" />
-                    {timerLabel}
-                  </button>
-                  {timerMenuOpen && (
-                    <div className="absolute left-1/2 top-full z-20 mt-2 w-36 -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
-                      {timerOptions.map((option) => (
-                        <button
-                          key={option.seconds}
-                          type="button"
-                          onClick={() => {
-                            setSelectedTimerSeconds(option.seconds);
-                            setTimerMenuOpen(false);
-                          }}
-                          className={cn(
-                            'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
-                            selectedTimerSeconds === option.seconds
-                              ? 'bg-primary/15 text-foreground'
-                              : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={handlePromptClick}
-                  className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
-                >
-                  <FileText size={15} className="text-primary" />
-                  Prompt
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleRandomFreePrompt()}
-                  disabled={randomPromptLoading}
-                  className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-2"
-                >
-                  <Shuffle size={15} className="text-primary" />
-                  Random
-                </button>
-              </div>
-            )}
             <div className="mb-4 min-h-[52px]">
               {promptText ? (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
-                  <p className="text-xl md:text-2xl font-serif font-medium text-foreground leading-snug max-w-xl mx-auto">{promptText}</p>
+                  <p className="text-2xl md:text-4xl font-serif font-medium text-foreground leading-tight max-w-2xl mx-auto">{promptText}</p>
                 </>
               ) : (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
-                  <p className="text-lg md:text-xl font-serif text-muted-foreground leading-snug">Speak freely</p>
+                  <p className="text-2xl md:text-4xl font-serif font-medium text-foreground leading-tight">Speak freely</p>
                 </>
               )}
             </div>
-            <div className="w-20 h-20 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-4 night-glow">
+            <button
+              type="button"
+              onClick={() => void handleStart()}
+              disabled={!canStart || promptLoading}
+              className="w-24 h-24 md:w-28 md:h-28 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-2 night-glow btn-press hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              aria-label="Start speaking"
+            >
               <Mic size={36} className="text-primary" />
-            </div>
-            <p className="text-sm md:text-base font-serif text-foreground/90 max-w-md mx-auto leading-relaxed">
-              Focus on continuous speech and minimizing pauses.
-            </p>
+            </button>
+            {state === 'setup' && (
+              <>
+                <p className="mb-4 text-xs md:text-sm font-sans text-muted-foreground/70">
+                  Tap the mic to start speaking
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+                      className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                    >
+                      <Clock size={15} className="text-primary" />
+                      {timerLabel}
+                    </button>
+                    {timerMenuOpen && (
+                      <div className="absolute left-1/2 bottom-full z-20 mb-2 w-36 -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
+                        {timerOptions.map((option) => (
+                          <button
+                            key={option.seconds}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTimerSeconds(option.seconds);
+                              setTimerMenuOpen(false);
+                            }}
+                            className={cn(
+                              'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
+                              selectedTimerSeconds === option.seconds
+                                ? 'bg-primary/15 text-foreground'
+                                : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePromptClick}
+                    className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                  >
+                    <FileText size={15} className="text-primary" />
+                    Prompt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRandomFreePrompt()}
+                    disabled={randomPromptLoading}
+                    className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-2"
+                  >
+                    <Shuffle size={15} className="text-primary" />
+                    Random
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -223,16 +231,19 @@ export function SetupCountdownPanel({
                   <Sparkles size={18} className="text-primary" /> Randomize
                 </button>
               )}
-              <button
-                onClick={() => void handleStart()}
-                disabled={!canStart || promptLoading}
-                className={cn(
-                  'w-full md:w-auto rounded-full bg-primary hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-sans font-bold btn-press flex items-center justify-center gap-2 shadow-soft night-glow',
-	                  isPromptMode ? 'min-h-11 px-8 py-2.5 text-sm' : 'min-h-11 px-10 py-3'
-                )}
-              >
-                <Mic size={20} /> Start Speaking
-              </button>
+              {mode !== 'free' && (
+                <button
+                  onClick={() => void handleStart()}
+                  disabled={!canStart || promptLoading}
+                  className={cn(
+                    'w-full md:w-auto rounded-full bg-primary hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-sans font-bold btn-press flex items-center justify-center gap-2 shadow-soft night-glow',
+                    isPromptMode ? 'min-h-11 px-8 py-2.5 text-sm' : 'min-h-11 px-10 py-3'
+                  )}
+                  aria-label="Start speaking"
+                >
+                  <Mic size={20} />
+                </button>
+              )}
             </div>
           </div>
         ) : (

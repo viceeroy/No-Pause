@@ -428,18 +428,9 @@ export function useRecordingController({ mode, navigate, state, selectedTimerSec
 
       analyzerRef.current = analyzer;
 
-      setState('countdown');
-      let count = 3;
-      setCountdown(count);
-
-      const countdownInterval = setInterval(() => {
-        count--;
-        setCountdown(count);
-        if (count === 0) {
-          clearInterval(countdownInterval);
-          void startRecording();
-        }
-      }, 1000);
+      setCountdown(0);
+      micInitializingRef.current = false;
+      await startRecording();
     } catch (error) {
       console.error('Error starting recording:', error);
       setState('setup');
