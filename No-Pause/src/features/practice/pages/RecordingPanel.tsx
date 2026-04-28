@@ -1,6 +1,5 @@
-import { Mic, Square, Timer } from 'lucide-react';
+import { Square } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
 import type { LemonPrompt, TopicPrompt } from '../lib/promptService';
 import { formatTime } from './time';
@@ -38,6 +37,11 @@ export function RecordingPanel({
         ? topicPrompt?.topicTitle
         : promptText;
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
+  const volumeLevel = Math.min(1, Math.max(audioData?.volume ?? audioData?.rms ?? 0, 0) * 28);
+  const isVisuallyActive = soundDetected || volumeLevel > 0;
+  const ringScale = 1 + volumeLevel * 0.18;
+  const ringOpacity = (isVisuallyActive ? 0.45 : 0.28) + volumeLevel * 0.45;
+  const coreScale = 1 + volumeLevel * 0.08;
 
   return (
     <div className={cn(
@@ -63,35 +67,20 @@ export function RecordingPanel({
 
       <div className="w-full flex-1 flex flex-col items-center justify-start min-h-0 pt-1 md:justify-center md:pt-0">
         <div
-          className={cn(
-            'relative flex h-52 w-52 items-center justify-center rounded-full border bg-surface-card shadow-card transition-all duration-500 md:h-72 md:w-72',
-            soundDetected
-              ? 'border-primary/45 night-glow'
-              : 'border-border/80'
-          )}
+          className="relative flex h-52 w-52 items-center justify-center rounded-full md:h-72 md:w-72"
           aria-label="Recording in progress"
         >
-          <div className={cn(
-            'absolute inset-3 rounded-full border transition-colors duration-500',
-            soundDetected ? 'border-primary/25' : 'border-border/50'
-          )} />
-          <div className={cn(
-            'absolute inset-8 rounded-full transition-all duration-500',
-            soundDetected ? 'bg-primary/10 blur-sm' : 'bg-muted/20'
-          )} />
-          <div className="absolute top-7 z-10 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-sans font-bold text-foreground shadow-sm backdrop-blur-sm md:top-9 md:px-4 md:text-sm">
-            <Timer size={15} className="text-primary" />
+          <div
+            className="absolute inset-0 rounded-full border-2 border-primary/60 transition-all duration-150 ease-out"
+            style={{ opacity: ringOpacity, transform: `scale(${ringScale})` }}
+          />
+          <div className="absolute inset-5 rounded-full border border-primary/25 animate-pulse md:inset-7" />
+          <div
+            className="absolute inset-12 rounded-full bg-primary/10 blur-sm transition-transform duration-150 ease-out md:inset-16"
+            style={{ transform: `scale(${coreScale})` }}
+          />
+          <div className="relative z-10 font-serif text-5xl font-medium leading-none text-primary md:text-7xl">
             {formatTime(timerValue)}
-          </div>
-          <div className="absolute inset-x-8 bottom-14 top-20 md:inset-x-10 md:bottom-20 md:top-24">
-            {audioData ? (
-              <VoiceVisualizer frequencyData={audioData.frequencyData} volume={audioData.volume} isSilent={audioData.isSilent} isRecording={true} />
-            ) : (
-              <VoiceVisualizer isSilent={true} isRecording={true} />
-            )}
-          </div>
-          <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft md:h-24 md:w-24">
-            <Mic size={38} className={cn(soundDetected && 'animate-pulse')} />
           </div>
         </div>
       </div>

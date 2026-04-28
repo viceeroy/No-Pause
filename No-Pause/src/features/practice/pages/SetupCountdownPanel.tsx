@@ -145,19 +145,16 @@ export function SetupCountdownPanel({
               )}
             </div>
             <div className="flex w-full flex-col items-center">
-              <button
-                type="button"
-                onClick={() => void handleStart()}
-                disabled={!canStart || promptLoading}
-                className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-3 night-glow btn-press hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                aria-label="Start speaking"
+              <div
+                className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-3 night-glow"
+                aria-hidden="true"
               >
                 <Mic size={44} className="text-primary md:size-16 lg:size-20" />
-              </button>
+              </div>
               {state === 'setup' && (
                 <>
                   <p className="mb-3 md:mb-5 text-xs md:text-sm font-sans text-muted-foreground/70">
-                    Tap the mic to start speaking
+                    Tap Start to begin
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     <div className="relative">
@@ -210,6 +207,14 @@ export function SetupCountdownPanel({
                       Random
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleStart()}
+                    disabled={!canStart || promptLoading}
+                    className="mt-5 min-h-12 w-full max-w-xs rounded-full bg-primary px-8 py-3 text-sm font-sans font-black text-primary-foreground shadow-soft night-glow btn-press hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed md:mt-6 md:w-auto md:min-w-56 md:text-base"
+                  >
+                    Start Speaking
+                  </button>
                 </>
               )}
             </div>
