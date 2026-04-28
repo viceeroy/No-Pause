@@ -77,13 +77,13 @@ export default function PracticePage() {
 
   return (
     <div className={cn(
-      'px-5 md:px-12 lg:px-20 max-w-4xl mx-auto',
+      'px-5 md:px-12 lg:px-20 max-w-5xl mx-auto',
       state.isFixedScreen
         ? state.state === 'recording'
           ? 'h-[100dvh] flex flex-col overflow-hidden'
           : isPromptMode
-	            ? 'h-[100dvh] flex flex-col overflow-hidden pt-2 pb-4'
-            : 'min-h-screen flex flex-col pb-28 pt-2'
+            ? 'h-[100dvh] flex flex-col overflow-hidden pt-2 pb-4'
+            : 'min-h-screen flex flex-col pb-10 md:pb-16 pt-2'
         : 'min-h-screen pb-32 pt-8'
     )}>
       {state.isFixedScreen && <div className="shrink-0 pt-6" />}
@@ -96,8 +96,8 @@ export default function PracticePage() {
 
       {state.state !== 'recording' && (
         <>
-          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-4xl mb-1' : 'text-4xl md:text-5xl mb-3')}>{prompt.getModeTitle()}</h1>
-          <p className={cn('text-muted-foreground font-sans shrink-0', state.isFixedScreen ? 'text-sm mb-4' : 'text-base mb-12')}>{prompt.getModeDescription()}</p>
+          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-1 md:mb-2' : 'text-4xl md:text-5xl mb-3')}>{prompt.getModeTitle()}</h1>
+          <p className={cn('text-muted-foreground font-sans shrink-0', state.isFixedScreen ? 'text-sm md:text-base mb-3 md:mb-6' : 'text-base mb-12')}>{prompt.getModeDescription()}</p>
         </>
       )}
 
@@ -134,6 +134,7 @@ export default function PracticePage() {
           timeLeft={state.timeLeft}
           elapsedTime={state.elapsedTime}
           selectedTimerSeconds={selectedTimerSeconds}
+          promptText={promptText}
           lemonPrompt={state.lemonPrompt}
           topicPrompt={state.topicPrompt}
           audioData={state.audioData}

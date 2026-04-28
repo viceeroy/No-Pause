@@ -62,7 +62,7 @@ export function SetupCountdownPanel({
   return (
     <div className={cn(
       'text-center flex-1 flex flex-col justify-start',
-	      isPromptMode ? 'overflow-y-auto scrollbar-hidden pb-10' : 'overflow-y-auto scrollbar-hidden pb-28'
+      isPromptMode ? 'overflow-y-auto scrollbar-hidden pb-10' : 'overflow-visible pb-6 md:pb-8'
     )}>
       {transcriptError && (
         <div className="mb-4 p-3 bg-orange-950/40 border border-orange-500/40 rounded-2xl w-full max-w-md mx-auto shrink-0">
@@ -130,17 +130,17 @@ export function SetupCountdownPanel({
         )}
 
         {mode === 'free' && (
-          <div className="py-4 md:py-6">
-            <div className="mb-4 min-h-[52px]">
+          <div className="flex min-h-[calc(100dvh-210px)] md:min-h-[calc(100dvh-260px)] flex-col items-center justify-center py-3 md:py-8">
+            <div className="mb-5 md:mb-8 min-h-[64px] md:min-h-[120px] w-full">
               {promptText ? (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
-                  <p className="text-2xl md:text-4xl font-serif font-medium text-foreground leading-tight max-w-2xl mx-auto">{promptText}</p>
+                  <p className="text-2xl md:text-5xl lg:text-6xl font-serif font-medium text-foreground leading-tight max-w-4xl mx-auto">{promptText}</p>
                 </>
               ) : (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
-                  <p className="text-2xl md:text-4xl font-serif font-medium text-foreground leading-tight">Speak freely</p>
+                  <p className="text-3xl md:text-5xl lg:text-6xl font-serif font-medium text-foreground leading-tight">Speak freely</p>
                 </>
               )}
             </div>
@@ -148,14 +148,14 @@ export function SetupCountdownPanel({
               type="button"
               onClick={() => void handleStart()}
               disabled={!canStart || promptLoading}
-              className="w-24 h-24 md:w-28 md:h-28 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-2 night-glow btn-press hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-3 night-glow btn-press hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="Start speaking"
             >
-              <Mic size={36} className="text-primary" />
+              <Mic size={44} className="text-primary md:size-16 lg:size-20" />
             </button>
             {state === 'setup' && (
               <>
-                <p className="mb-4 text-xs md:text-sm font-sans text-muted-foreground/70">
+                <p className="mb-4 md:mb-6 text-xs md:text-sm font-sans text-muted-foreground/70">
                   Tap the mic to start speaking
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -169,7 +169,7 @@ export function SetupCountdownPanel({
                       {timerLabel}
                     </button>
                     {timerMenuOpen && (
-                      <div className="absolute left-1/2 bottom-full z-20 mb-2 w-36 -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
+                      <div className="absolute left-0 top-full z-20 mt-2 w-36 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float sm:left-1/2 sm:-translate-x-1/2">
                         {timerOptions.map((option) => (
                           <button
                             key={option.seconds}

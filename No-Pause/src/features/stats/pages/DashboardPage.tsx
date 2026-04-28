@@ -258,13 +258,17 @@ export default function DashboardPage() {
               View more
             </button>
           </div>
-          <div className="max-h-[116px] md:max-h-[168px] overflow-hidden">
+          <div className="max-h-[132px] md:max-h-[188px] overflow-hidden">
             <div className="flex flex-wrap justify-center sm:justify-start gap-2.5 md:gap-4">
-              {homepagePrompts.map((prompt) => (
+              {homepagePrompts.slice(0, 4).map((prompt, index) => (
                 <button
                   key={prompt}
                   onClick={() => handlePromptClick(prompt)}
-                  className="w-[calc(50%-0.3125rem)] max-w-[240px] sm:w-[220px] md:w-[240px] min-h-24 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
+                  className={cn(
+                    'w-[calc(50%-0.3125rem)] max-w-[240px] sm:w-[220px] md:w-[240px] min-h-24 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press flex flex-col justify-between',
+                    index >= 2 && 'hidden sm:flex',
+                    index >= 3 && 'sm:hidden lg:flex'
+                  )}
                 >
                   <span className="text-base md:text-2xl font-serif font-medium text-foreground leading-snug line-clamp-3">{prompt}</span>
                   <span className="mt-3 md:mt-5 w-9 h-9 md:w-11 md:h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">
