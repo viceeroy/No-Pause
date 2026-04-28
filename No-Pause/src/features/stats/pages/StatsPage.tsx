@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Flame, Clock, TrendingUp, LogOut } from 'lucide-react';
+import { Target, Flame, Clock, TrendingUp, LogOut, Instagram, Send } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
@@ -194,8 +194,12 @@ export default function StatsPage({
     setShowInstallHelp(true);
   };
 
+  const openExternal = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-	    <div className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto">
+	    <div className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto scrollbar-hidden">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Stats</h1>
@@ -226,6 +230,22 @@ export default function StatsPage({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openExternal('https://instagram.com/nopause_org')}
+            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/75 hover:text-muted-foreground btn-press transition-colors"
+            aria-label="Instagram"
+          >
+            <Instagram size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => openExternal('https://t.me/nopause_org')}
+            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/75 hover:text-muted-foreground btn-press transition-colors"
+            aria-label="Telegram"
+          >
+            <Send size={18} />
+          </button>
           {isInstallEligible && !isInstalled && (
             <button
               type="button"

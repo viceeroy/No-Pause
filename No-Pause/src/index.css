@@ -100,27 +100,21 @@ body::before {
     linear-gradient(180deg, rgba(21, 24, 32, 0.96), rgba(11, 13, 18, 0.96));
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: hsl(220 14% 30%);
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(18 54% 52%);
-}
-
 .font-serif {
   font-family: 'Playfair Display', serif;
 }
 
 .font-sans {
   font-family: 'Nunito', sans-serif;
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
 }
 
 .waveform-canvas {

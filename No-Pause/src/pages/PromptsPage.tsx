@@ -56,7 +56,7 @@ export default function PromptsPage() {
 
       <div className="mb-10">
         <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">Argue This</h2>
-	        <div className="-mx-5 md:-mx-12 lg:-mx-20 px-5 md:px-12 lg:px-20 overflow-x-auto pb-3">
+	        <div className="-mx-5 md:-mx-12 lg:-mx-20 px-5 md:px-12 lg:px-20 overflow-x-auto scrollbar-hidden pb-3">
 	          <div className="flex gap-3 md:gap-4 min-w-max">
             {arguePrompts.map((prompt) => (
               <button

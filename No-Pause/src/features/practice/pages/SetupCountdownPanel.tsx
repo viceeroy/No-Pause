@@ -42,7 +42,7 @@ export function SetupCountdownPanel({
   return (
     <div className={cn(
       'text-center flex-1 flex flex-col justify-start',
-	      isPromptMode ? 'overflow-y-auto pb-10' : 'overflow-y-auto pb-28'
+	      isPromptMode ? 'overflow-y-auto scrollbar-hidden pb-10' : 'overflow-y-auto scrollbar-hidden pb-28'
     )}>
       {transcriptError && (
         <div className="mb-4 p-3 bg-orange-950/40 border border-orange-500/40 rounded-2xl w-full max-w-md mx-auto shrink-0">

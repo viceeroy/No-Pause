@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Download, Instagram, Send, Flame, Target, Clock, TrendingUp, Play } from 'lucide-react';
+import { Mic, Download, Flame, Target, Clock, TrendingUp, Play } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
@@ -83,21 +83,17 @@ export default function DashboardPage() {
     sub?: string;
     valueClassName?: string;
   }) => (
-	    <div className="rounded-[18px] md:rounded-[20px] border shadow-card elevation-card p-3.5 md:p-5 min-h-[92px] md:min-h-[112px]">
-	      <div className="flex items-start justify-between gap-2 mb-1.5 md:mb-2">
-	        <p className="text-xs md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
-	        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1.5">
+	    <div className="rounded-[16px] md:rounded-[20px] border shadow-card elevation-card p-3 md:p-5 min-h-[76px] md:min-h-[112px]">
+	      <div className="flex items-start justify-between gap-2 mb-1 md:mb-2">
+	        <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
+	        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1 md:p-1.5">
           <Icon size={14} className="text-primary" />
         </div>
       </div>
-	      <p className={cn('text-xl md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
+	      <p className={cn('text-lg md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
     </div>
   );
-
-  const openExternal = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
 
   const handleInstallClick = async () => {
     if (!isInstallEligible || isInstalled) return;
@@ -158,12 +154,12 @@ export default function DashboardPage() {
       .join('') || 'NP';
 
   return (
-	    <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto">
+	    <div className="min-h-dvh md:min-h-screen pb-8 md:pb-32 px-4 md:px-12 lg:px-20 pt-4 md:pt-8 max-w-6xl mx-auto scrollbar-hidden">
       {/* Header */}
-	      <div className="flex items-start justify-between gap-3 mb-8 md:mb-12">
+	      <div className="flex items-start justify-between gap-3 mb-3 md:mb-12">
 	        <div className="text-left">
-	          <h1 className="text-3xl md:text-6xl font-serif font-medium text-foreground mb-2 md:mb-4 tracking-tight">No Pause</h1>
-	          <h2 className="text-base md:text-2xl font-serif font-semibold text-foreground/95 tracking-tight">
+	          <h1 className="text-3xl md:text-6xl font-serif font-medium text-foreground mb-1 md:mb-4 tracking-tight">No Pause</h1>
+	          <h2 className="text-sm md:text-2xl font-serif font-semibold text-foreground/95 tracking-tight">
 	            Real-time speaking analytics tool.
 	          </h2>
         </div>
@@ -232,25 +228,28 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Speaking Area */}
-      <div className="flex flex-col mb-4 md:mb-6">
-        <div
-          onClick={handleCardClick}
-	          className="rounded-[20px] md:rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-5 md:p-12 mb-4 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
-        >
-	          <div className="flex justify-center mb-4 md:mb-6">
-	            <div className="relative h-[72px] w-[72px] md:w-32 md:h-32 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
-	              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
-	              <Mic size={30} className="md:hidden text-primary relative z-10" />
-              <Mic size={56} className="hidden md:block text-primary relative z-10" />
-            </div>
+      <div className="flex min-h-[calc(100dvh-92px)] md:min-h-0 flex-col">
+      <div className="order-2 md:order-3 mb-3 md:mb-10">
+        <h2 className="text-lg md:text-3xl font-serif font-medium text-foreground mb-2 md:mb-4">Prompts</h2>
+	      <div className="-mx-4 md:-mx-12 lg:-mx-20 px-4 md:px-12 lg:px-20 overflow-x-auto scrollbar-hidden pb-1 md:pb-3">
+	        <div className="flex gap-3 md:gap-4 min-w-max">
+            {homepagePrompts.map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => handlePromptClick(prompt)}
+	              className="w-[76vw] max-w-64 md:w-80 md:max-w-none min-h-24 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
+              >
+	              <span className="text-base md:text-2xl font-serif font-medium text-foreground leading-snug">{prompt}</span>
+	              <span className="mt-3 md:mt-5 w-9 h-9 md:w-11 md:h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">
+                  <Play size={14} fill="currentColor" />
+                </span>
+              </button>
+            ))}
           </div>
-	          <h3 className="text-lg md:text-2xl font-serif text-foreground mb-1">Free Speaking</h3>
-	          <p className="text-xs md:text-base text-muted-foreground font-sans">Practice continuous speaking without time limits</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+      <div className="order-3 md:order-2 grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4 mb-3 md:mb-8">
         <OverviewCard icon={Flame} label="Current Streak" value={statsLoading ? '...' : `${stats.currentStreak}/${stats.bestStreak}`} />
         <OverviewCard icon={Target} label="Scored Sessions" value={statsLoading ? '...' : stats.scoredSessions} />
         <OverviewCard
@@ -261,42 +260,23 @@ export default function DashboardPage() {
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={statsLoading ? '...' : stats.avgFlowScore} />
       </div>
 
-      <div className="mb-10">
-        <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">Prompts</h2>
-	      <div className="-mx-5 md:-mx-12 lg:-mx-20 px-5 md:px-12 lg:px-20 overflow-x-auto pb-3">
-	        <div className="flex gap-3 md:gap-4 min-w-max">
-            {homepagePrompts.map((prompt) => (
-              <button
-                key={prompt}
-                onClick={() => handlePromptClick(prompt)}
-	              className="w-60 md:w-80 min-h-32 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-4 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
-              >
-	              <span className="text-lg md:text-2xl font-serif font-medium text-foreground leading-snug">{prompt}</span>
-	              <span className="mt-4 md:mt-5 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">
-                  <Play size={16} fill="currentColor" />
-                </span>
-              </button>
-            ))}
+      {/* Speaking Area */}
+      <div className="order-4 md:order-1 flex flex-1 flex-col mb-0 md:mb-6">
+        <div
+          onClick={handleCardClick}
+	          className="rounded-[20px] md:rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-4 md:p-12 mb-0 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group flex flex-1 min-h-[150px] md:min-h-0 flex-col justify-center"
+        >
+	          <div className="flex justify-center mb-3 md:mb-6">
+	            <div className="relative h-16 w-16 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
+	              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
+	              <Mic size={28} className="md:hidden text-primary relative z-10" />
+              <Mic size={56} className="hidden md:block text-primary relative z-10" />
+            </div>
           </div>
+	          <h3 className="text-lg md:text-2xl font-serif text-foreground mb-1">Free Speaking</h3>
+	          <p className="text-xs md:text-base text-muted-foreground font-sans">Practice continuous speaking without time limits</p>
         </div>
       </div>
-
-      {/* Social Icons */}
-      <div className="flex items-center justify-center gap-4 mb-14">
-        <button
-          onClick={() => openExternal('https://instagram.com/nopause_org')}
-          className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground btn-press transition-colors"
-          aria-label="Instagram"
-        >
-          <Instagram size={22} />
-        </button>
-        <button
-          onClick={() => openExternal('https://t.me/nopause_org')}
-          className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground/80 hover:text-muted-foreground btn-press transition-colors"
-          aria-label="Telegram"
-        >
-          <Send size={22} />
-        </button>
       </div>
 
     </div>
