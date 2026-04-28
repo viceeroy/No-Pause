@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, FileText, Mic, Shuffle, Sparkles, Timer } from 'lucide-react';
+import { AlertTriangle, Clock, FileText, Shuffle, Sparkles, Timer } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import {
   LEMON_MIN_TOTAL_SECONDS,
@@ -131,7 +131,7 @@ export function SetupCountdownPanel({
 
         {mode === 'free' && (
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-start py-1 md:min-h-[calc(100dvh-260px)] md:justify-center md:py-8">
-            <div className="mb-6 min-h-[78px] w-full md:mb-10 md:min-h-[120px]">
+            <div className="mb-8 min-h-[78px] w-full md:mb-12 md:min-h-[120px]">
               {promptText ? (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
@@ -145,17 +145,8 @@ export function SetupCountdownPanel({
               )}
             </div>
             <div className="flex w-full flex-col items-center">
-              <div
-                className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-3 night-glow"
-                aria-hidden="true"
-              >
-                <Mic size={44} className="text-primary md:size-16 lg:size-20" />
-              </div>
               {state === 'setup' && (
                 <>
-                  <p className="mb-3 md:mb-5 text-xs md:text-sm font-sans text-muted-foreground/70">
-                    Tap Start to begin
-                  </p>
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     <div className="relative">
                       <button
@@ -211,7 +202,7 @@ export function SetupCountdownPanel({
                     type="button"
                     onClick={() => void handleStart()}
                     disabled={!canStart || promptLoading}
-                    className="mt-5 min-h-12 w-full max-w-xs rounded-full bg-primary px-8 py-3 text-sm font-sans font-black text-primary-foreground shadow-soft night-glow btn-press hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed md:mt-6 md:w-auto md:min-w-56 md:text-base"
+                    className="mt-5 w-full max-w-xs rounded-full bg-primary px-10 py-3 text-base font-sans font-black text-primary-foreground shadow-soft night-glow btn-press hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed sm:px-16 sm:py-4 sm:text-lg md:mt-6 md:w-auto md:max-w-none"
                   >
                     Start Speaking
                   </button>
@@ -248,7 +239,7 @@ export function SetupCountdownPanel({
                   )}
                   aria-label="Start speaking"
                 >
-                  <Mic size={20} />
+                  Start Speaking
                 </button>
               )}
             </div>

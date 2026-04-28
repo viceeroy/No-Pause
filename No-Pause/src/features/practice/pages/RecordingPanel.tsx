@@ -41,7 +41,6 @@ export function RecordingPanel({
   const isVisuallyActive = soundDetected || volumeLevel > 0;
   const ringScale = 1 + volumeLevel * 0.18;
   const ringOpacity = (isVisuallyActive ? 0.45 : 0.28) + volumeLevel * 0.45;
-  const coreScale = 1 + volumeLevel * 0.08;
 
   return (
     <div className={cn(
@@ -73,11 +72,6 @@ export function RecordingPanel({
           <div
             className="absolute inset-0 rounded-full border-2 border-primary/60 transition-all duration-150 ease-out"
             style={{ opacity: ringOpacity, transform: `scale(${ringScale})` }}
-          />
-          <div className="absolute inset-5 rounded-full border border-primary/25 animate-pulse md:inset-7" />
-          <div
-            className="absolute inset-12 rounded-full bg-primary/10 blur-sm transition-transform duration-150 ease-out md:inset-16"
-            style={{ transform: `scale(${coreScale})` }}
           />
           <div className="relative z-10 font-serif text-5xl font-medium leading-none text-primary md:text-7xl">
             {formatTime(timerValue)}

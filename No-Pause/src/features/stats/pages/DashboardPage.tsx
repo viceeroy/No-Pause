@@ -258,14 +258,19 @@ export default function DashboardPage() {
               View more
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
-            {homepagePrompts.slice(0, 4).map((prompt) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
+            {homepagePrompts.slice(0, 4).map((prompt, index) => (
                 <button
                   key={prompt}
                   onClick={() => handlePromptClick(prompt)}
-                  className="min-h-28 md:min-h-36 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press flex items-start"
+                  className={cn(
+                    'min-h-24 md:min-h-36 rounded-2xl bg-surface-elevated border border-border shadow-card p-3 md:p-5 text-left card-hover btn-press items-start',
+                    index === 2 && 'hidden sm:flex',
+                    index === 3 && 'hidden lg:flex',
+                    index < 2 && 'flex'
+                  )}
                 >
-                  <span className="text-base md:text-2xl font-serif font-medium text-foreground leading-snug line-clamp-3">{prompt}</span>
+                  <span className="text-sm sm:text-base md:text-2xl font-serif font-medium text-foreground leading-snug line-clamp-3">{prompt}</span>
                 </button>
               ))}
           </div>
