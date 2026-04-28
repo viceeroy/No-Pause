@@ -130,7 +130,7 @@ export function SetupCountdownPanel({
         )}
 
         {mode === 'free' && (
-          <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-start py-1 md:min-h-[calc(100dvh-260px)] md:justify-center md:py-8">
+          <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-start py-1 md:min-h-[calc(100dvh-260px)] md:py-8">
             <div className="mb-8 min-h-[78px] w-full md:mb-12 md:min-h-[120px]">
               {promptText ? (
                 <>
@@ -144,17 +144,17 @@ export function SetupCountdownPanel({
                 </>
               )}
             </div>
-            <div className="flex w-full flex-col items-center">
+            <div className="flex w-full flex-1 flex-col items-center justify-end pb-2 md:pb-6">
               {state === 'setup' && (
                 <>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
+                  <div className="flex flex-nowrap items-center justify-center gap-2 md:gap-3">
                     <div className="relative">
                       <button
                         type="button"
                         onClick={() => setTimerMenuOpen(!timerMenuOpen)}
-                        className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                        className="min-h-10 rounded-full bg-surface-card border border-border px-3 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-1.5 md:min-h-11 md:px-4 md:text-sm md:gap-2"
                       >
-                        <Clock size={15} className="text-primary" />
+                        <Clock size={15} className="text-primary shrink-0" />
                         {timerLabel}
                       </button>
                       {timerMenuOpen && (
@@ -183,18 +183,18 @@ export function SetupCountdownPanel({
                     <button
                       type="button"
                       onClick={handlePromptClick}
-                      className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                      className="min-h-10 rounded-full bg-surface-card border border-border px-3 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-1.5 md:min-h-11 md:px-4 md:text-sm md:gap-2"
                     >
-                      <FileText size={15} className="text-primary" />
+                      <FileText size={15} className="text-primary shrink-0" />
                       Prompt
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleRandomFreePrompt()}
                       disabled={randomPromptLoading}
-                      className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-2"
+                      className="min-h-10 rounded-full bg-surface-card border border-border px-3 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-1.5 md:min-h-11 md:px-4 md:text-sm md:gap-2"
                     >
-                      <Shuffle size={15} className="text-primary" />
+                      <Shuffle size={15} className="text-primary shrink-0" />
                       Random
                     </button>
                   </div>
@@ -202,7 +202,7 @@ export function SetupCountdownPanel({
                     type="button"
                     onClick={() => void handleStart()}
                     disabled={!canStart || promptLoading}
-                    className="mt-5 w-full max-w-xs rounded-full bg-primary px-10 py-3 text-base font-sans font-black text-primary-foreground shadow-soft night-glow btn-press hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed sm:px-16 sm:py-4 sm:text-lg md:mt-6 md:w-auto md:max-w-none"
+                    className="mt-5 w-full md:w-auto rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press shadow-soft night-glow flex items-center justify-center gap-4 px-10 sm:px-16 py-3 sm:py-4 text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed md:mt-6"
                   >
                     Start Speaking
                   </button>
