@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Toaster } from "@/shared/components/ui/toaster";
 import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useServiceWorkerUpdate } from "@/providers/ServiceWorkerUpdateContext";
 import { getRouteSeoConfig, seoDefaults } from "@/shared/seo/routeSeo";
-import { getNavTabIndex, navTabs } from "@/shared/lib/navTabs";
 import DashboardPage from "@/features/stats/pages/DashboardPage";
 import PracticePage from "./pages/PracticePage";
 import StatsPage from "@/features/stats/pages/StatsPage";
@@ -86,89 +85,18 @@ const RouteSeoManager = () => {
 
 const AppRoutes = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const isPractice = location.pathname.startsWith('/practice');
   const { hasPendingUpdate, applyUpdateIfAvailable } = useServiceWorkerUpdate();
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
-  const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
 
   useEffect(() => {
     if (!hasPendingUpdate || isPractice) return;
     void applyUpdateIfAvailable();
   }, [hasPendingUpdate, isPractice, applyUpdateIfAvailable]);
 
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return;
-    if (document.body.dataset.recording === 'true') return;
-    const touch = event.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  };
-
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (isSwipeAnimating) return;
-    if (document.body.dataset.recording === 'true') return;
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start || event.changedTouches.length === 0) return;
-
-    const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - start.x;
-    const deltaY = touch.clientY - start.y;
-    const absX = Math.abs(deltaX);
-    const absY = Math.abs(deltaY);
-
-    if (absX < 50) return;
-    if (absY > absX) return;
-
-    const direction = deltaX < 0 ? 'left' : 'right';
-    const isMainTabRoute = navTabs.some((tab) => tab.path === location.pathname);
-
-    if (!isMainTabRoute) {
-      if (direction !== 'right') return;
-      setIsSwipeAnimating(true);
-      setSwipeDirection(direction);
-      window.setTimeout(() => {
-        navigate(-1);
-      }, 90);
-      window.setTimeout(() => {
-        setSwipeDirection(null);
-        setIsSwipeAnimating(false);
-      }, 220);
-      return;
-    }
-
-    const currentIndex = getNavTabIndex(location.pathname);
-    if (currentIndex === -1) return;
-
-    const nextIndex = direction === 'left' ? currentIndex + 1 : currentIndex - 1;
-    if (nextIndex < 0 || nextIndex >= navTabs.length) return;
-
-    const nextPath = navTabs[nextIndex].path;
-    if (nextPath === location.pathname) return;
-
-    setIsSwipeAnimating(true);
-    setSwipeDirection(direction);
-
-    window.setTimeout(() => {
-      navigate(nextPath);
-    }, 90);
-
-    window.setTimeout(() => {
-      setSwipeDirection(null);
-      setIsSwipeAnimating(false);
-    }, 220);
-  };
-
   return (
     <>
       <RouteSeoManager />
-      <div
-        className="page-swipe-container"
-        data-swipe={swipeDirection ?? undefined}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/practice" element={<PracticePage />} />

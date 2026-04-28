@@ -139,16 +139,35 @@ export default function StatsPage({
     sub?: string;
     valueClassName?: string;
   }) => (
-	    <div className="rounded-[18px] md:rounded-[20px] border shadow-card elevation-card p-3.5 md:p-5 min-h-[92px] md:min-h-[112px]">
-	      <div className="flex items-start justify-between gap-2 mb-1.5 md:mb-2">
-	        <p className="text-xs md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
-	        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1.5">
-          <Icon size={14} className="text-primary" />
+    <div className="rounded-[16px] md:rounded-[20px] border shadow-card elevation-card p-3 md:p-5 min-h-[86px] md:min-h-[112px]">
+      <div className="flex items-start justify-between gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+        <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
+        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1 md:p-1.5">
+          <Icon size={13} className="text-primary md:size-3.5" />
         </div>
       </div>
-	      <p className={cn('text-xl md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
+      <p className={cn('text-lg md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
       {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
     </div>
+  );
+
+  const SocialCard = ({ icon: Icon, title, url }: {
+    icon: React.ElementType;
+    title: string;
+    url: string;
+  }) => (
+    <button
+      type="button"
+      onClick={() => openExternal(url)}
+      className="rounded-[16px] md:rounded-[20px] border shadow-card elevation-card p-3 md:p-5 min-h-[76px] md:min-h-[104px] text-left card-hover btn-press flex items-center gap-2.5 md:gap-4"
+    >
+      <span className="flex h-9 w-9 md:h-11 md:w-11 flex-shrink-0 items-center justify-center rounded-xl bg-surface-elevated border border-border text-primary">
+        <Icon size={17} className="md:size-5" />
+      </span>
+      <span className="text-sm md:text-lg font-serif font-medium text-foreground leading-tight line-clamp-2">
+        {title}
+      </span>
+    </button>
   );
 
   const renderDurationValue = (seconds: number) => {
@@ -230,22 +249,6 @@ export default function StatsPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => openExternal('https://instagram.com/nopause_org')}
-            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/75 hover:text-muted-foreground btn-press transition-colors"
-            aria-label="Instagram"
-          >
-            <Instagram size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={() => openExternal('https://t.me/nopause_org')}
-            className="h-9 w-9 rounded-full flex items-center justify-center text-muted-foreground/75 hover:text-muted-foreground btn-press transition-colors"
-            aria-label="Telegram"
-          >
-            <Send size={18} />
-          </button>
           {isInstallEligible && !isInstalled && (
             <button
               type="button"
@@ -308,7 +311,7 @@ export default function StatsPage({
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4 mb-4 md:mb-6">
         <OverviewCard icon={Flame} label="Current Streak" value={isRemoteStreakLoading ? '...' : `${backendCurrentStreak}/${backendBestStreak}`} />
         <OverviewCard icon={Target} label="Scored Sessions" value={isRemoteStatsLoading ? '...' : backendScoredSessions} />
         <OverviewCard
@@ -319,6 +322,19 @@ export default function StatsPage({
         <OverviewCard icon={TrendingUp} label="Overall Flow" value={isRemoteStatsLoading ? '...' : backendAvgFlowScore} />
       </div>
 
+      <div className="grid grid-cols-2 gap-2.5 md:gap-4 mb-8">
+        <SocialCard
+          icon={Instagram}
+          title="Join us on Instagram"
+          url="https://instagram.com/nopause_org"
+        />
+        <SocialCard
+          icon={Send}
+          title="Discuss on Telegram"
+          url="https://t.me/nopause_org"
+        />
+      </div>
+
       {statsError && (
         <div className="mb-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100 font-sans">
           {statsError}
@@ -327,7 +343,7 @@ export default function StatsPage({
 
       <div className="mb-8">
         <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Difficulty</h2>
-        <div className="grid grid-cols-3 gap-2 md:gap-3">
+        <div className="grid grid-cols-3 gap-1.5 md:gap-3">
           {DIFFICULTY_OPTIONS.map((option) => {
             const isActive = difficultyLevel === option.level;
             return (
@@ -352,13 +368,13 @@ export default function StatsPage({
                   }
                 }}
                 className={cn(
-                  'rounded-2xl border p-3 md:p-4 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                  'rounded-2xl border px-2 py-2.5 md:p-4 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                   isActive
                     ? 'bg-primary/15 border-primary/45 text-foreground'
                     : 'bg-surface-base border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
                 )}
               >
-                <p className="text-xs md:text-sm font-sans font-semibold">{option.label}</p>
+                <p className="text-[11px] md:text-sm font-sans font-semibold">{option.label}</p>
               </button>
             );
           })}
