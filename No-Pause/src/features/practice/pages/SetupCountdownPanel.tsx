@@ -130,87 +130,89 @@ export function SetupCountdownPanel({
         )}
 
         {mode === 'free' && (
-          <div className="flex min-h-[calc(100dvh-210px)] md:min-h-[calc(100dvh-260px)] flex-col items-center justify-center py-3 md:py-8">
-            <div className="mb-5 md:mb-8 min-h-[64px] md:min-h-[120px] w-full">
+          <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-start py-1 md:min-h-[calc(100dvh-260px)] md:justify-center md:py-8">
+            <div className="mb-6 min-h-[78px] w-full md:mb-10 md:min-h-[120px]">
               {promptText ? (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
-                  <p className="text-2xl md:text-5xl lg:text-6xl font-serif font-medium text-foreground leading-tight max-w-4xl mx-auto">{promptText}</p>
+                  <p className="text-2xl md:text-5xl lg:text-6xl font-serif font-medium text-foreground leading-tight max-w-4xl mx-auto text-balance">{promptText}</p>
                 </>
               ) : (
                 <>
                   <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
-                  <p className="text-3xl md:text-5xl lg:text-6xl font-serif font-medium text-foreground leading-tight">Speak freely</p>
+                  <p className="text-3xl md:text-5xl lg:text-6xl font-serif font-medium text-foreground leading-tight text-balance">Speak freely</p>
                 </>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => void handleStart()}
-              disabled={!canStart || promptLoading}
-              className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-3 night-glow btn-press hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="Start speaking"
-            >
-              <Mic size={44} className="text-primary md:size-16 lg:size-20" />
-            </button>
-            {state === 'setup' && (
-              <>
-                <p className="mb-4 md:mb-6 text-xs md:text-sm font-sans text-muted-foreground/70">
-                  Tap the mic to start speaking
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <div className="relative">
+            <div className="flex w-full flex-col items-center">
+              <button
+                type="button"
+                onClick={() => void handleStart()}
+                disabled={!canStart || promptLoading}
+                className="w-28 h-28 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-3 night-glow btn-press hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Start speaking"
+              >
+                <Mic size={44} className="text-primary md:size-16 lg:size-20" />
+              </button>
+              {state === 'setup' && (
+                <>
+                  <p className="mb-3 md:mb-5 text-xs md:text-sm font-sans text-muted-foreground/70">
+                    Tap the mic to start speaking
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+                        className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
+                      >
+                        <Clock size={15} className="text-primary" />
+                        {timerLabel}
+                      </button>
+                      {timerMenuOpen && (
+                        <div className="absolute bottom-full left-1/2 z-50 mb-2 w-36 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
+                          {timerOptions.map((option) => (
+                            <button
+                              key={option.seconds}
+                              type="button"
+                              onClick={() => {
+                                setSelectedTimerSeconds(option.seconds);
+                                setTimerMenuOpen(false);
+                              }}
+                              className={cn(
+                                'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
+                                selectedTimerSeconds === option.seconds
+                                  ? 'bg-primary/15 text-foreground'
+                                  : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
+                              )}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+                      onClick={handlePromptClick}
                       className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
                     >
-                      <Clock size={15} className="text-primary" />
-                      {timerLabel}
+                      <FileText size={15} className="text-primary" />
+                      Prompt
                     </button>
-                    {timerMenuOpen && (
-                      <div className="absolute left-0 top-full z-20 mt-2 w-36 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float sm:left-1/2 sm:-translate-x-1/2">
-                        {timerOptions.map((option) => (
-                          <button
-                            key={option.seconds}
-                            type="button"
-                            onClick={() => {
-                              setSelectedTimerSeconds(option.seconds);
-                              setTimerMenuOpen(false);
-                            }}
-                            className={cn(
-                              'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
-                              selectedTimerSeconds === option.seconds
-                                ? 'bg-primary/15 text-foreground'
-                                : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
-                            )}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => void handleRandomFreePrompt()}
+                      disabled={randomPromptLoading}
+                      className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-2"
+                    >
+                      <Shuffle size={15} className="text-primary" />
+                      Random
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handlePromptClick}
-                    className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-2"
-                  >
-                    <FileText size={15} className="text-primary" />
-                    Prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleRandomFreePrompt()}
-                    disabled={randomPromptLoading}
-                    className="min-h-10 rounded-full bg-surface-card border border-border px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-2"
-                  >
-                    <Shuffle size={15} className="text-primary" />
-                    Random
-                  </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

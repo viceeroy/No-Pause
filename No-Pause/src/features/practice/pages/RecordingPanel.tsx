@@ -42,11 +42,11 @@ export function RecordingPanel({
   return (
     <div className={cn(
       'flex-1 flex flex-col items-center justify-start text-center max-w-4xl mx-auto animate-in fade-in duration-700 overflow-hidden',
-      isPromptMode ? 'pb-6 pt-2' : 'pb-12 md:pb-20'
+      isPromptMode ? 'pb-6 pt-2' : 'pb-10 md:pb-20'
     )}>
       <div className={cn(
         'w-full shrink-0 min-h-[72px] md:min-h-[120px] flex flex-col items-center justify-center',
-        isPromptMode ? 'mb-4 md:mb-6' : 'mb-6 md:mb-8'
+        isPromptMode ? 'mb-4 md:mb-6' : 'mb-5 md:mb-10'
       )}>
         <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">
           {mode === 'free' ? 'Free Speak' : 'Prompt'}
@@ -61,7 +61,7 @@ export function RecordingPanel({
         </p>
       </div>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center min-h-0">
+      <div className="w-full flex-1 flex flex-col items-center justify-start min-h-0 pt-1 md:justify-center md:pt-0">
         <div
           className={cn(
             'relative flex h-52 w-52 items-center justify-center rounded-full border bg-surface-card shadow-card transition-all duration-500 md:h-72 md:w-72',
@@ -84,11 +84,11 @@ export function RecordingPanel({
             {formatTime(timerValue)}
           </div>
           <div className="absolute inset-x-8 bottom-14 top-20 md:inset-x-10 md:bottom-20 md:top-24">
-          {audioData ? (
-            <VoiceVisualizer frequencyData={audioData.frequencyData} volume={audioData.volume} isSilent={audioData.isSilent} isRecording={true} />
-          ) : (
-            <VoiceVisualizer isSilent={true} isRecording={true} />
-          )}
+            {audioData ? (
+              <VoiceVisualizer frequencyData={audioData.frequencyData} volume={audioData.volume} isSilent={audioData.isSilent} isRecording={true} />
+            ) : (
+              <VoiceVisualizer isSilent={true} isRecording={true} />
+            )}
           </div>
           <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft md:h-24 md:w-24">
             <Mic size={38} className={cn(soundDetected && 'animate-pulse')} />
