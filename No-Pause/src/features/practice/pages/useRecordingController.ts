@@ -48,8 +48,6 @@ export function useRecordingController({ mode, navigate, state, selectedTimerSec
   const userEmail = user?.email;
 
   const {
-    lemonPrompt,
-    topicPrompt,
     setState,
     setTimeLeft,
     setCountdown,
@@ -173,7 +171,7 @@ export function useRecordingController({ mode, navigate, state, selectedTimerSec
       isRecordingRef.current = false;
       setShowMicRetry(false);
     }
-  }, [mode, lemonPrompt, topicPrompt, setLastResults, setState, setShowMicRetry, userEmail, userId]);
+  }, [mode, setLastResults, setState, setShowMicRetry, userEmail, userId]);
 
   const requestFeedback = useCallback(async () => {
     if (!lastResults) return;

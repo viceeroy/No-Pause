@@ -1,5 +1,3 @@
-import { getBlogPostBySlug } from "@/features/blog/data";
-
 const SITE_NAME = "No Pause";
 const SITE_URL = "https://nopause.org";
 const DEFAULT_IMAGE = `${SITE_URL}/preview.png`;
@@ -133,47 +131,6 @@ export const getRouteSeoConfig = (pathname: string, search: string): RouteSeoCon
       canonicalPath: "/connect",
       robots: "noindex, nofollow",
       structuredData: buildWebPageSchema(title, description, "/connect"),
-    };
-  }
-
-  if (pathname === "/blog") {
-    const title = "No Pause Blog | Speaking Analytics and Fluency Tips";
-    const description =
-      "Read No Pause blog posts on speaking practice, fluency improvement, hesitation control, and real-time speaking analytics.";
-    return {
-      title,
-      description,
-      canonicalPath: "/blog",
-      structuredData: buildWebPageSchema(title, description, "/blog"),
-    };
-  }
-
-  if (pathname.startsWith("/blog/")) {
-    const slug = decodeURIComponent(pathname.replace("/blog/", ""));
-    const post = getBlogPostBySlug(slug);
-    if (post) {
-      return {
-        title: `${post.title} | No Pause`,
-        description: post.description,
-        canonicalPath: `/blog/${post.slug}`,
-        structuredData: buildWebPageSchema(
-          `${post.title} | No Pause`,
-          post.description,
-          `/blog/${post.slug}`,
-        ),
-      };
-    }
-
-    return {
-      title: "Blog Post Not Found | No Pause",
-      description: "The blog post you requested was not found on No Pause.",
-      canonicalPath: pathname,
-      robots: "noindex, nofollow",
-      structuredData: buildWebPageSchema(
-        "Blog Post Not Found | No Pause",
-        "The blog post you requested was not found on No Pause.",
-        pathname,
-      ),
     };
   }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Target, Flame, Clock, TrendingUp, LogOut, Instagram, Send } from 'lucide-react';
+import { Target, Flame, Clock, TrendingUp, LogOut, Instagram, Send, ChevronLeft } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
@@ -47,7 +47,7 @@ type StatsPageProps = {
 
 export default function StatsPage({
   emptyStateTitle = 'No sessions yet',
-  emptyStateMessage = 'Complete a Lemon or Topic session to see scored stats.',
+  emptyStateMessage = 'Complete a Free Speaking session to see scored stats.',
   showEmptyStateAction = true,
 }: StatsPageProps) {
   const navigate = useNavigate();
@@ -107,7 +107,6 @@ export default function StatsPage({
   const backendAvgFlowScore = stats.avgFlowScore;
   const backendCurrentStreak = stats.currentStreak;
   const backendBestStreak = stats.bestStreak;
-  const modeBreakdown = stats.modeBreakdown;
 
   const shouldShowScore = (mode: string, score: number | null | undefined) => {
     const rawMode = (mode || '').toLowerCase();
@@ -219,6 +218,14 @@ export default function StatsPage({
 
   return (
 	    <div className="min-h-screen bg-surface-base pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto scrollbar-hidden">
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="min-h-11 -ml-2 px-2 mb-8 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0"
+      >
+        <ChevronLeft size={16} /> Back
+      </button>
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Stats</h1>
@@ -386,41 +393,6 @@ export default function StatsPage({
           <p className="text-sm text-amber-200/90 font-sans mt-2">{difficultyError}</p>
         )}
       </div>
-
-      {modeBreakdown.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg md:text-xl font-serif text-foreground mb-3">Practice Breakdown</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {modeBreakdown.map((item) => {
-              const rawMode = item.mode.toLowerCase();
-              const normalizedMode = normalizeMode(rawMode);
-              const label = rawMode === 'readingchallenge' ? 'Reading Challenge' : MODE_LABELS[normalizedMode];
-              const showScore =
-                normalizedMode === 'free' ||
-                normalizedMode === 'free-speak' ||
-                normalizedMode === 'lemon' ||
-                normalizedMode === 'topic';
-              return (
-                <div key={item.mode} className="rounded-[20px] border shadow-card elevation-card p-4 md:p-5 min-h-[112px]">
-                  <p className="text-sm text-muted-foreground font-sans mb-2">{label}</p>
-                  <p className="text-2xl md:text-3xl font-serif font-medium text-foreground leading-none">{item.totalSessions}</p>
-                  <p className="text-xs text-muted-foreground/80 mt-1 font-sans">
-                    <span className="font-sans">
-                      {renderDurationValue(item.totalDuration)}
-                    </span>
-                    <span className="ml-1">total</span>
-                  </p>
-                  {showScore && (
-                    <p className="text-xs text-muted-foreground/80 mt-1 font-sans">
-                      Avg flow {item.avgFlowScore ?? 0}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {isRemoteRecentSessionsLoading && (
         <div className="mb-8">

@@ -1,9 +1,8 @@
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
-import type { LemonPrompt, TopicDifficulty, TopicPrompt } from '../lib/promptService';
+import type { TopicPrompt } from '../lib/promptService';
 import type { Dispatch, SetStateAction } from 'react';
 
 export type PracticeState = 'setup' | 'countdown' | 'recording' | 'done';
-export type TopicDifficultyMode = 'random' | TopicDifficulty;
 
 export interface SessionResult {
   sessionId?: string | null;
@@ -41,16 +40,10 @@ export interface PracticeStateStore {
   setTranscriptError: Dispatch<SetStateAction<string | null>>;
   showMicRetry: boolean;
   setShowMicRetry: Dispatch<SetStateAction<boolean>>;
-  promptLoading: boolean;
-  setPromptLoading: Dispatch<SetStateAction<boolean>>;
-  topicDifficultyMode: TopicDifficultyMode;
-  setTopicDifficultyMode: Dispatch<SetStateAction<TopicDifficultyMode>>;
   elapsedTime: number;
   setElapsedTime: Dispatch<SetStateAction<number>>;
   copied: boolean;
   setCopied: Dispatch<SetStateAction<boolean>>;
-  lemonPrompt: LemonPrompt | null;
-  setLemonPrompt: Dispatch<SetStateAction<LemonPrompt | null>>;
   topicPrompt: TopicPrompt | null;
   setTopicPrompt: Dispatch<SetStateAction<TopicPrompt | null>>;
   isFixedScreen: boolean;

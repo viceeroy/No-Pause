@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Download, Flame, Target, Clock, TrendingUp } from 'lucide-react';
+import { Mic, Download, Activity, Send, CircleUser, Coffee, type LucideIcon } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
-import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import {
   Dialog,
   DialogContent,
@@ -27,31 +26,43 @@ const homepagePrompts = [
   'Share what you would do with one extra hour today.',
 ];
 
-function getDurationParts(seconds: number) {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  return {
-    mins: Math.floor(safeSeconds / 60),
-    secs: safeSeconds % 60,
-  };
-}
+const infoCards: Array<{
+  title: string;
+  text: string;
+  icon: LucideIcon;
+}> = [
+  {
+    title: 'Speak more',
+    text: 'Build consistency with short daily speaking sessions.',
+    icon: Mic,
+  },
+  {
+    title: 'Reduce pauses',
+    text: 'Try to keep speaking without long silent gaps.',
+    icon: Activity,
+  },
+  {
+    title: 'Use Telegram',
+    text: 'Practice from Telegram with quick voice notes.',
+    icon: Send,
+  },
+  {
+    title: 'See stats via avatar',
+    text: 'Tap your avatar to view progress and recent sessions.',
+    icon: CircleUser,
+  },
+  {
+    title: 'Everyday speaking',
+    text: 'Practice real-life answers, not perfect speeches.',
+    icon: Coffee,
+  },
+];
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [showInstallHelp, setShowInstallHelp] = useState(false);
-  const [stats, setStats] = useState<PracticeStats>({
-    scoredSessions: 0,
-    totalPracticeTime: 0,
-    avgFlowScore: 0,
-    bestFlowScore: 0,
-    lastSessionDate: null,
-    currentStreak: 0,
-    bestStreak: 0,
-    modeBreakdown: [],
-    recentSessions: [],
-  });
-  const [statsLoading, setStatsLoading] = useState(true);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
   const handleCardClick = () => {
@@ -61,39 +72,6 @@ export default function DashboardPage() {
   const handlePromptClick = (prompt: string) => {
     navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(prompt)}`);
   };
-
-  const renderDurationValue = (seconds: number) => {
-    const { mins, secs } = getDurationParts(seconds);
-    return (
-      <>
-        {mins}
-        <span className="ml-1 text-sm md:text-base font-sans font-semibold text-muted-foreground/80">m</span>
-        <span className="ml-2">
-          {secs}
-          <span className="ml-1 text-sm md:text-base font-sans font-semibold text-muted-foreground/80">s</span>
-        </span>
-      </>
-    );
-  };
-
-  const OverviewCard = ({ icon: Icon, label, value, sub, valueClassName }: {
-    icon: React.ElementType;
-    label: string;
-    value: React.ReactNode;
-    sub?: string;
-    valueClassName?: string;
-  }) => (
-	    <div className="rounded-[16px] md:rounded-[20px] border shadow-card elevation-card p-3 md:p-5 min-h-[76px] md:min-h-[112px]">
-	      <div className="flex items-start justify-between gap-2 mb-1 md:mb-2">
-	        <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
-	        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1 md:p-1.5">
-          <Icon size={14} className="text-primary" />
-        </div>
-      </div>
-	      <p className={cn('text-lg md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
-      {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
-    </div>
-  );
 
   const handleInstallClick = async () => {
     if (!isInstallEligible || isInstalled) return;
@@ -109,38 +87,6 @@ export default function DashboardPage() {
     }
     setShowInstallHelp(true);
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setStatsLoading(true);
-    getPracticeStats(user?.id ?? null, 15)
-      .then((nextStats) => {
-        if (!cancelled) setStats(nextStats);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setStats({
-            scoredSessions: 0,
-            totalPracticeTime: 0,
-            avgFlowScore: 0,
-            bestFlowScore: 0,
-            lastSessionDate: null,
-            currentStreak: 0,
-            bestStreak: 0,
-            modeBreakdown: [],
-            recentSessions: [],
-          });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setStatsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
 
   const showInstallButton = isInstallEligible && !isInstalled;
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
@@ -247,6 +193,36 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <section aria-labelledby="next-steps-heading" className="mb-3 md:mb-8">
+          <div className="mb-2 md:mb-3 flex items-center justify-between gap-3">
+            <h2 id="next-steps-heading" className="text-base md:text-xl font-serif font-medium text-foreground">
+              What to do next
+            </h2>
+          </div>
+          <div className="-mx-4 overflow-x-auto px-4 pb-2 scrollbar-hidden md:mx-0 md:px-0 md:overflow-visible">
+            <div className="flex w-max gap-2.5 md:w-full md:gap-3">
+              {infoCards.map(({ title, text, icon: Icon }) => (
+                <article
+                  key={title}
+                  aria-labelledby={`next-step-${title.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="min-h-[112px] w-[218px] shrink-0 rounded-[16px] border border-border/80 bg-surface-elevated p-3.5 shadow-card md:min-h-[124px] md:w-auto md:min-w-0 md:flex-1 md:p-4"
+                >
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
+                    <Icon size={18} aria-hidden="true" />
+                  </div>
+                  <h3
+                    id={`next-step-${title.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="mb-1 text-sm md:text-base font-serif font-medium leading-tight text-foreground"
+                  >
+                    {title}
+                  </h3>
+                  <p className="text-xs md:text-sm font-sans leading-snug text-muted-foreground">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <div className="mb-3 md:mb-10">
           <div className="mb-2 md:mb-4 flex items-center justify-between gap-3">
             <h2 className="text-lg md:text-3xl font-serif font-medium text-foreground">Prompts</h2>
@@ -274,17 +250,6 @@ export default function DashboardPage() {
                 </button>
               ))}
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4 mb-3 md:mb-8">
-          <OverviewCard icon={Flame} label="Current Streak" value={statsLoading ? '...' : `${stats.currentStreak}/${stats.bestStreak}`} />
-          <OverviewCard icon={Target} label="Scored Sessions" value={statsLoading ? '...' : stats.scoredSessions} />
-          <OverviewCard
-            icon={Clock}
-            label="Practice Time"
-            value={statsLoading ? '...' : renderDurationValue(stats.totalPracticeTime)}
-          />
-          <OverviewCard icon={TrendingUp} label="Overall Flow" value={statsLoading ? '...' : stats.avgFlowScore} />
         </div>
       </div>
 

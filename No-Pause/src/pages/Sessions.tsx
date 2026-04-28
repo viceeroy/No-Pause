@@ -1,5 +1,4 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { Navbar } from "@/shared/components/Navbar";
 import { useAuth } from "@/providers/AuthContext";
 import StatsPage from "@/features/stats/pages/StatsPage";
 
@@ -27,7 +26,6 @@ const Sessions = () => {
         emptyStateMessage="Send a voice message to @NoPauseAI_bot to get started!"
         showEmptyStateAction={false}
       />
-      <Navbar />
     </div>
   );
 };

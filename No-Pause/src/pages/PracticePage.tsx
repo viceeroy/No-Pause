@@ -8,7 +8,6 @@ import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { usePromptLoader } from '@/features/practice/pages/usePromptLoader';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
-import { ReadingChallengePanel } from '@/features/practice/pages/ReadingChallengePanel';
 import { getRandomTopicPrompt } from '@/features/practice/lib/promptService';
 
 const timerOptions = [
@@ -34,7 +33,6 @@ export default function PracticePage() {
     state,
     selectedTimerSeconds,
   });
-  const isPromptMode = prompt.mode === 'lemon' || prompt.mode === 'topic';
   const promptText = state.topicPrompt?.topicTitle || searchParams.get('prompt_text') || '';
   const timerLabel = useMemo(
     () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
@@ -55,11 +53,6 @@ export default function PracticePage() {
     }
   };
 
-  const canStart =
-    prompt.mode === 'free' ||
-    prompt.mode === 'readingchallenge' ||
-    (prompt.mode === 'lemon' ? !!state.lemonPrompt : !!state.topicPrompt);
-
   useEffect(() => {
     if (state.state === 'recording') {
       document.body.dataset.recording = 'true';
@@ -71,19 +64,13 @@ export default function PracticePage() {
     };
   }, [state.state]);
 
-  if (prompt.mode === 'readingchallenge') {
-    return <ReadingChallengePanel onExit={() => navigate('/')} />;
-  }
-
   return (
     <div className={cn(
       'px-5 md:px-12 lg:px-20 max-w-5xl mx-auto',
       state.isFixedScreen
         ? state.state === 'recording'
           ? 'h-[100dvh] flex flex-col overflow-hidden'
-          : isPromptMode
-            ? 'h-[100dvh] flex flex-col overflow-hidden pt-2 pb-4'
-            : 'min-h-screen flex flex-col pb-10 md:pb-16 pt-2'
+          : 'min-h-screen flex flex-col pb-10 md:pb-16 pt-2'
         : 'min-h-screen pb-32 pt-8'
     )}>
       {state.isFixedScreen && <div className="shrink-0 pt-6" />}
@@ -103,18 +90,12 @@ export default function PracticePage() {
 
       {(state.state === 'setup' || state.state === 'countdown') && (
         <SetupCountdownPanel
-          mode={prompt.mode}
           state={state.state}
           transcriptError={state.transcriptError}
           showMicRetry={state.showMicRetry}
           handleRetryMicrophone={recording.handleRetryMicrophone}
-          lemonPrompt={state.lemonPrompt}
-          topicPrompt={state.topicPrompt}
-          promptLoading={state.promptLoading}
-          handleRandomPrompt={prompt.handleRandomPrompt}
           handlePromptClick={handlePromptClick}
           handleRandomFreePrompt={handleRandomFreePrompt}
-          selectedTimerSeconds={selectedTimerSeconds}
           timerLabel={timerLabel}
           timerMenuOpen={timerMenuOpen}
           setTimerMenuOpen={setTimerMenuOpen}
@@ -122,7 +103,6 @@ export default function PracticePage() {
           timerOptions={timerOptions}
           promptText={promptText}
           randomPromptLoading={randomPromptLoading}
-          canStart={canStart}
           handleStart={() => recording.handleStart()}
           countdown={state.countdown}
         />
@@ -130,13 +110,10 @@ export default function PracticePage() {
 
       {state.state === 'recording' && (
         <RecordingPanel
-          mode={prompt.mode}
           timeLeft={state.timeLeft}
           elapsedTime={state.elapsedTime}
           selectedTimerSeconds={selectedTimerSeconds}
           promptText={promptText}
-          lemonPrompt={state.lemonPrompt}
-          topicPrompt={state.topicPrompt}
           audioData={state.audioData}
           soundDetected={recording.soundDetectedRef.current}
           stopRecording={recording.stopRecording}

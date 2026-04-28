@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
-import type { LemonPrompt, TopicPrompt } from '../lib/promptService';
-import type { PracticeState, PracticeStateStore, SessionResult, TopicDifficultyMode } from './types';
+import type { TopicPrompt } from '../lib/promptService';
+import type { PracticeState, PracticeStateStore, SessionResult } from './types';
 
 export function usePracticeState(): PracticeStateStore {
-  const [lemonPrompt, setLemonPrompt] = useState<LemonPrompt | null>(null);
   const [topicPrompt, setTopicPrompt] = useState<TopicPrompt | null>(null);
   const [state, setState] = useState<PracticeState>('setup');
   const [timeLeft, setTimeLeft] = useState(0);
@@ -13,8 +12,6 @@ export function usePracticeState(): PracticeStateStore {
   const [lastResults, setLastResults] = useState<SessionResult | null>(null);
   const [transcriptError, setTranscriptError] = useState<string | null>(null);
   const [showMicRetry, setShowMicRetry] = useState(false);
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [topicDifficultyMode, setTopicDifficultyMode] = useState<TopicDifficultyMode>('random');
   const [elapsedTime, setElapsedTime] = useState(0);
   const [copied, setCopied] = useState(false);
 
@@ -39,16 +36,10 @@ export function usePracticeState(): PracticeStateStore {
     setTranscriptError,
     showMicRetry,
     setShowMicRetry,
-    promptLoading,
-    setPromptLoading,
-    topicDifficultyMode,
-    setTopicDifficultyMode,
     elapsedTime,
     setElapsedTime,
     copied,
     setCopied,
-    lemonPrompt,
-    setLemonPrompt,
     topicPrompt,
     setTopicPrompt,
     isFixedScreen,
@@ -64,11 +55,8 @@ export function usePracticeState(): PracticeStateStore {
     lastResults,
     transcriptError,
     showMicRetry,
-    promptLoading,
-    topicDifficultyMode,
     elapsedTime,
     copied,
-    lemonPrompt,
     topicPrompt,
     isFixedScreen,
     isTranscriptMissing,
