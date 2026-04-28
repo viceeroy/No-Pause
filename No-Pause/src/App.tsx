@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Navbar } from "@/shared/components/Navbar";
 import { useServiceWorkerUpdate } from "@/providers/ServiceWorkerUpdateContext";
 import { getRouteSeoConfig, seoDefaults } from "@/shared/seo/routeSeo";
 import { getNavTabIndex, navTabs } from "@/shared/lib/navTabs";
@@ -179,7 +178,6 @@ const AppRoutes = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
-      {!isPractice && <Navbar />}
     </>
   );
 };

@@ -39,7 +39,6 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
-  const [installBannerDismissed, setInstallBannerDismissed] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
@@ -116,11 +115,6 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const dismissed = localStorage.getItem('nopause_install_banner_dismissed') === 'true';
-    setInstallBannerDismissed(dismissed);
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
 
     setStatsLoading(true);
@@ -152,12 +146,16 @@ export default function DashboardPage() {
     };
   }, [user?.id]);
 
-  const handleDismissInstallBanner = () => {
-    setInstallBannerDismissed(true);
-    localStorage.setItem('nopause_install_banner_dismissed', 'true');
-  };
-
-  const showInstallBanner = isInstallEligible && !isInstalled && !installBannerDismissed;
+  const showInstallButton = isInstallEligible && !isInstalled;
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'NP';
 
   return (
 	    <div className="min-h-screen pb-32 px-5 md:px-12 lg:px-20 pt-6 md:pt-8 max-w-6xl mx-auto">
@@ -170,53 +168,30 @@ export default function DashboardPage() {
 	          </h2>
         </div>
         <div className="flex items-center justify-center gap-2">
-          {showInstallBanner && (
-	            <div className="md:hidden flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleInstallClick}
-	                className="inline-flex min-h-10 items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-border text-xs font-sans text-foreground hover:bg-surface-card transition-colors"
-              >
-                <Download size={14} className="text-primary" />
-                Install
-              </button>
-              <button
-                type="button"
-                onClick={handleDismissInstallBanner}
-	                className="min-h-10 min-w-10 px-2 py-1.5 rounded-full border border-border text-[11px] font-sans text-muted-foreground hover:text-foreground hover:bg-surface-card transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {showInstallBanner && (
-        <div className="hidden md:flex mb-6 md:mb-8 px-5 py-4 md:px-6 md:py-5 rounded-2xl border border-border bg-surface-elevated/80 items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface-card">
-              <Download size={15} className="text-primary animate-bounce" />
-            </span>
-            <p className="text-sm md:text-base text-muted-foreground font-sans">Install No Pause for faster access</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleInstallClick}
-              className="px-4 py-2 rounded-full border border-border text-sm md:text-base font-sans text-foreground hover:bg-surface-card transition-colors"
-            >
-              Install No Pause
-            </button>
+          {showInstallButton && (
             <button
               type="button"
-              onClick={handleDismissInstallBanner}
-              className="px-3 py-2 rounded-full border border-border text-xs md:text-sm font-sans text-muted-foreground hover:text-foreground hover:bg-surface-card transition-colors"
+              onClick={handleInstallClick}
+	            className="inline-flex min-h-10 items-center gap-1.5 px-2.5 md:px-4 py-1.5 rounded-full border border-border text-xs md:text-sm font-sans text-foreground hover:bg-surface-card transition-colors"
             >
-              ✕
+              <Download size={14} className="text-primary" />
+              Install
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate('/stats')}
+	          className="h-10 w-10 rounded-full border border-border bg-surface-elevated text-sm font-sans font-semibold text-foreground shadow-card overflow-hidden flex items-center justify-center btn-press hover:bg-surface-card transition-colors"
+            aria-label="Open stats"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </button>
         </div>
-      )}
+      </div>
 
       <Dialog open={showInstallHelp} onOpenChange={setShowInstallHelp}>
         <DialogContent className="bg-[var(--surface-card)] border-border/60 rounded-[20px] p-0 max-w-md mx-auto gap-0 overflow-hidden">
