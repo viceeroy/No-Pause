@@ -11,10 +11,7 @@ import { getRouteSeoConfig, seoDefaults } from "@/shared/seo/routeSeo";
 import { getNavTabIndex, navTabs } from "@/shared/lib/navTabs";
 import DashboardPage from "@/features/stats/pages/DashboardPage";
 import PracticePage from "./pages/PracticePage";
-import PromptsPage from "./pages/PromptsPage";
 import StatsPage from "@/features/stats/pages/StatsPage";
-import BlogListPage from "@/features/blog/pages/BlogListPage";
-import BlogPostPage from "@/features/blog/pages/BlogPostPage";
 import AuthPage from "@/features/auth/pages/AuthPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
 import AuthCallbackPage from "@/features/auth/pages/AuthCallbackPage";
@@ -177,9 +174,6 @@ const AppRoutes = () => {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/practice/free-speaking" element={<PracticePage />} />
-          <Route path="/prompts" element={<PromptsPage />} />
-          <Route path="/blog" element={<BlogListPage />} />
-          <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/history" element={<Navigate to="/stats" replace />} />
           <Route path="*" element={<NotFound />} />

@@ -2,7 +2,7 @@
 
 This is the living architecture document for No Pause. Keep it updated after every task that changes architecture, scoring, data flow, API behavior, database shape, environment variables, or deployment assumptions.
 
-Last audited: 2026-04-27.
+Last audited: 2026-04-28.
 
 ## Architecture
 
@@ -53,18 +53,22 @@ Supabase service-role writes
 - Entry: `src/main.tsx` renders `App` with providers.
 - Router: `src/App.tsx`.
 - Authenticated app routes:
-  - `/`: dashboard/mode picker.
-  - `/practice`: practice page, mode driven by query string.
+  - `/`: dashboard with Free Speaking as the only exposed web practice entry point.
+  - `/practice`: practice page. Web UI currently forces Free Speaking and ignores incoming `mode` query values.
   - `/practice/free-speaking`: free speaking route.
-  - `/prompts`: prompt browser.
   - `/stats`: stats dashboard.
   - `/sessions`: authenticated wrapper around `StatsPage`, targeted at Telegram users.
-  - `/blog`, `/blog/:slug`: SEO blog content.
 - Auth routes:
   - `/auth`, `/login`: Google sign-in.
   - `/auth/sign-up`: sign-up page.
   - `/auth/callback`: OAuth callback.
   - `/connect?tg=<telegram_id>`: links a Telegram user after Google sign-in.
+- Removed web UI routes:
+  - `/prompts`, `/blog`, and `/blog/:slug` are no longer registered in `src/App.tsx`.
+  - Blog data/pages and prompt browser code still exist in the repository for possible reuse.
+- Web UI mode exposure:
+  - Only Free Speaking is reachable from the dashboard/navigation.
+  - Lemon, topic, and reading challenge logic remains in code for internal/history compatibility, but current web UI does not link to those modes.
 - Web persistence:
   - Browser Supabase client in `src/lib/supabase.ts`.
   - `src/lib/practiceApi.ts` writes sessions and streaks through shared core helpers.
@@ -174,6 +178,7 @@ Files:
 - `src/features/practice/lib/speechAnalyzer.ts`.
 - `src/features/practice/lib/analyzer/micStateMachine.ts`.
 - `src/features/practice/pages/useRecordingController.ts`.
+- `src/features/practice/pages/usePromptLoader.ts` currently forces web practice mode to `free` regardless of route/query input.
 
 How it works:
 

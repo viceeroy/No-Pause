@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, BookOpen, Target, Timer, Download, Instagram, Send } from 'lucide-react';
+import { Mic, Download, Instagram, Send, Flame, Target, Clock, TrendingUp, Play } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { LEMON_MIN_TOTAL_SECONDS, TOPIC_MIN_TOTAL_SECONDS } from '@/features/practice/lib/scoringConstants';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
+import { useAuth } from '@/providers/AuthContext';
+import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import {
   Dialog,
   DialogContent,
@@ -13,76 +14,87 @@ import {
   DialogDescription,
 } from '@/shared/components/ui/dialog';
 
-const toMMSS = (seconds: number) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}m ${secs}s`;
-};
+const homepagePrompts = [
+  'Talk about a small win you had recently.',
+  'Describe a conversation that changed your mind.',
+  'Explain something you are learning right now.',
+  'Share an opinion you used to disagree with.',
+  'Talk about a place that helps you think clearly.',
+  'Describe a habit you want to improve.',
+  'Explain a decision you made this week.',
+  'Talk about a person who influenced your communication style.',
+  'Describe what makes a team work well.',
+  'Share what you would do with one extra hour today.',
+];
 
-interface CompactModeCardProps {
-  title: string;
-  subtitle: string;
-  actionLabel: string;
-  timeSeconds: number;
-  onClick: () => void;
-  icon: React.ElementType;
-  className?: string;
-  iconWrapClass?: string;
-  iconClass?: string;
-  actionClass?: string;
+function getDurationParts(seconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  return {
+    mins: Math.floor(safeSeconds / 60),
+    secs: safeSeconds % 60,
+  };
 }
-
-const CompactModeCard = ({
-  title, subtitle, actionLabel, timeSeconds, onClick, icon: Icon,
-  className, iconWrapClass, iconClass, actionClass,
-}: CompactModeCardProps) => (
-  <button
-    onClick={onClick}
-    className={cn(
-	      'rounded-[18px] md:rounded-[22px] p-3.5 md:p-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden',
-	      'min-h-[176px] md:min-h-[220px] flex flex-col items-center justify-between',
-      className
-    )}
-  >
-	    <div className={cn('p-2 md:p-2.5 rounded-xl md:rounded-2xl border', iconWrapClass)}>
-	      <Icon size={16} className={iconClass} />
-	    </div>
-	    <div className="mt-2 md:mt-3">
-	      <h3 className="text-sm md:text-lg font-serif text-foreground leading-tight">{title}</h3>
-	      <p className="text-[11px] md:text-sm text-muted-foreground font-sans leading-tight mt-1">{subtitle}</p>
-	    </div>
-	    <div className={cn(
-	      'mt-2 md:mt-3 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full text-[10px] md:text-xs font-sans font-semibold border',
-	      actionClass
-	    )}>
-      {actionLabel}
-    </div>
-	    <div className="mt-2 md:mt-3">
-	      <p className="text-base md:text-xl font-serif font-semibold text-foreground leading-none">
-        {Math.floor(timeSeconds / 60)}
-        <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">m</span>
-        <span className="ml-2">
-          {timeSeconds % 60}
-          <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">s</span>
-        </span>
-      </p>
-	      <p className="text-[9px] md:text-[10px] text-muted-foreground font-sans uppercase tracking-[0.14em] mt-1">Time Limit</p>
-    </div>
-  </button>
-);
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [installBannerDismissed, setInstallBannerDismissed] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [stats, setStats] = useState<PracticeStats>({
+    scoredSessions: 0,
+    totalPracticeTime: 0,
+    avgFlowScore: 0,
+    bestFlowScore: 0,
+    lastSessionDate: null,
+    currentStreak: 0,
+    bestStreak: 0,
+    modeBreakdown: [],
+    recentSessions: [],
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
 
-  const handleCardClick = (mode: string) => {
-    if (mode === 'free') navigate('/practice/free-speaking');
-    else if (mode === 'lemon') navigate('/practice?mode=lemon');
-    else if (mode === 'topic') navigate('/practice?mode=topic');
+  const handleCardClick = () => {
+    navigate('/practice/free-speaking');
   };
+
+  const handlePromptClick = (prompt: string) => {
+    navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(prompt)}`);
+  };
+
+  const renderDurationValue = (seconds: number) => {
+    const { mins, secs } = getDurationParts(seconds);
+    return (
+      <>
+        {mins}
+        <span className="ml-1 text-sm md:text-base font-sans font-semibold text-muted-foreground/80">m</span>
+        <span className="ml-2">
+          {secs}
+          <span className="ml-1 text-sm md:text-base font-sans font-semibold text-muted-foreground/80">s</span>
+        </span>
+      </>
+    );
+  };
+
+  const OverviewCard = ({ icon: Icon, label, value, sub, valueClassName }: {
+    icon: React.ElementType;
+    label: string;
+    value: React.ReactNode;
+    sub?: string;
+    valueClassName?: string;
+  }) => (
+	    <div className="rounded-[18px] md:rounded-[20px] border shadow-card elevation-card p-3.5 md:p-5 min-h-[92px] md:min-h-[112px]">
+	      <div className="flex items-start justify-between gap-2 mb-1.5 md:mb-2">
+	        <p className="text-xs md:text-sm text-muted-foreground font-sans leading-tight">{label}</p>
+	        <div className="rounded-lg md:rounded-xl bg-surface-elevated border border-border p-1.5">
+          <Icon size={14} className="text-primary" />
+        </div>
+      </div>
+	      <p className={cn('text-xl md:text-3xl font-serif font-medium text-foreground leading-none', valueClassName)}>{value}</p>
+      {sub && <p className="text-xs text-muted-foreground/80 mt-1 font-sans">{sub}</p>}
+    </div>
+  );
 
   const openExternal = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -107,6 +119,38 @@ export default function DashboardPage() {
     const dismissed = localStorage.getItem('nopause_install_banner_dismissed') === 'true';
     setInstallBannerDismissed(dismissed);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setStatsLoading(true);
+    getPracticeStats(user?.id ?? null, 15)
+      .then((nextStats) => {
+        if (!cancelled) setStats(nextStats);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStats({
+            scoredSessions: 0,
+            totalPracticeTime: 0,
+            avgFlowScore: 0,
+            bestFlowScore: 0,
+            lastSessionDate: null,
+            currentStreak: 0,
+            bestStreak: 0,
+            modeBreakdown: [],
+            recentSessions: [],
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const handleDismissInstallBanner = () => {
     setInstallBannerDismissed(true);
@@ -216,7 +260,7 @@ export default function DashboardPage() {
       {/* Speaking Area */}
       <div className="flex flex-col mb-4 md:mb-6">
         <div
-          onClick={() => handleCardClick('free')}
+          onClick={handleCardClick}
 	          className="rounded-[20px] md:rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-5 md:p-12 mb-4 md:mb-6 text-center cursor-pointer card-hover btn-press relative overflow-hidden group"
         >
 	          <div className="flex justify-center mb-4 md:mb-6">
@@ -229,53 +273,37 @@ export default function DashboardPage() {
 	          <h3 className="text-lg md:text-2xl font-serif text-foreground mb-1">Free Speaking</h3>
 	          <p className="text-xs md:text-base text-muted-foreground font-sans">Practice continuous speaking without time limits</p>
         </div>
-
-        <div className="grid grid-cols-2 gap-3 md:gap-6">
-          <CompactModeCard
-            onClick={() => handleCardClick('lemon')}
-            icon={Timer}
-            title="Lemon Technique"
-            subtitle={`${toMMSS(LEMON_MIN_TOTAL_SECONDS)} pressure speak`}
-            actionLabel="Random word"
-            timeSeconds={LEMON_MIN_TOTAL_SECONDS}
-            className="bg-gradient-to-b from-ember-200/14 to-surface-primary border border-ember-500/40 shadow-card"
-            iconWrapClass="bg-ember-200/35 border-ember-500/35"
-            iconClass="text-ember-600"
-            actionClass="bg-surface-interactive border-ember-500/35 text-ember-600"
-          />
-          <CompactModeCard
-            onClick={() => handleCardClick('topic')}
-            icon={Target}
-            title="Topic Score"
-            subtitle={`${toMMSS(TOPIC_MIN_TOTAL_SECONDS)} critical thinking`}
-            actionLabel="Random topic"
-            timeSeconds={TOPIC_MIN_TOTAL_SECONDS}
-            className="bg-gradient-to-b from-cyan-500/12 to-surface-primary border border-cyan-400/40 shadow-card"
-            iconWrapClass="bg-cyan-500/18 border-cyan-400/35"
-            iconClass="text-cyan-300"
-            actionClass="bg-surface-interactive border-cyan-400/35 text-cyan-300"
-          />
-        </div>
       </div>
 
-      {/* Stats */}
-	      <div className="mb-8">
-	        <div
-	          onClick={() => navigate('/practice?mode=readingchallenge')}
-	          className="rounded-[20px] md:rounded-[24px] bg-gradient-to-b from-surface-card to-surface-elevated border border-border/80 shadow-card p-4 md:p-8 text-left md:text-center cursor-pointer card-hover btn-press relative overflow-hidden group flex items-center md:block gap-4"
-	        >
-	          <div className="flex justify-center md:mb-4 shrink-0">
-	            <div className="relative w-14 h-14 md:w-24 md:h-24 rounded-full flex items-center justify-center bg-secondary transition-transform duration-300 group-hover:scale-110 night-glow">
-	              <div className="absolute inset-0 rounded-full animate-pulse bg-primary opacity-30"></div>
-	              <BookOpen size={24} className="md:hidden text-primary relative z-10" />
-	              <BookOpen size={44} className="hidden md:block text-primary relative z-10" />
-	            </div>
-	          </div>
-	          <div className="min-w-0">
-	            <h3 className="text-lg md:text-2xl font-serif text-foreground mb-1">Reading Challenge</h3>
-	            <p className="text-xs md:text-base text-muted-foreground font-sans">Read a passage with clarity</p>
-	          </div>
-	        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+        <OverviewCard icon={Flame} label="Current Streak" value={statsLoading ? '...' : `${stats.currentStreak}/${stats.bestStreak}`} />
+        <OverviewCard icon={Target} label="Scored Sessions" value={statsLoading ? '...' : stats.scoredSessions} />
+        <OverviewCard
+          icon={Clock}
+          label="Practice Time"
+          value={statsLoading ? '...' : renderDurationValue(stats.totalPracticeTime)}
+        />
+        <OverviewCard icon={TrendingUp} label="Overall Flow" value={statsLoading ? '...' : stats.avgFlowScore} />
+      </div>
+
+      <div className="mb-10">
+        <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">Prompts</h2>
+	      <div className="-mx-5 md:-mx-12 lg:-mx-20 px-5 md:px-12 lg:px-20 overflow-x-auto pb-3">
+	        <div className="flex gap-3 md:gap-4 min-w-max">
+            {homepagePrompts.map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => handlePromptClick(prompt)}
+	              className="w-60 md:w-80 min-h-32 md:min-h-40 rounded-2xl bg-surface-elevated border border-border shadow-card p-4 md:p-5 text-left card-hover btn-press flex flex-col justify-between"
+              >
+	              <span className="text-lg md:text-2xl font-serif font-medium text-foreground leading-snug">{prompt}</span>
+	              <span className="mt-4 md:mt-5 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-soft">
+                  <Play size={16} fill="currentColor" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Social Icons */}

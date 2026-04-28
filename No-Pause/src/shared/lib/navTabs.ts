@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import { Home, BookOpen, Newspaper, BarChart3 } from 'lucide-react';
+import { Home, BarChart3 } from 'lucide-react';
 
 export type NavTab = {
   path: string;
@@ -14,18 +14,6 @@ export const navTabs: NavTab[] = [
     label: 'Home',
     icon: Home,
     isActive: (pathname) => pathname === '/',
-  },
-  {
-    path: '/prompts',
-    label: 'Prompts',
-    icon: BookOpen,
-    isActive: (pathname) => pathname.startsWith('/prompts'),
-  },
-  {
-    path: '/blog',
-    label: 'Sessions',
-    icon: Newspaper,
-    isActive: (pathname) => pathname === '/blog' || pathname.startsWith('/blog/'),
   },
   {
     path: '/stats',

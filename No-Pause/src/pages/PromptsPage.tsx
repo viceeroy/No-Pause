@@ -92,7 +92,7 @@ export default function PromptsPage() {
               </div>
               <button
                 onClick={() => {
-                  navigate(`/practice?mode=topic&prompt=${encodeURIComponent(item.id)}`);
+                  navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(item.topicTitle)}`);
                 }}
 	                className="flex-shrink-0 w-11 h-11 rounded-full bg-surface-interactive border border-border text-cyan-400 flex items-center justify-center btn-press hover:border-cyan-400/40 hover:text-cyan-300 transition-colors"
               >
