@@ -63,6 +63,18 @@ function requireEnv(value: string | undefined, name: string): string {
   return value;
 }
 
+function toHttpHeaderValue(value: string, name: string): string {
+  const headerValue = value.trim().replace(/[^\x00-\xff]/g, "");
+  if (!headerValue) {
+    throw new Error(`${name} does not contain a valid HTTP header value`);
+  }
+  if (headerValue !== value) {
+    console.warn(`${name} contained characters that cannot be sent in an HTTP header`);
+  }
+
+  return headerValue;
+}
+
 export function getBotToken(): string {
   return requireEnv(process.env.TELEGRAM_BOT_TOKEN, "TELEGRAM_BOT_TOKEN");
 }
@@ -184,11 +196,12 @@ function detectPausesFromWordTimestamps(words: TranscribedWord[]) {
 async function transcribeAudio(audioBuffer: ArrayBuffer) {
   const formData = new FormData();
   formData.append("audio", new File([audioBuffer], "voice.ogg", { type: "audio/ogg" }));
+  const internalToken = process.env.NOPAUSE_INTERNAL_API_TOKEN ?? getBotToken();
 
   const response = await fetch(getTranscriptionEndpointUrl(), {
     method: "POST",
     headers: {
-      "x-nopause-internal-token": process.env.NOPAUSE_INTERNAL_API_TOKEN ?? getBotToken(),
+      "x-nopause-internal-token": toHttpHeaderValue(internalToken, "NOPAUSE_INTERNAL_API_TOKEN"),
     },
     body: formData,
   });

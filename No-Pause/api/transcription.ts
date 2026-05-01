@@ -29,13 +29,18 @@ function getBoundary(contentType: string | undefined): string | null {
   return match?.[1] ?? match?.[2] ?? null;
 }
 
+function toHttpHeaderValue(value: string): string {
+  return value.trim().replace(/[^\x00-\xff]/g, "");
+}
+
 async function requireAuthenticatedUser(req: IncomingMessage): Promise<boolean> {
   const internalToken = process.env.NOPAUSE_INTERNAL_API_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
+  const expectedInternalToken = internalToken ? toHttpHeaderValue(internalToken) : "";
   const internalHeader = req.headers["x-nopause-internal-token"];
   if (
-    internalToken &&
+    expectedInternalToken &&
     typeof internalHeader === "string" &&
-    internalHeader === internalToken
+    internalHeader === expectedInternalToken
   ) {
     return true;
   }

@@ -4,9 +4,9 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 ## Product Surface
 
-- Web UI currently exposes authenticated Free Speaking practice only. `/practice` and `/practice/free-speaking` both render `PracticePage`; `PracticePage` always uses mode `free`.
-- Web no longer exposes `/prompts` or prompt-browser files. Free Speaking can still accept `prompt_text`; this is display context only and is scored as `free`.
-- Telegram may still use prompts and friend/group challenges. Do not remove `src/lib/core/prompts.ts` unless Telegram prompt/challenge behavior is replaced.
+- Web UI exposes authenticated Free Speaking practice. `/practice` and `/practice/free-speaking` both render `PracticePage`; `PracticePage` currently uses mode `free`.
+- `/prompts` is an authenticated prompt picker. Selected prompt text is passed into Free Speaking as display/practice context and is scored as `free`.
+- Telegram uses prompts and friend/group challenges. Do not remove `src/lib/core/prompts.ts` unless Telegram prompt/challenge behavior is replaced.
 - `lemon`, `topic`, and `readingchallenge` mode values may exist in old data or Telegram-related copy, but they are not separate current web practice modes.
 
 ## Exposed Routes
@@ -14,6 +14,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `/`: authenticated dashboard, `DashboardPage`.
 - `/practice`: Free Speaking practice, `PracticePage`.
 - `/practice/free-speaking`: Free Speaking practice, `PracticePage`.
+- `/prompts`: authenticated prompt picker.
 - `/stats`: stats/session history, `StatsPage`.
 - `/history`: redirects to `/stats`.
 - `/connect?tg=<telegram_id>`: Telegram account linking page.
@@ -23,6 +24,8 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 ## API Endpoints
 
+- `POST /api/transcription`: `api/transcription.ts`; accepts `multipart/form-data` audio upload in `audio` or `file`, requires either a Supabase bearer token or an internal token, calls Groq Whisper with the server-side `GROQ_API_KEY`, and returns transcript text plus word timestamps.
+- `POST /api/feedback`: `api/feedback.ts`; accepts transcript text and scoring data as JSON, requires a Supabase bearer token, calls Groq chat with the server-side `GROQ_API_KEY`, and returns coaching feedback.
 - `POST /api/telegram/webhook`: `api/telegram/webhook.ts`; receives Telegram updates and delegates to Telegraf.
 - `POST /api/telegram/connect`: `api/telegram/connect.ts`; requires Supabase bearer token, validates the user, upserts `telegram_connections`, and sends a Telegram welcome message.
 
@@ -33,22 +36,32 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/providers/AuthContext.tsx`: Supabase session state, Google sign-in, difficulty metadata.
 - `src/services/supabase.ts`: browser Supabase anon client.
 - `src/services/supabaseServer.ts`: server Supabase service-role client.
-- `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients.
-- `src/services/groq.ts`: Groq Whisper transcription, verbose word timestamps, filler analysis, AI feedback.
-- `src/pages/PracticePage.tsx`: current web practice screen; enforces `mode = "free"` and maps optional `prompt_text`.
-- `src/features/practice/pages/useRecordingController.ts`: coordinates recording, scoring, session persistence, and optional Groq transcription/feedback hooks.
+- `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients when present in the worktree.
+- `src/services/groq.ts`: server-only Groq implementation for Whisper transcription, verbose word timestamps, filler analysis, and AI feedback. Browser code must not import this file.
+- `api/transcription.ts`: serverless audio transcription boundary.
+- `api/feedback.ts`: serverless AI feedback boundary.
+- `src/pages/PracticePage.tsx`: current web practice screen; maps optional `prompt_text` into the session context.
+- `src/features/practice/pages/useRecordingController.ts`: coordinates recording, scoring, session persistence, transcription, and feedback hooks.
 - `src/features/practice/hooks/useRecording.ts`: web recording lifecycle and microphone/audio analyzer orchestration.
 - `src/features/practice/hooks/useScoring.ts`: builds web session result using core scoring.
 - `src/features/practice/hooks/useSession.ts`: web session persistence, transcription, and feedback requests.
-- `src/features/practice/lib/speechAnalyzer.ts`: Web Audio analyzer, silence/pause detection, browser speech recognition, recorder diagnostics; imports core scoring directly.
-- `src/lib/practiceApi.ts`: browser-facing session, streak, stats, Groq transcription, and feedback wrapper.
-- `src/lib/telegramBot.ts`: Telegram bot commands, voice analysis, prompts, stats, friend/group challenges.
+- `src/features/practice/lib/speechAnalyzer.ts`: high-level practice analyzer that composes audio capture, speech session state, and transcription.
+- `src/features/practice/lib/audioCapture.ts`: MediaRecorder/Web Audio stream setup, analyser samples, audio chunks, diagnostics, and health checks.
+- `src/features/practice/lib/speechSession.ts`: speech/silence state, pause-unit tracking, scoring preview, and mic state-machine integration.
+- `src/features/practice/lib/transcription.ts`: browser SpeechRecognition plus Android/server transcription fallback coordination.
+- `src/features/practice/lib/speechTypes.ts`: shared practice analyzer types.
+- `src/lib/practiceApi.ts`: browser-facing API facade for sessions, streaks, stats, transcription, and feedback. Groq work is routed through `/api/transcription` and `/api/feedback`.
+- `src/lib/telegramBot.ts`: compatibility re-export for the Telegram router.
+- `src/lib/telegram/router.ts`: Telegraf command/action routing, connection checks, stats, and prompt messages.
+- `src/lib/telegram/voiceHandler.ts`: Telegram voice download, transcription endpoint call, pause/filler analysis, persistence, and reply formatting.
+- `src/lib/telegram/challenges.ts`: friend/group challenge creation, state, callbacks, and result updates.
+- `src/lib/telegram/constants.ts`: Telegram bot constants.
 - `src/lib/telegramAuth.ts`: Telegram connection upsert.
 - `src/lib/core/scoring.ts`: Flow Score source of truth.
 - `src/lib/core/session.ts`: shared `sessions` insert and `streaks` update.
 - `src/lib/core/queries.ts`: shared stats/session reads and aggregation.
 - `src/lib/core/modes.ts`: mode normalization and labels.
-- `src/lib/core/prompts.ts`: built-in prompts used by Telegram.
+- `src/lib/core/prompts.ts`: built-in prompts used by web prompts and Telegram.
 - `src/lib/core/user.ts`: Telegram ID to Supabase user lookup.
 - `supabase/migrations/*.sql`: additive migrations for Telegram connections, challenge tables, and newer session columns. Base `sessions`/`streaks` schema is not fully represented in this repo.
 
@@ -58,35 +71,50 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `insertSession(supabase, input)`: normalizes `free_speaking` to `free`, writes session rows, falls back when newer analysis columns are missing.
 - `updateStreak(supabase, input)`: updates daily streak counters.
 - `buildPracticeStats(sessions, streak)`: aggregates dashboard/stat values.
-- `AudioAnalyzer`: browser audio capture and pause-unit detection.
+- `SpeechAnalyzer`: top-level browser practice orchestrator.
+- `AudioCapture`: browser audio capture/analyser/recorder helper.
+- `SpeechSession`: pause detection and scoring session state.
+- `TranscriptionController`: browser SpeechRecognition and server transcription fallback helper.
 - `createTelegramBot()`: registers Telegram commands, actions, and voice handling.
-- `transcribeAudioVerbose()`: Groq Whisper transcription with word timestamps for Telegram pause detection.
-- `analyzeSpeech()` / `getAIFeedback()`: Groq chat-based filler counting and user feedback.
+- `handleVoiceMessage()`: Telegram voice analysis pipeline.
+- `transcribeAudioVerbose()`: server-side Groq Whisper transcription with word timestamps.
+- `analyzeSpeech()` / `getAIFeedback()` / `analyzePracticeSpeech()`: server-side Groq chat-based filler counting and feedback.
 
 ## Active Data Flow
 
 ### Web Free Speaking
 
-1. Authenticated user opens `/practice` or `/practice/free-speaking`.
-2. `PracticePage` sets mode to `free`; optional `prompt_text` becomes display prompt context only.
-3. `useRecordingController` initializes `micService` and `AudioAnalyzer`.
-4. `AudioAnalyzer` samples Web Audio RMS, calibrates noise, tracks speech/silence, and emits pause units.
-5. Browser speech recognition may produce an initial transcript; user can request Groq transcription from the saved audio blob.
-6. `calculateFlowScore` scores pause units using speaking time and total session time.
-7. `saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
-8. Stats pages read `sessions` and `streaks` through `getPracticeStats` / `buildPracticeStats`.
+1. Authenticated user opens `/practice`, `/practice/free-speaking`, or chooses a prompt from `/prompts`.
+2. `PracticePage` runs Free Speaking mode; optional `prompt_text` becomes prompt context.
+3. `useRecordingController` initializes microphone services and the practice analyzer.
+4. `AudioCapture` samples Web Audio RMS, records chunks, and reports capture diagnostics.
+5. `SpeechSession` tracks speech/silence, emits pause units, and uses `calculateFlowScore` for preview/final scoring.
+6. Browser SpeechRecognition may produce an initial transcript. Android fallback or manual transcription sends the audio blob through `practiceApi.transcribeAudio()` to `/api/transcription`.
+7. `/api/transcription` validates the Supabase bearer token, calls Groq Whisper server-side, and returns transcript text and optional word timestamps.
+8. `saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
+9. Optional coaching feedback sends transcript and scoring data through `practiceApi.analyzeSpeech()` to `/api/feedback`; the endpoint calls Groq server-side and stores/returns feedback through the session flow.
+10. Stats pages read `sessions` and `streaks` through `getPracticeStats` / `buildPracticeStats`.
 
 ### Telegram Voice / Challenge
 
 1. Telegram posts updates to `/api/telegram/webhook`.
 2. `createTelegramBot` resolves the Telegram user through `telegram_connections`; unconnected users get `/connect?tg=...`.
-3. Voice files are downloaded from Telegram and sent to Groq Whisper verbose transcription.
-4. Telegram rejects unusable transcripts under 3 words.
-5. Pause units are calculated from inter-word timestamp gaps; spoken filler count is calculated by Groq chat.
-6. `calculateFlowScore` scores pause units as mode `free`.
-7. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
-8. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback.
-9. Friend/group challenge state uses `challenges` and `telegram_challenge_state`; prompt text comes from `src/lib/core/prompts.ts`.
+3. `voiceHandler` downloads Telegram voice files from Telegram.
+4. `voiceHandler` uploads the audio to `/api/transcription` with `x-nopause-internal-token`; the transcription endpoint calls Groq Whisper server-side and returns transcript plus word timestamps.
+5. Telegram rejects unusable transcripts under 3 words.
+6. Pause units are calculated from inter-word timestamp gaps; spoken filler count is calculated by server-side Groq chat.
+7. `calculateFlowScore` scores pause units as mode `free`.
+8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
+9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback.
+10. Friend/group challenge state uses `challenges` and `telegram_challenge_state`; prompt text comes from `src/lib/core/prompts.ts`.
+
+## External Service Boundaries
+
+- Browser code may call Supabase with the anon key and local serverless endpoints under `/api/*`.
+- Browser code must not call Groq URLs directly and must not import `src/services/groq.ts`.
+- `api/transcription.ts`, `api/feedback.ts`, and server-side Telegram code are the Groq boundary.
+- Telegram voice transcription goes through `/api/transcription` even though it runs server-side, so the Whisper upload path stays centralized.
+- Supabase service-role access is server-only. Browser data writes use authenticated Supabase client calls or serverless endpoints that validate the user.
 
 ## Scoring Source Of Truth
 
@@ -113,16 +141,20 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 - Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 - Server/API Groq: `GROQ_API_KEY`.
-- Server/Vercel: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`.
+- Server/Vercel/Supabase: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`.
+- Internal Telegram-to-API auth/routing: `NOPAUSE_INTERNAL_API_TOKEN`, `NOPAUSE_API_URL`, `NOPAUSE_INTERNAL_API_URL`, `VERCEL_URL`.
 - Runtime flags used by code: `import.meta.env.DEV`, `import.meta.env.VITEST`, `import.meta.env.MODE`.
+- Do not add `VITE_GROQ_API_KEY`; Groq keys are server-only.
 
 ## Architecture Risks / Constraints
 
-- Never expose `SUPABASE_SERVICE_ROLE_KEY` or other server-only secrets to browser code; `VITE_*` values are bundled client-side.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, Telegram tokens, or internal API tokens to browser code; `VITE_*` values are bundled client-side.
+- Groq must remain behind serverless/server code. Browser transcription and feedback must use `/api/transcription` and `/api/feedback`.
+- `/api/transcription` accepts either a Supabase bearer token or the internal token used by Telegram. `/api/feedback` currently requires a Supabase bearer token.
 - Base `sessions` and `streaks` schema/RLS policies are incomplete in repo migrations; verify production Supabase before changing access patterns.
 - `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count`, `filler_count`, or `hesitations_per_minute`.
 - Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not be represented accurately.
-- Telegram prompt/challenge behavior is active even though web UI exposes Free Speaking only.
-- AI feedback generation depends on stored transcripts; no separate durable transcript cache exists beyond `sessions.transcript`.
+- Telegram prompt/challenge behavior is active and shares prompt data with the web prompt picker.
+- AI feedback generation depends on stored or generated transcripts; no separate durable transcript cache exists beyond `sessions.transcript`.
 - `APP_URL`, `SITE_URL`, and Google redirect URLs are hardcoded in code and may require code changes for non-production domains.
 - Microphone capture requires secure context except localhost and depends on browser MediaRecorder/Web Audio support.
