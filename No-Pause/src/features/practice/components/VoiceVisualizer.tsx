@@ -41,6 +41,8 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
     const barCount = 32;
     const barWidth = 6;
     const gap = 4;
+    const primaryToken = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+    const primaryFill = (alpha: number) => `hsl(${primaryToken} / ${alpha})`;
 
     const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
       ctx.beginPath();
@@ -79,7 +81,7 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
           const height = smoothedHeightsRef.current[i];
           const x = startX + i * (barWidth + gap);
           const y = centerY - height / 2;
-          ctx.fillStyle = 'rgba(90, 125, 124, 0.1)';
+          ctx.fillStyle = primaryFill(0.1);
           drawRoundedRect(ctx, x, y, barWidth, height, barWidth / 2);
         }
         animationRef.current = requestAnimationFrame(animate);
@@ -114,13 +116,13 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
 
         const gradient = ctx.createLinearGradient(x, y, x, y + height);
         if (currentIsSilent) {
-          gradient.addColorStop(0, 'rgba(90, 125, 124, 0.15)');
-          gradient.addColorStop(1, 'rgba(90, 125, 124, 0.15)');
+          gradient.addColorStop(0, primaryFill(0.15));
+          gradient.addColorStop(1, primaryFill(0.15));
         } else {
           const intensity = Math.min(1, height / (h * 0.6));
-          gradient.addColorStop(0, `rgba(90, 125, 124, ${0.4 + intensity * 0.4})`);
-          gradient.addColorStop(0.5, `rgba(90, 125, 124, ${0.7 + intensity * 0.3})`);
-          gradient.addColorStop(1, `rgba(90, 125, 124, ${0.4 + intensity * 0.4})`);
+          gradient.addColorStop(0, primaryFill(0.4 + intensity * 0.4));
+          gradient.addColorStop(0.5, primaryFill(0.7 + intensity * 0.3));
+          gradient.addColorStop(1, primaryFill(0.4 + intensity * 0.4));
         }
 
         ctx.fillStyle = gradient;
@@ -128,7 +130,7 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
 
         if (!currentIsSilent && height > h * 0.3) {
           ctx.shadowBlur = 10 * (height / h);
-          ctx.shadowColor = 'rgba(90, 125, 124, 0.3)';
+          ctx.shadowColor = primaryFill(0.3);
         } else {
           ctx.shadowBlur = 0;
         }

@@ -1,250 +1,128 @@
-# No Pause AI Context
+# No Pause Architecture
 
-High-signal architecture notes for AI agents. Keep this file compact.
+Compact current-state notes for AI agents. Update only when architecture, data flow, API behavior, scoring, schema, env, or deployment assumptions change.
 
-## Agent Rules
+## Product Surface
 
-- Only Free Speaking is exposed in the web UI.
-- Lemon, topic, reading challenge, blog, and prompt-browser code may still exist, but current web UI should not link to those flows.
-- Do not remove `src/lib/core/prompts.ts`; it is used by Telegram.
-- `SYSTEM.md` should only change for architecture-level changes: scoring, data flow, API behavior, database shape, environment variables, deployment assumptions, or major product-surface changes.
-- Do not update `SYSTEM.md` for UI styling, layout, copy, or navigation-only changes.
-- Source of truth for Flow Score is `src/lib/core/scoring.ts`; do not duplicate or fork scoring logic.
-- Do not casually modify scoring, analyzer, Supabase, or Telegram bot behavior when doing UI work.
+- Web UI currently exposes authenticated Free Speaking practice only. `/practice` and `/practice/free-speaking` both render `PracticePage`; `PracticePage` always uses mode `free`.
+- Web no longer exposes `/prompts` or prompt-browser files. Free Speaking can still accept `prompt_text`; this is display context only and is scored as `free`.
+- Telegram may still use prompts and friend/group challenges. Do not remove `src/lib/core/prompts.ts` unless Telegram prompt/challenge behavior is replaced.
+- `lemon`, `topic`, and `readingchallenge` mode values may exist in old data or Telegram-related copy, but they are not separate current web practice modes.
 
-## Architecture
+## Exposed Routes
 
-### Web
+- `/`: authenticated dashboard, `DashboardPage`.
+- `/practice`: Free Speaking practice, `PracticePage`.
+- `/practice/free-speaking`: Free Speaking practice, `PracticePage`.
+- `/stats`: stats/session history, `StatsPage`.
+- `/history`: redirects to `/stats`.
+- `/connect?tg=<telegram_id>`: Telegram account linking page.
+- `/sessions`: auth-gated stats page used from Telegram links.
+- `/auth/*`, `/login/*`, `/auth/sign-up/*`, `/auth/callback`: Supabase Google auth.
+- `*`: `NotFound`.
 
-- Vite + React + TypeScript app.
-- Entry: `src/main.tsx`.
-- Router: `src/App.tsx`.
-- Auth: Supabase Google auth through `AuthContext` and `src/lib/supabase.ts`.
-- Practice UI: `src/pages/PracticePage.tsx`.
-- Web practice state/controllers: `src/features/practice/pages/*`.
-- Web audio analysis: `src/features/practice/lib/speechAnalyzer.ts`, `src/features/practice/lib/analyzer/micStateMachine.ts`.
-- Persistence/API wrapper: `src/lib/practiceApi.ts`.
-- Current web practice mode: Free Speaking only; `usePromptLoader` forces mode to `free` regardless of route/query.
+## API Endpoints
 
-### Telegram
+- `POST /api/telegram/webhook`: `api/telegram/webhook.ts`; receives Telegram updates and delegates to Telegraf.
+- `POST /api/telegram/connect`: `api/telegram/connect.ts`; requires Supabase bearer token, validates the user, upserts `telegram_connections`, and sends a Telegram welcome message.
 
-- Webhook: `api/telegram/webhook.ts`.
-- Bot implementation: `src/lib/telegramBot.ts`.
-- Bot username: `NoPauseAI_bot`.
-- Telegram connects to web through `/connect?tg=<telegram_id>`.
-- Telegram voice analysis uses Groq Whisper timestamps, Groq chat filler analysis, core scoring, and Supabase service-role writes.
+## Important Files
 
-### Supabase
+- `src/main.tsx`: React entry and providers.
+- `src/App.tsx`: routing, auth gating, SEO updates, Vercel analytics/speed insights.
+- `src/providers/AuthContext.tsx`: Supabase session state, Google sign-in, difficulty metadata.
+- `src/services/supabase.ts`: browser Supabase anon client.
+- `src/services/supabaseServer.ts`: server Supabase service-role client.
+- `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients.
+- `src/services/groq.ts`: Groq Whisper transcription, verbose word timestamps, filler analysis, AI feedback.
+- `src/pages/PracticePage.tsx`: current web practice screen; enforces `mode = "free"` and maps optional `prompt_text`.
+- `src/features/practice/pages/useRecordingController.ts`: coordinates recording, scoring, session persistence, and optional Groq transcription/feedback hooks.
+- `src/features/practice/hooks/useRecording.ts`: web recording lifecycle and microphone/audio analyzer orchestration.
+- `src/features/practice/hooks/useScoring.ts`: builds web session result using core scoring.
+- `src/features/practice/hooks/useSession.ts`: web session persistence, transcription, and feedback requests.
+- `src/features/practice/lib/speechAnalyzer.ts`: Web Audio analyzer, silence/pause detection, browser speech recognition, recorder diagnostics; imports core scoring directly.
+- `src/lib/practiceApi.ts`: browser-facing session, streak, stats, Groq transcription, and feedback wrapper.
+- `src/lib/telegramBot.ts`: Telegram bot commands, voice analysis, prompts, stats, friend/group challenges.
+- `src/lib/telegramAuth.ts`: Telegram connection upsert.
+- `src/lib/core/scoring.ts`: Flow Score source of truth.
+- `src/lib/core/session.ts`: shared `sessions` insert and `streaks` update.
+- `src/lib/core/queries.ts`: shared stats/session reads and aggregation.
+- `src/lib/core/modes.ts`: mode normalization and labels.
+- `src/lib/core/prompts.ts`: built-in prompts used by Telegram.
+- `src/lib/core/user.ts`: Telegram ID to Supabase user lookup.
+- `supabase/migrations/*.sql`: additive migrations for Telegram connections, challenge tables, and newer session columns. Base `sessions`/`streaks` schema is not fully represented in this repo.
 
-- Browser uses anon client + user auth.
-- Server/API/bot uses service-role client.
-- Stores users, sessions, streaks, Telegram links, challenge records, and pending Telegram challenge state.
-- Base migrations for `sessions` and `streaks` are incomplete in repo; some production schema/policies may exist outside repo.
+## Core Functions / Modules
 
-### Groq
+- `calculateFlowScore(rawHesitationCount, options)`: authoritative scoring function.
+- `insertSession(supabase, input)`: normalizes `free_speaking` to `free`, writes session rows, falls back when newer analysis columns are missing.
+- `updateStreak(supabase, input)`: updates daily streak counters.
+- `buildPracticeStats(sessions, streak)`: aggregates dashboard/stat values.
+- `AudioAnalyzer`: browser audio capture and pause-unit detection.
+- `createTelegramBot()`: registers Telegram commands, actions, and voice handling.
+- `transcribeAudioVerbose()`: Groq Whisper transcription with word timestamps for Telegram pause detection.
+- `analyzeSpeech()` / `getAIFeedback()`: Groq chat-based filler counting and user feedback.
 
-- Module: `src/lib/core/groq.ts`.
-- Transcription endpoint: `/openai/v1/audio/transcriptions`.
-- Chat endpoint: `/openai/v1/chat/completions`.
-- Whisper model: `whisper-large-v3-turbo`.
-- Chat model: `llama-3.3-70b-versatile`.
-- Browser Groq calls may use `VITE_GROQ_API_KEY`; server/bot uses `GROQ_API_KEY`.
+## Active Data Flow
 
-## Core Flows
-
-### Web Practice Flow
+### Web Free Speaking
 
 1. Authenticated user opens `/practice` or `/practice/free-speaking`.
-2. `usePromptLoader` resolves mode as `free`; optional `prompt_text` becomes a Free Speaking prompt.
-3. `useRecordingController` obtains mic stream via `micService`.
-4. `AudioAnalyzer` samples Web Audio RMS, calibrates noise, tracks speech/silence transitions, and counts pause units.
-5. Browser `SpeechRecognition`, when available, builds transcript and filler-word display data.
-6. `calculateFlowScore` scores filtered pause units with speaking time and total duration.
-7. `saveSession`/`insertSession` writes session metrics and transcript to Supabase; `updateStreak` updates streaks.
-8. Stats read through `getPracticeStats`.
+2. `PracticePage` sets mode to `free`; optional `prompt_text` becomes display prompt context only.
+3. `useRecordingController` initializes `micService` and `AudioAnalyzer`.
+4. `AudioAnalyzer` samples Web Audio RMS, calibrates noise, tracks speech/silence, and emits pause units.
+5. Browser speech recognition may produce an initial transcript; user can request Groq transcription from the saved audio blob.
+6. `calculateFlowScore` scores pause units using speaking time and total session time.
+7. `saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
+8. Stats pages read `sessions` and `streaks` through `getPracticeStats` / `buildPracticeStats`.
 
-### Telegram Voice Flow
+### Telegram Voice / Challenge
 
-1. Telegram sends POST update to `/api/telegram/webhook`.
-2. `createTelegramBot` delegates voice messages to `handleVoiceMessage`.
-3. Bot resolves connected Supabase user from `telegram_connections`; unconnected users get a connect prompt.
-4. Bot downloads voice file from Telegram file API.
-5. `transcribeAudioVerbose` sends audio to Groq Whisper with `verbose_json` word timestamps.
-6. Empty, under-3-word, or high `no_speech_prob` transcripts are rejected.
-7. Bot counts real pauses from inter-word timestamp gaps using the default pause threshold.
-8. `analyzeGroqSpeech` counts spoken filler hesitations from transcript text; this is display/storage only.
-9. Bot calculates Flow Score from pause count, speaking time, total voice duration, and mode.
-10. Bot writes session, updates streak, stores temporary transcript memory for AI feedback, and replies with score, pauses, hesitations, speaking time, and transcript.
+1. Telegram posts updates to `/api/telegram/webhook`.
+2. `createTelegramBot` resolves the Telegram user through `telegram_connections`; unconnected users get `/connect?tg=...`.
+3. Voice files are downloaded from Telegram and sent to Groq Whisper verbose transcription.
+4. Telegram rejects unusable transcripts under 3 words.
+5. Pause units are calculated from inter-word timestamp gaps; spoken filler count is calculated by Groq chat.
+6. `calculateFlowScore` scores pause units as mode `free`.
+7. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
+8. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback.
+9. Friend/group challenge state uses `challenges` and `telegram_challenge_state`; prompt text comes from `src/lib/core/prompts.ts`.
 
-### Telegram Challenges
+## Scoring Source Of Truth
 
-- `/nopause` in groups creates a durable challenge and stores pending state in `telegram_challenge_state`.
-- Friend/group challenge voice notes reuse the same voice analysis and session write flow.
-- Challenge topics and pending challenge context are durable in Supabase; AI feedback transcript cache is process-local and can disappear on cold starts.
+- Only `src/lib/core/scoring.ts` defines Flow Score. UI/analyzer modules import it directly; do not fork constants or formulas.
+- `rawHesitationCount` means penalized pause units for scoring.
+- Current completion rules: `free` and `lemon` require at least 60s total session time and 50% speaking ratio; `topic` requires at least 120s and 50% speaking ratio.
+- Incomplete sessions return score `0` with reason `duration` or `speaking`.
+- Pause thresholds by difficulty: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`; Telegram uses the default beginner threshold.
+- Web `hesitationCount` is audio-derived pause units and affects score.
+- Telegram `pauseCount` is word-gap pause units and affects score.
+- Telegram `hesitationCount`/`filler_count` is LLM-counted spoken fillers for display/storage only.
+- `sessions.pauses` is legacy naming; current writes also use `pause_count` when available.
 
-## Scoring
+## Database Tables Used
 
-Source: `src/lib/core/scoring.ts`. Re-exported by `src/features/practice/lib/scoringConstants.ts` and `src/features/practice/lib/analyzer/scoring.ts`.
-
-### Key Constants
-
-- `SCORING_VERSION = "1.0"`.
-- Pause thresholds: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`.
-- Default pause threshold: beginner.
-- `GRACE_RATE = 1.0`.
-- `PENALTY_PER_HPM = 10`.
-- `MIN_RATIO_FOR_UNCAPPED = 0.65`.
-- `CAP_AT_MIN_RATIO = 70`.
-- Minimum speaking ratio for completion: `0.5`.
-- Min total duration: free `60s`, lemon `60s`, topic `120s`.
-
-### Completion
-
-`calculateFlowScore(rawHesitationCount, options)` treats `rawHesitationCount` as penalized interruption units. Current Telegram passes `pauseCount`.
-
-- If `totalSessionTimeSec <= 0`: score `0`, incomplete, reason `duration`.
-- `free`: complete when total duration >= `60s` and speaking ratio >= `0.5`.
-- `lemon`: complete when total duration >= `60s` and speaking ratio >= `0.5`.
-- `topic`: complete when total duration >= `120s` and speaking ratio >= `0.5`.
-- Incomplete sessions return score `0` and reason `duration` or `speaking`.
-
-### Formula
-
-```text
-speakingRatio = speakingTimeSec / totalSessionTimeSec
-speakingMinutes = max(speakingTimeSec / 60, 0.5)
-hesitationsPerMinute = penalizedCount / speakingMinutes
-excessRate = max(0, hesitationsPerMinute - GRACE_RATE)
-baseScore = max(0, round(100 - excessRate * PENALTY_PER_HPM))
-
-if speakingRatio < MIN_RATIO_FOR_UNCAPPED:
-  ratioRange = MIN_RATIO_FOR_UNCAPPED - 0.5
-  ratioProgress = min(1, (speakingRatio - 0.5) / ratioRange)
-  maxScore = round(CAP_AT_MIN_RATIO + ratioProgress * (100 - CAP_AT_MIN_RATIO))
-  finalScore = min(baseScore, maxScore)
-else:
-  finalScore = baseScore
-```
-
-With current constants:
-
-```text
-baseScore = max(0, round(100 - max(0, HPM - 1.0) * 10))
-```
-
-Labels: `96-100 Perfect Flow`, `81-95 Great Flow`, `61-80 Good Flow`, `41-60 Getting There`, `0-40 Needs Practice`.
-
-### Pause vs Filler Semantics
-
-- Web `hesitationCount` means real pause units from audio silence detection; it affects score.
-- Telegram `pauseCount` means real pause units from word timestamp gaps; it affects score.
-- Telegram `hesitationCount` means LLM-counted spoken fillers; it is display/storage only (`filler_count`) and does not affect score.
-- `sessions.pauses` is legacy naming; `insertSession` also writes `pause_count` when available.
-
-### Web Pause Detection
-
-- RMS smoothing window: `10`.
-- Calibration: `1500ms`.
-- Speech-on threshold: `max(0.01, noiseFloor * 3)`, capped at `0.06`.
-- Speech-off threshold: `speechOnThreshold * 0.7`.
-- Ignore micro-pauses under `300ms`.
-- Pause units: `floor(silenceDuration / hesitationMinDuration)`.
-- Final trailing silence handled with `END_BUFFER_MS = 1000`.
-- Difficulty threshold comes from Supabase user metadata.
-
-### Telegram Pause Detection
-
-- Uses Groq Whisper `verbose_json` with word timestamps.
-- Inter-word gap = `word.start - previousWord.end`.
-- Gap >= default threshold (`1.8s`) counts `floor(gap / 1.8s)` pause units.
-- Speaking time uses sum of word durations when possible; otherwise Telegram voice duration.
-- Total session time uses Telegram voice duration, minimum `1s`.
-
-## API Surface
-
-- `POST /api/telegram/webhook`
-  - File: `api/telegram/webhook.ts`.
-  - Receives Telegram updates and delegates to Telegraf.
-- `POST /api/telegram/connect`
-  - File: `api/telegram/connect.ts`.
-  - Requires Supabase bearer token, validates logged-in user, upserts `telegram_connections`, sends Telegram welcome message.
-
-## Database
-
-### `auth.users`
-
-- Managed by Supabase Auth.
-- Used fields: `id`, `email`, `user_metadata.full_name/name/avatar_url`, difficulty metadata.
-- Difficulty controls web pause threshold.
-
-### `public.sessions`
-
-- Durable practice/voice records.
-- Critical fields: `user_id`, `created_at`, `mode`, `duration`, `speaking_time`, `pauses`, `pause_count`, `filler_count`, `hesitations_per_minute`, `words`, `flow_score`, `completed`, `hesitation_log`, `transcript`, `analysis_feedback`, `scoring_version`.
-- Values for `mode` can include `free`, `lemon`, `topic`, `readingchallenge`; `free_speaking` normalizes to `free`.
-- Written by web and Telegram through shared `insertSession`; updated by web `updateSession`.
-- Read by stats, session history, and Telegram status.
-
-### `public.streaks`
-
-- Durable streak counters.
-- Critical fields: `user_id`, `current_streak`, `longest_streak`, `last_session_date`.
-- Written by shared `updateStreak`; read by stats and Telegram status.
-
-### `public.telegram_connections`
-
-- Links Telegram ID to Supabase user ID.
-- Critical fields: `user_id`, `telegram_id`, `connected_at`.
-- Written by `/api/telegram/connect`; read by bot user resolution.
-
-### `public.challenges`
-
-- Durable Telegram friend/group challenge records.
-- Critical fields: `id`, `topic`, `creator_telegram_id`, `creator_score`, `status`, `created_at`.
-- Service-role managed.
-
-### `public.telegram_challenge_state`
-
-- Durable pending friend/group challenge context by Telegram user.
-- Critical fields: `telegram_id`, `challenge_type`, `challenge_id`, `group_id`, `group_message_id`, `participant_username`, `creator_username`.
-- Service-role managed.
-
-## Core Modules
-
-- `src/lib/core/scoring.ts`: Flow Score source of truth.
-- `src/lib/core/session.ts`: shared session/streak writes; falls back when newer columns are absent.
-- `src/lib/core/queries.ts`: shared stats reads/aggregation; reads `pause_count` with `pauses` fallback.
-- `src/lib/core/groq.ts`: Groq transcription, verbose transcription, filler analysis, AI feedback.
-- `src/lib/core/modes.ts`: mode normalization/labels.
-- `src/lib/core/prompts.ts`: built-in Telegram prompts.
-- `src/lib/core/user.ts`: Telegram ID to Supabase user resolution.
+- `auth.users`: Supabase Auth users; code reads `id`, `email`, name/avatar metadata, and difficulty metadata.
+- `public.sessions`: practice records. Used fields include `id`, `user_id`, `created_at`, `mode`, `duration`, `speaking_time`, `pauses`, `pause_count`, `filler_count`, `hesitations_per_minute`, `words`, `flow_score`, `completed`, `hesitation_log`, `transcript`, `analysis_feedback`, `scoring_version`, `source`.
+- `public.streaks`: streak counters. Used fields: `user_id`, `current_streak`, `longest_streak`, `last_session_date`.
+- `public.telegram_connections`: Telegram account links. Used fields: `telegram_id`, `user_id`, `connected_at`.
+- `public.challenges`: Telegram friend/group challenge records. Used fields: `id`, `topic`, `creator_telegram_id`, `creator_score`, `status`, `created_at`.
+- `public.telegram_challenge_state`: pending Telegram challenge context. Used fields: `telegram_id`, `challenge_id`, `challenge_type`, `group_id`, `group_message_id`, `participant_username`, `creator_username`, `created_at`, `updated_at`.
 
 ## Environment Variables
 
-### Browser
+- Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- Browser or server Groq: `VITE_GROQ_API_KEY` in browser builds, `GROQ_API_KEY` in server/API runtime.
+- Server/Vercel: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`.
+- Runtime flags used by code: `import.meta.env.DEV`, `import.meta.env.VITEST`, `import.meta.env.MODE`.
 
-- `VITE_SUPABASE_URL`: required by `src/lib/supabase.ts`.
-- `VITE_SUPABASE_ANON_KEY`: required by `src/lib/supabase.ts`.
-- `VITE_GROQ_API_KEY`: browser-exposed Groq key when browser-side Groq calls run.
+## Architecture Risks / Constraints
 
-### Server / Vercel
-
-- `SUPABASE_URL`: server Supabase URL.
-- `SUPABASE_SERVICE_ROLE_KEY`: server-only Supabase service-role key.
-- `TELEGRAM_BOT_TOKEN`: Telegraf bot and Telegram file API token.
-- `GROQ_API_KEY`: server-only Groq key.
-
-### Build/Test
-
-- `import.meta.env.DEV`: debug logging gates.
-- `import.meta.env.VITEST` / `MODE === "test"`: suppresses scoring debug output in tests.
-
-## Constraints / Risks
-
-- Do not expose service-role keys client-side.
-- `VITE_*` keys are bundled into browser code.
-- `sessions` and `streaks` RLS policies are not defined in repo migrations; verify production policies before changing data access.
-- Telegram stats prefer `sessions.source = 'telegram'`; if absent, fallback can include indistinguishable connected-user free sessions.
-- AI feedback transcript memory is process-local and not durable.
-- `hasSpeechEvidence` exists in `FlowScoreOptions` but is not currently used by `calculateFlowScore`.
-- `api/telegram/connect.ts` and auth redirect URLs contain hardcoded production URLs in code.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` or other server-only secrets to browser code; `VITE_*` values are bundled client-side.
+- Base `sessions` and `streaks` schema/RLS policies are incomplete in repo migrations; verify production Supabase before changing access patterns.
+- `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count`, `filler_count`, or `hesitations_per_minute`.
+- Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not be represented accurately.
+- Telegram prompt/challenge behavior is active even though web UI exposes Free Speaking only.
+- AI feedback generation depends on stored transcripts; no separate durable transcript cache exists beyond `sessions.transcript`.
+- `APP_URL`, `SITE_URL`, and Google redirect URLs are hardcoded in code and may require code changes for non-production domains.
+- Microphone capture requires secure context except localhost and depends on browser MediaRecorder/Web Audio support.

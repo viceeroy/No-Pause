@@ -156,7 +156,7 @@ export function ResultPanel({
             </div>
 	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
               <p className="text-xs text-muted-foreground font-sans mb-1.5">Pauses</p>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-ember-600">{lastResults.hesitationCount}</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">{lastResults.hesitationCount}</p>
             </div>
 	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
               <p className="text-xs text-muted-foreground font-sans mb-1.5">Words</p>
@@ -221,9 +221,9 @@ export function ResultPanel({
                 {lastResults.transcriptionLoading ? 'Transcribing…' : (lastResults.transcriptionError ? 'Retry Transcription' : 'Transcribe')}
               </button>
               {lastResults.transcriptionError && (
-                <p className="mt-2 text-sm text-amber-200/90 font-sans">
-                  {lastResults.transcriptionError}
-                </p>
+                  <p className="mt-2 text-sm text-destructive font-sans">
+                    {lastResults.transcriptionError}
+                  </p>
               )}
             </div>
           );
@@ -260,7 +260,7 @@ export function ResultPanel({
                     : (lastResults.analysisFeedbackError ? 'Retry AI Feedback' : 'Get AI Feedback')}
                 </button>
                 {lastResults.analysisFeedbackError && (
-                  <p className="mt-2 text-sm text-amber-200/90 font-sans">
+                  <p className="mt-2 text-sm text-destructive font-sans">
                     {lastResults.analysisFeedbackError}
                   </p>
                 )}
@@ -333,7 +333,7 @@ export function ResultPanel({
           >
             {copied ? (
               <span className="flex items-center justify-center gap-1 animate-scale-in sm:gap-2">
-                <Check size={16} className="text-green-400 sm:size-[18px]" /> Copied!
+                <Check size={16} className="text-primary sm:size-[18px]" /> Copied!
               </span>
             ) : (
               <span className="flex items-center justify-center gap-1 sm:gap-2">

@@ -53,6 +53,16 @@ export type UpdateStreakInput = {
   localDate?: string;
 };
 
+export type ExistingStreakRecord = {
+  current_streak: number | null;
+  longest_streak: number | null;
+  last_session_date: string | null;
+};
+
+export type StreakUpdateValues = ExistingStreakRecord & {
+  user_id: string;
+};
+
 function normalizeSessionMode(mode: string): string {
   return mode === "free_speaking" ? "free" : mode;
 }
@@ -84,6 +94,62 @@ function isMissingSessionAnalysisColumnError(error: unknown): boolean {
   );
 }
 
+export function buildSessionInsertValues(input: InsertSessionInput) {
+  return {
+    user_id: input.userId,
+    speaking_time: input.speakingTime,
+    flow_score: input.flowScore,
+    pauses: input.pauses,
+    pause_count: input.pauseCount ?? input.pauses,
+    filler_count: input.fillerCount ?? null,
+    hesitations_per_minute: input.hesitationsPerMinute ?? null,
+    words: input.words,
+    mode: normalizeSessionMode(input.mode ?? "free"),
+    duration: input.duration,
+    completed: input.completed ?? false,
+    hesitation_log: input.hesitationLog ?? null,
+    transcript: input.transcript ?? null,
+    analysis_feedback: input.analysisFeedback ?? null,
+    scoring_version: input.scoringVersion ?? SCORING_VERSION,
+    source: input.source ?? "web",
+  };
+}
+
+export function buildLegacySessionInsertValues(input: InsertSessionInput) {
+  const {
+    pause_count: _pauseCount,
+    filler_count: _fillerCount,
+    hesitations_per_minute: _hesitationsPerMinute,
+    ...legacyValues
+  } = buildSessionInsertValues(input);
+
+  return legacyValues;
+}
+
+export function calculateNextStreak(input: {
+  userId: string;
+  today: string;
+  existingStreak: ExistingStreakRecord | null;
+}): StreakUpdateValues | null {
+  if (input.existingStreak?.last_session_date === input.today) {
+    return null;
+  }
+
+  const yesterday = addDaysToDateString(input.today, -1);
+  const currentStreak =
+    input.existingStreak?.last_session_date === yesterday
+      ? Number(input.existingStreak.current_streak ?? 0) + 1
+      : 1;
+  const longestStreak = Math.max(currentStreak, Number(input.existingStreak?.longest_streak ?? 0));
+
+  return {
+    user_id: input.userId,
+    current_streak: currentStreak,
+    longest_streak: longestStreak,
+    last_session_date: input.today,
+  };
+}
+
 export async function insertSession(
   supabase: SupabaseLike,
   input: InsertSessionInput,
@@ -92,24 +158,7 @@ export async function insertSession(
     return null;
   }
 
-  const values = {
-      user_id: input.userId,
-      speaking_time: input.speakingTime,
-      flow_score: input.flowScore,
-      pauses: input.pauses,
-      pause_count: input.pauseCount ?? input.pauses,
-      filler_count: input.fillerCount ?? null,
-      hesitations_per_minute: input.hesitationsPerMinute ?? null,
-      words: input.words,
-      mode: normalizeSessionMode(input.mode ?? "free"),
-      duration: input.duration,
-      completed: input.completed ?? false,
-      hesitation_log: input.hesitationLog ?? null,
-      transcript: input.transcript ?? null,
-      analysis_feedback: input.analysisFeedback ?? null,
-      scoring_version: input.scoringVersion ?? SCORING_VERSION,
-      source: input.source ?? "web",
-    };
+  const values = buildSessionInsertValues(input);
 
   const { data, error } = await supabase
     .from("sessions")
@@ -119,12 +168,7 @@ export async function insertSession(
 
   if (error) {
     if (isMissingSessionAnalysisColumnError(error)) {
-      const {
-        pause_count: _pauseCount,
-        filler_count: _fillerCount,
-        hesitations_per_minute: _hpm,
-        ...legacyValues
-      } = values;
+      const legacyValues = buildLegacySessionInsertValues(input);
       const { data: legacyData, error: legacyError } = await supabase
         .from("sessions")
         .insert(legacyValues)
@@ -153,7 +197,6 @@ export async function updateStreak(
   }
 
   const today = input.localDate ?? formatLocalDate(new Date());
-  const yesterday = addDaysToDateString(today, -1);
 
   const { data: streak, error: fetchError } = await supabase
     .from("streaks")
@@ -165,21 +208,18 @@ export async function updateStreak(
     throw fetchError;
   }
 
-  if (streak?.last_session_date === today) {
+  const streakValues = calculateNextStreak({
+    userId: input.userId,
+    today,
+    existingStreak: streak,
+  });
+
+  if (!streakValues) {
     return;
   }
 
-  const currentStreak =
-    streak?.last_session_date === yesterday ? Number(streak.current_streak ?? 0) + 1 : 1;
-  const longestStreak = Math.max(currentStreak, Number(streak?.longest_streak ?? 0));
-
   const { error: upsertError } = await supabase.from("streaks").upsert(
-    {
-      user_id: input.userId,
-      current_streak: currentStreak,
-      longest_streak: longestStreak,
-      last_session_date: today,
-    },
+    streakValues,
     { onConflict: "user_id" },
   );
 

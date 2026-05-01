@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { supabaseServer } from "../../src/lib/supabaseServer.js";
+import { supabaseServer } from "../../src/services/supabaseServer.js";
 import { upsertTelegramConnection } from "../../src/lib/telegramAuth.js";
 import { escapeTelegramHtml } from "../../src/lib/core/utils.js";
 

@@ -6,9 +6,7 @@ import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPan
 import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
 import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
-import { usePromptLoader } from '@/features/practice/pages/usePromptLoader';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
-import { getRandomTopicPrompt } from '@/features/practice/lib/promptService';
 
 const timerOptions = [
   { label: 'No timer', seconds: 0 },
@@ -24,34 +22,31 @@ export default function PracticePage() {
   const [searchParams] = useSearchParams();
   const [selectedTimerSeconds, setSelectedTimerSeconds] = useState(0);
   const [timerMenuOpen, setTimerMenuOpen] = useState(false);
-  const [randomPromptLoading, setRandomPromptLoading] = useState(false);
   const state = usePracticeState();
-  const prompt = usePromptLoader(state);
+  const mode = 'free' as const;
   const recording = useRecordingController({
-    mode: prompt.mode,
+    mode,
     navigate,
     state,
     selectedTimerSeconds,
   });
-  const promptText = state.topicPrompt?.topicTitle || searchParams.get('prompt_text') || '';
+  const promptTextParam = searchParams.get('prompt_text');
+  const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';
   const timerLabel = useMemo(
     () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
     [selectedTimerSeconds],
   );
 
-  const handlePromptClick = () => {
-    navigate('/prompts');
-  };
-
-  const handleRandomFreePrompt = async () => {
-    setRandomPromptLoading(true);
-    try {
-      const picked = await getRandomTopicPrompt();
-      navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(picked.topicTitle)}`, { replace: true });
-    } finally {
-      setRandomPromptLoading(false);
-    }
-  };
+  useEffect(() => {
+    state.setTimeLeft(0);
+    state.setTopicPrompt(promptTextParam ? {
+      id: 'free-speaking-topic',
+      topicTitle: decodeURIComponent(promptTextParam),
+      category: 'EXPERIENCE',
+      difficulty: 'medium',
+      cueCard: [],
+    } : null);
+  }, [promptTextParam, state.setTimeLeft, state.setTopicPrompt]);
 
   useEffect(() => {
     if (state.state === 'recording') {
@@ -83,8 +78,8 @@ export default function PracticePage() {
 
       {state.state !== 'recording' && (
         <>
-          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-1 md:mb-2' : 'text-4xl md:text-5xl mb-3')}>{prompt.getModeTitle()}</h1>
-          <p className={cn('text-muted-foreground font-sans shrink-0', state.isFixedScreen ? 'text-sm md:text-base mb-3 md:mb-6' : 'text-base mb-12')}>{prompt.getModeDescription()}</p>
+          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-1 md:mb-2' : 'text-4xl md:text-5xl mb-3')}>Free Speaking</h1>
+          <p className={cn('text-muted-foreground font-sans shrink-0', state.isFixedScreen ? 'text-sm md:text-base mb-3 md:mb-6' : 'text-base mb-12')}>Talk about anything, no time limit</p>
         </>
       )}
 
@@ -94,15 +89,13 @@ export default function PracticePage() {
           transcriptError={state.transcriptError}
           showMicRetry={state.showMicRetry}
           handleRetryMicrophone={recording.handleRetryMicrophone}
-          handlePromptClick={handlePromptClick}
-          handleRandomFreePrompt={handleRandomFreePrompt}
           timerLabel={timerLabel}
           timerMenuOpen={timerMenuOpen}
           setTimerMenuOpen={setTimerMenuOpen}
+          selectedTimerSeconds={selectedTimerSeconds}
           setSelectedTimerSeconds={setSelectedTimerSeconds}
           timerOptions={timerOptions}
           promptText={promptText}
-          randomPromptLoading={randomPromptLoading}
           handleStart={() => recording.handleStart()}
           countdown={state.countdown}
         />
@@ -122,7 +115,7 @@ export default function PracticePage() {
 
       {state.state === 'done' && state.lastResults && (
         <ResultPanel
-          mode={prompt.mode}
+          mode={mode}
           lastResults={state.lastResults}
           showResultsDebugExport={state.showResultsDebugExport}
           handleRetry={recording.handleRetry}

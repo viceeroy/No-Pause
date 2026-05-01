@@ -14,22 +14,19 @@ interface Particle {
   shape: 'square' | 'circle' | 'strip';
 }
 
-const COLORS = [
-  'hsl(18, 69%, 64%)',   // primary/terracotta
-  'hsl(43, 56%, 58%)',   // gold
-  'hsl(198, 45%, 58%)',  // blue
-  'hsl(165, 34%, 55%)',  // teal
-  'hsl(336, 48%, 62%)',  // pink
-  'hsl(18, 69%, 74%)',   // light terracotta
-  'hsl(0, 0%, 95%)',     // white
-];
-
 const PARTICLE_COUNT = 80;
 
 export default function Confetti() {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
+    const styles = getComputedStyle(document.documentElement);
+    const colors = [
+      `hsl(${styles.getPropertyValue('--primary').trim()})`,
+      `hsl(${styles.getPropertyValue('--accent').trim()})`,
+      `hsl(${styles.getPropertyValue('--foreground').trim()})`,
+      `hsl(${styles.getPropertyValue('--muted-foreground').trim()})`,
+    ];
     const initial: Particle[] = [];
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const fromLeft = i % 2 === 0;
@@ -41,7 +38,7 @@ export default function Confetti() {
         vy: -(3 + Math.random() * 5),
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 15,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        color: colors[Math.floor(Math.random() * colors.length)],
         size: 6 + Math.random() * 8,
         opacity: 1,
         shape: (['square', 'circle', 'strip'] as const)[Math.floor(Math.random() * 3)],

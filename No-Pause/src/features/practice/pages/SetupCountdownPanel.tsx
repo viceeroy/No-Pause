@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, FileText, Shuffle } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
 
@@ -7,15 +7,13 @@ type SetupCountdownPanelProps = {
   transcriptError: string | null;
   showMicRetry: boolean;
   handleRetryMicrophone: () => void;
-  handlePromptClick: () => void;
-  handleRandomFreePrompt: () => Promise<void>;
   timerLabel: string;
   timerMenuOpen: boolean;
   setTimerMenuOpen: (open: boolean) => void;
+  selectedTimerSeconds: number;
   setSelectedTimerSeconds: (seconds: number) => void;
   timerOptions: { label: string; seconds: number }[];
   promptText: string;
-  randomPromptLoading: boolean;
   handleStart: () => Promise<void>;
   countdown: number;
 };
@@ -25,34 +23,31 @@ export function SetupCountdownPanel({
   transcriptError,
   showMicRetry,
   handleRetryMicrophone,
-  handlePromptClick,
-  handleRandomFreePrompt,
   timerLabel,
   timerMenuOpen,
   setTimerMenuOpen,
+  selectedTimerSeconds,
   setSelectedTimerSeconds,
   timerOptions,
   promptText,
-  randomPromptLoading,
   handleStart,
   countdown,
 }: SetupCountdownPanelProps) {
   return (
     <div className={cn(
-      'text-center flex-1 flex flex-col justify-start',
-      'overflow-visible pb-6 md:pb-8'
+      'flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8'
     )}>
       {transcriptError && (
-        <div className="mb-4 p-3 bg-orange-950/40 border border-orange-500/40 rounded-2xl w-full max-w-md mx-auto shrink-0">
-          <div className="flex items-center gap-2 text-orange-200 mb-1">
+        <div className="mx-auto mb-4 w-full max-w-md shrink-0 rounded-2xl border border-border bg-surface-card p-4 shadow-card">
+          <div className="mb-1 flex items-center gap-2 text-destructive">
             <AlertTriangle size={16} />
             <span className="font-sans font-semibold text-sm">Warning</span>
           </div>
-          <p className="text-orange-200/90 text-sm font-sans">{transcriptError}</p>
+          <p className="text-sm font-sans text-muted-foreground">{transcriptError}</p>
           {showMicRetry && (
             <button
               onClick={handleRetryMicrophone}
-              className="mt-3 px-4 py-2 rounded-full bg-orange-500/20 border border-orange-400/40 text-orange-100 text-sm font-sans font-semibold btn-press hover:bg-orange-500/30"
+              className="mt-3 rounded-full border border-border bg-surface-elevated px-4 py-2 text-sm font-sans font-semibold text-foreground btn-press hover:bg-surface-interactive"
             >
               Retry microphone
             </button>
@@ -61,19 +56,24 @@ export function SetupCountdownPanel({
       )}
 
       <div className={cn('transition-all duration-500 flex-1 flex flex-col justify-start min-h-0', state === 'countdown' && 'opacity-30 scale-95 blur-[2px]')}>
-        <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-start py-1 md:min-h-[calc(100dvh-260px)] md:py-8">
-          <div className="mb-8 min-h-[78px] w-full md:mb-12 md:min-h-[120px]">
-            <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">Prompt</p>
+        <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-[calc(100dvh-260px)] md:py-8">
+          <div className="w-full rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:px-10 md:py-12">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Free Speaking</p>
             <p className={cn(
-              'font-serif font-medium text-foreground leading-tight text-balance',
+              'mx-auto font-serif font-medium leading-tight text-balance text-foreground',
               promptText
                 ? 'text-2xl md:text-5xl lg:text-6xl max-w-4xl mx-auto'
                 : 'text-3xl md:text-5xl lg:text-6xl'
             )}>
               {promptText || 'Speak freely'}
             </p>
+            <div className="mx-auto mt-8 flex h-36 w-36 items-center justify-center rounded-full border border-primary/20 bg-primary/10 md:h-44 md:w-44">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full border border-border bg-surface-elevated shadow-card md:h-28 md:w-28">
+                <span className="h-8 w-8 rounded-full bg-primary" />
+              </div>
+            </div>
           </div>
-          <div className="flex w-full flex-1 flex-col items-center justify-end pb-2 md:pb-6">
+          <div className="flex w-full flex-col items-center gap-4 pb-2 pt-6 md:pb-6">
             {state === 'setup' && (
               <>
                 <div className="flex flex-nowrap items-center justify-center gap-2 md:gap-3">
@@ -109,28 +109,11 @@ export function SetupCountdownPanel({
                       </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handlePromptClick}
-                    className="min-h-10 rounded-full bg-surface-card border border-border px-3 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated btn-press transition-colors inline-flex items-center gap-1.5 md:min-h-11 md:px-4 md:text-sm md:gap-2"
-                  >
-                    <FileText size={15} className="text-primary shrink-0" />
-                    Prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleRandomFreePrompt()}
-                    disabled={randomPromptLoading}
-                    className="min-h-10 rounded-full bg-surface-card border border-border px-3 py-2 text-xs font-sans font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed btn-press transition-colors inline-flex items-center gap-1.5 md:min-h-11 md:px-4 md:text-sm md:gap-2"
-                  >
-                    <Shuffle size={15} className="text-primary shrink-0" />
-                    Random
-                  </button>
                 </div>
                   <button
                     type="button"
                     onClick={() => void handleStart()}
-                    className="w-full md:w-auto rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press shadow-soft night-glow flex items-center justify-center gap-4 px-10 sm:px-16 py-3 sm:py-4 text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
                   >
                   Start Speaking
                 </button>

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
-import type { TopicPrompt } from '../lib/promptService';
-import type { PracticeState, PracticeStateStore, SessionResult } from './types';
+import type { PracticeState, PracticeStateStore, SessionResult, TopicPrompt } from './types';
 
 export function usePracticeState(): PracticeStateStore {
   const [topicPrompt, setTopicPrompt] = useState<TopicPrompt | null>(null);

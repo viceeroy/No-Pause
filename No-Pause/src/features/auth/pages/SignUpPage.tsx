@@ -61,7 +61,7 @@ const SignUpPage = () => {
           <div className="flex flex-col gap-4 mb-6 md:mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-surface-card border border-border">
-                <Flame size={18} className="text-ember-500" />
+                <Flame size={18} className="text-primary" />
               </div>
               <span className="text-sm md:text-base text-foreground font-sans font-medium">Track your fluency streak</span>
             </div>
@@ -73,7 +73,7 @@ const SignUpPage = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-surface-card border border-border">
-                <TrendingUp size={18} className="text-emerald-400" />
+                <TrendingUp size={18} className="text-primary" />
               </div>
               <span className="text-sm md:text-base text-foreground font-sans font-medium">Improve with every session</span>
             </div>
@@ -99,7 +99,7 @@ const SignUpPage = () => {
             No Pause only supports Google sign-up
           </p>
           {authError ? (
-            <p className="text-center text-xs text-amber-200/90 mt-3 font-sans font-medium">
+            <p className="text-center text-xs text-destructive mt-3 font-sans font-medium">
               {authError}
             </p>
           ) : null}

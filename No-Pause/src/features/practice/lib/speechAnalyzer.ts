@@ -16,7 +16,7 @@ import {
   DEFAULT_PAUSE_THRESHOLD_MS,
   type FlowScoreOptions,
   type FlowScoreResult,
-} from './analyzer/scoring';
+} from '@/lib/core/scoring';
 
 const SPEECH_THRESHOLD = 0.01;
 const SPEECH_OFF_MULTIPLIER = 0.7;

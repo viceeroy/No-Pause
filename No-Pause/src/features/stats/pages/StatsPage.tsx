@@ -6,7 +6,7 @@ import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { type DifficultyLevel, useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
-import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
+import { normalizeMode } from '@/lib/core/modes';
 import {
   Dialog,
   DialogContent,
@@ -229,7 +229,7 @@ export default function StatsPage({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-2">Stats</h1>
-          <p className="text-base text-muted-foreground font-sans">Flow score by practice mode.</p>
+          <p className="text-base text-muted-foreground font-sans">Flow score from Free Speaking sessions.</p>
         </div>
       </div>
 
@@ -280,7 +280,7 @@ export default function StatsPage({
       </div>
 
       <Dialog open={showInstallHelp} onOpenChange={setShowInstallHelp}>
-        <DialogContent className="bg-[var(--surface-card)] border-border/60 rounded-[20px] p-0 max-w-md mx-auto gap-0 overflow-hidden">
+        <DialogContent className="bg-surface-card border-border rounded-[20px] p-0 max-w-md mx-auto gap-0 overflow-hidden">
           <div className="p-6 pb-4">
             <DialogHeader className="gap-2">
               <DialogTitle className="text-xl font-serif text-foreground">Install No Pause</DialogTitle>
@@ -343,7 +343,7 @@ export default function StatsPage({
       </div>
 
       {statsError && (
-        <div className="mb-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100 font-sans">
+        <div className="mb-8 rounded-2xl border border-border bg-surface-card p-4 text-sm text-destructive font-sans shadow-card">
           {statsError}
         </div>
       )}
@@ -390,7 +390,7 @@ export default function StatsPage({
           {DIFFICULTY_OPTIONS.find((option) => option.level === difficultyLevel)?.description}
         </p>
         {difficultyError && (
-          <p className="text-sm text-amber-200/90 font-sans mt-2">{difficultyError}</p>
+          <p className="text-sm text-destructive font-sans mt-2">{difficultyError}</p>
         )}
       </div>
 
@@ -415,11 +415,10 @@ export default function StatsPage({
             {recentSessions.map((session) => {
               const rawMode = (session.mode || '').toLowerCase();
               const normalizedMode = normalizeMode(rawMode);
-              const modeLabel = rawMode === 'readingchallenge' ? 'Reading Challenge' : MODE_LABELS[normalizedMode];
               return (
                 <div key={session.id || session.created_at} className="rounded-2xl bg-surface-elevated border border-border shadow-card p-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-sm text-foreground font-sans font-semibold">{modeLabel}</p>
+                    <p className="text-sm text-foreground font-sans font-semibold">Free Speaking</p>
 	                    <p className="text-xs text-muted-foreground font-sans truncate">
 	                      {formatDate(session.created_at)}
 	                    </p>
@@ -452,7 +451,7 @@ export default function StatsPage({
       {!isRemoteRecentSessionsLoading && !hasAnySession && (
         <div className="text-center py-12">
           <p className="text-lg font-serif text-foreground mb-2">{emptyStateTitle}</p>
-          <p className="text-sm text-[#AAB2C5] font-sans mb-6">{emptyStateMessage}</p>
+          <p className="text-sm text-muted-foreground font-sans mb-6">{emptyStateMessage}</p>
           {showEmptyStateAction && (
 	            <button onClick={() => navigate('/')} className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-sans font-semibold text-sm btn-press hover:brightness-110 night-glow transition-all">
               Start Practicing

@@ -13,9 +13,9 @@ import {
   isUsableTranscript,
   transcribeAudioVerbose,
   type TranscribedWord,
-} from "./core/groq.js";
+} from "../services/groq.js";
 import { resolveTelegramUser } from "./core/user.js";
-import { supabaseServer } from "./supabaseServer.js";
+import { supabaseServer } from "../services/supabaseServer.js";
 
 const SITE_URL = APP_URL;
 const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";

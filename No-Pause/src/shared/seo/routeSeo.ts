@@ -98,18 +98,6 @@ export const getRouteSeoConfig = (pathname: string, search: string): RouteSeoCon
     };
   }
 
-  if (pathname === "/prompts") {
-    const title = "Speaking Prompts Library | No Pause";
-    const description =
-      "Browse speaking prompts by category and difficulty, then jump directly into timed practice sessions.";
-    return {
-      title,
-      description,
-      canonicalPath: "/prompts",
-      structuredData: buildWebPageSchema(title, description, "/prompts"),
-    };
-  }
-
   if (pathname === "/stats" || pathname === "/history") {
     const title = "Fluency Stats & Progress | No Pause";
     const description =

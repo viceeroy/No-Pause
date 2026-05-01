@@ -28,37 +28,40 @@ export function RecordingPanel({
   const ringOpacity = (isVisuallyActive ? 0.45 : 0.28) + volumeLevel * 0.45;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-start text-center max-w-4xl mx-auto animate-in fade-in duration-700 overflow-hidden pb-10 md:pb-20">
-      <div className="w-full shrink-0 min-h-[72px] md:min-h-[120px] flex flex-col items-center justify-center mb-5 md:mb-10">
+    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
+      <div className="flex min-h-[92px] w-full shrink-0 flex-col items-center justify-center md:min-h-[128px]">
         <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">
-          Free Speak
+          Free Speaking
         </p>
         <p className="font-serif font-medium text-foreground leading-tight text-balance max-w-4xl text-2xl md:text-5xl lg:text-6xl">
           {promptText || 'Speak freely'}
         </p>
       </div>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-start min-h-0 pt-1 md:justify-center md:pt-0">
+      <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
         <div
-          className="relative flex h-52 w-52 items-center justify-center rounded-full md:h-72 md:w-72"
+          className="relative flex h-64 w-64 items-center justify-center rounded-full bg-primary/10 md:h-80 md:w-80"
           aria-label="Recording in progress"
         >
           <div
-            className="absolute inset-0 rounded-full border-2 border-primary/60 transition-all duration-150 ease-out"
+            className="absolute inset-0 rounded-full border-2 border-primary transition-all duration-150 ease-out"
             style={{ opacity: ringOpacity, transform: `scale(${ringScale})` }}
           />
-          <div className="relative z-10 font-serif text-5xl font-medium leading-none text-primary md:text-7xl">
-            {formatTime(timerValue)}
+          <div className="relative z-10 flex h-44 w-44 flex-col items-center justify-center rounded-full border border-border bg-surface-card shadow-card md:h-56 md:w-56">
+            <div className="font-serif text-5xl font-medium leading-none text-primary md:text-7xl">
+              {formatTime(timerValue)}
+            </div>
+            <p className="mt-3 text-xs font-sans font-bold uppercase tracking-widest text-muted-foreground">Recording</p>
           </div>
         </div>
       </div>
 
-      <div className="shrink-0 pt-5 md:pt-7">
+      <div className="w-full shrink-0 pt-5 md:w-auto md:pt-7">
         <button
           onClick={() => void stopRecording()}
-          className="w-full md:w-auto rounded-full bg-primary hover:brightness-110 text-primary-foreground font-sans font-black btn-press shadow-soft night-glow flex items-center justify-center gap-4 px-10 sm:px-16 py-3 sm:py-4 text-base sm:text-lg"
+          className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
         >
-          <Square size={20} fill="white" className="rounded-sm" /> Finish & View Results
+          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
         </button>
       </div>
     </div>

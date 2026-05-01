@@ -47,6 +47,9 @@ export type PracticeStats = {
   }>;
 };
 
+export type ModeBreakdown = PracticeStats["modeBreakdown"][number];
+export type RecentSessionSummary = PracticeStats["recentSessions"][number];
+
 const SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
 const LEGACY_SESSION_COLUMNS =
@@ -146,58 +149,106 @@ export async function getStreak(userId: string): Promise<StreakRecord | null> {
   return data as StreakRecord | null;
 }
 
+export function isScoredSession(session: SessionRecord): boolean {
+  return session.flow_score !== null && session.flow_score !== undefined;
+}
+
+export function getSessionDuration(session: SessionRecord): number {
+  return Number(session.duration || 0);
+}
+
+export function getSessionHesitationCount(session: SessionRecord): number {
+  return Number(session.pause_count ?? session.pauses ?? 0);
+}
+
+export function getSessionFlowScore(session: SessionRecord): number | null {
+  return isScoredSession(session) ? Number(session.flow_score) : null;
+}
+
+export function getNormalizedSessionMode(session: SessionRecord): string {
+  return normalizeMode((session.mode || "free").toLowerCase());
+}
+
+export function groupSessionsByMode(sessions: SessionRecord[]): Record<string, SessionRecord[]> {
+  return sessions.reduce<Record<string, SessionRecord[]>>((acc, session) => {
+    const mode = getNormalizedSessionMode(session);
+    acc[mode] = acc[mode] ? [...acc[mode], session] : [session];
+    return acc;
+  }, {});
+}
+
+export function calculateWeightedAverageFlowScore(sessions: SessionRecord[]): number {
+  const scored = sessions.filter(isScoredSession);
+  const totalScoreWeight = scored.reduce((sum, session) => sum + getSessionDuration(session), 0);
+  const weightedScore = scored.reduce(
+    (sum, session) => sum + Number(session.flow_score || 0) * getSessionDuration(session),
+    0,
+  );
+
+  return totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0;
+}
+
+export function calculateBestFlowScore(sessions: SessionRecord[]): number {
+  return sessions
+    .filter(isScoredSession)
+    .map((session) => Number(session.flow_score))
+    .filter((score) => Number.isFinite(score))
+    .reduce((best, score) => Math.max(best, score), 0);
+}
+
+export function getLastSessionDate(sessions: SessionRecord[]): string | null {
+  return (
+    sessions
+      .map((session) => session.created_at)
+      .filter((createdAt): createdAt is string => Boolean(createdAt))
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null
+  );
+}
+
+export function buildModeBreakdown(sessions: SessionRecord[]): ModeBreakdown[] {
+  return Object.entries(groupSessionsByMode(sessions)).map(([mode, modeSessions]) => {
+    const scoredByMode = modeSessions.filter(isScoredSession);
+    return {
+      mode,
+      totalSessions: modeSessions.length,
+      totalDuration: modeSessions.reduce((sum, session) => sum + getSessionDuration(session), 0),
+      avgFlowScore:
+        scoredByMode.length > 0
+          ? Math.round(
+              scoredByMode.reduce((sum, session) => sum + Number(session.flow_score || 0), 0) /
+                scoredByMode.length,
+            )
+          : null,
+    };
+  });
+}
+
+export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSessionSummary[] {
+  return sessions.map((session) => ({
+    id: session.id,
+    created_at: session.created_at,
+    duration: getSessionDuration(session),
+    hesitationCount: getSessionHesitationCount(session),
+    flowScore: getSessionFlowScore(session),
+    mode: getNormalizedSessionMode(session),
+  }));
+}
+
 export function buildPracticeStats(
   sessions: SessionRecord[],
   streak: StreakRecord | null,
 ): PracticeStats {
-  const scored = sessions.filter((session) => session.flow_score !== null && session.flow_score !== undefined);
-  const totalScoreWeight = scored.reduce((sum, session) => sum + Number(session.duration || 0), 0);
-  const weightedScore = scored.reduce(
-    (sum, session) => sum + Number(session.flow_score || 0) * Number(session.duration || 0),
-    0,
-  );
-  const byMode = sessions.reduce<Record<string, SessionRecord[]>>((acc, session) => {
-    const mode = normalizeMode((session.mode || "free").toLowerCase());
-    acc[mode] = acc[mode] ? [...acc[mode], session] : [session];
-    return acc;
-  }, {});
+  const scored = sessions.filter(isScoredSession);
 
   return {
     scoredSessions: scored.length,
-    totalPracticeTime: sessions.reduce((sum, session) => sum + Number(session.duration || 0), 0),
-    avgFlowScore: totalScoreWeight > 0 ? Math.round(weightedScore / totalScoreWeight) : 0,
-    bestFlowScore: scored
-      .map((session) => Number(session.flow_score))
-      .filter((score) => Number.isFinite(score))
-      .reduce((best, score) => Math.max(best, score), 0),
-    lastSessionDate:
-      sessions
-        .map((session) => session.created_at)
-        .filter((createdAt): createdAt is string => Boolean(createdAt))
-        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null,
+    totalPracticeTime: sessions.reduce((sum, session) => sum + getSessionDuration(session), 0),
+    avgFlowScore: calculateWeightedAverageFlowScore(sessions),
+    bestFlowScore: calculateBestFlowScore(sessions),
+    lastSessionDate: getLastSessionDate(sessions),
     currentStreak: Number(streak?.current_streak ?? 0),
     bestStreak: Number(streak?.longest_streak ?? 0),
-    modeBreakdown: Object.entries(byMode).map(([mode, modeSessions]) => {
-      const scoredByMode = modeSessions.filter(
-        (session) => session.flow_score !== null && session.flow_score !== undefined,
-      );
-      return {
-        mode,
-        totalSessions: modeSessions.length,
-        totalDuration: modeSessions.reduce((sum, session) => sum + Number(session.duration || 0), 0),
-        avgFlowScore:
-          scoredByMode.length > 0
-            ? Math.round(scoredByMode.reduce((sum, session) => sum + Number(session.flow_score || 0), 0) / scoredByMode.length)
-            : null,
-      };
-    }),
-    recentSessions: sessions.map((session) => ({
-      id: session.id,
-      created_at: session.created_at,
-      duration: Number(session.duration || 0),
-      hesitationCount: Number(session.pause_count ?? session.pauses ?? 0),
-      flowScore: session.flow_score === null || session.flow_score === undefined ? null : Number(session.flow_score),
-      mode: normalizeMode((session.mode || "free").toLowerCase()),
-    })),
+    modeBreakdown: buildModeBreakdown(sessions),
+    recentSessions: buildRecentSessionSummaries(sessions),
   };
 }

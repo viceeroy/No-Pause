@@ -1,28 +1,35 @@
-export const TOPIC_MIN_TOTAL_SECONDS = 120;
+import {
+  CAP_AT_MIN_RATIO,
+  FREE_SPEAKING_MIN_TOTAL_SECONDS,
+  GETTING_THERE_MIN_SCORE,
+  GOOD_FLOW_MIN_SCORE,
+  GRACE_RATE,
+  GREAT_FLOW_MIN_SCORE,
+  LEMON_MIN_TOTAL_SECONDS,
+  MIN_RATIO_FOR_UNCAPPED,
+  MIN_SPEAKING_RATIO_FOR_SCORE,
+  PENALTY_PER_HPM,
+  PERFECT_FLOW_MIN_SCORE,
+  TOPIC_MIN_TOTAL_SECONDS,
+} from "./constants.js";
 
-export const LEMON_MIN_TOTAL_SECONDS = 60;
-
-export const THRESHOLD_BEGINNER = 1.8;
-export const THRESHOLD_INTERMEDIATE = 1.2;
-export const THRESHOLD_ADVANCED = 0.8;
-export const DEFAULT_PAUSE_THRESHOLD_MS = Math.round(THRESHOLD_BEGINNER * 1000);
-
-export type PauseThresholdLevel = "beginner" | "intermediate" | "advanced";
-
-export const DEFAULT_PAUSE_THRESHOLD_LEVEL: PauseThresholdLevel = "beginner";
-
-export const PAUSE_THRESHOLD_BY_LEVEL: Record<PauseThresholdLevel, number> = {
-  beginner: THRESHOLD_BEGINNER,
-  intermediate: THRESHOLD_INTERMEDIATE,
-  advanced: THRESHOLD_ADVANCED,
-};
-
-export const GRACE_RATE = 1.0;
-export const PENALTY_PER_HPM = 10;
-export const MIN_RATIO_FOR_UNCAPPED = 0.65;
-export const CAP_AT_MIN_RATIO = 70;
-
-const MIN_SPEAKING_RATIO_FOR_SCORE = 0.5;
+export {
+  CAP_AT_MIN_RATIO,
+  DEFAULT_PAUSE_THRESHOLD_LEVEL,
+  DEFAULT_PAUSE_THRESHOLD_MS,
+  FREE_SPEAKING_MIN_TOTAL_SECONDS,
+  GRACE_RATE,
+  LEMON_MIN_TOTAL_SECONDS,
+  MIN_RATIO_FOR_UNCAPPED,
+  MIN_SPEAKING_RATIO_FOR_SCORE,
+  PAUSE_THRESHOLD_BY_LEVEL,
+  PENALTY_PER_HPM,
+  THRESHOLD_ADVANCED,
+  THRESHOLD_BEGINNER,
+  THRESHOLD_INTERMEDIATE,
+  TOPIC_MIN_TOTAL_SECONDS,
+  type PauseThresholdLevel,
+} from "./constants.js";
 
 type ScoreReason = "duration" | "speaking";
 
@@ -86,8 +93,12 @@ export function calculateFlowScore(
       isCompleted = true;
     }
   } else {
-    isCompleted = totalSession >= 60 && speakingRatio >= MIN_SPEAKING_RATIO_FOR_SCORE;
-    if (!isCompleted) reason = totalSession < 60 ? "duration" : "speaking";
+    isCompleted =
+      totalSession >= FREE_SPEAKING_MIN_TOTAL_SECONDS &&
+      speakingRatio >= MIN_SPEAKING_RATIO_FOR_SCORE;
+    if (!isCompleted) {
+      reason = totalSession < FREE_SPEAKING_MIN_TOTAL_SECONDS ? "duration" : "speaking";
+    }
   }
 
   if (!isCompleted) {
@@ -133,9 +144,9 @@ export function calculateFlowScore(
 }
 
 export function getScoreLabel(score: number): string {
-  if (score >= 96) return "Perfect Flow";
-  if (score >= 81) return "Great Flow";
-  if (score >= 61) return "Good Flow";
-  if (score >= 41) return "Getting There";
+  if (score >= PERFECT_FLOW_MIN_SCORE) return "Perfect Flow";
+  if (score >= GREAT_FLOW_MIN_SCORE) return "Great Flow";
+  if (score >= GOOD_FLOW_MIN_SCORE) return "Good Flow";
+  if (score >= GETTING_THERE_MIN_SCORE) return "Getting There";
   return "Needs Practice";
 }

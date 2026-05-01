@@ -1,94 +1,21 @@
-import { supabase } from "./supabase";
 import { insertSession, updateStreak as updateCoreStreak } from "./core/session";
-import { getAIFeedback, transcribeBase64Audio, type Base64TranscriptionInput } from "./core/groq";
 import { buildPracticeStats, type PracticeStats, type SessionRecord, type StreakRecord } from "./core/queries";
+import {
+  analyzePracticeSpeech,
+  transcribePracticeAudio,
+  type AnalyzePracticeSpeechInput,
+  type Base64TranscriptionInput,
+} from "@/services/groq";
+import { supabase as browserSupabase } from "@/services/supabase";
 
 export type { PracticeStats, SessionRecord } from "./core/queries";
 
-type AnalyzeSpeechInput = {
-  transcript: string;
-  flowScore?: number;
-  hesitationCount?: number;
-  speakingTime?: number;
-  wordCount?: number;
-  mode?: string;
-};
-
-const buildPrompt = (input: {
-  transcript: string;
-  flowScore: number;
-  hesitationCount: number;
-  speakingTime: number;
-  wordCount: number;
-}) =>
-  `You are a speech analysis expert. The user just completed a speaking session with these stats:
-- Flow Score: ${input.flowScore}/100
-- Pauses: ${input.hesitationCount}
-- Speaking Time: ${input.speakingTime} seconds
-- Word Count: ${input.wordCount}
-- Transcript: ${input.transcript}
-
-Return feedback in markdown with:
-- A short punchy header (e.g. ## 🎯 Your Session Breakdown)
-- Bold the key stats when mentioned (flow score, pause count)
-- 2-3 short sections with emoji headers like ### 💪 What You Did Well and ### 🎯 Focus On This
-- End with a single motivational sentence under ### 🚀 Next Time
-Keep it under 200 words, punchy and energetic in tone — not corporate or boring.`;
-
-const buildVoiceActingPrompt = (transcript: string) =>
-  `You are a drama coach and voice acting director. The user just read a dramatic passage aloud. Analyze their transcript for emotional expression, clarity, pacing, and dramatic delivery. Give energetic, encouraging feedback like a real acting coach. Reference specific words or phrases from their reading. Keep it under 200 words and use markdown formatting with emoji headers.
-
-Transcript: ${transcript}`;
-
 export async function transcribeAudio(input: Base64TranscriptionInput): Promise<string> {
-  return transcribeBase64Audio(input);
+  return transcribePracticeAudio(input);
 }
 
-export async function analyzeSpeech(input: AnalyzeSpeechInput): Promise<string> {
-  try {
-    const trimmed = input.transcript.trim();
-    if (!trimmed) {
-      throw new Error("Transcript is empty");
-    }
-
-    const flowScore = input.flowScore ?? 0;
-    const hesitationCount = input.hesitationCount ?? 0;
-    const speakingTime = input.speakingTime ?? 0;
-    const wordCount = input.wordCount ?? 0;
-    const mode = input.mode ?? "default";
-
-    console.log("analyzeSpeech request", {
-      transcriptLength: trimmed.length,
-      flowScore,
-      hesitationCount,
-      speakingTime,
-      wordCount,
-      mode,
-    });
-
-    const output = await getAIFeedback(
-      trimmed,
-      mode === "voiceacting"
-        ? buildVoiceActingPrompt(trimmed)
-        : buildPrompt({
-          transcript: trimmed,
-          flowScore,
-          hesitationCount,
-          speakingTime,
-          wordCount,
-        }),
-    );
-    console.log("analyzeSpeech response", {
-      responseLength: output.length,
-    });
-    return output;
-  } catch (error) {
-    console.error("Groq analyzeSpeech failed", {
-      message: error instanceof Error ? error.message : String(error),
-      transcriptLength: input.transcript.length,
-    });
-    throw error;
-  }
+export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
+  return analyzePracticeSpeech(input);
 }
 
 type SaveSessionInput = {
@@ -115,7 +42,7 @@ type UpdateSessionInput = {
 };
 
 export async function saveSession(input: SaveSessionInput): Promise<string | null> {
-  return insertSession(supabase, {
+  return insertSession(browserSupabase, {
     userId: input.userId,
     speakingTime: input.speakingTime,
     flowScore: input.flowScore,
@@ -140,7 +67,7 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
   if (input.analysisFeedback !== undefined) updates.analysis_feedback = input.analysisFeedback;
   if (Object.keys(updates).length === 0) return;
 
-  const { error } = await supabase
+  const { error } = await browserSupabase
     .from("sessions")
     .update(updates)
     .eq("id", input.sessionId)
@@ -150,7 +77,7 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
 }
 
 export async function updateStreak(input: { userId: string | null; email?: string | null; localDate?: string }): Promise<void> {
-  await updateCoreStreak(supabase, {
+  await updateCoreStreak(browserSupabase, {
     userId: input.userId,
     localDate: input.localDate,
   });
@@ -172,13 +99,13 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   }
 
   const [{ data: sessions, error: sessionsError }, { data: streak, error: streakError }] = await Promise.all([
-    supabase
+    browserSupabase
       .from("sessions")
       .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit),
-    supabase
+    browserSupabase
       .from("streaks")
       .select("current_streak, longest_streak")
       .eq("user_id", userId)

@@ -26,6 +26,15 @@ export type Base64TranscriptionInput = {
   durationSec?: number;
 };
 
+export type AnalyzePracticeSpeechInput = {
+  transcript: string;
+  flowScore?: number;
+  hesitationCount?: number;
+  speakingTime?: number;
+  wordCount?: number;
+  mode?: string;
+};
+
 function getGroqApiKey(): string {
   const processEnv =
     typeof process !== "undefined"
@@ -353,6 +362,83 @@ export async function getAIFeedback(transcript: string, systemPrompt?: string): 
     console.error("Groq feedback failed", {
       message: error instanceof Error ? error.message : String(error),
       transcriptLength: transcript.length,
+    });
+    throw error;
+  }
+}
+
+const buildPracticeFeedbackPrompt = (input: {
+  transcript: string;
+  flowScore: number;
+  hesitationCount: number;
+  speakingTime: number;
+  wordCount: number;
+}) =>
+  `You are a speech analysis expert. The user just completed a speaking session with these stats:
+- Flow Score: ${input.flowScore}/100
+- Pauses: ${input.hesitationCount}
+- Speaking Time: ${input.speakingTime} seconds
+- Word Count: ${input.wordCount}
+- Transcript: ${input.transcript}
+
+Return feedback in markdown with:
+- A short punchy header (e.g. ## 🎯 Your Session Breakdown)
+- Bold the key stats when mentioned (flow score, pause count)
+- 2-3 short sections with emoji headers like ### 💪 What You Did Well and ### 🎯 Focus On This
+- End with a single motivational sentence under ### 🚀 Next Time
+Keep it under 200 words, punchy and energetic in tone — not corporate or boring.`;
+
+const buildVoiceActingPrompt = (transcript: string) =>
+  `You are a drama coach and voice acting director. The user just read a dramatic passage aloud. Analyze their transcript for emotional expression, clarity, pacing, and dramatic delivery. Give energetic, encouraging feedback like a real acting coach. Reference specific words or phrases from their reading. Keep it under 200 words and use markdown formatting with emoji headers.
+
+Transcript: ${transcript}`;
+
+export async function transcribePracticeAudio(input: Base64TranscriptionInput): Promise<string> {
+  return transcribeBase64Audio(input);
+}
+
+export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
+  try {
+    const trimmed = input.transcript.trim();
+    if (!trimmed) {
+      throw new Error("Transcript is empty");
+    }
+
+    const flowScore = input.flowScore ?? 0;
+    const hesitationCount = input.hesitationCount ?? 0;
+    const speakingTime = input.speakingTime ?? 0;
+    const wordCount = input.wordCount ?? 0;
+    const mode = input.mode ?? "default";
+
+    console.log("analyzeSpeech request", {
+      transcriptLength: trimmed.length,
+      flowScore,
+      hesitationCount,
+      speakingTime,
+      wordCount,
+      mode,
+    });
+
+    const output = await getAIFeedback(
+      trimmed,
+      mode === "voiceacting"
+        ? buildVoiceActingPrompt(trimmed)
+        : buildPracticeFeedbackPrompt({
+            transcript: trimmed,
+            flowScore,
+            hesitationCount,
+            speakingTime,
+            wordCount,
+          }),
+    );
+    console.log("analyzeSpeech response", {
+      responseLength: output.length,
+    });
+    return output;
+  } catch (error) {
+    console.error("Groq analyzeSpeech failed", {
+      message: error instanceof Error ? error.message : String(error),
+      transcriptLength: input.transcript.length,
     });
     throw error;
   }

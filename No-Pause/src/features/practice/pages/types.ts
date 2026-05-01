@@ -1,8 +1,15 @@
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
-import type { TopicPrompt } from '../lib/promptService';
 import type { Dispatch, SetStateAction } from 'react';
 
 export type PracticeState = 'setup' | 'countdown' | 'recording' | 'done';
+
+export type TopicPrompt = {
+  id: string;
+  topicTitle: string;
+  category: string;
+  difficulty: string;
+  cueCard: string[];
+};
 
 export interface SessionResult {
   sessionId?: string | null;
