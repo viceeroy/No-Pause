@@ -44,7 +44,7 @@ export interface SpeechSessionFinalStats {
 }
 
 export class SpeechSession {
-  private readonly startBufferMs = 0;
+  private readonly startBufferMs = 2000;
   private readonly endBufferMs = 1000;
   private speechOnThreshold = SPEECH_THRESHOLD;
   private speechOffThreshold = SPEECH_THRESHOLD * SPEECH_OFF_MULTIPLIER;

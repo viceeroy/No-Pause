@@ -49,6 +49,8 @@ export function useRecording({
 }: UseRecordingOptions) {
   const analyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRunIdRef = useRef(0);
   const sessionDataRef = useRef<SessionData | null>(null);
   const soundDetectedRef = useRef(false);
   const micInitializingRef = useRef(false);
@@ -64,6 +66,32 @@ export function useRecording({
     setShowMicRetry,
     setElapsedTime,
   } = state;
+
+  const clearCountdownTimer = useCallback(() => {
+    countdownRunIdRef.current += 1;
+    if (countdownTimerRef.current) {
+      clearTimeout(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+  }, []);
+
+  const runStartCountdown = useCallback(async () => {
+    clearCountdownTimer();
+    const runId = countdownRunIdRef.current;
+    setState('countdown');
+    setCountdown(3);
+
+    for (let nextCount = 2; nextCount >= 0; nextCount -= 1) {
+      await new Promise<void>((resolve) => {
+        countdownTimerRef.current = setTimeout(resolve, 1000);
+      });
+      countdownTimerRef.current = null;
+      if (countdownRunIdRef.current !== runId) return false;
+      setCountdown(nextCount);
+    }
+
+    return true;
+  }, [clearCountdownTimer, setCountdown, setState]);
 
   const stopRecording = useCallback(async () => {
     if (analyzerRef.current && analyzerRef.current.isRunning) {
@@ -220,7 +248,9 @@ export function useRecording({
 
       analyzerRef.current = analyzer;
 
-      setCountdown(0);
+      const countdownCompleted = await runStartCountdown();
+      if (!countdownCompleted) return;
+
       micInitializingRef.current = false;
       await startRecording();
     } catch (error) {
@@ -229,7 +259,7 @@ export function useRecording({
     } finally {
       micInitializingRef.current = false;
     }
-  }, [difficultyLevel, setLastResults, setTranscriptError, setShowMicRetry, setAudioData, setState, setCountdown, startRecording]);
+  }, [difficultyLevel, setLastResults, setTranscriptError, setShowMicRetry, setAudioData, setState, runStartCountdown, startRecording]);
 
   const handleRetryMicrophone = useCallback(() => {
     void handleStart(true);
@@ -241,9 +271,10 @@ export function useRecording({
       analyzerRef.current = null;
     }
     void micService.reset();
+    clearCountdownTimer();
     if (timerRef.current) clearInterval(timerRef.current);
     navigate('/');
-  }, [navigate]);
+  }, [clearCountdownTimer, navigate]);
 
   const exportDiagnosticsLogs = useCallback(() => {
     const analyzer = analyzerRef.current;
@@ -306,9 +337,10 @@ export function useRecording({
         analyzerRef.current = null;
       }
       void micService.reset();
+      clearCountdownTimer();
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [clearCountdownTimer]);
 
   return {
     handleBack,
