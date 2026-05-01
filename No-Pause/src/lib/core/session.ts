@@ -83,7 +83,7 @@ export function addDaysToDateString(dateString: string, days: number): string {
   return formatLocalDate(date);
 }
 
-function isMissingSessionAnalysisColumnError(error: unknown): boolean {
+export function isMissingSessionAnalysisColumnError(error: unknown): boolean {
   const maybeError = error as { code?: string; message?: string } | null;
   return (
     maybeError?.code === "PGRST204" ||
@@ -116,12 +116,12 @@ export function buildSessionInsertValues(input: InsertSessionInput) {
 }
 
 export function buildLegacySessionInsertValues(input: InsertSessionInput) {
-  const {
-    pause_count: _pauseCount,
-    filler_count: _fillerCount,
-    hesitations_per_minute: _hesitationsPerMinute,
-    ...legacyValues
-  } = buildSessionInsertValues(input);
+  const legacyValues: Partial<ReturnType<typeof buildSessionInsertValues>> = {
+    ...buildSessionInsertValues(input),
+  };
+  delete legacyValues.pause_count;
+  delete legacyValues.filler_count;
+  delete legacyValues.hesitations_per_minute;
 
   return legacyValues;
 }

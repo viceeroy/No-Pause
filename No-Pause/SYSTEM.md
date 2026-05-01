@@ -112,7 +112,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## Environment Variables
 
 - Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
-- Browser or server Groq: `VITE_GROQ_API_KEY` in browser builds, `GROQ_API_KEY` in server/API runtime.
+- Server/API Groq: `GROQ_API_KEY`.
 - Server/Vercel: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`.
 - Runtime flags used by code: `import.meta.env.DEV`, `import.meta.env.VITEST`, `import.meta.env.MODE`.
 

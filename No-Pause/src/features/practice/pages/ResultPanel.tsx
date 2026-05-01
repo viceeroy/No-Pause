@@ -120,7 +120,7 @@ export function ResultPanel({
     const pauseRanges = (lastResults.hesitationLog || [])
       .map(getHesitationRangeMs)
       .filter((range) => range.end > range.start);
-    const sampleCount = 48;
+    const sampleCount: number = 48;
     const chartWidth = TIMELINE_WIDTH - TIMELINE_PADDING_X * 2;
     const chartBottom = 82;
     const chartHeight = chartBottom - TIMELINE_PADDING_Y;

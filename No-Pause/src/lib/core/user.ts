@@ -1,4 +1,4 @@
-import { supabaseServer } from "../supabaseServer.js";
+import { supabaseServer } from "../../services/supabaseServer.js";
 
 export async function resolveTelegramUser(telegramId: number): Promise<string | null> {
   const { data, error } = await supabaseServer

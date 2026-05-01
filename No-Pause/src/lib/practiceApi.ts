@@ -1,21 +1,97 @@
-import { insertSession, updateStreak as updateCoreStreak } from "./core/session";
+import { insertSession, updateStreak as updateCoreStreak, type SupabaseLike } from "./core/session";
 import { buildPracticeStats, type PracticeStats, type SessionRecord, type StreakRecord } from "./core/queries";
-import {
-  analyzePracticeSpeech,
-  transcribePracticeAudio,
-  type AnalyzePracticeSpeechInput,
-  type Base64TranscriptionInput,
-} from "@/services/groq";
 import { supabase as browserSupabase } from "@/services/supabase";
 
 export type { PracticeStats, SessionRecord } from "./core/queries";
 
+const sessionSupabase: SupabaseLike = browserSupabase as unknown as SupabaseLike;
+
+export type Base64TranscriptionInput = {
+  audioBase64: string;
+  mimeType: string;
+  language?: string;
+  durationSec?: number;
+};
+
+export type AnalyzePracticeSpeechInput = {
+  transcript: string;
+  flowScore?: number;
+  hesitationCount?: number;
+  speakingTime?: number;
+  wordCount?: number;
+  mode?: string;
+};
+
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return new Blob([bytes], { type: mimeType });
+}
+
+function getAudioFilename(mimeType: string): string {
+  const extensionByMime: Record<string, string> = {
+    "audio/webm": "webm",
+    "audio/wav": "wav",
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/mp4": "mp4",
+    "audio/m4a": "m4a",
+    "audio/ogg": "ogg",
+  };
+  const safeMimeType = mimeType.split(";")[0] || "audio/webm";
+  return `recording.${extensionByMime[safeMimeType] || "webm"}`;
+}
+
+async function readEndpointJson<T>(response: Response): Promise<T> {
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message =
+      body && typeof body === "object" && "error" in body
+        ? String((body as { error?: unknown }).error)
+        : `Request failed: ${response.status}`;
+    throw new Error(message);
+  }
+
+  return body as T;
+}
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data } = await browserSupabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function transcribeAudio(input: Base64TranscriptionInput): Promise<string> {
-  return transcribePracticeAudio(input);
+  const safeMimeType = input.mimeType.split(";")[0] || "audio/webm";
+  const formData = new FormData();
+  formData.append("audio", base64ToBlob(input.audioBase64, safeMimeType), getAudioFilename(safeMimeType));
+  if (input.language) formData.append("language", input.language);
+  if (input.durationSec !== undefined) formData.append("durationSec", String(input.durationSec));
+
+  const response = await fetch("/api/transcription", {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: formData,
+  });
+  const body = await readEndpointJson<{ transcript?: unknown }>(response);
+  return String(body.transcript ?? "");
 }
 
 export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
-  return analyzePracticeSpeech(input);
+  const response = await fetch("/api/feedback", {
+    method: "POST",
+    headers: {
+      ...(await getAuthHeaders()),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  const body = await readEndpointJson<{ feedback?: unknown }>(response);
+  return String(body.feedback ?? "");
 }
 
 type SaveSessionInput = {
@@ -42,7 +118,7 @@ type UpdateSessionInput = {
 };
 
 export async function saveSession(input: SaveSessionInput): Promise<string | null> {
-  return insertSession(browserSupabase, {
+  return insertSession(sessionSupabase, {
     userId: input.userId,
     speakingTime: input.speakingTime,
     flowScore: input.flowScore,
@@ -77,7 +153,7 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
 }
 
 export async function updateStreak(input: { userId: string | null; email?: string | null; localDate?: string }): Promise<void> {
-  await updateCoreStreak(browserSupabase, {
+  await updateCoreStreak(sessionSupabase, {
     userId: input.userId,
     localDate: input.localDate,
   });

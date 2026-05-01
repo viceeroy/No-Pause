@@ -40,11 +40,7 @@ function getGroqApiKey(): string {
     typeof process !== "undefined"
       ? (process.env as Record<string, string | undefined>)
       : undefined;
-  const viteEnv =
-    typeof import.meta !== "undefined"
-      ? (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
-      : undefined;
-  const apiKey = processEnv?.GROQ_API_KEY ?? viteEnv?.VITE_GROQ_API_KEY;
+  const apiKey = processEnv?.GROQ_API_KEY;
 
   if (!apiKey) {
     throw new Error("GROQ_API_KEY is not set");

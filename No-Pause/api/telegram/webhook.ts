@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { createTelegramBot } from "../../src/lib/telegramBot.js";
+import { createTelegramBot } from "../../src/lib/telegram/router.js";
 
 const bot = createTelegramBot();
 const telegrafWebhook = bot.webhookCallback("/api/telegram/webhook");

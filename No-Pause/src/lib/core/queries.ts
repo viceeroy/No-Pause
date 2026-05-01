@@ -1,4 +1,5 @@
 import { normalizeMode } from "./modes.js";
+import { isMissingSessionAnalysisColumnError } from "./session.js";
 
 export type SessionRecord = {
   id: string;
@@ -55,18 +56,8 @@ const SESSION_COLUMNS =
 const LEGACY_SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
 
-function isMissingSessionAnalysisColumnError(error: unknown): boolean {
-  const maybeError = error as { code?: string; message?: string } | null;
-  return (
-    maybeError?.code === "PGRST204" ||
-    maybeError?.code === "42703" ||
-    maybeError?.message?.includes("pause_count") === true ||
-    maybeError?.message?.includes("filler_count") === true
-  );
-}
-
 async function getServerSupabase() {
-  const { supabaseServer } = await import("../supabaseServer.js");
+  const { supabaseServer } = await import("../../services/supabaseServer.js");
   return supabaseServer;
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, MessageCircle, ShieldAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/services/supabase";
 import { useAuth } from "@/providers/AuthContext";
 
 type ConnectState = "missing" | "signing-in" | "connecting" | "success" | "error";

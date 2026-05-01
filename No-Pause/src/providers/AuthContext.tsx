@@ -7,7 +7,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/services/supabase";
 
 export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
 
