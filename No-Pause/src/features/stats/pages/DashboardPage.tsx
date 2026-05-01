@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Download, Activity, Send, CircleUser, Coffee, TrendingUp, Clock, type LucideIcon } from 'lucide-react';
+import { Mic, Download, Activity, Send, CircleUser, Coffee, TrendingUp, Clock, CalendarDays, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
+import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
+import { opinionPrompts } from '@/lib/core/prompts';
 import {
   Dialog,
   DialogContent,
@@ -44,12 +46,54 @@ const infoCards: Array<{
   },
 ];
 
+const dashboardPrompts = opinionPrompts.slice(0, 10);
+
+const emptyStats: PracticeStats = {
+  scoredSessions: 0,
+  totalPracticeTime: 0,
+  avgFlowScore: 0,
+  bestFlowScore: 0,
+  lastSessionDate: null,
+  currentStreak: 0,
+  bestStreak: 0,
+  modeBreakdown: [],
+  recentSessions: [],
+};
+
+function formatPracticeMinutes(seconds: number) {
+  const minutes = Math.round(Math.max(0, seconds || 0) / 60);
+  return `${minutes}m`;
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [stats, setStats] = useState<PracticeStats>(emptyStats);
+  const [statsLoading, setStatsLoading] = useState(true);
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setStatsLoading(true);
+    getPracticeStats(user?.id ?? null, 1000)
+      .then((nextStats) => {
+        if (!cancelled) setStats(nextStats);
+      })
+      .catch((error) => {
+        console.error('Failed to load dashboard stats:', error);
+        if (!cancelled) setStats(emptyStats);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const handleCardClick = () => {
     navigate('/practice/free-speaking');
@@ -80,17 +124,51 @@ export default function DashboardPage() {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() ?? '')
       .join('') || 'NP';
+  const sessionsThisMonth = useMemo(() => {
+    const now = new Date();
+    return stats.recentSessions.filter((session) => {
+      const sessionDate = new Date(session.created_at);
+      return (
+        Number.isFinite(sessionDate.getTime()) &&
+        sessionDate.getFullYear() === now.getFullYear() &&
+        sessionDate.getMonth() === now.getMonth()
+      );
+    }).length;
+  }, [stats.recentSessions]);
+  const metricCards: Array<{
+    label: string;
+    value: string | number;
+    icon: LucideIcon;
+    valueClassName: string;
+    className?: string;
+  }> = [
+    {
+      label: 'Flow score',
+      value: statsLoading ? '...' : stats.avgFlowScore,
+      icon: TrendingUp,
+      valueClassName: 'text-primary',
+    },
+    {
+      label: 'Practice time',
+      value: statsLoading ? '...' : formatPracticeMinutes(stats.totalPracticeTime),
+      icon: Clock,
+      valueClassName: 'text-foreground',
+    },
+    {
+      label: 'Sessions this month',
+      value: statsLoading ? '...' : sessionsThisMonth,
+      icon: CalendarDays,
+      valueClassName: 'text-foreground',
+      className: 'hidden md:flex',
+    },
+  ];
 
   return (
     <div className="min-h-dvh bg-surface-base px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 md:px-12 md:pb-16 md:pt-8 lg:px-20">
       <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-6xl flex-col">
-        <div className="mb-6 flex items-start justify-between gap-4 md:mb-10">
+        <div className="mb-4 flex items-center justify-between gap-4 md:mb-6">
           <div className="min-w-0 text-left">
-            <p className="mb-2 text-xs font-sans font-black uppercase tracking-widest text-primary">Free Speaking</p>
-            <h1 className="mb-2 text-4xl font-serif font-medium tracking-tight text-foreground md:text-6xl">No Pause</h1>
-            <h2 className="max-w-xl text-sm font-sans leading-relaxed text-muted-foreground md:text-lg">
-              Minimal speech practice for smoother flow.
-            </h2>
+            <h1 className="text-4xl font-serif font-medium tracking-tight text-foreground md:text-6xl">No Pause</h1>
           </div>
           <div className="flex shrink-0 items-center justify-center gap-2">
             {showInstallButton && (
@@ -118,47 +196,78 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid flex-1 gap-4 md:grid-cols-[minmax(0,1fr)_320px] md:items-start md:gap-6">
+        <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:grid-cols-3 md:gap-4">
+          {metricCards.map(({ label, value, icon: Icon, valueClassName, className }) => (
+            <article
+              key={label}
+              className={`min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 shadow-card md:min-h-[124px] md:p-5 ${className ?? 'flex'}`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-sans font-bold leading-snug text-muted-foreground">{label}</p>
+                <Icon size={18} className="shrink-0 text-primary" />
+              </div>
+              <p className={`text-3xl font-serif font-medium leading-none md:text-4xl ${valueClassName}`}>
+                {value}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <div className="flex flex-1 flex-col">
           <button
             type="button"
             onClick={handleCardClick}
-            className="group flex min-h-[360px] flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card p-7 text-center shadow-card transition-all btn-press hover:bg-surface-elevated md:min-h-[560px] md:p-12"
+            className="group flex min-h-[332px] flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card p-7 text-center shadow-card transition-all btn-press hover:bg-surface-elevated md:min-h-[420px] md:p-12"
           >
-            <div className="relative mb-8 flex h-44 w-44 items-center justify-center rounded-full border border-primary/20 bg-primary/10 md:h-64 md:w-64">
-              <div className="absolute inset-5 rounded-full border border-primary/30" />
-              <div className="absolute inset-10 rounded-full bg-surface-elevated shadow-card transition-transform duration-300 group-hover:scale-105" />
-              <Mic size={64} className="relative z-10 text-primary md:size-24" />
+            <div className="relative mb-8 flex h-44 w-44 items-center justify-center md:h-56 md:w-56">
+              <div className="dashboard-mic-glow absolute inset-0 rounded-full border border-primary/30" />
+              <Mic size={64} className="relative z-10 text-primary drop-shadow-[0_0_14px_hsl(var(--primary)/0.22)] md:size-20" />
             </div>
-            <h3 className="mb-3 text-3xl font-serif font-medium text-foreground md:text-5xl">Start with your voice</h3>
+            <h3 className="mb-3 text-3xl font-serif font-medium text-foreground md:text-4xl">Start with your voice</h3>
             <p className="max-w-md text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
               Open Free Speaking, record a short session, then review Flow Score and pauses.
             </p>
           </button>
-
-          <div className="grid gap-3 md:gap-4">
-            <article className="rounded-[22px] border border-border bg-surface-card p-5 shadow-card">
-              <div className="mb-5 flex items-center justify-between">
-                <p className="text-xs font-sans font-bold uppercase tracking-widest text-muted-foreground">Today</p>
-                <TrendingUp size={18} className="text-primary" />
-              </div>
-              <p className="text-5xl font-serif font-medium leading-none text-primary">86</p>
-              <p className="mt-2 text-sm font-sans text-muted-foreground">Flow Score target</p>
-            </article>
-            <article className="rounded-[22px] border border-border bg-surface-card p-5 shadow-card">
-              <div className="mb-5 flex items-center justify-between">
-                <p className="text-xs font-sans font-bold uppercase tracking-widest text-muted-foreground">Practice</p>
-                <Clock size={18} className="text-primary" />
-              </div>
-              <p className="text-4xl font-serif font-medium leading-none text-foreground">5 min</p>
-              <p className="mt-2 text-sm font-sans text-muted-foreground">A short session is enough.</p>
-            </article>
-          </div>
         </div>
 
-        <section aria-labelledby="next-steps-heading" className="mt-5 md:mt-6">
+        <section aria-labelledby="prompt-blocks-heading" className="mt-4 md:mt-6">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 id="next-steps-heading" className="text-base font-serif font-medium text-foreground md:text-xl">
-              What to do next
+            <h2 id="prompt-blocks-heading" className="text-[1.1rem] font-serif font-medium text-foreground md:text-[1.375rem]">
+              Prompts
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/prompts')}
+              className="inline-flex min-h-9 items-center justify-center rounded-full border border-border bg-surface-card px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-elevated md:text-sm"
+            >
+              More
+            </button>
+          </div>
+          <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden md:mx-0 md:px-0">
+            <div className="flex w-max gap-3">
+              {dashboardPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(prompt)}`)}
+                  className="min-h-[118px] w-[218px] shrink-0 rounded-[18px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:w-[240px]"
+                >
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-elevated text-primary">
+                    <Mic size={18} aria-hidden="true" />
+                  </div>
+                  <p className="text-sm md:text-base font-serif font-medium leading-tight text-foreground">
+                    {prompt}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="next-steps-heading" className="mt-4 md:mt-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 id="next-steps-heading" className="text-[1.1rem] font-serif font-medium text-foreground md:text-[1.375rem]">
+              Help
             </h2>
           </div>
           <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden md:mx-0 md:px-0 md:overflow-visible">

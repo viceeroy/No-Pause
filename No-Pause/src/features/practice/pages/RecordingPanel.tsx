@@ -1,4 +1,5 @@
 import { Square } from 'lucide-react';
+import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
 import { formatTime } from './time';
 
@@ -22,10 +23,7 @@ export function RecordingPanel({
   stopRecording,
 }: RecordingPanelProps) {
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
-  const volumeLevel = Math.min(1, Math.max(audioData?.volume ?? audioData?.rms ?? 0, 0) * 28);
-  const isVisuallyActive = soundDetected || volumeLevel > 0;
-  const ringScale = 1 + volumeLevel * 0.18;
-  const ringOpacity = (isVisuallyActive ? 0.45 : 0.28) + volumeLevel * 0.45;
+  const isSilent = audioData?.isSilent ?? !soundDetected;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
@@ -40,19 +38,32 @@ export function RecordingPanel({
 
       <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
         <div
-          className="relative flex h-64 w-64 items-center justify-center rounded-full bg-primary/10 md:h-80 md:w-80"
+          className="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-border bg-surface-card p-5 shadow-card md:p-8"
           aria-label="Recording in progress"
         >
-          <div
-            className="absolute inset-0 rounded-full border-2 border-primary transition-all duration-150 ease-out"
-            style={{ opacity: ringOpacity, transform: `scale(${ringScale})` }}
-          />
-          <div className="relative z-10 flex h-44 w-44 flex-col items-center justify-center rounded-full border border-border bg-surface-card shadow-card md:h-56 md:w-56">
-            <div className="font-serif text-5xl font-medium leading-none text-primary md:text-7xl">
+          <div className="pointer-events-none absolute inset-x-8 top-1/2 h-24 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative z-10 mb-6 flex items-center justify-between gap-4">
+            <div className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-surface-elevated px-4 text-xs font-sans font-black uppercase tracking-widest text-foreground shadow-card">
+              <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+              Recording
+            </div>
+            <div className="font-serif text-4xl font-medium leading-none text-primary md:text-6xl">
               {formatTime(timerValue)}
             </div>
-            <p className="mt-3 text-xs font-sans font-bold uppercase tracking-widest text-muted-foreground">Recording</p>
           </div>
+          <div className="relative z-10 overflow-hidden rounded-[22px] border border-border bg-surface-elevated px-2 py-5 shadow-[0_0_36px_hsl(var(--primary)/0.08)] md:px-4 md:py-8">
+            <div className="h-28 md:h-36">
+              <VoiceVisualizer
+                frequencyData={audioData?.frequencyData}
+                volume={audioData?.volume}
+                isSilent={isSilent}
+                isRecording
+              />
+            </div>
+          </div>
+          <p className="relative z-10 mt-5 text-xs font-sans font-bold uppercase tracking-widest text-muted-foreground">
+            Speak now
+          </p>
         </div>
       </div>
 

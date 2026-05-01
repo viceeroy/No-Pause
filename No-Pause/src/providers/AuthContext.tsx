@@ -23,7 +23,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const GOOGLE_REDIRECT_URL = "https://www.nopause.org/auth/callback";
+const PRODUCTION_ORIGIN = "https://nopause.org";
 const DEFAULT_DIFFICULTY_LEVEL: DifficultyLevel = "beginner";
 
 const isDifficultyLevel = (value: unknown): value is DifficultyLevel =>
@@ -35,6 +35,15 @@ const getDifficultyFromUser = (user: User | null | undefined): DifficultyLevel =
   if (isDifficultyLevel(metadata.difficultyLevel)) return metadata.difficultyLevel;
   if (isDifficultyLevel(metadata.pauseThresholdLevel)) return metadata.pauseThresholdLevel;
   return DEFAULT_DIFFICULTY_LEVEL;
+};
+
+const getAuthCallbackUrl = (nextPath?: string) => {
+  const origin = typeof window !== "undefined" ? window.location.origin : PRODUCTION_ORIGIN;
+  const url = new URL("/auth/callback", origin);
+  if (nextPath) {
+    url.searchParams.set("next", nextPath);
+  }
+  return url.toString();
 };
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -92,10 +101,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       signInWithGoogle: async (returnTo?: string) => {
         const nextPath = returnTo?.startsWith("/") ? returnTo : null;
-        const redirectTo =
-          nextPath && typeof window !== "undefined"
-            ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
-            : GOOGLE_REDIRECT_URL;
+        const redirectTo = getAuthCallbackUrl(nextPath ?? undefined);
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {

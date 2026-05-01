@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, FileText, MessageSquare, Share2, Volume2, Zap } from 'lucide-react';
+import { Activity, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, Timer, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { VoicePlayer } from '../components/VoicePlayer';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
 import { formatMMSS } from './time';
@@ -22,6 +21,40 @@ interface CustomWindow extends Window {
   __nopauseExportLogs?: () => void;
 }
 
+const TIMELINE_WIDTH = 320;
+const TIMELINE_HEIGHT = 128;
+const TIMELINE_PADDING_X = 18;
+const TIMELINE_PADDING_Y = 18;
+const TIMELINE_LABEL_Y = 120;
+
+function formatTimelineTime(seconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  const mins = Math.floor(safeSeconds / 60);
+  const secs = safeSeconds % 60;
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+function getHesitationRangeMs(item: SessionResult['hesitationLog'][number]) {
+  const timestamp = Math.max(0, Number(item.timestamp || 0));
+  const duration = Math.max(0, Number(item.duration || 0));
+  const start = Math.max(0, timestamp - duration);
+  const end = Math.max(start, timestamp);
+  return { start, end };
+}
+
+function buildSmoothPath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+
+    const previous = points[index - 1];
+    const controlX = (previous.x + point.x) / 2;
+    return `${path} C ${controlX.toFixed(2)} ${previous.y.toFixed(2)}, ${controlX.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }, '');
+}
+
 export function ResultPanel({
   mode,
   lastResults,
@@ -33,33 +66,31 @@ export function ResultPanel({
   setCopied,
 }: ResultPanelProps) {
   const navigate = useNavigate();
-  const showWordCount = typeof lastResults.wordCount === 'number' && lastResults.wordCount > 0;
-  const renderDurationValue = (seconds: number) => {
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [copiedTranscript, setCopiedTranscript] = useState(false);
+  const copyText = async (text: string, onCopied: (copied: boolean) => void) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    onCopied(true);
+    setTimeout(() => onCopied(false), 2000);
+  };
+  const renderDurationText = (seconds: number) => {
     const safeSeconds = Math.max(0, Math.floor(seconds || 0));
     const mins = Math.floor(safeSeconds / 60);
     const secs = safeSeconds % 60;
-    return (
-      <>
-        {mins}
-        <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">m</span>
-        <span className="ml-2">
-          {secs}
-          <span className="ml-1 text-xs md:text-sm font-sans font-semibold text-muted-foreground/80">s</span>
-        </span>
-      </>
-    );
+    return `${mins}m ${secs}s`;
   };
-  const getScoreHeadline = (score: number) => {
-    if (score >= 100) return 'Flawless Flow!';
-    if (score >= 95) return 'Near Perfect!';
-    if (score >= 90) return 'Almost Flawless!';
-    if (score >= 80) return 'Strong Performance!';
-    if (score >= 70) return 'Good Momentum!';
-    if (score >= 60) return 'Solid Effort!';
-    if (score >= 50) return 'Building Consistency!';
-    if (score >= 40) return 'Keep Practicing!';
-    return 'Just Getting Started!';
-  };
+
   const getCoachingNote = () => {
     if (lastResults.flowScore === 0) return 'Speak for at least 1 minute to earn a score';
     if (lastResults.hesitationCount > 5) return 'Try to reduce pauses — aim for fewer silence gaps';
@@ -67,244 +98,290 @@ export function ResultPanel({
     if (lastResults.flowScore > 80) return 'Great flow — keep it up';
     return 'Keep building steady, continuous speech';
   };
-
   const speakingTargetPercent = useMemo(() => {
     if (!lastResults.totalSessionTime || lastResults.totalSessionTime <= 0) return 0;
     const raw = (lastResults.totalSpeakingTime / lastResults.totalSessionTime) * 100;
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
+  const scoreWidth = Math.max(0, Math.min(100, lastResults.flowScore));
+  const transcript = (lastResults.transcript || '').trim();
+  const transcriptReady =
+    transcript.length > 0 &&
+    transcript !== 'No speech detected.' &&
+    !transcript.startsWith('Transcription failed');
+  const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
+  const feedbackAvailable = !!lastResults.analysisFeedback || lastResults.analysisFeedbackLoading;
+  const sessionDuration = Math.max(0, lastResults.totalSessionTime || 0);
+  const timelineAvailable = sessionDuration >= 10;
+  const timelineData = useMemo(() => {
+    if (!timelineAvailable) return null;
 
-  const [animatedSpeakingPercent, setAnimatedSpeakingPercent] = useState(0);
+    const durationMs = sessionDuration * 1000;
+    const pauseRanges = (lastResults.hesitationLog || [])
+      .map(getHesitationRangeMs)
+      .filter((range) => range.end > range.start);
+    const sampleCount = 48;
+    const chartWidth = TIMELINE_WIDTH - TIMELINE_PADDING_X * 2;
+    const chartBottom = 82;
+    const chartHeight = chartBottom - TIMELINE_PADDING_Y;
+    const points = Array.from({ length: sampleCount }, (_, index) => {
+      const progress = sampleCount === 1 ? 0 : index / (sampleCount - 1);
+      const currentMs = progress * durationMs;
+      const pauseInfluence = pauseRanges.reduce((strongest, range) => {
+        const midpoint = range.start + (range.end - range.start) / 2;
+        const halfWidth = Math.max(900, (range.end - range.start) / 2);
+        const distance = Math.abs(currentMs - midpoint);
+        const influence = Math.max(0, 1 - distance / halfWidth);
+        return Math.max(strongest, influence);
+      }, 0);
+      const baseline = 0.72 + Math.sin(progress * Math.PI * 4) * 0.05;
+      const activity = Math.max(0.2, Math.min(0.86, baseline - pauseInfluence * 0.5));
+      const x = TIMELINE_PADDING_X + progress * chartWidth;
+      const y = TIMELINE_PADDING_Y + (1 - activity) * chartHeight;
+      return { x, y };
+    });
+    const path = buildSmoothPath(points);
+    const pauseMarkers = pauseRanges.map((range) => {
+      const approximateMs = Math.min(durationMs, Math.max(0, range.start + (range.end - range.start) / 2));
+      const x = TIMELINE_PADDING_X + (approximateMs / durationMs) * chartWidth;
+      const nearestPoint = points.reduce((nearest, point) => (
+        Math.abs(point.x - x) < Math.abs(nearest.x - x) ? point : nearest
+      ), points[0]);
+      return {
+        x,
+        y: nearestPoint.y,
+        label: formatTimelineTime(approximateMs / 1000),
+      };
+    });
 
-  useEffect(() => {
-    const durationMs = 800;
-    const start = performance.now();
-    let rafId = 0;
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(1, elapsed / durationMs);
-      const eased = progress * progress * progress; // ease-in
-      setAnimatedSpeakingPercent(speakingTargetPercent * eased);
-
-      if (progress < 1) {
-        rafId = requestAnimationFrame(tick);
-      }
-    };
-
-    setAnimatedSpeakingPercent(0);
-    rafId = requestAnimationFrame(tick);
-
-    return () => cancelAnimationFrame(rafId);
-  }, [speakingTargetPercent, lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
+    return { path, pauseMarkers };
+  }, [lastResults.hesitationLog, sessionDuration, timelineAvailable]);
 
   return (
-    <div className="w-full max-w-full overflow-hidden text-center">
+    <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       {lastResults.flowScore === 100 && <Confetti />}
-      <div className="mb-8 sm:mb-10">
-        <div className="w-20 h-20 bg-surface-card border border-border/80 rounded-full flex items-center justify-center mx-auto mb-6 night-glow">
-          <Zap size={32} className="text-primary" />
-        </div>
-        <h2 className="text-3xl font-serif font-medium text-foreground mb-3">
-          {getScoreHeadline(lastResults.flowScore)}
-        </h2>
-        <p className="text-muted-foreground font-sans">
-          {lastResults.flowScore === 100
-            ? 'Flawless performance — you nailed it!'
-            : lastResults.flowScore >= 90
-              ? `Spoke smoothly with just ${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''} — nearly perfect!`
-              : lastResults.flowScore >= 75
-                ? `Solid flow with only ${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''}.`
-                : lastResults.flowScore >= 60
-                  ? `${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''} detected — you're getting there!`
-                  : lastResults.flowScore >= 40
-                    ? `Try to reduce pauses and keep your speech continuous.`
-                    : `Focus on speaking continuously — ${lastResults.hesitationCount} pause${lastResults.hesitationCount !== 1 ? 's' : ''} slowed you down`}
-        </p>
+      <div className="mb-8 text-left">
+        <h2 className="mb-2 text-3xl font-serif font-medium text-foreground md:text-5xl">Results</h2>
+        <p className="text-sm font-sans text-muted-foreground md:text-base">{getCoachingNote()}</p>
       </div>
 
-	      <div className="mb-10 sm:mb-12 space-y-4 sm:space-y-6">
-	        <section className="night-panel rounded-2xl sm:rounded-3xl px-5 py-6 sm:px-8 sm:py-10">
-	          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Flow Score</p>
-	          <p className="text-6xl sm:text-8xl md:text-9xl font-serif font-medium leading-none text-primary">
-            {lastResults.flowScore}
-          </p>
-          <p className="mt-2 text-sm sm:text-base font-sans text-muted-foreground">out of 100</p>
-        </section>
-
-        <section className="p-4 sm:p-5 night-panel rounded-2xl sm:rounded-3xl text-left">
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground font-sans mb-2">Speaking Time</p>
-          <p className="text-sm sm:text-base text-foreground font-sans mb-3">
-            You spoke {Math.round(animatedSpeakingPercent)}% of the time
-          </p>
-          <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${animatedSpeakingPercent}%` }}
-            />
+      <div className="space-y-6">
+        <section className="rounded-[28px] border border-border bg-surface-card p-6 text-left shadow-card md:p-8">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <p className="mb-2 text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">Flow Score</p>
+              <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">{lastResults.flowScore}</p>
+            </div>
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
+              <TrendingUp size={22} />
+            </span>
+          </div>
+          <p className="mb-4 text-sm font-sans text-muted-foreground">out of 100</p>
+          <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${scoreWidth}%` }} />
           </div>
         </section>
 
-        <section>
-          <h3 className="text-lg font-serif font-medium text-foreground mb-4 text-left">Performance Stats</h3>
-	          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
-              <p className="text-xs text-muted-foreground font-sans mb-1.5">Duration</p>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">
-                {renderDurationValue(lastResults.totalSessionTime)}
+        <section className="rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="mb-1 flex items-center gap-2 text-lg font-serif font-medium text-foreground">
+                <Activity size={20} className="text-primary" /> Session timeline
+              </h3>
+              <p className="text-xs font-sans text-muted-foreground">
+                Voice activity and pause moments from this session.
               </p>
             </div>
-	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
-              <p className="text-xs text-muted-foreground font-sans mb-1.5">Pauses</p>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">{lastResults.hesitationCount}</p>
-            </div>
-	            <div className="min-w-0 p-3 sm:p-4 md:p-6 night-panel rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-3 sm:flex-col sm:justify-center">
-              <p className="text-xs text-muted-foreground font-sans mb-1.5">Words</p>
-              <p className="text-2xl sm:text-3xl md:text-4xl font-serif font-medium text-primary">{showWordCount ? lastResults.wordCount : 0}</p>
-            </div>
+            <p className="shrink-0 text-xs font-sans font-bold text-muted-foreground">
+              {formatTimelineTime(sessionDuration)}
+            </p>
           </div>
-        </section>
-
-        <p className="p-4 night-panel rounded-2xl text-sm sm:text-base text-foreground font-sans text-left">
-          {getCoachingNote()}
-        </p>
-
-        {showResultsDebugExport && (
-          <div className="text-left">
-            <button
-              type="button"
-              onClick={() => {
-                const exportFn = (window as CustomWindow).__nopauseExportLogs;
-                if (typeof exportFn === 'function') exportFn();
-              }}
-              className="text-xs font-sans text-muted-foreground/80 hover:underline underline-offset-2 transition-colors"
-            >
-              Having issues? Export debug file
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="mb-16">
-        <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-          <Volume2 size={20} className="text-primary" /> Voice Recording
-        </h3>
-        <div className="p-4 sm:p-8 night-panel rounded-3xl">
-          {lastResults.audioBlob ? (
-            <VoicePlayer audioBlob={lastResults.audioBlob} audioMimeType={lastResults.audioMimeType} />
+          {timelineData ? (
+            <>
+              <div className="overflow-hidden rounded-[18px] border border-border bg-surface-elevated p-3">
+                <svg
+                  viewBox={`0 0 ${TIMELINE_WIDTH} ${TIMELINE_HEIGHT}`}
+                  role="img"
+                  aria-label="Session voice activity timeline"
+                  className="h-32 w-full"
+                  preserveAspectRatio="none"
+                >
+                  <line
+                    x1={TIMELINE_PADDING_X}
+                    y1={82}
+                    x2={TIMELINE_WIDTH - TIMELINE_PADDING_X}
+                    y2={82}
+                    className="stroke-border"
+                    strokeWidth="1"
+                  />
+                  <path
+                    d={timelineData.path}
+                    fill="none"
+                    className="stroke-primary"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {timelineData.pauseMarkers.map((x, index) => (
+                    <g key={`${x.x}-${index}`}>
+                      <circle
+                        cx={x.x}
+                        cy={x.y}
+                        r="4"
+                        className="fill-primary"
+                      />
+                      <text
+                        x={x.x}
+                        y={TIMELINE_LABEL_Y}
+                        textAnchor="middle"
+                        className="fill-muted-foreground text-[10px] font-sans font-semibold"
+                      >
+                        {x.label}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-[11px] font-sans font-semibold text-muted-foreground">
+                <span>0s</span>
+                <span>{timelineData.pauseMarkers.length} pauses</span>
+                <span>{formatTimelineTime(sessionDuration)}</span>
+              </div>
+            </>
           ) : (
-            <div className="text-center py-8">
-              <Volume2 size={48} className="text-muted-foreground/60 mx-auto mb-4" />
-              <p className="text-muted-foreground font-sans">Audio recording will be available here</p>
+            <div className="rounded-[18px] border border-border bg-surface-elevated px-4 py-8 text-center">
+              <p className="text-sm font-sans text-muted-foreground">
+                Timeline will appear after a longer session.
+              </p>
             </div>
           )}
-        </div>
+        </section>
 
-        {(() => {
-          const transcript = (lastResults.transcript || '').trim();
-          const transcriptReady =
-            transcript.length > 0 &&
-            transcript !== 'No speech detected.' &&
-            !transcript.startsWith('Transcription failed');
-          const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
+        <section className="grid grid-cols-2 gap-3 md:gap-4">
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <Timer size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Speaking time</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+              {renderDurationText(lastResults.totalSpeakingTime || lastResults.totalSessionTime)}
+            </p>
+          </article>
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <Pause size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Pauses</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{lastResults.hesitationCount}</p>
+          </article>
+        </section>
 
-          if (!showTranscribeButton) return null;
-
-          return (
-            <div className="mt-4">
+        <section className="rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-lg font-serif font-medium text-foreground">
+              <MessageSquare size={20} className="text-primary" /> Feedback
+            </h3>
+            {lastResults.analysisFeedback && !lastResults.analysisFeedbackLoading ? (
               <button
                 type="button"
-                onClick={() => requestTranscription()}
-                disabled={lastResults.transcriptionLoading}
-                className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press transition-all duration-300 disabled:opacity-60"
+                onClick={() => copyText(lastResults.analysisFeedback || '', setCopiedFeedback)}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
               >
-                {lastResults.transcriptionLoading ? 'Transcribing…' : (lastResults.transcriptionError ? 'Retry Transcription' : 'Transcribe')}
+                {copiedFeedback ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+                {copiedFeedback ? 'Copied' : 'Copy'}
               </button>
-              {lastResults.transcriptionError && (
-                  <p className="mt-2 text-sm text-destructive font-sans">
-                    {lastResults.transcriptionError}
-                  </p>
-              )}
-            </div>
-          );
-        })()}
-      </div>
+            ) : null}
+          </div>
+          {feedbackAvailable ? (
+            lastResults.analysisFeedbackLoading ? (
+              <p className="font-sans text-sm leading-relaxed text-muted-foreground">Generating feedback...</p>
+            ) : (
+              <div className="font-sans text-sm leading-relaxed text-foreground">
+                <ReactMarkdown>{lastResults.analysisFeedback || 'AI feedback unavailable.'}</ReactMarkdown>
+              </div>
+            )
+          ) : (
+            <>
+              <p className="mb-4 font-sans text-sm leading-relaxed text-muted-foreground">
+                {getCoachingNote()} You spoke for {Math.round(speakingTargetPercent)}% of the session.
+              </p>
+              <button
+                type="button"
+                onClick={() => requestFeedback()}
+                disabled={lastResults.analysisFeedbackLoading}
+                className="rounded-full border border-border bg-surface-elevated px-5 py-2.5 text-sm font-sans font-bold text-foreground btn-press hover:bg-surface-interactive disabled:opacity-60"
+              >
+                Get AI Feedback
+              </button>
+            </>
+          )}
+          {lastResults.analysisFeedbackError && (
+            <p className="mt-3 text-sm font-sans text-destructive">{lastResults.analysisFeedbackError}</p>
+          )}
+        </section>
 
-      {(() => {
-        const transcript = (lastResults.transcript || '').trim();
-        const transcriptReady =
-          transcript.length > 0 &&
-          transcript !== 'No speech detected.' &&
-          !transcript.startsWith('Transcription failed');
-
-        if (!transcriptReady) return null;
-
-        return (
-          <div className="mb-16">
-            <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-              <FileText size={20} className="text-primary" /> Speech Transcript
+        <section className="rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-lg font-serif font-medium text-foreground">
+              <FileText size={20} className="text-primary" /> Transcript
             </h3>
-	            <div className="p-5 sm:p-8 night-panel rounded-2xl sm:rounded-3xl">
-              <p className="text-foreground font-sans leading-relaxed text-left">{lastResults.transcript}</p>
-            </div>
-            {!lastResults.analysisFeedback && (
-              <div className="mt-4">
+            {transcriptReady ? (
+              <button
+                type="button"
+                onClick={() => copyText(transcript, setCopiedTranscript)}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
+              >
+                {copiedTranscript ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+                {copiedTranscript ? 'Copied' : 'Copy'}
+              </button>
+            ) : null}
+          </div>
+          {transcriptReady ? (
+            <p className="font-sans text-sm leading-relaxed text-foreground">{lastResults.transcript}</p>
+          ) : (
+            <>
+              <p className="mb-4 font-sans text-sm leading-relaxed text-muted-foreground">
+                {lastResults.transcriptionLoading ? 'Transcribing audio...' : 'Transcript is not ready yet.'}
+              </p>
+              {showTranscribeButton && (
                 <button
                   type="button"
-                  onClick={() => requestFeedback()}
-                  disabled={lastResults.analysisFeedbackLoading}
-                  className="px-6 py-3 rounded-full bg-surface-card border border-border hover:bg-surface-elevated text-foreground font-sans font-black btn-press transition-all duration-300 disabled:opacity-60"
+                  onClick={() => requestTranscription()}
+                  disabled={lastResults.transcriptionLoading}
+                  className="rounded-full border border-border bg-surface-elevated px-5 py-2.5 text-sm font-sans font-bold text-foreground btn-press hover:bg-surface-interactive disabled:opacity-60"
                 >
-                  {lastResults.analysisFeedbackLoading
-                    ? 'Getting AI Feedback…'
-                    : (lastResults.analysisFeedbackError ? 'Retry AI Feedback' : 'Get AI Feedback')}
+                  {lastResults.transcriptionLoading ? 'Transcribing...' : (lastResults.transcriptionError ? 'Retry Transcription' : 'Transcribe')}
                 </button>
-                {lastResults.analysisFeedbackError && (
-                  <p className="mt-2 text-sm text-destructive font-sans">
-                    {lastResults.analysisFeedbackError}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+              )}
+              {lastResults.transcriptionError && (
+                <p className="mt-3 text-sm font-sans text-destructive">{lastResults.transcriptionError}</p>
+              )}
+            </>
+          )}
+        </section>
 
-      {(lastResults.analysisFeedback || lastResults.analysisFeedbackLoading) && (
-        <div className="mb-16">
-          <h3 className="text-xl font-serif font-medium text-foreground mb-6 text-left flex items-center gap-2">
-            <MessageSquare size={20} className="text-primary" /> AI Feedback
-          </h3>
-	          <div className="p-5 sm:p-8 night-panel rounded-2xl sm:rounded-3xl">
-            {lastResults.analysisFeedbackLoading ? (
-              <p className="text-foreground font-sans leading-relaxed text-left">
-                Generating feedback…
-              </p>
-            ) : (
-              <div className="text-foreground font-sans leading-relaxed text-left">
-                <ReactMarkdown>
-                  {lastResults.analysisFeedback || 'AI feedback unavailable.'}
-                </ReactMarkdown>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        {showResultsDebugExport && (
+          <button
+            type="button"
+            onClick={() => {
+              const exportFn = (window as CustomWindow).__nopauseExportLogs;
+              if (typeof exportFn === 'function') exportFn();
+            }}
+            className="text-left text-xs font-sans text-muted-foreground/80 underline-offset-2 hover:underline"
+          >
+            Having issues? Export debug file
+          </button>
+        )}
 
-      <div className="mx-auto w-full max-w-[520px] pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:flex sm:max-w-none sm:items-center sm:justify-center sm:pt-0 sm:pb-0">
-        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
+        <div className="grid gap-3 pt-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <button
             onClick={handleRetry}
-            className="min-h-[50px] rounded-full bg-primary px-2.5 py-3 text-[13px] font-sans font-black leading-tight text-primary-foreground night-glow btn-press hover:brightness-110 sm:min-h-0 sm:px-8 sm:py-4 sm:text-base"
+            className="flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110"
           >
-            Practice Again
+            <Mic size={18} /> Practice Again
           </button>
           <button
             onClick={async () => {
-              const transcript = lastResults.transcript || '';
+              const shareTranscript = lastResults.transcript || '';
               const shareText = mode === 'free'
-                ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
-                : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${transcript.slice(0, 100)}${transcript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+                ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
+                : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {
@@ -329,26 +406,26 @@ export function ResultPanel({
                 setTimeout(() => setCopied(false), 2000);
               }
             }}
-            className="min-h-[50px] rounded-full border border-border bg-surface-card px-2.5 py-3 text-[13px] font-sans font-black leading-tight text-foreground transition-all duration-300 btn-press hover:bg-surface-elevated sm:min-h-0 sm:px-8 sm:py-4 sm:text-base"
+            className="flex min-h-[56px] items-center justify-center gap-2 rounded-full border border-border bg-surface-card px-6 text-base font-sans font-black text-foreground btn-press hover:bg-surface-elevated"
           >
             {copied ? (
-              <span className="flex items-center justify-center gap-1 animate-scale-in sm:gap-2">
-                <Check size={16} className="text-primary sm:size-[18px]" /> Copied!
-              </span>
+              <>
+                <Check size={18} className="text-primary" /> Copied
+              </>
             ) : (
-              <span className="flex items-center justify-center gap-1 sm:gap-2">
-                <Share2 size={16} className="shrink-0 sm:size-[18px]" /> Share Results
-              </span>
+              <>
+                <Share2 size={18} /> Share Results
+              </>
             )}
           </button>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="min-h-[56px] rounded-full border border-border bg-surface-card px-8 text-base font-sans font-black text-foreground btn-press hover:bg-surface-elevated"
+          >
+            Home
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="mt-3 min-h-[50px] min-w-[136px] rounded-full border border-border bg-surface-card px-8 py-3 text-[13px] font-sans font-black text-foreground transition-all duration-300 btn-press hover:bg-surface-elevated sm:mt-0 sm:ml-4 sm:min-h-0 sm:px-8 sm:py-4 sm:text-base"
-        >
-          Home
-        </button>
       </div>
     </div>
   );

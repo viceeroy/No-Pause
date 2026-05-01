@@ -1,4 +1,4 @@
-const opinionPrompts = [
+export const opinionPrompts = [
   "Should schools teach public speaking as a core skill?",
   "Is remote work better for creativity or focus?",
   "Should people read more books or listen to more podcasts?",

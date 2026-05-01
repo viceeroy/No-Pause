@@ -141,6 +141,23 @@ body::before {
   animation: breathe 4s ease-in-out infinite;
 }
 
+@keyframes dashboard-mic-glow {
+  0%, 100% {
+    opacity: 0.62;
+    transform: scale(1);
+    box-shadow: 0 0 22px hsl(var(--primary) / 0.12);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+    box-shadow: 0 0 34px hsl(var(--primary) / 0.2);
+  }
+}
+.dashboard-mic-glow {
+  animation: dashboard-mic-glow 2.8s ease-in-out infinite;
+  will-change: transform, opacity, box-shadow;
+}
+
 @keyframes float-up {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }

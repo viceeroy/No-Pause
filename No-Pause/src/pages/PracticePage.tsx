@@ -7,6 +7,7 @@ import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
 import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
+import { getRandomPrompt, opinionPrompts } from '@/lib/core/prompts';
 
 const timerOptions = [
   { label: 'No timer', seconds: 0 },
@@ -17,11 +18,27 @@ const timerOptions = [
   { label: '5 min', seconds: 300 },
 ];
 
+const getRandomPromptOptions = (count = 6) => {
+  const prompts = [...opinionPrompts];
+
+  for (let index = prompts.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [prompts[index], prompts[randomIndex]] = [prompts[randomIndex], prompts[index]];
+  }
+
+  return prompts.slice(0, count);
+};
+
+const arePromptOptionsEqual = (left: string[], right: string[]) =>
+  left.length === right.length && left.every((prompt, index) => prompt === right[index]);
+
 export default function PracticePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedTimerSeconds, setSelectedTimerSeconds] = useState(0);
   const [timerMenuOpen, setTimerMenuOpen] = useState(false);
+  const [promptMenuOpen, setPromptMenuOpen] = useState(false);
+  const [promptOptions, setPromptOptions] = useState(() => getRandomPromptOptions());
   const state = usePracticeState();
   const mode = 'free' as const;
   const recording = useRecordingController({
@@ -58,6 +75,41 @@ export default function PracticePage() {
       delete document.body.dataset.recording;
     };
   }, [state.state]);
+
+  const applyPrompt = (topicTitle: string) => {
+    state.setTopicPrompt({
+      id: `free-speaking-${topicTitle}`,
+      topicTitle,
+      category: 'FREE_SPEAKING',
+      difficulty: 'medium',
+      cueCard: [],
+    });
+  };
+
+  const handleSelectPrompt = (topicTitle: string) => {
+    applyPrompt(topicTitle);
+    setPromptMenuOpen(false);
+  };
+
+  const handlePromptMenuOpenChange = (open: boolean) => {
+    if (open) {
+      setPromptOptions((currentOptions) => {
+        let nextOptions = getRandomPromptOptions();
+
+        for (let attempt = 0; attempt < 4 && arePromptOptionsEqual(nextOptions, currentOptions); attempt += 1) {
+          nextOptions = getRandomPromptOptions();
+        }
+
+        return nextOptions;
+      });
+    }
+    setPromptMenuOpen(open);
+  };
+
+  const handleRandomPrompt = () => {
+    applyPrompt(getRandomPrompt(promptText || undefined));
+    setPromptMenuOpen(false);
+  };
 
   return (
     <div className={cn(
@@ -96,6 +148,11 @@ export default function PracticePage() {
           setSelectedTimerSeconds={setSelectedTimerSeconds}
           timerOptions={timerOptions}
           promptText={promptText}
+          promptMenuOpen={promptMenuOpen}
+          setPromptMenuOpen={handlePromptMenuOpenChange}
+          promptOptions={promptOptions}
+          handleSelectPrompt={handleSelectPrompt}
+          handleRandomPrompt={handleRandomPrompt}
           handleStart={() => recording.handleStart()}
           countdown={state.countdown}
         />
