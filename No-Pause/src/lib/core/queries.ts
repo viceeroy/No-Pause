@@ -13,6 +13,7 @@ export type SessionRecord = {
   words: number | null;
   flow_score: number | null;
   completed: boolean | null;
+  source?: string | null;
   hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
   transcript: string | null;
   analysis_feedback: string | null;
@@ -50,6 +51,7 @@ export type PracticeStats = {
     hesitationCount: number;
     flowScore: number | null;
     mode: string;
+    source?: string | null;
   }>;
 };
 
@@ -246,6 +248,7 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
     hesitationCount: getSessionHesitationCount(session),
     flowScore: getSessionFlowScore(session),
     mode: getNormalizedSessionMode(session),
+    source: session.source ?? null,
   }));
 }
 

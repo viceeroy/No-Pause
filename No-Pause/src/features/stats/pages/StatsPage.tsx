@@ -88,7 +88,7 @@ export default function StatsPage({
 
   const recentSessions = stats.recentSessions;
   const hasAnySession = recentSessions.length > 0;
-  const flowProgress = Math.max(0, stats.avgFlowScore || 0);
+  const flowProgress = Math.min(100, Math.max(0, stats.avgFlowScore || 0));
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const email = user?.email || '';
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;

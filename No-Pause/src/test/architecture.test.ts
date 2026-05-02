@@ -1,6 +1,7 @@
 import { Readable } from 'stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
+import { buildPracticeStats, type SessionRecord } from '@/lib/core/queries';
 import {
   buildSessionInsertValues,
   calculateNextStreak,
@@ -153,6 +154,35 @@ describe('speaking mode scoring architecture', () => {
     { score: 49, label: 'Needs Practice' },
   ])('labels score $score as $label', ({ score, label }) => {
     expect(getScoreLabel(score)).toBe(label);
+  });
+});
+
+describe('stats architecture', () => {
+  it('builds recent session stats from pause_count and source metadata', () => {
+    const sessions: SessionRecord[] = [
+      {
+        id: 'telegram-session',
+        created_at: '2026-05-02T01:00:00.000Z',
+        mode: 'speaking',
+        duration: 90,
+        speaking_time: 80,
+        pauses: 99,
+        pause_count: 3,
+        filler_count: 2,
+        words: 20,
+        flow_score: 120,
+        completed: true,
+        source: 'telegram',
+        hesitation_log: null,
+        transcript: null,
+        analysis_feedback: null,
+      },
+    ];
+
+    expect(buildPracticeStats(sessions, null).recentSessions[0]).toMatchObject({
+      hesitationCount: 3,
+      source: 'telegram',
+    });
   });
 });
 

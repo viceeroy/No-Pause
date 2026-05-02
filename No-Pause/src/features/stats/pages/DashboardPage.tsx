@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Download, Activity, Send, CircleUser, Coffee, TrendingUp, Clock, CalendarDays, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
@@ -61,11 +61,6 @@ const emptyStats: PracticeStats = {
   recentSessions: [],
 };
 
-function formatPracticeMinutes(seconds: number) {
-  const minutes = Math.round(Math.max(0, seconds || 0) / 60);
-  return formatDuration(minutes * 60);
-}
-
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -125,17 +120,7 @@ export default function DashboardPage() {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() ?? '')
       .join('') || 'NP';
-  const sessionsThisMonth = useMemo(() => {
-    const now = new Date();
-    return stats.recentSessions.filter((session) => {
-      const sessionDate = new Date(session.created_at);
-      return (
-        Number.isFinite(sessionDate.getTime()) &&
-        sessionDate.getFullYear() === now.getFullYear() &&
-        sessionDate.getMonth() === now.getMonth()
-      );
-    }).length;
-  }, [stats.recentSessions]);
+  const sessionsThisMonth = stats.monthlyStats?.totalSessions ?? 0;
   const metricCards: Array<{
     label: string;
     value: string | number;
@@ -151,7 +136,7 @@ export default function DashboardPage() {
     },
     {
       label: 'Practice time',
-      value: statsLoading ? '...' : formatPracticeMinutes(stats.totalPracticeTime),
+      value: statsLoading ? '...' : formatDuration(stats.totalPracticeTime),
       icon: Clock,
       valueClassName: 'text-foreground',
     },

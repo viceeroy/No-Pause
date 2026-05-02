@@ -11,6 +11,8 @@ import { supabase as browserSupabase } from "@/services/supabase";
 export type { PracticeStats, SessionRecord } from "./core/queries";
 
 const sessionSupabase: SupabaseLike = browserSupabase as unknown as SupabaseLike;
+const STATS_SESSION_COLUMNS =
+  "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, source, hesitation_log, transcript, analysis_feedback";
 
 export type Base64TranscriptionInput = {
   audioBase64: string;
@@ -192,12 +194,12 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   ] = await Promise.all([
     browserSupabase
       .from("sessions")
-      .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
+      .select(STATS_SESSION_COLUMNS)
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     browserSupabase
       .from("sessions")
-      .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
+      .select(STATS_SESSION_COLUMNS)
       .eq("user_id", userId)
       .gte("created_at", monthRange.start)
       .lt("created_at", monthRange.end)
