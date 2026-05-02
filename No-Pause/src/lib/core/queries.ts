@@ -13,10 +13,10 @@ export type SessionRecord = {
   words: number | null;
   flow_score: number | null;
   completed: boolean | null;
-  source?: string | null;
   hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
-  transcript: string | null;
-  analysis_feedback: string | null;
+  transcript?: string | null;
+  analysis_feedback?: string | null;
+  source?: "web" | "telegram" | string | null;
 };
 
 export type StreakRecord = {
@@ -51,7 +51,7 @@ export type PracticeStats = {
     hesitationCount: number;
     flowScore: number | null;
     mode: string;
-    source?: string | null;
+    source: string | null;
   }>;
 };
 
@@ -64,9 +64,9 @@ export type StatsSessionSets = {
 };
 
 const SESSION_COLUMNS =
-  "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
+  "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 const LEGACY_SESSION_COLUMNS =
-  "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
+  "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 
 async function getServerSupabase() {
   const { supabaseServer } = await import("../../services/supabaseServer.js");

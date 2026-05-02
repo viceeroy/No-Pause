@@ -292,9 +292,13 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
       return;
     }
 
-    if (Number(challenge.creator_telegram_id) !== ctx.from?.id) {
-      await ctx.answerCbQuery();
-      await ctx.reply("Only the person who started the challenge can change the topic.");
+    const creatorTelegramId = String(challenge.creator_telegram_id);
+    const userTelegramId = ctx.from?.id === undefined ? null : String(ctx.from.id);
+    const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
+    if (creatorTelegramId !== userTelegramId && creatorTelegramId !== chatId) {
+      await ctx.answerCbQuery("Only the person who started the challenge can change the topic.", {
+        show_alert: true,
+      });
       return;
     }
 
@@ -381,18 +385,21 @@ export async function retryGroupChallenge(
       return;
     }
 
+    const pendingChallenge = await getPendingChallenge(telegramId);
+    const groupId = Number(pendingChallenge?.group_id ?? challenge.creator_telegram_id);
+
     console.log("Telegram retryGroupChallenge calling upsertPendingChallenge", {
       telegramId,
       challengeId: challenge.id,
       challengeType: "group",
-      groupId: Number(challenge.creator_telegram_id),
+      groupId,
       participantUsername,
     });
     await upsertPendingChallenge({
       telegramId,
       challengeId: challenge.id,
       challengeType: "group",
-      groupId: Number(challenge.creator_telegram_id),
+      groupId,
       participantUsername,
     });
     console.log("Telegram retryGroupChallenge upsertPendingChallenge completed", {

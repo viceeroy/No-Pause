@@ -57,7 +57,7 @@ export default function PracticePage() {
     state.setTimeLeft(0);
     state.setTopicPrompt(promptTextParam ? {
       id: 'speaking-practice-topic',
-      topicTitle: decodeURIComponent(promptTextParam),
+      topicTitle: promptTextParam,
       category: 'EXPERIENCE',
       difficulty: 'medium',
       cueCard: [],

@@ -285,7 +285,6 @@ async function transcribeAudio(audioBuffer: ArrayBuffer) {
   const data = (await response.json()) as VerboseTranscriptionResponse;
   const transcript = String(data.transcript ?? data.text ?? "").trim();
   const words = parseTranscribedWords(data.words);
-  console.log("transcript:", transcript);
   console.log("transcript words:", words.length);
 
   return { text: transcript, words };
@@ -488,6 +487,10 @@ export async function handleVoiceMessage(
   try {
     const pendingChallenge = groupChat ? null : await getPendingChallenge(telegramId);
     const challenge = pendingChallenge ? await getFriendChallenge(pendingChallenge.challenge_id) : null;
+    if (pendingChallenge && !challenge) {
+      await deletePendingChallenge(telegramId);
+    }
+
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;

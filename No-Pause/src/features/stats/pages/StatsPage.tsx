@@ -279,8 +279,7 @@ export default function StatsPage({
           {!statsLoading && hasAnySession && (
             <div className="space-y-3">
               {recentSessions.map((session) => {
-                const source = (session as { source?: string | null }).source;
-                const isTelegramSession = source === 'telegram';
+                const isTelegramSession = session.source === 'telegram';
 
                 return (
                   <article
@@ -302,7 +301,7 @@ export default function StatsPage({
                         {formatDate(session.created_at)} | {formatDuration(session.duration || 0)} - {session.hesitationCount || 0} pauses
                       </p>
                     </div>
-                    {session.flowScore ? (
+                    {session.flowScore !== null && session.flowScore !== undefined ? (
                       <div className="shrink-0 text-right">
                         <p className="text-2xl font-serif font-medium leading-none text-primary">{session.flowScore}</p>
                         <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>

@@ -1,7 +1,7 @@
 import { Readable } from 'stream';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
-import { buildPracticeStats, type SessionRecord } from '@/lib/core/queries';
+import { buildPracticeStats, buildRecentSessionSummaries, type SessionRecord } from '@/lib/core/queries';
 import {
   buildSessionInsertValues,
   calculateNextStreak,
@@ -9,6 +9,7 @@ import {
   updateStreak,
   type SupabaseLike,
 } from '@/lib/core/session';
+import { getSpeakingResultMessage } from '@/lib/telegram/constants';
 
 const originalEnv = { ...process.env };
 
@@ -183,6 +184,50 @@ describe('stats architecture', () => {
       hesitationCount: 3,
       source: 'telegram',
     });
+  });
+});
+
+describe('result message formatting architecture', () => {
+  it('truncates long Telegram transcripts below the safe message limit', () => {
+    const message = getSpeakingResultMessage({
+      analysis: {
+        flowScore: 500,
+        pauseCount: 0,
+        hesitationCount: 0,
+        speakingTimeSec: 300,
+        totalSessionTimeSec: 300,
+        isCompleted: true,
+        pauseLog: [],
+      },
+      transcript: 'hello '.repeat(1000),
+    });
+
+    expect(message.length).toBeLessThanOrEqual(4000);
+    expect(message).toContain('... (truncated)');
+  });
+});
+
+describe('stats summary architecture', () => {
+  it('keeps session source on recent summaries', () => {
+    const summaries = buildRecentSessionSummaries([
+      {
+        id: 'session-1',
+        created_at: '2026-05-02T00:00:00.000Z',
+        mode: 'speaking',
+        duration: 60,
+        speaking_time: 55,
+        pauses: 1,
+        pause_count: 1,
+        filler_count: null,
+        words: 10,
+        flow_score: 90,
+        completed: true,
+        hesitation_log: [],
+        source: 'telegram',
+      },
+    ] as SessionRecord[]);
+
+    expect(summaries[0].source).toBe('telegram');
   });
 });
 

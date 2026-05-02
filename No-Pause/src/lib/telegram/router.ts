@@ -138,6 +138,17 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
 export function createTelegramBot() {
   const bot = new Telegraf(getBotToken());
 
+  void bot.telegram.setMyCommands([
+    { command: "start", description: "Start or connect NoPause" },
+    { command: "stats", description: "View your speaking stats" },
+    { command: "scoring", description: "See how scoring works" },
+    { command: "challenge", description: "Learn about challenges" },
+    { command: "nopause", description: "Start a group challenge" },
+    { command: "about", description: "About NoPause" },
+  ]).catch((error) => {
+    console.error("Telegram command menu registration failed", error);
+  });
+
   bot.start(async (ctx) => {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
@@ -175,7 +186,19 @@ export function createTelegramBot() {
   });
 
   bot.command("stats", async (ctx) => {
-    await ctx.reply(MESSAGES.statsInfo, { parse_mode: "HTML" });
+    if (isGroupChat(ctx)) {
+      await ctx.reply(MESSAGES.statsPrivate, { parse_mode: "HTML" });
+      return;
+    }
+
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) return;
+
+    await replyWithStatus(ctx, telegramId);
+  });
+
+  bot.command("about", async (ctx) => {
+    await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
   });
 
   bot.command("prompt", async (ctx) => {
@@ -218,45 +241,7 @@ export function createTelegramBot() {
   });
 
   bot.hears(ABOUT_LABEL, async (ctx) => {
-    await ctx.reply(
-      `ℹ️ <b>About NoPause</b>
-
-<b>What it is:</b>
-NoPause is your Telegram speaking coach.
-
-🎤 <b>Voice practice</b>
-
-<b>Action:</b>
-Practice speaking naturally.
-I transcribe your speech.
-I measure pauses.
-I give you a Flow Score.
-
-📊 <b>Dashboard</b>
-
-<b>Action:</b>
-Review your dashboard and session history.
-
-💡 <b>Prompts</b>
-
-<b>Action:</b>
-Receive a speaking topic when you want something to practice.
-
-📈 <b>Stats</b>
-
-<b>Action:</b>
-Check your streak.
-Review your practice time.
-See recent sessions.
-Track your overall Flow Score.
-
-<b>Account:</b>
-Your sessions are saved to your connected NoPause account.
-
-<b>Website:</b>
-nopause.org`,
-      { ...replyKeyboard, parse_mode: "HTML" },
-    );
+    await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
   });
 
   bot.action(new RegExp(`^${CHANGE_GROUP_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {

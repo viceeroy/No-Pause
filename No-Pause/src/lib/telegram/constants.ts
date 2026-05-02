@@ -18,6 +18,8 @@ export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
 export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
+const TELEGRAM_SAFE_MESSAGE_LENGTH = 4000;
+const TRUNCATED_TRANSCRIPT_NOTE = "... (truncated)";
 
 export const TELEGRAM_CHALLENGE_TABLES_SQL = `create table if not exists public.challenges (
   id text primary key,
@@ -138,32 +140,51 @@ function formatCompletedMinutesLabel(minutes: number): string {
   return `${minutes} completed ${minutes === 1 ? "minute" : "minutes"}`;
 }
 
+function truncateTextForLimit(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  if (maxLength <= TRUNCATED_TRANSCRIPT_NOTE.length) {
+    return TRUNCATED_TRANSCRIPT_NOTE.slice(0, Math.max(0, maxLength));
+  }
+
+  return `${text.slice(0, maxLength - TRUNCATED_TRANSCRIPT_NOTE.length).trimEnd()}${TRUNCATED_TRANSCRIPT_NOTE}`;
+}
+
 function formatResultFields(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
   html?: boolean;
+  maxLength?: number;
 }): string {
   const completedMinutes = Math.floor(Math.max(0, input.analysis.speakingTimeSec || 0) / 60);
   const bonus = completedMinutes * 40;
   const transcript = input.transcript?.trim();
   const label = (text: string) => (input.html ? `<b>${text}</b>` : text);
-
-  return [
+  const fields = [
     `📊 ${label("Flow Score:")} ${input.analysis.flowScore}`,
     `🥇 ${label("Bonus:")} +${bonus} (${formatCompletedMinutesLabel(completedMinutes)})`,
     "",
     `⏱ ${label("Speaking time:")} ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}`,
     `🔇 ${label("Pauses:")} ${input.analysis.pauseCount} (silent gaps)`,
     `💬 ${label("Hesitations:")} ${input.analysis.hesitationCount} (um, uh, er, ah)`,
-    ...(transcript
-      ? [
-          "",
-          `📝 ${label("Transcript:")}`,
-          "",
-          input.html ? escapeTelegramHtml(transcript) : transcript,
-        ]
-      : []),
   ].join("\n");
+
+  if (!transcript) {
+    return fields;
+  }
+
+  const transcriptPrefix = `\n\n📝 ${label("Transcript:")}\n\n`;
+  const availableTranscriptLength =
+    (input.maxLength ?? TELEGRAM_SAFE_MESSAGE_LENGTH) - fields.length - transcriptPrefix.length;
+
+  if (availableTranscriptLength <= 0) {
+    return fields;
+  }
+
+  const renderedTranscript = input.html ? escapeTelegramHtml(transcript) : transcript;
+  return `${fields}${transcriptPrefix}${truncateTextForLimit(renderedTranscript, availableTranscriptLength)}`;
 }
 
 export function getSpeakingResultMessage(input: {
@@ -175,10 +196,12 @@ export function getSpeakingResultMessage(input: {
     ? `\n\n👤 <b>Speaker:</b> ${escapeTelegramHtml(input.speaker)}`
     : "";
 
-  return `🎤 <b>Speaking Result</b>${speakerText}\n\n${formatResultFields({
+  const prefix = `🎤 <b>Speaking Result</b>${speakerText}\n\n`;
+  return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
     html: true,
+    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
 }
 
@@ -188,9 +211,11 @@ export function getGroupResultText(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
 }): string {
-  return `🎤 Group Challenge Result\n\nSpeaker: ${input.username}\n\nTopic: ${input.topic}\n\n${formatResultFields({
+  const prefix = `🎤 Group Challenge Result\n\nSpeaker: ${input.username}\n\nTopic: ${input.topic}\n\n`;
+  return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
+    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
 }
 
@@ -203,10 +228,12 @@ export function getGroupShareResultMessage(input: {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
 
-  return `🎤 <b>Group Challenge Result</b>\n\n👤 <b>Speaker:</b> ${nameLine}\n\n${formatResultFields({
+  const prefix = `🎤 <b>Group Challenge Result</b>\n\n👤 <b>Speaker:</b> ${nameLine}\n\n`;
+  return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
     html: true,
+    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
 }
 
@@ -252,10 +279,12 @@ export function getFriendChallengeResultActions(input: {
   challengeId: string;
   sessionId: string;
 }) {
+  const creatorLabel = input.creatorUsername.trim().replace(/^@+/, "");
+
   return Markup.inlineKeyboard([
     [
       Markup.button.callback(
-        `📤 Send Result to @${input.creatorUsername}`,
+        `Send Result to @${creatorLabel} 📨`,
         `${SEND_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`,
       ),
     ],
@@ -268,10 +297,12 @@ export function getChallengeResultMessage(input: {
   transcript?: string | null;
   title?: string;
 }): string {
-  return `⚔️ <b>${escapeTelegramHtml(input.title ?? "Challenge Result")}</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n${formatResultFields({
+  const prefix = `⚔️ <b>${escapeTelegramHtml(input.title ?? "Challenge Result")}</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n`;
+  return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
     html: true,
+    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
 }
 
@@ -285,18 +316,24 @@ export function getChallengeCreatorNotification(input: {
   const friend = escapeTelegramHtml(input.friendUsername);
   const topic = escapeTelegramHtml(input.topic);
   if (input.creatorScore === null || input.creatorScore === undefined) {
-    return `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n${formatResultFields({
+    const prefix = `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n`;
+    const suffix = `\n\n<b>Action:</b>\nSend a voice note and let's see what you've got 🎤`;
+    return `${prefix}${formatResultFields({
       analysis: input.analysis,
       transcript: input.transcript,
       html: true,
-    })}\n\n<b>Action:</b>\nSend a voice note and let's see what you've got 🎤`;
+      maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length - suffix.length,
+    })}${suffix}`;
   }
 
-  return `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n${formatResultFields({
+  const prefix = `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n`;
+  const suffix = `\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
+  return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
     html: true,
-  })}\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
+    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length - suffix.length,
+  })}${suffix}`;
 }
 
 export function getConnectUrl(telegramId: number): string {
@@ -413,6 +450,8 @@ export const MESSAGES = {
     "📊 <b>How stats work</b>\n\nYour stats combine everything.\nSessions from the web app and voice notes from Telegram all count together.\n\nYou can see your streak, best score, total practice time, and recent progress.",
   nopauseInfo:
     "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button or type /nopause to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
+  about:
+    "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nCheck your streak, best score, and practice time with /stats.\n\n💡 <b>Prompts</b>\nNeed something to talk about? Tap Get Prompt for a random topic.\n\n🌐 nopause.org",
   readyPrivate:
     "🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
   welcomeIdentify:
