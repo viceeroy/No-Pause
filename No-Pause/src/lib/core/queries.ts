@@ -29,6 +29,11 @@ export type PracticeStats = {
   totalPracticeTime: number;
   avgFlowScore: number;
   bestFlowScore: number;
+  monthlyStats?: {
+    totalSessions: number;
+    totalSpeakingTime: number;
+    avgFlowScore: number;
+  };
   lastSessionDate: string | null;
   currentStreak: number;
   bestStreak: number;
@@ -51,6 +56,11 @@ export type PracticeStats = {
 export type ModeBreakdown = PracticeStats["modeBreakdown"][number];
 export type RecentSessionSummary = PracticeStats["recentSessions"][number];
 
+export type StatsSessionSets = {
+  allTimeSessions: SessionRecord[];
+  monthlySessions: SessionRecord[];
+};
+
 const SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback";
 const LEGACY_SESSION_COLUMNS =
@@ -61,37 +71,78 @@ async function getServerSupabase() {
   return supabaseServer;
 }
 
-export async function getTelegramSessions(userId: string, limit = 15): Promise<SessionRecord[]> {
+export function getCurrentMonthRange(now = new Date()): { start: string; end: string } {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+export async function getTelegramSessions(userId: string): Promise<StatsSessionSets> {
   const supabase = await getServerSupabase();
-  const { data, error } = await supabase
-    .from("sessions")
-    .select(SESSION_COLUMNS)
-    .eq("user_id", userId)
-    .eq("source", "telegram")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const monthRange = getCurrentMonthRange();
+  const [
+    { data: allTimeData, error: allTimeError },
+    { data: monthlyData, error: monthlyError },
+  ] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select(SESSION_COLUMNS)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("sessions")
+      .select(SESSION_COLUMNS)
+      .eq("user_id", userId)
+      .gte("created_at", monthRange.start)
+      .lt("created_at", monthRange.end)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  if (error) {
-    if (isMissingSessionAnalysisColumnError(error)) {
-      const { data: legacyData, error: legacyError } = await supabase
-        .from("sessions")
-        .select(LEGACY_SESSION_COLUMNS)
-        .eq("user_id", userId)
-        .eq("source", "telegram")
-        .order("created_at", { ascending: false })
-        .limit(limit);
+  if (allTimeError || monthlyError) {
+    if (isMissingSessionAnalysisColumnError(allTimeError) || isMissingSessionAnalysisColumnError(monthlyError)) {
+      const [
+        { data: legacyAllTimeData, error: legacyAllTimeError },
+        { data: legacyMonthlyData, error: legacyMonthlyError },
+      ] = await Promise.all([
+        supabase
+          .from("sessions")
+          .select(LEGACY_SESSION_COLUMNS)
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("sessions")
+          .select(LEGACY_SESSION_COLUMNS)
+          .eq("user_id", userId)
+          .gte("created_at", monthRange.start)
+          .lt("created_at", monthRange.end)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (legacyError) {
-        throw legacyError;
+      if (legacyAllTimeError) {
+        throw legacyAllTimeError;
+      }
+      if (legacyMonthlyError) {
+        throw legacyMonthlyError;
       }
 
-      return (legacyData ?? []) as SessionRecord[];
+      return {
+        allTimeSessions: (legacyAllTimeData ?? []) as SessionRecord[],
+        monthlySessions: (legacyMonthlyData ?? []) as SessionRecord[],
+      };
     }
 
-    throw error;
+    if (allTimeError) {
+      throw allTimeError;
+    }
+    if (monthlyError) {
+      throw monthlyError;
+    }
   }
 
-  return (data ?? []) as SessionRecord[];
+  return {
+    allTimeSessions: (allTimeData ?? []) as SessionRecord[],
+    monthlySessions: (monthlyData ?? []) as SessionRecord[],
+  };
 }
 
 export async function getStreak(userId: string): Promise<StreakRecord | null> {
@@ -115,6 +166,10 @@ export function isScoredSession(session: SessionRecord): boolean {
 
 export function getSessionDuration(session: SessionRecord): number {
   return Number(session.duration || 0);
+}
+
+export function getSessionSpeakingTime(session: SessionRecord): number {
+  return Number(session.speaking_time ?? session.duration ?? 0);
 }
 
 export function getSessionHesitationCount(session: SessionRecord): number {
@@ -194,9 +249,21 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
   }));
 }
 
+export function getCurrentMonthSessions(sessions: SessionRecord[], now = new Date()): SessionRecord[] {
+  return sessions.filter((session) => {
+    const sessionDate = new Date(session.created_at);
+    return (
+      Number.isFinite(sessionDate.getTime()) &&
+      sessionDate.getFullYear() === now.getFullYear() &&
+      sessionDate.getMonth() === now.getMonth()
+    );
+  });
+}
+
 export function buildPracticeStats(
   sessions: SessionRecord[],
   streak: StreakRecord | null,
+  monthlySessionRecords = getCurrentMonthSessions(sessions),
 ): PracticeStats {
   const scored = sessions.filter(isScoredSession);
 
@@ -205,6 +272,11 @@ export function buildPracticeStats(
     totalPracticeTime: sessions.reduce((sum, session) => sum + getSessionDuration(session), 0),
     avgFlowScore: calculateWeightedAverageFlowScore(sessions),
     bestFlowScore: calculateBestFlowScore(sessions),
+    monthlyStats: {
+      totalSessions: monthlySessionRecords.length,
+      totalSpeakingTime: monthlySessionRecords.reduce((sum, session) => sum + getSessionSpeakingTime(session), 0),
+      avgFlowScore: calculateWeightedAverageFlowScore(monthlySessionRecords),
+    },
     lastSessionDate: getLastSessionDate(sessions),
     currentStreak: Number(streak?.current_streak ?? 0),
     bestStreak: Number(streak?.longest_streak ?? 0),

@@ -2,7 +2,6 @@ import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
 import { buildPracticeStats, getStreak, getTelegramSessions } from "../core/queries.js";
-import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import {
@@ -14,6 +13,7 @@ import {
   CHALLENGE_LABEL,
   GET_PROMPT_LABEL,
   getConnectAccountKeyboard,
+  getTelegramStatsMessage,
   MESSAGES,
   MY_STATS_LABEL,
   replyKeyboard,
@@ -43,17 +43,13 @@ import {
   shareResultToGroup,
 } from "./voiceHandler.js";
 
-const STATS_SESSION_LIMIT = 15;
+const VOICE_ONLY_MESSAGE = "🎤 NoPause only accepts voice notes. Please send a voice note to get your Flow Score.";
 
 function getStartPayload(ctx: Context): string {
   const message = ctx.message as { text?: unknown } | undefined;
   const text = typeof message?.text === "string" ? message.text : "";
   const [, payload = ""] = text.split(/\s+/, 2);
   return payload.trim();
-}
-
-function formatAverageFlowScore(score: number | null): string {
-  return score === null ? "N/A" : String(score);
 }
 
 function formatRelativeDate(dateText: string | null): string {
@@ -100,11 +96,11 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
 
   let stats;
   try {
-    const [streak, records] = await Promise.all([
+    const [streak, sessionSets] = await Promise.all([
       getStreak(userId),
-      getTelegramSessions(userId, STATS_SESSION_LIMIT),
+      getTelegramSessions(userId),
     ]);
-    stats = buildPracticeStats(records, streak);
+    stats = buildPracticeStats(sessionSets.allTimeSessions, streak, sessionSets.monthlySessions);
   } catch (error) {
     console.error("Telegram stats lookup failed", error);
     await ctx.reply(MESSAGES.statsError, { ...replyKeyboard, parse_mode: "HTML" });
@@ -121,7 +117,20 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   };
 
   await ctx.reply(
-    `📊 <b>Your NoPause Stats</b>\n\n<b>Current streak:</b>\n${stats.currentStreak} day(s)\n\n<b>Best streak:</b>\n${stats.bestStreak} day(s)\n\n<b>Overall Flow:</b>\n${stats.avgFlowScore}\n\n<b>Scored sessions:</b>\n${stats.scoredSessions}\n\n<b>Practice time:</b>\n${formatDuration(Math.round(stats.totalPracticeTime))}\n\n📈 <b>Practice Breakdown</b>\n\n<b>Speaking Mode sessions:</b>\n${modeStats.speaking?.totalSessions ?? 0}\n\n<b>Speaking Mode average flow:</b>\n${formatAverageFlowScore(modeStats.speaking?.avgFlowScore ?? null)}\n\n🏆 <b>Highlights</b>\n\n<b>Best Flow Score:</b>\n${stats.bestFlowScore}\n\n<b>Last session:</b>\n${formatRelativeDate(stats.lastSessionDate)}`,
+    getTelegramStatsMessage({
+      currentStreak: stats.currentStreak,
+      bestStreak: stats.bestStreak,
+      bestFlowScore: stats.bestFlowScore,
+      avgFlowScore: stats.avgFlowScore,
+      scoredSessions: stats.scoredSessions,
+      totalPracticeTime: stats.totalPracticeTime,
+      monthlySessions: stats.monthlyStats?.totalSessions ?? 0,
+      monthlySpeakingTime: stats.monthlyStats?.totalSpeakingTime ?? 0,
+      monthlyAvgFlowScore: stats.monthlyStats?.avgFlowScore ?? 0,
+      speakingSessions: modeStats.speaking?.totalSessions ?? 0,
+      speakingAvgFlowScore: modeStats.speaking?.avgFlowScore ?? null,
+      lastSessionText: formatRelativeDate(stats.lastSessionDate),
+    }),
     { ...replyKeyboard, parse_mode: "HTML" },
   );
 }
@@ -157,13 +166,25 @@ export function createTelegramBot() {
     await replyWithStatus(ctx, telegramId);
   });
 
+  bot.command("scoring", async (ctx) => {
+    await ctx.reply(MESSAGES.scoringInfo, { parse_mode: "HTML" });
+  });
+
+  bot.command("challenge", async (ctx) => {
+    await ctx.reply(MESSAGES.challengeInfo, { parse_mode: "HTML" });
+  });
+
+  bot.command("stats", async (ctx) => {
+    await ctx.reply(MESSAGES.statsInfo, { parse_mode: "HTML" });
+  });
+
   bot.command("prompt", async (ctx) => {
     await replyWithPrompt(ctx);
   });
 
   bot.command("nopause", async (ctx) => {
     if (!isGroupChat(ctx)) {
-      await ctx.reply(MESSAGES.readyPrivate, { ...replyKeyboard, parse_mode: "HTML" });
+      await ctx.reply("👥 This command only works in groups. Add NoPause to a group to start a group challenge.");
       return;
     }
 
@@ -296,10 +317,26 @@ nopause.org`,
   });
 
   bot.action(new RegExp(`^${TRY_GROUP_CHALLENGE_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    console.log("Telegram group retry button pressed", {
+      callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,
+      match: ctx.match?.[1],
+      chatId: ctx.chat?.id,
+      chatType: ctx.chat?.type,
+      fromId: ctx.from?.id,
+    });
     await ctx.answerCbQuery();
     const telegramId = getTelegramId(ctx);
+    console.log("Telegram group retry telegramId read", {
+      telegramId,
+      challengeId: ctx.match?.[1],
+    });
     if (!telegramId) return;
 
+    console.log("Telegram group retry calling retryGroupChallenge", {
+      telegramId,
+      challengeId: ctx.match?.[1],
+      username: getTelegramUsername(ctx),
+    });
     await retryGroupChallenge(ctx, telegramId, getTelegramUsername(ctx));
   });
 
@@ -313,6 +350,10 @@ nopause.org`,
     }
 
     await replyWithAiFeedback(ctx, telegramId);
+  });
+
+  bot.on(["photo", "video", "document", "sticker", "audio", "animation", "video_note"], async (ctx) => {
+    await ctx.reply(VOICE_ONLY_MESSAGE);
   });
 
   bot.on("voice", async (ctx) => {

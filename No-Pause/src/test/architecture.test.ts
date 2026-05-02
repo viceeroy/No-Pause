@@ -100,6 +100,12 @@ function createRequest(input: {
 describe('speaking mode scoring architecture', () => {
   it.each([
     { hesitations: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100 },
+    { hesitations: 0, speakingTimeSec: 59, totalSessionTimeSec: 59, expected: 59 },
+    { hesitations: 0, speakingTimeSec: 150, totalSessionTimeSec: 150, expected: 230 },
+    { hesitations: 10, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 100 },
+    { hesitations: 20, speakingTimeSec: 1, totalSessionTimeSec: 60, expected: 0 },
+    { hesitations: 0, speakingTimeSec: 300, totalSessionTimeSec: 300, expected: 500 },
+    { hesitations: 0, speakingTimeSec: 1, totalSessionTimeSec: 1, expected: 1 },
     { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 90 },
     { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 70 },
     { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 140 },
@@ -321,11 +327,10 @@ describe('HTTP header ASCII normalization', () => {
     process.env.NOPAUSE_API_URL = 'https://internal.example';
 
     vi.doMock('@/services/groq', () => ({
-      analyzeSpeech: vi.fn(async () => {
+      getAIFeedback: vi.fn(async () => {
         order.push('analyze');
-        return { hesitation_count: 1 };
+        return '{"hesitation_count":1}';
       }),
-      getAIFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
     }));
 
@@ -346,6 +351,14 @@ describe('HTTP header ASCII normalization', () => {
     const upsertedStreaks: unknown[] = [];
     vi.doMock('@/services/supabaseServer', () => ({
       supabaseServer: {
+        auth: {
+          admin: {
+            getUserById: vi.fn(async () => ({
+              data: { user: { user_metadata: { difficulty: 'beginner' } } },
+              error: null,
+            })),
+          },
+        },
         from: vi.fn((table: string) => ({
           insert: vi.fn((values: unknown) => {
             order.push(`insert:${table}`);
@@ -434,7 +447,58 @@ describe('HTTP header ASCII normalization', () => {
       source: 'telegram',
       transcript: 'hello world again',
     });
-    expect(replies.at(-1)?.[0]).toContain('Speaking Mode Result');
+    expect(replies.at(-1)?.[0]).toContain('Speaking Result');
     expect(upsertedStreaks).toHaveLength(1);
+  });
+
+  it('voiceHandler rejects voice notes over 300 seconds before analysis work starts', async () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
+
+    vi.doMock('@/services/groq', () => ({
+      getAIFeedback: vi.fn(async () => 'Feedback'),
+      isUsableTranscript: vi.fn(() => true),
+    }));
+
+    vi.doMock('@/lib/core/user', () => ({
+      resolveTelegramUser: vi.fn(async () => 'user-1'),
+    }));
+
+    vi.doMock('@/lib/telegram/challenges', () => ({
+      deletePendingChallenge: vi.fn(),
+      getFriendChallenge: vi.fn(),
+      getPendingChallenge: vi.fn(),
+      isMissingChallengesTableError: vi.fn(() => false),
+      updateFriendChallengeCreatorScore: vi.fn(),
+      upsertPendingChallenge: vi.fn(),
+    }));
+
+    const fromMock = vi.fn();
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: {
+        from: fromMock,
+      },
+    }));
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { handleVoiceMessage } = await import('@/lib/telegram/voiceHandler');
+    const replies: Array<[string, unknown?]> = [];
+    const ctx = {
+      from: { id: 123, username: 'speaker' },
+      chat: { type: 'private' },
+      message: { voice: { file_id: 'file-1', duration: 301 } },
+      reply: vi.fn(async (message: string, options?: unknown) => {
+        replies.push([message, options]);
+      }),
+    };
+
+    await handleVoiceMessage(ctx as never, 123);
+
+    expect(replies).toEqual([
+      ['🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.', undefined],
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
   });
 });

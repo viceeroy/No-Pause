@@ -1,8 +1,13 @@
 import type { Context } from "telegraf";
-import { SCORING_VERSION, TELEGRAM_MIN_DURATION } from "../core/constants.js";
-import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD_MS } from "../core/scoring.js";
+import {
+  DEFAULT_PAUSE_THRESHOLD_LEVEL,
+  PAUSE_THRESHOLD_BY_LEVEL,
+  SCORING_VERSION,
+  TELEGRAM_MIN_DURATION,
+  type PauseThresholdLevel,
+} from "../core/constants.js";
+import { calculateFlowScore } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
-import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import {
   getAIFeedback,
@@ -30,11 +35,13 @@ import {
   getGroupResultText,
   getGroupShareResultMessage,
   getSessionActions,
+  getSpeakingResultMessage,
   groupTryAgainKeyboard,
   MESSAGES,
 } from "./constants.js";
 
 const sessionSupabase = supabaseServer as unknown as SupabaseLike;
+const MAX_TELEGRAM_VOICE_DURATION_SECONDS = 300;
 
 export type TelegramSessionRecord = {
   id: string;
@@ -58,6 +65,33 @@ type VerboseTranscriptionResponse = {
 type HesitationAnalysis = {
   hesitation_count: number;
 };
+
+function isPauseThresholdLevel(value: unknown): value is PauseThresholdLevel {
+  return value === "beginner" || value === "intermediate" || value === "advanced";
+}
+
+function getPauseThresholdLevelFromMetadata(metadata: Record<string, unknown> | null | undefined): PauseThresholdLevel {
+  if (isPauseThresholdLevel(metadata?.difficulty)) return metadata.difficulty;
+  if (isPauseThresholdLevel(metadata?.difficultyLevel)) return metadata.difficultyLevel;
+  return DEFAULT_PAUSE_THRESHOLD_LEVEL;
+}
+
+async function getUserPauseThresholdMs(userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabaseServer.auth.admin.getUserById(userId);
+    if (error) {
+      console.error("Telegram difficulty metadata lookup failed", error);
+      return Math.round(PAUSE_THRESHOLD_BY_LEVEL[DEFAULT_PAUSE_THRESHOLD_LEVEL] * 1000);
+    }
+
+    const metadata = data.user?.user_metadata as Record<string, unknown> | undefined;
+    const level = getPauseThresholdLevelFromMetadata(metadata);
+    return Math.round(PAUSE_THRESHOLD_BY_LEVEL[level] * 1000);
+  } catch (error) {
+    console.error("Telegram difficulty metadata lookup failed", error);
+    return Math.round(PAUSE_THRESHOLD_BY_LEVEL[DEFAULT_PAUSE_THRESHOLD_LEVEL] * 1000);
+  }
+}
 
 function requireEnv(value: string | undefined, name: string): string {
   if (!value) {
@@ -163,6 +197,11 @@ function parseGroqHesitationAnalysis(content: string): HesitationAnalysis {
     hesitation_count?: unknown;
   };
   const numberValue = Number(parsed.hesitation_count);
+  if (!Number.isFinite(numberValue)) {
+    console.warn("Groq hesitation analysis returned missing or non-finite hesitation_count", {
+      hesitation_count: parsed.hesitation_count,
+    });
+  }
 
   return {
     hesitation_count: Number.isFinite(numberValue)
@@ -193,11 +232,11 @@ function getSpeakingTimeSec(words: TranscribedWord[], fallbackDurationSec: numbe
   return fallbackDurationSec;
 }
 
-function detectPausesFromWordTimestamps(words: TranscribedWord[]) {
+function detectPausesFromWordTimestamps(words: TranscribedWord[], pauseThresholdMs: number) {
   const orderedWords = [...words]
     .filter((word) => Number.isFinite(word.start) && Number.isFinite(word.end) && word.end >= word.start)
     .sort((a, b) => a.start - b.start);
-  const thresholdSec = DEFAULT_PAUSE_THRESHOLD_MS / 1000;
+  const thresholdSec = pauseThresholdMs / 1000;
 
   return orderedWords.slice(1).reduce(
     (result, word, index) => {
@@ -256,12 +295,12 @@ async function analyzeTranscript(
   transcript: string,
   words: TranscribedWord[],
   totalSessionTimeSec: number,
+  pauseThresholdMs: number,
 ): Promise<FlowAnalysis> {
   const { hesitation_count: hesitationCount } = await analyzeGroqSpeech(transcript);
   const speakingTimeSec = getSpeakingTimeSec(words, totalSessionTimeSec);
-  const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words);
+  const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words, pauseThresholdMs);
   const scoreResult = calculateFlowScore(pauseCount, {
-    mode: "speaking",
     speakingTimeSec,
     totalSessionTimeSec,
     hasSpeechEvidence: transcript.trim().length > 0 || words.length > 0 || pauseCount > 0,
@@ -415,7 +454,13 @@ export function getSessionAnalysis(session: TelegramSessionRecord): FlowAnalysis
 }
 
 export async function handleVoiceMessage(
-  ctx: Context & { message: { voice: { file_id: string; duration?: number } } },
+  ctx: Context & {
+    message: {
+      voice: { file_id: string; duration?: number };
+      forward_origin?: unknown;
+      forward_date?: unknown;
+    };
+  },
   telegramId: number,
 ) {
   const userId = await resolveTelegramUser(telegramId);
@@ -426,12 +471,23 @@ export async function handleVoiceMessage(
     return;
   }
 
+  const voice = ctx.message.voice;
+  if (ctx.message.forward_origin || ctx.message.forward_date) {
+    await ctx.reply("🎤 Please record a fresh voice note directly in this chat, not forwarded from somewhere else.");
+    return;
+  }
+
+  if (voice.duration && voice.duration > MAX_TELEGRAM_VOICE_DURATION_SECONDS) {
+    await ctx.reply("🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.");
+    return;
+  }
+
+  const pauseThresholdMs = await getUserPauseThresholdMs(userId);
   await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
 
   try {
     const pendingChallenge = groupChat ? null : await getPendingChallenge(telegramId);
     const challenge = pendingChallenge ? await getFriendChallenge(pendingChallenge.challenge_id) : null;
-    const voice = ctx.message.voice;
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;
@@ -442,7 +498,7 @@ export async function handleVoiceMessage(
     }
 
     const totalSessionTimeSec = estimateDurationSec(voice.duration);
-    const analysis = await analyzeTranscript(transcript, transcription.words, totalSessionTimeSec);
+    const analysis = await analyzeTranscript(transcript, transcription.words, totalSessionTimeSec, pauseThresholdMs);
     const sessionId = await insertTelegramSession({
       userId,
       transcript,
@@ -451,7 +507,7 @@ export async function handleVoiceMessage(
 
     if (groupChat) {
       await ctx.reply(
-        `🎤 <b>Voice Result</b>\n\n<b>Speaker:</b>\n${escapeTelegramHtml(username)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(analysis.speakingTimeSec)}`,
+        getSpeakingResultMessage({ speaker: username, analysis, transcript }),
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
@@ -471,7 +527,7 @@ export async function handleVoiceMessage(
           }
         }
 
-        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis }), {
+        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
           parse_mode: "HTML",
         });
         return;
@@ -479,7 +535,7 @@ export async function handleVoiceMessage(
 
       const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
 
-      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis }), {
+      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
         ...getFriendChallengeResultActions({
           creatorUsername,
           challengeId: challenge.id,
@@ -496,11 +552,12 @@ export async function handleVoiceMessage(
         username: pendingChallenge.participant_username ?? username,
         topic: challenge.topic,
         analysis,
+        transcript,
       });
       const groupId = Number(pendingChallenge.group_id ?? challenge.creator_telegram_id);
 
       await ctx.reply(
-        `⚔️ <b>Group Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(challenge.topic)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(analysis.speakingTimeSec)}\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
+        getChallengeResultMessage({ title: "Group Challenge Result", topic: challenge.topic, analysis, transcript }),
         {
           ...getGroupChallengeResultActions({
             resultText,
@@ -515,7 +572,7 @@ export async function handleVoiceMessage(
     }
 
     await ctx.reply(
-      `🎤 Speaking Mode Result\n\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.pauseCount} | Hesitations: ${analysis.hesitationCount} | Speaking time: ${formatDuration(analysis.speakingTimeSec)}\n\n📝 Transcript:\n${escapeTelegramHtml(transcript)}`,
+      getSpeakingResultMessage({ analysis, transcript }),
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {
@@ -556,6 +613,7 @@ export async function sendFriendChallengeResult(
       topic: challenge.topic,
       analysis,
       creatorScore: challenge.creator_score,
+      transcript: session.transcript,
     }), {
       parse_mode: "HTML",
     });
@@ -606,6 +664,7 @@ export async function shareResultToGroup(
         firstName: ctx.from?.first_name ?? "Someone",
         username: ctx.from?.username,
         analysis: getSessionAnalysis(session),
+        transcript: session.transcript,
       }),
       { parse_mode: "HTML" },
     );

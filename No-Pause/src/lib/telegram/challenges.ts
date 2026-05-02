@@ -1,10 +1,11 @@
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
-import { escapeTelegramHtml } from "../core/utils.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
   getChallengeShareActions,
   getChallengesTableMissingMessage,
+  getFriendChallengeReceivedMessage,
+  getFriendChallengeShareMessage,
   getGroupChallengeKeyboard,
   getGroupChallengeMessage,
   getPrivateChallengeMessage,
@@ -195,9 +196,9 @@ export async function replyWithNewFriendChallenge(ctx: Context, telegramId: numb
     });
 
     await ctx.reply(
-      `⚔️ <b>Challenge your friends</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}`,
+      getFriendChallengeShareMessage({ topic, challengeId }),
       {
-        ...getChallengeShareActions(challengeId, topic),
+        ...getChallengeShareActions(challengeId, true, topic),
         parse_mode: "HTML",
       },
     );
@@ -240,7 +241,7 @@ export async function handleChallengeDeepLink(
     });
 
     await ctx.reply(
-      `⚔️ <b>Challenge received</b>\n\n<b>From:</b>\n@${escapeTelegramHtml(creatorUsername)}\n\n<b>Topic:</b>\n${escapeTelegramHtml(challenge.topic)}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`,
+      getFriendChallengeReceivedMessage({ creatorUsername, topic: challenge.topic }),
       { parse_mode: "HTML" },
     );
     return true;
@@ -288,6 +289,12 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
     const challenge = await getFriendChallenge(challengeId);
     if (!challenge) {
       await ctx.answerCbQuery("I could not update this challenge right now.");
+      return;
+    }
+
+    if (Number(challenge.creator_telegram_id) !== ctx.from?.id) {
+      await ctx.answerCbQuery();
+      await ctx.reply("Only the person who started the challenge can change the topic.");
       return;
     }
 
@@ -349,14 +356,38 @@ export async function retryGroupChallenge(
   participantUsername: string,
 ) {
   const challengeId = ctx.match[1];
+  console.log("Telegram retryGroupChallenge started", {
+    telegramId,
+    challengeId,
+    participantUsername,
+  });
 
   try {
+    console.log("Telegram retryGroupChallenge fetching challenge", {
+      challengeId,
+    });
     const challenge = await getFriendChallenge(challengeId);
+    console.log("Telegram retryGroupChallenge challenge fetched", {
+      challengeId,
+      found: Boolean(challenge),
+      creatorTelegramId: challenge?.creator_telegram_id,
+      status: challenge?.status,
+    });
     if (!challenge) {
+      console.log("Telegram retryGroupChallenge challenge missing, replying gone", {
+        challengeId,
+      });
       await ctx.reply(MESSAGES.groupChallengeGone, { parse_mode: "HTML" });
       return;
     }
 
+    console.log("Telegram retryGroupChallenge calling upsertPendingChallenge", {
+      telegramId,
+      challengeId: challenge.id,
+      challengeType: "group",
+      groupId: Number(challenge.creator_telegram_id),
+      participantUsername,
+    });
     await upsertPendingChallenge({
       telegramId,
       challengeId: challenge.id,
@@ -364,7 +395,20 @@ export async function retryGroupChallenge(
       groupId: Number(challenge.creator_telegram_id),
       participantUsername,
     });
+    console.log("Telegram retryGroupChallenge upsertPendingChallenge completed", {
+      telegramId,
+      challengeId: challenge.id,
+    });
+    console.log("Telegram retryGroupChallenge sending retry prompt reply", {
+      telegramId,
+      challengeId: challenge.id,
+      topicLength: challenge.topic.length,
+    });
     await ctx.reply(getPrivateChallengeMessage(challenge.topic), { parse_mode: "HTML" });
+    console.log("Telegram retryGroupChallenge retry prompt reply sent", {
+      telegramId,
+      challengeId: challenge.id,
+    });
   } catch (error) {
     console.error("Telegram group retry failed", error);
     if (isMissingChallengesTableError(error)) {

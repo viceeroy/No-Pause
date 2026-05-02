@@ -1,5 +1,11 @@
 import { insertSession, updateStreak as updateCoreStreak, type SupabaseLike } from "./core/session";
-import { buildPracticeStats, type PracticeStats, type SessionRecord, type StreakRecord } from "./core/queries";
+import {
+  buildPracticeStats,
+  getCurrentMonthRange,
+  type PracticeStats,
+  type SessionRecord,
+  type StreakRecord,
+} from "./core/queries";
 import { supabase as browserSupabase } from "@/services/supabase";
 
 export type { PracticeStats, SessionRecord } from "./core/queries";
@@ -165,6 +171,11 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
       totalPracticeTime: 0,
       avgFlowScore: 0,
       bestFlowScore: 0,
+      monthlyStats: {
+        totalSessions: 0,
+        totalSpeakingTime: 0,
+        avgFlowScore: 0,
+      },
       lastSessionDate: null,
       currentStreak: 0,
       bestStreak: 0,
@@ -173,13 +184,24 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
     };
   }
 
-  const [{ data: sessions, error: sessionsError }, { data: streak, error: streakError }] = await Promise.all([
+  const monthRange = getCurrentMonthRange();
+  const [
+    { data: sessions, error: sessionsError },
+    { data: monthlySessions, error: monthlySessionsError },
+    { data: streak, error: streakError },
+  ] = await Promise.all([
     browserSupabase
       .from("sessions")
       .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit),
+      .order("created_at", { ascending: false }),
+    browserSupabase
+      .from("sessions")
+      .select("id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback")
+      .eq("user_id", userId)
+      .gte("created_at", monthRange.start)
+      .lt("created_at", monthRange.end)
+      .order("created_at", { ascending: false }),
     browserSupabase
       .from("streaks")
       .select("current_streak, longest_streak")
@@ -188,7 +210,16 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   ]);
 
   if (sessionsError) throw sessionsError;
+  if (monthlySessionsError) throw monthlySessionsError;
   if (streakError) throw streakError;
 
-  return buildPracticeStats((sessions ?? []) as SessionRecord[], streak as StreakRecord | null);
+  const stats = buildPracticeStats(
+    (sessions ?? []) as SessionRecord[],
+    streak as StreakRecord | null,
+    (monthlySessions ?? []) as SessionRecord[],
+  );
+  return {
+    ...stats,
+    recentSessions: stats.recentSessions.slice(0, limit),
+  };
 }

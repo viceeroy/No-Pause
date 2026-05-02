@@ -1,6 +1,5 @@
 import { Markup } from "telegraf";
 import { APP_URL } from "../core/constants.js";
-import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 
 export const SITE_URL = APP_URL;
@@ -98,23 +97,117 @@ export function getPrivateChallengeMessage(topic: string): string {
   return `⚔️ <b>Group Challenge</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`;
 }
 
+export function getFriendChallengeShareMessage(input: { topic: string; challengeId: string }): string {
+  return `⚔️ <b>Challenge your friends</b>
+
+💬 <b>Topic</b>
+${escapeTelegramHtml(input.topic)}
+
+<a href="${getChallengeDeepLink(input.challengeId)}">Accept Challenge 🎤</a>
+
+Say anything — just speak your mind! 🎤`;
+}
+
+export function getFriendChallengeReceivedMessage(input: { creatorUsername: string; topic: string }): string {
+  return `⚔️ <b>Challenge received</b>
+
+👤 @${escapeTelegramHtml(input.creatorUsername)}
+
+💬 ${escapeTelegramHtml(input.topic)}
+
+🎤 Send a voice note and let's see what you've got.`;
+}
+
+function formatTelegramResultDuration(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+
+  if (minutes === 0) {
+    return `${remainingSeconds}s`;
+  }
+
+  if (remainingSeconds === 0) {
+    return `${minutes}m`;
+  }
+
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function formatCompletedMinutesLabel(minutes: number): string {
+  return `${minutes} completed ${minutes === 1 ? "minute" : "minutes"}`;
+}
+
+function formatResultFields(input: {
+  analysis: FlowAnalysis;
+  transcript?: string | null;
+  html?: boolean;
+}): string {
+  const completedMinutes = Math.floor(Math.max(0, input.analysis.speakingTimeSec || 0) / 60);
+  const bonus = completedMinutes * 40;
+  const transcript = input.transcript?.trim();
+  const label = (text: string) => (input.html ? `<b>${text}</b>` : text);
+
+  return [
+    `📊 ${label("Flow Score:")} ${input.analysis.flowScore}`,
+    `🥇 ${label("Bonus:")} +${bonus} (${formatCompletedMinutesLabel(completedMinutes)})`,
+    "",
+    `⏱ ${label("Speaking time:")} ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}`,
+    `🔇 ${label("Pauses:")} ${input.analysis.pauseCount} (silent gaps)`,
+    `💬 ${label("Hesitations:")} ${input.analysis.hesitationCount} (um, uh, er, ah)`,
+    ...(transcript
+      ? [
+          "",
+          `📝 ${label("Transcript:")}`,
+          "",
+          input.html ? escapeTelegramHtml(transcript) : transcript,
+        ]
+      : []),
+  ].join("\n");
+}
+
+export function getSpeakingResultMessage(input: {
+  analysis: FlowAnalysis;
+  transcript?: string | null;
+  speaker?: string;
+}): string {
+  const speakerText = input.speaker
+    ? `\n\n👤 <b>Speaker:</b> ${escapeTelegramHtml(input.speaker)}`
+    : "";
+
+  return `🎤 <b>Speaking Result</b>${speakerText}\n\n${formatResultFields({
+    analysis: input.analysis,
+    transcript: input.transcript,
+    html: true,
+  })}`;
+}
+
 export function getGroupResultText(input: {
   username: string;
   topic: string;
   analysis: FlowAnalysis;
+  transcript?: string | null;
 }): string {
-  return `🎤 Group Challenge Result\n\nSpeaker:\n${input.username}\n\nTopic:\n${input.topic}\n\nFlow Score:\n${input.analysis.flowScore}\n\nPauses:\n${input.analysis.pauseCount}\n\nHesitations:\n${input.analysis.hesitationCount}\n\nSpeaking time:\n${formatDuration(input.analysis.speakingTimeSec)}`;
+  return `🎤 Group Challenge Result\n\nSpeaker: ${input.username}\n\nTopic: ${input.topic}\n\n${formatResultFields({
+    analysis: input.analysis,
+    transcript: input.transcript,
+  })}`;
 }
 
 export function getGroupShareResultMessage(input: {
   firstName: string;
   username?: string;
   analysis: FlowAnalysis;
+  transcript?: string | null;
 }): string {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
 
-  return `🎤 <b>Group Challenge Result</b>\n\n<b>Speaker:</b>\n${nameLine}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(input.analysis.speakingTimeSec)}`;
+  return `🎤 <b>Group Challenge Result</b>\n\n👤 <b>Speaker:</b> ${nameLine}\n\n${formatResultFields({
+    analysis: input.analysis,
+    transcript: input.transcript,
+    html: true,
+  })}`;
 }
 
 export function getResultShareUrl(resultText: string): string {
@@ -136,16 +229,20 @@ export function getGroupChallengeResultActions(input: {
   ]);
 }
 
-export function getChallengeShareActions(challengeId: string, topic: string) {
+export function getChallengeShareActions(challengeId: string, createdByViewer = false, topic?: string) {
+  const challengeDeepLink = getChallengeDeepLink(challengeId);
+
   return Markup.inlineKeyboard([
     [
-      Markup.button.url(
-        "⚔️ Share Challenge",
-        getTelegramShareUrl({
-          url: getChallengeDeepLink(challengeId),
-          text: `I challenged you on NoPause! Topic: ${topic}`,
-        }),
-      ),
+      createdByViewer
+        ? Markup.button.url(
+            "Share Challenge 🔗",
+            getTelegramShareUrl({
+              url: challengeDeepLink,
+              text: topic ? `Topic: ${topic}\n\nSay anything — just speak your mind! 🎤` : undefined,
+            }),
+          )
+        : Markup.button.url("Accept Challenge 🎤", challengeDeepLink),
     ],
   ]);
 }
@@ -165,8 +262,17 @@ export function getFriendChallengeResultActions(input: {
   ]);
 }
 
-export function getChallengeResultMessage(input: { topic: string; analysis: FlowAnalysis }): string {
-  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(input.analysis.speakingTimeSec)}`;
+export function getChallengeResultMessage(input: {
+  topic: string;
+  analysis: FlowAnalysis;
+  transcript?: string | null;
+  title?: string;
+}): string {
+  return `⚔️ <b>${escapeTelegramHtml(input.title ?? "Challenge Result")}</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n${formatResultFields({
+    analysis: input.analysis,
+    transcript: input.transcript,
+    html: true,
+  })}`;
 }
 
 export function getChallengeCreatorNotification(input: {
@@ -174,14 +280,23 @@ export function getChallengeCreatorNotification(input: {
   topic: string;
   analysis: FlowAnalysis;
   creatorScore: number | null;
+  transcript?: string | null;
 }): string {
   const friend = escapeTelegramHtml(input.friendUsername);
   const topic = escapeTelegramHtml(input.topic);
   if (input.creatorScore === null || input.creatorScore === undefined) {
-    return `⚔️ <b>Challenge update</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n<b>Their Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Action:</b>\nSend a voice note and let's see what you've got 🎤`;
+    return `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n${formatResultFields({
+      analysis: input.analysis,
+      transcript: input.transcript,
+      html: true,
+    })}\n\n<b>Action:</b>\nSend a voice note and let's see what you've got 🎤`;
   }
 
-  return `⚔️ <b>Challenge update</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n<b>Their Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
+  return `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n${formatResultFields({
+    analysis: input.analysis,
+    transcript: input.transcript,
+    html: true,
+  })}\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
 }
 
 export function getConnectUrl(telegramId: number): string {
@@ -202,6 +317,60 @@ export function getConnectAccountKeyboard(telegramId: number) {
   return Markup.inlineKeyboard([
     [Markup.button.url("🔑 Connect Account", getConnectUrl(telegramId))],
   ]);
+}
+
+function formatCompactDuration(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.round(seconds || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+
+  if (minutes === 0) {
+    return `${remainingSeconds}s`;
+  }
+
+  if (remainingSeconds === 0) {
+    return `${minutes}m`;
+  }
+
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function formatAverageScore(score: number | null): string {
+  return score === null ? "N/A" : String(score);
+}
+
+export function getTelegramStatsMessage(input: {
+  currentStreak: number;
+  bestStreak: number;
+  bestFlowScore: number;
+  avgFlowScore: number;
+  scoredSessions: number;
+  totalPracticeTime: number;
+  monthlySessions: number;
+  monthlySpeakingTime: number;
+  monthlyAvgFlowScore: number;
+  speakingSessions: number;
+  speakingAvgFlowScore: number | null;
+  lastSessionText: string;
+}): string {
+  return `📊 <b>Your NoPause Stats</b>
+
+🔥 <b>Streak:</b> ${input.currentStreak} days  |  <b>Best:</b> ${input.bestStreak} days
+
+🏆 <b>Best Score:</b> ${input.bestFlowScore}
+📈 <b>Average Score:</b> ${input.avgFlowScore}
+✅ <b>All-Time Sessions:</b> ${input.scoredSessions}
+
+⏱ <b>All-Time Practice Time:</b> ${formatCompactDuration(input.totalPracticeTime)}
+
+📅 <b>This Month</b>
+<b>Sessions:</b> ${input.monthlySessions}  |  <b>Avg Score:</b> ${input.monthlyAvgFlowScore}
+<b>Speaking Time:</b> ${formatCompactDuration(input.monthlySpeakingTime)}
+
+🎤 <b>Speaking Mode</b>
+<b>Sessions:</b> ${input.speakingSessions}  |  <b>Avg Score:</b> ${formatAverageScore(input.speakingAvgFlowScore)}
+
+📅 <b>Last session:</b> ${input.lastSessionText}`;
 }
 
 export const MESSAGES = {
@@ -236,6 +405,14 @@ export const MESSAGES = {
     "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not generate feedback right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
   statsPrivate:
     "📊 <b>Stats are private</b>\n\n<b>Action:</b>\nOpen @NoPauseAI_bot directly to view your stats.",
+  scoringInfo:
+    "🏆 <b>How scoring works</b>\n\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points",
+  challengeInfo:
+    "⚔️ <b>How challenges work</b>\n\nUse the Challenge button to challenge a friend.\nThey get a link to join.\nBoth of you submit a voice note.\nWhoever scores higher wins.\n\nIn groups, anyone can start a group challenge. Everyone gets the topic and can submit a voice note to compete.",
+  statsInfo:
+    "📊 <b>How stats work</b>\n\nYour stats combine everything.\nSessions from the web app and voice notes from Telegram all count together.\n\nYou can see your streak, best score, total practice time, and recent progress.",
+  nopauseInfo:
+    "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button or type /nopause to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
   readyPrivate:
     "🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
   welcomeIdentify:

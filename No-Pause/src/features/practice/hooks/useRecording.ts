@@ -18,6 +18,8 @@ type SessionData = {
   sessionId: string;
 };
 
+const DEFAULT_MAX_RECORDING_SECONDS = 300;
+
 type UseRecordingOptions = {
   buildSessionResult: (input: {
     results: Awaited<ReturnType<AudioAnalyzer['stop']>>;
@@ -153,13 +155,13 @@ export function useRecording({
 
       sessionDataRef.current = { startTime: Date.now(), sessionId };
 
-      const duration = selectedTimerSeconds;
+      const duration = selectedTimerSeconds > 0 ? selectedTimerSeconds : DEFAULT_MAX_RECORDING_SECONDS;
       setTimeLeft(duration);
       setElapsedTime(0);
       setShowMicRetry(false);
 
       const timerStartTime = Date.now();
-      if (duration > 0) {
+      if (selectedTimerSeconds > 0) {
         timerRef.current = setInterval(() => {
           const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
           const remaining = Math.max(0, duration - elapsed);
@@ -172,7 +174,11 @@ export function useRecording({
       } else {
         timerRef.current = setInterval(() => {
           const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
-          setElapsedTime(elapsed);
+          setElapsedTime(Math.min(elapsed, duration));
+          if (elapsed >= duration) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            void stopRecording();
+          }
         }, 250);
       }
     } catch (error) {

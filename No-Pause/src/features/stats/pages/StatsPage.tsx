@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'lucide-react';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
+import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration } from '@/lib/core/time';
-import { useAuth } from '@/providers/AuthContext';
+import { useAuth, type DifficultyLevel } from '@/providers/AuthContext';
+
+const difficultyOptions: Array<{ level: DifficultyLevel; label: string }> = [
+  { level: 'beginner', label: 'Beginner' },
+  { level: 'intermediate', label: 'Intermediate' },
+  { level: 'advanced', label: 'Advanced' },
+];
 
 function formatDate(isoString?: string): string {
   if (!isoString) return 'Unknown date';
@@ -13,6 +20,15 @@ function formatDate(isoString?: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function getSessionModeLabel(mode: string): string {
+  const normalizedMode = mode.toLowerCase();
+  if (normalizedMode === 'speaking' || normalizedMode === 'free' || normalizedMode === 'free_speaking') {
+    return 'Speaking Mode';
+  }
+
+  return MODE_LABELS[normalizeMode(normalizedMode)];
 }
 
 type StatsPageProps = {
@@ -27,8 +43,9 @@ export default function StatsPage({
   showEmptyStateAction = true,
 }: StatsPageProps) {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const [limit, setLimit] = useState(15);
+  const { user, signOut, difficultyLevel, updateDifficultyLevel } = useAuth();
+  const [limit, setLimit] = useState(50);
+  const [difficultyError, setDifficultyError] = useState<string | null>(null);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
     totalPracticeTime: 0,
@@ -75,6 +92,8 @@ export default function StatsPage({
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const email = user?.email || '';
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const currentDifficultyLabel =
+    difficultyOptions.find((option) => option.level === difficultyLevel)?.label ?? 'Beginner';
   const initials =
     displayName
       .split(/\s+/)
@@ -99,7 +118,7 @@ export default function StatsPage({
           <p className="text-base font-sans text-muted-foreground">Speaking progress</p>
         </header>
 
-        <section className="mb-6 flex flex-col gap-4 rounded-[22px] border border-border bg-surface-card p-5 shadow-card sm:flex-row sm:items-center sm:justify-between md:p-6">
+        <section className="mb-6 flex items-center justify-between gap-4 rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:p-6">
           <div className="flex min-w-0 items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-primary shadow-card md:h-16 md:w-16">
               {avatarUrl ? (
@@ -123,10 +142,11 @@ export default function StatsPage({
             onClick={() => {
               void signOut();
             }}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-border bg-surface-elevated px-5 py-2 text-sm font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-card sm:w-auto"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground transition-colors btn-press hover:bg-surface-card"
+            aria-label="Sign out"
+            title="Sign out"
           >
             <LogOut size={16} className="text-primary" />
-            Sign out
           </button>
         </section>
 
@@ -165,6 +185,55 @@ export default function StatsPage({
               {statsLoading ? '...' : formatDuration(stats.totalPracticeTime)}
             </p>
           </article>
+        </section>
+
+        <section className="mb-6 rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
+          <div className="mb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-serif font-medium text-foreground">Difficulty</h2>
+              <span
+                className="inline-flex min-h-8 items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-sans font-bold text-primary"
+                aria-label={`Current difficulty: ${currentDifficultyLabel}`}
+              >
+                {currentDifficultyLabel}
+              </span>
+            </div>
+            <p className="mt-1 text-sm font-sans text-muted-foreground">
+              Higher difficulty catches shorter pauses.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {difficultyOptions.map((option) => {
+              const selected = option.level === difficultyLevel;
+              return (
+                <button
+                  key={option.level}
+                  type="button"
+                  onClick={() => {
+                    setDifficultyError(null);
+                    void updateDifficultyLevel(option.level).catch((error) => {
+                      const message =
+                        error && typeof error === 'object' && 'message' in error
+                          ? String((error as { message?: unknown }).message)
+                          : 'Could not update difficulty.';
+                      setDifficultyError(message);
+                    });
+                  }}
+                  className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-sans font-bold transition-colors btn-press ${
+                    selected
+                      ? 'border-primary bg-primary text-primary-foreground shadow-soft'
+                      : 'border-border bg-surface-elevated text-foreground hover:border-primary/40'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          {difficultyError && (
+            <p className="mt-3 text-sm font-sans text-destructive">{difficultyError}</p>
+          )}
         </section>
 
         <a
@@ -209,29 +278,43 @@ export default function StatsPage({
 
           {!statsLoading && hasAnySession && (
             <div className="space-y-3">
-              {recentSessions.map((session) => (
-                <article
-                  key={session.id || session.created_at}
-                  className="flex min-h-[64px] items-center justify-between gap-4 rounded-[18px] border border-border bg-surface-card p-4 shadow-card"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-sans font-semibold text-foreground">Speaking Mode</p>
-                    <p className="truncate text-xs font-sans text-muted-foreground">
-                      {formatDate(session.created_at)} | {formatDuration(session.duration || 0)} - {session.hesitationCount || 0} pauses
-                    </p>
-                  </div>
-                  {session.flowScore ? (
-                    <div className="shrink-0 text-right">
-                      <p className="text-2xl font-serif font-medium leading-none text-primary">{session.flowScore}</p>
-                      <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
+              {recentSessions.map((session) => {
+                const source = (session as { source?: string | null }).source;
+                const isTelegramSession = source === 'telegram';
+
+                return (
+                  <article
+                    key={session.id || session.created_at}
+                    className="flex min-h-[64px] items-center justify-between gap-4 rounded-[18px] border border-border bg-surface-card p-4 shadow-card"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-sans font-semibold text-foreground">
+                          {getSessionModeLabel(session.mode)}
+                        </p>
+                        {isTelegramSession && (
+                          <span className="rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] font-sans font-bold text-muted-foreground">
+                            via Telegram
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-xs font-sans text-muted-foreground">
+                        {formatDate(session.created_at)} | {formatDuration(session.duration || 0)} - {session.hesitationCount || 0} pauses
+                      </p>
                     </div>
-                  ) : null}
-                </article>
-              ))}
+                    {session.flowScore ? (
+                      <div className="shrink-0 text-right">
+                        <p className="text-2xl font-serif font-medium leading-none text-primary">{session.flowScore}</p>
+                        <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
               {recentSessions.length === limit && (
                 <button
                   type="button"
-                  onClick={() => setLimit((prev) => prev + 15)}
+                  onClick={() => setLimit((prev) => prev + 50)}
                   className="mt-2 rounded-full border border-border bg-surface-card px-5 py-2 text-sm font-sans font-bold text-foreground transition-colors hover:bg-surface-elevated"
                 >
                   Load more
