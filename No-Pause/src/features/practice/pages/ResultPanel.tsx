@@ -93,7 +93,7 @@ export function ResultPanel({
     const raw = (lastResults.totalSpeakingTime / lastResults.totalSessionTime) * 100;
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
-  const scoreWidth = Math.max(0, Math.min(100, lastResults.flowScore));
+  const scoreWidth = Math.max(0, lastResults.flowScore);
   const transcript = (lastResults.transcript || '').trim();
   const transcriptReady =
     transcript.length > 0 &&
@@ -150,7 +150,7 @@ export function ResultPanel({
 
   return (
     <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-      {lastResults.flowScore === 100 && <Confetti />}
+      {lastResults.flowScore >= 200 && <Confetti />}
       <div className="mb-8 text-left">
         <h2 className="mb-2 text-3xl font-serif font-medium text-foreground md:text-5xl">Results</h2>
         {coachingNote && (
@@ -169,7 +169,6 @@ export function ResultPanel({
               <TrendingUp size={22} />
             </span>
           </div>
-          <p className="mb-4 text-sm font-sans text-muted-foreground">out of 100</p>
           <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
             <div className="h-full rounded-full bg-primary" style={{ width: `${scoreWidth}%` }} />
           </div>

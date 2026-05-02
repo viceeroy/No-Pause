@@ -208,8 +208,8 @@ const buildPracticeFeedbackPrompt = (input: {
   speakingTime: number;
   wordCount: number;
 }) =>
-  `You are a speech analysis expert. The user just completed a speaking session with these stats:
-- Flow Score: ${input.flowScore}/100
+  `You are a speech analysis expert. The user just completed a speaking session. Flow Score is open-ended and grows with sustained speaking time, so do not describe it as a percentage or fixed 100-point score.
+- Flow Score: ${input.flowScore}
 - Pauses: ${input.hesitationCount}
 - Speaking Time: ${input.speakingTime} seconds
 - Word Count: ${input.wordCount}

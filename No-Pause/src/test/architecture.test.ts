@@ -100,10 +100,11 @@ function createRequest(input: {
 describe('speaking mode scoring architecture', () => {
   it.each([
     { hesitations: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100 },
-    { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100 },
-    { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 80 },
-    { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 80 },
-    { hesitations: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 73 },
+    { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 90 },
+    { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 70 },
+    { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 140 },
+    { hesitations: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 31 },
+    { hesitations: 2, speakingTimeSec: 125, totalSessionTimeSec: 300, expected: 185 },
   ])(
     'scores $expected for $hesitations hesitations over $speakingTimeSec/$totalSessionTimeSec seconds',
     ({ hesitations, speakingTimeSec, totalSessionTimeSec, expected }) => {
@@ -114,31 +115,36 @@ describe('speaking mode scoring architecture', () => {
     },
   );
 
-  it('returns 0 for sessions under 60 seconds', () => {
+  it('scores sessions under 60 seconds from speaking time', () => {
     expect(calculateFlowScore(0, { speakingTimeSec: 59, totalSessionTimeSec: 59 })).toEqual({
-      score: 0,
-      isCompleted: false,
-      reason: 'duration',
+      score: 59,
+      isCompleted: true,
     });
   });
 
-  it('returns 0 for sessions under 50% speaking ratio', () => {
+  it('scores sessions under 50% speaking ratio from speaking time', () => {
     expect(calculateFlowScore(0, { speakingTimeSec: 29, totalSessionTimeSec: 60 })).toEqual({
+      score: 29,
+      isCompleted: true,
+    });
+  });
+
+  it('does not return negative scores', () => {
+    expect(calculateFlowScore(10, { speakingTimeSec: 5, totalSessionTimeSec: 60 })).toEqual({
       score: 0,
-      isCompleted: false,
-      reason: 'speaking',
+      isCompleted: true,
     });
   });
 
   it.each([
-    { score: 96, label: 'Perfect Flow' },
-    { score: 95, label: 'Great Flow' },
-    { score: 81, label: 'Great Flow' },
-    { score: 80, label: 'Good Flow' },
-    { score: 61, label: 'Good Flow' },
-    { score: 60, label: 'Getting There' },
-    { score: 41, label: 'Getting There' },
-    { score: 40, label: 'Needs Practice' },
+    { score: 300, label: 'Perfect Flow' },
+    { score: 299, label: 'Great Flow' },
+    { score: 200, label: 'Great Flow' },
+    { score: 199, label: 'Good Flow' },
+    { score: 100, label: 'Good Flow' },
+    { score: 99, label: 'Getting There' },
+    { score: 50, label: 'Getting There' },
+    { score: 49, label: 'Needs Practice' },
   ])('labels score $score as $label', ({ score, label }) => {
     expect(getScoreLabel(score)).toBe(label);
   });
@@ -432,4 +438,3 @@ describe('HTTP header ASCII normalization', () => {
     expect(upsertedStreaks).toHaveLength(1);
   });
 });
-

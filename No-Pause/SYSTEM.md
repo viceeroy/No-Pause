@@ -35,7 +35,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/services/supabase.ts`: browser Supabase anon client.
 - `src/services/supabaseServer.ts`: server Supabase service-role client.
 - `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients when present in the worktree.
-- `src/services/groq.ts`: server-only Groq implementation for Whisper transcription, verbose word timestamps, filler analysis, and AI feedback. Browser code must not import this file.
+- `src/services/groq.ts`: server-only Groq implementation for Whisper transcription, verbose word timestamps, and AI feedback. Browser code must not import this file.
 - `api/transcription.ts`: serverless audio transcription boundary.
 - `api/feedback.ts`: serverless AI feedback boundary.
 - `src/pages/PracticePage.tsx`: current web practice screen; maps optional `prompt_text` into the session context.
@@ -49,7 +49,6 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/features/practice/lib/transcription.ts`: browser SpeechRecognition plus Android/server transcription fallback coordination.
 - `src/features/practice/lib/speechTypes.ts`: shared practice analyzer types.
 - `src/lib/practiceApi.ts`: browser-facing API facade for sessions, streaks, stats, transcription, and feedback. Groq work is routed through `/api/transcription` and `/api/feedback`.
-- `src/lib/telegramBot.ts`: compatibility re-export for the Telegram router.
 - `src/lib/telegram/router.ts`: Telegraf command/action routing, connection checks, stats, and prompt messages.
 - `src/lib/telegram/voiceHandler.ts`: Telegram voice download, transcription endpoint call, pause/filler analysis, persistence, and reply formatting.
 - `src/lib/telegram/challenges.ts`: friend/group challenge creation, state, callbacks, and result updates.
@@ -100,7 +99,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 3. `voiceHandler` downloads Telegram voice files from Telegram.
 4. `voiceHandler` uploads the audio to `/api/transcription` with `x-nopause-internal-token`; the transcription endpoint calls Groq Whisper server-side and returns transcript plus word timestamps.
 5. Telegram rejects unusable transcripts under 3 words.
-6. Pause units are calculated from inter-word timestamp gaps; spoken filler count is calculated by server-side Groq chat.
+6. Pause units are calculated from inter-word timestamp gaps; spoken filler count may be included for display/storage when available.
 7. `calculateFlowScore` scores pause units as mode `speaking`.
 8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
 9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback.
@@ -118,8 +117,9 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 - Only `src/lib/core/scoring.ts` defines Flow Score. UI/analyzer modules import it directly; do not fork constants or formulas.
 - `rawHesitationCount` means penalized pause units for scoring.
-- Current completion rule: Speaking Mode requires at least 60s total session time and 50% speaking ratio.
-- Incomplete sessions return score `0` with reason `duration` or `speaking`.
+- Current scoring formula: `speaking seconds + 40 * completed speaking minutes - 10 * hesitation units`, with a minimum score of `0`.
+- There is no minimum session duration gate and no speaking-ratio completion gate.
+- `getScoreLabel` uses the current open-ended scale: `<50` Needs Practice, `50-99` Getting There, `100-199` Good Flow, `200-299` Great Flow, `300+` Perfect Flow.
 - Pause thresholds by difficulty: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`; Telegram uses the default beginner threshold.
 - Web `hesitationCount` is audio-derived pause units and affects score.
 - Telegram `pauseCount` is word-gap pause units and affects score.

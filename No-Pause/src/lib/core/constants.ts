@@ -19,12 +19,6 @@ export const PAUSE_THRESHOLD_BY_LEVEL: Record<PauseThresholdLevel, number> = {
   advanced: THRESHOLD_ADVANCED,
 };
 
-export const GRACE_RATE = 1.0;
-export const PENALTY_PER_HPM = 10;
-export const MIN_RATIO_FOR_UNCAPPED = 0.65;
-export const CAP_AT_MIN_RATIO = 70;
-export const MIN_SPEAKING_RATIO_FOR_SCORE = 0.5;
-
 export const PERFECT_FLOW_MIN_SCORE = 96;
 export const GREAT_FLOW_MIN_SCORE = 81;
 export const GOOD_FLOW_MIN_SCORE = 61;
