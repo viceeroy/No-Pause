@@ -19,7 +19,6 @@ export type AnalyzePracticeSpeechInput = {
   hesitationCount?: number;
   speakingTime?: number;
   wordCount?: number;
-  mode?: string;
 };
 
 function base64ToBlob(base64: string, mimeType: string): Blob {

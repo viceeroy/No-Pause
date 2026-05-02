@@ -5,10 +5,7 @@ No Pause is a real-time speaking analytics web application designed to help you 
 ## 🎯 Features
 
 - **Real-Time Speech Analysis**: Analyzes audio input purely on the client side using the Web Audio API without streaming your voice to servers.
-- **Three Practice Modes**:
-  - **Free Speaking**: Unrestricted practice to build stamina.
-  - **Lemon Technique**: Time-pressured speaking exercises based on random words to build quick-thinking skills.
-  - **Topic Score**: Structured prompts categorized by difficulty to practice critical thinking and storytelling.
+- **Speaking Mode**: Unrestricted practice to build stamina.
 - **Measurable Flow Score**: A customized algorithm evaluating hesitation rate (pauses/minute) and speaking ratio to penalize excessive silences and reward continuous flow.
 - **Configurable Sensitivities**: Granular settings (Beginner, Intermediate, Advanced) adjusting how long a silence must be to constitute a "hesitation".
 - **Progress Tracking**: Authentication, sessions, streaks, transcripts, hesitation logs, and feedback notes are stored in Supabase.

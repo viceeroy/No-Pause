@@ -8,14 +8,15 @@ import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
 import { getRandomPrompt, opinionPrompts } from '@/lib/core/prompts';
+import { formatDuration } from '@/lib/core/time';
 
 const timerOptions = [
   { label: 'No timer', seconds: 0 },
-  { label: '1 min', seconds: 60 },
-  { label: '2 min', seconds: 120 },
-  { label: '3 min', seconds: 180 },
-  { label: '4 min', seconds: 240 },
-  { label: '5 min', seconds: 300 },
+  { label: formatDuration(60), seconds: 60 },
+  { label: formatDuration(120), seconds: 120 },
+  { label: formatDuration(180), seconds: 180 },
+  { label: formatDuration(240), seconds: 240 },
+  { label: formatDuration(300), seconds: 300 },
 ];
 
 const getRandomPromptOptions = (count = 6) => {
@@ -40,9 +41,7 @@ export default function PracticePage() {
   const [promptMenuOpen, setPromptMenuOpen] = useState(false);
   const [promptOptions, setPromptOptions] = useState(() => getRandomPromptOptions());
   const state = usePracticeState();
-  const mode = 'free' as const;
   const recording = useRecordingController({
-    mode,
     navigate,
     state,
     selectedTimerSeconds,
@@ -57,7 +56,7 @@ export default function PracticePage() {
   useEffect(() => {
     state.setTimeLeft(0);
     state.setTopicPrompt(promptTextParam ? {
-      id: 'free-speaking-topic',
+      id: 'speaking-practice-topic',
       topicTitle: decodeURIComponent(promptTextParam),
       category: 'EXPERIENCE',
       difficulty: 'medium',
@@ -78,9 +77,9 @@ export default function PracticePage() {
 
   const applyPrompt = (topicTitle: string) => {
     state.setTopicPrompt({
-      id: `free-speaking-${topicTitle}`,
+      id: `speaking-practice-${topicTitle}`,
       topicTitle,
-      category: 'FREE_SPEAKING',
+      category: 'SPEAKING_PRACTICE',
       difficulty: 'medium',
       cueCard: [],
     });
@@ -130,8 +129,7 @@ export default function PracticePage() {
 
       {state.state !== 'recording' && (
         <>
-          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-1 md:mb-2' : 'text-4xl md:text-5xl mb-3')}>Free Speaking</h1>
-          <p className={cn('text-muted-foreground font-sans shrink-0', state.isFixedScreen ? 'text-sm md:text-base mb-3 md:mb-6' : 'text-base mb-12')}>Talk about anything, no time limit</p>
+          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-3 md:mb-6' : 'text-4xl md:text-5xl mb-12')}>Speaking Mode</h1>
         </>
       )}
 
@@ -172,7 +170,6 @@ export default function PracticePage() {
 
       {state.state === 'done' && state.lastResults && (
         <ResultPanel
-          mode={mode}
           lastResults={state.lastResults}
           showResultsDebugExport={state.showResultsDebugExport}
           handleRetry={recording.handleRetry}

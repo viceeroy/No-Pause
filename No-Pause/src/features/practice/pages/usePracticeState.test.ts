@@ -15,7 +15,7 @@ describe('usePracticeState', () => {
         totalSessionTime: 60,
         hesitationCount: 3,
         hesitationLog: [],
-        mode: 'lemon',
+        mode: 'speaking',
         audioBlob: null,
         transcript: '',
         wordCount: null,

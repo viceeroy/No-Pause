@@ -7,7 +7,6 @@ import type { SessionResult } from './types';
 import { formatMMSS } from './time';
 
 type ResultPanelProps = {
-  mode: string;
   lastResults: SessionResult;
   showResultsDebugExport: boolean;
   handleRetry: () => void;
@@ -28,10 +27,7 @@ const TIMELINE_PADDING_Y = 18;
 const TIMELINE_LABEL_Y = 120;
 
 function formatTimelineTime(seconds: number) {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  const mins = Math.floor(safeSeconds / 60);
-  const secs = safeSeconds % 60;
-  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  return formatMMSS(seconds);
 }
 
 function getHesitationRangeMs(item: SessionResult['hesitationLog'][number]) {
@@ -56,7 +52,6 @@ function buildSmoothPath(points: Array<{ x: number; y: number }>) {
 }
 
 export function ResultPanel({
-  mode,
   lastResults,
   showResultsDebugExport,
   handleRetry,
@@ -84,15 +79,10 @@ export function ResultPanel({
     onCopied(true);
     setTimeout(() => onCopied(false), 2000);
   };
-  const renderDurationText = (seconds: number) => {
-    const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-    const mins = Math.floor(safeSeconds / 60);
-    const secs = safeSeconds % 60;
-    return `${mins}m ${secs}s`;
-  };
+  const renderDurationText = (seconds: number) => formatMMSS(seconds);
 
   const getCoachingNote = () => {
-    if (lastResults.flowScore === 0) return 'Speak for at least 1 minute to earn a score';
+    if (lastResults.flowScore === 0) return '';
     if (lastResults.hesitationCount > 5) return 'Try to reduce pauses — aim for fewer silence gaps';
     if (speakingTargetPercent < 50) return 'Try to fill more of the session with speech';
     if (lastResults.flowScore > 80) return 'Great flow — keep it up';
@@ -113,6 +103,7 @@ export function ResultPanel({
   const feedbackAvailable = !!lastResults.analysisFeedback || lastResults.analysisFeedbackLoading;
   const sessionDuration = Math.max(0, lastResults.totalSessionTime || 0);
   const timelineAvailable = sessionDuration >= 10;
+  const coachingNote = getCoachingNote();
   const timelineData = useMemo(() => {
     if (!timelineAvailable) return null;
 
@@ -162,7 +153,9 @@ export function ResultPanel({
       {lastResults.flowScore === 100 && <Confetti />}
       <div className="mb-8 text-left">
         <h2 className="mb-2 text-3xl font-serif font-medium text-foreground md:text-5xl">Results</h2>
-        <p className="text-sm font-sans text-muted-foreground md:text-base">{getCoachingNote()}</p>
+        {coachingNote && (
+          <p className="text-sm font-sans text-muted-foreground md:text-base">{coachingNote}</p>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -243,7 +236,7 @@ export function ResultPanel({
                 </svg>
               </div>
               <div className="mt-3 flex items-center justify-between text-[11px] font-sans font-semibold text-muted-foreground">
-                <span>0s</span>
+                <span>{formatTimelineTime(0)}</span>
                 <span>{timelineData.pauseMarkers.length} pauses</span>
                 <span>{formatTimelineTime(sessionDuration)}</span>
               </div>
@@ -379,9 +372,7 @@ export function ResultPanel({
           <button
             onClick={async () => {
               const shareTranscript = lastResults.transcript || '';
-              const shareText = mode === 'free'
-                ? `I just practiced Free Speaking on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`
-                : `I just practiced speaking on No Pause 🎤\n\nFlow score: ${lastResults.flowScore}/100\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {

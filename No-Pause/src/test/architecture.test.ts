@@ -1,0 +1,435 @@
+import { Readable } from 'stream';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
+import {
+  buildSessionInsertValues,
+  calculateNextStreak,
+  insertSession,
+  updateStreak,
+  type SupabaseLike,
+} from '@/lib/core/session';
+
+const originalEnv = { ...process.env };
+
+type InsertCall = {
+  table: string;
+  values: unknown;
+};
+
+function createInsertSupabase(input: {
+  id?: string;
+  error?: unknown;
+  legacyId?: string;
+} = {}) {
+  const inserts: InsertCall[] = [];
+  const supabase = {
+    from: vi.fn((table: string) => ({
+      insert: vi.fn((values: unknown) => {
+        inserts.push({ table, values });
+        const isLegacyInsert = inserts.length > 1;
+        return {
+          select: vi.fn(() => ({
+            single: vi.fn(async () => (
+              !isLegacyInsert && input.error
+                ? { data: null, error: input.error }
+                : { data: { id: isLegacyInsert ? input.legacyId ?? 'legacy-session' : input.id ?? 'session-1' }, error: null }
+            )),
+          })),
+        };
+      }),
+    })),
+  };
+
+  return { supabase: supabase as unknown as SupabaseLike, inserts };
+}
+
+function createStreakSupabase(existingStreak: {
+  current_streak: number | null;
+  longest_streak: number | null;
+  last_session_date: string | null;
+} | null) {
+  const upserts: unknown[] = [];
+  const supabase = {
+    from: vi.fn((table: string) => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          maybeSingle: vi.fn(async () => ({ data: existingStreak, error: null })),
+        })),
+      })),
+      upsert: vi.fn(async (values: unknown) => {
+        upserts.push({ table, values });
+        return { data: null, error: null };
+      }),
+    })),
+  };
+
+  return { supabase: supabase as unknown as SupabaseLike, upserts };
+}
+
+function createResponseRecorder() {
+  const res = {
+    statusCode: 200,
+    headers: {} as Record<string, string>,
+    body: '',
+    setHeader: vi.fn((key: string, value: string) => {
+      res.headers[key] = value;
+    }),
+    end: vi.fn((body?: string) => {
+      res.body = body ?? '';
+    }),
+  };
+
+  return res;
+}
+
+function createRequest(input: {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string | Buffer;
+}) {
+  const body = input.body ? [Buffer.isBuffer(input.body) ? input.body : Buffer.from(input.body)] : [];
+  const req = Readable.from(body) as Readable & {
+    method?: string;
+    headers: Record<string, string>;
+  };
+  req.method = input.method ?? 'POST';
+  req.headers = input.headers ?? {};
+  return req;
+}
+
+describe('speaking mode scoring architecture', () => {
+  it.each([
+    { hesitations: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100 },
+    { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100 },
+    { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 80 },
+    { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 80 },
+    { hesitations: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 73 },
+  ])(
+    'scores $expected for $hesitations hesitations over $speakingTimeSec/$totalSessionTimeSec seconds',
+    ({ hesitations, speakingTimeSec, totalSessionTimeSec, expected }) => {
+      expect(calculateFlowScore(hesitations, { speakingTimeSec, totalSessionTimeSec })).toEqual({
+        score: expected,
+        isCompleted: true,
+      });
+    },
+  );
+
+  it('returns 0 for sessions under 60 seconds', () => {
+    expect(calculateFlowScore(0, { speakingTimeSec: 59, totalSessionTimeSec: 59 })).toEqual({
+      score: 0,
+      isCompleted: false,
+      reason: 'duration',
+    });
+  });
+
+  it('returns 0 for sessions under 50% speaking ratio', () => {
+    expect(calculateFlowScore(0, { speakingTimeSec: 29, totalSessionTimeSec: 60 })).toEqual({
+      score: 0,
+      isCompleted: false,
+      reason: 'speaking',
+    });
+  });
+
+  it.each([
+    { score: 96, label: 'Perfect Flow' },
+    { score: 95, label: 'Great Flow' },
+    { score: 81, label: 'Great Flow' },
+    { score: 80, label: 'Good Flow' },
+    { score: 61, label: 'Good Flow' },
+    { score: 60, label: 'Getting There' },
+    { score: 41, label: 'Getting There' },
+    { score: 40, label: 'Needs Practice' },
+  ])('labels score $score as $label', ({ score, label }) => {
+    expect(getScoreLabel(score)).toBe(label);
+  });
+});
+
+describe('session persistence architecture', () => {
+  it('builds new session rows with speaking mode even when old free_speaking input is supplied', () => {
+    const values = buildSessionInsertValues({
+      userId: 'user-1',
+      duration: 60,
+      pauses: 2,
+      speakingTime: 55,
+      mode: 'free_speaking',
+      flowScore: 90,
+      completed: true,
+    });
+
+    expect(values.mode).toBe('speaking');
+    expect(JSON.stringify(values)).not.toContain('free_speaking');
+  });
+
+  it('insertSession writes speaking mode to Supabase', async () => {
+    const { supabase, inserts } = createInsertSupabase();
+
+    await expect(insertSession(supabase, {
+      userId: 'user-1',
+      duration: 60,
+      pauses: 0,
+      mode: 'free_speaking',
+    })).resolves.toBe('session-1');
+
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].values).toMatchObject({ mode: 'speaking', source: 'web' });
+    expect(JSON.stringify(inserts[0].values)).not.toContain('free_speaking');
+  });
+
+  it('insertSession fallback still writes speaking mode for legacy schemas', async () => {
+    const { supabase, inserts } = createInsertSupabase({
+      error: { code: 'PGRST204', message: 'pause_count missing' },
+      legacyId: 'legacy-id',
+    });
+
+    await expect(insertSession(supabase, {
+      userId: 'user-1',
+      duration: 60,
+      pauses: 1,
+      mode: 'free_speaking',
+    })).resolves.toBe('legacy-id');
+
+    expect(inserts).toHaveLength(2);
+    expect(inserts[1].values).toMatchObject({ mode: 'speaking' });
+    expect(JSON.stringify(inserts[1].values)).not.toContain('free_speaking');
+  });
+
+  it('calculateNextStreak increments from yesterday and preserves best streak', () => {
+    expect(calculateNextStreak({
+      userId: 'user-1',
+      today: '2026-05-02',
+      existingStreak: {
+        current_streak: 3,
+        longest_streak: 5,
+        last_session_date: '2026-05-01',
+      },
+    })).toEqual({
+      user_id: 'user-1',
+      current_streak: 4,
+      longest_streak: 5,
+      last_session_date: '2026-05-02',
+    });
+  });
+
+  it('updateStreak upserts the incremented streak values', async () => {
+    const { supabase, upserts } = createStreakSupabase({
+      current_streak: 3,
+      longest_streak: 3,
+      last_session_date: '2026-05-01',
+    });
+
+    await updateStreak(supabase, { userId: 'user-1', localDate: '2026-05-02' });
+
+    expect(upserts).toEqual([{
+      table: 'streaks',
+      values: {
+        user_id: 'user-1',
+        current_streak: 4,
+        longest_streak: 4,
+        last_session_date: '2026-05-02',
+      },
+    }]);
+  });
+});
+
+describe('module export architecture', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+    process.env = { ...originalEnv };
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
+    process.env.GROQ_API_KEY = 'groq-key';
+  });
+
+  it('router, voiceHandler, and challenges exports resolve with their server dependencies mocked', async () => {
+    vi.doMock('@/services/groq', () => ({
+      analyzeSpeech: vi.fn(async () => ({ hesitation_count: 0 })),
+      getAIFeedback: vi.fn(async () => 'Feedback'),
+      isUsableTranscript: vi.fn(() => true),
+    }));
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: { from: vi.fn() },
+    }));
+
+    const [router, voiceHandler, challenges] = await Promise.all([
+      import('@/lib/telegram/router'),
+      import('@/lib/telegram/voiceHandler'),
+      import('@/lib/telegram/challenges'),
+    ]);
+
+    expect(router.createTelegramBot).toEqual(expect.any(Function));
+    expect(voiceHandler.handleVoiceMessage).toEqual(expect.any(Function));
+    expect(voiceHandler.getSessionAnalysis).toEqual(expect.any(Function));
+    expect(challenges.createChallengeId).toEqual(expect.any(Function));
+    expect(challenges.isMissingChallengesTableError).toEqual(expect.any(Function));
+  });
+
+  it('audio pipeline modules export expected classes and functions', async () => {
+    const [audioCapture, speechSession, transcription, micStateMachine] = await Promise.all([
+      import('@/features/practice/lib/audioCapture'),
+      import('@/features/practice/lib/speechSession'),
+      import('@/features/practice/lib/transcription'),
+      import('@/features/practice/lib/analyzer/micStateMachine'),
+    ]);
+
+    expect(audioCapture.AudioCapture).toEqual(expect.any(Function));
+    expect(speechSession.SpeechSession).toEqual(expect.any(Function));
+    expect(transcription.TranscriptionController).toEqual(expect.any(Function));
+    expect(transcription.processTranscriptForFillerWords).toEqual(expect.any(Function));
+    expect(micStateMachine.applyMicStateFrame).toEqual(expect.any(Function));
+    expect(micStateMachine.finalizeMicState).toEqual(expect.any(Function));
+  });
+});
+
+describe('HTTP header ASCII normalization', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+    process.env = { ...originalEnv };
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    process.env.GROQ_API_KEY = 'groq-key';
+  });
+
+  it('api/transcription accepts an internally normalized token containing non-header characters', async () => {
+    process.env.NOPAUSE_INTERNAL_API_TOKEN = 'internal-token✅';
+    const { default: handler } = await import('../../api/transcription');
+    const req = createRequest({
+      headers: {
+        'x-nopause-internal-token': 'internal-token',
+      },
+    });
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body)).toEqual({ error: 'Expected multipart/form-data audio upload' });
+  });
+
+  it('voiceHandler sends only normalized HTTP-header characters to the transcription endpoint', async () => {
+    const order: string[] = [];
+    process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
+    process.env.NOPAUSE_INTERNAL_API_TOKEN = 'internal-token✅';
+    process.env.NOPAUSE_API_URL = 'https://internal.example';
+
+    vi.doMock('@/services/groq', () => ({
+      analyzeSpeech: vi.fn(async () => {
+        order.push('analyze');
+        return { hesitation_count: 1 };
+      }),
+      getAIFeedback: vi.fn(async () => 'Feedback'),
+      isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
+    }));
+
+    vi.doMock('@/lib/core/user', () => ({
+      resolveTelegramUser: vi.fn(async () => 'user-1'),
+    }));
+
+    vi.doMock('@/lib/telegram/challenges', () => ({
+      deletePendingChallenge: vi.fn(),
+      getFriendChallenge: vi.fn(),
+      getPendingChallenge: vi.fn(async () => null),
+      isMissingChallengesTableError: vi.fn(() => false),
+      updateFriendChallengeCreatorScore: vi.fn(),
+      upsertPendingChallenge: vi.fn(),
+    }));
+
+    const insertedSessions: unknown[] = [];
+    const upsertedStreaks: unknown[] = [];
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: {
+        from: vi.fn((table: string) => ({
+          insert: vi.fn((values: unknown) => {
+            order.push(`insert:${table}`);
+            insertedSessions.push(values);
+            return {
+              select: vi.fn(() => ({
+                single: vi.fn(async () => ({ data: { id: 'telegram-session-1' }, error: null })),
+              })),
+            };
+          }),
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: vi.fn(async () => ({
+                data: { current_streak: 0, longest_streak: 0, last_session_date: null },
+                error: null,
+              })),
+            })),
+          })),
+          upsert: vi.fn(async (values: unknown) => {
+            order.push(`upsert:${table}`);
+            upsertedStreaks.push(values);
+            return { data: null, error: null };
+          }),
+        })),
+      },
+    }));
+
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('/getFile')) {
+        order.push('telegram:getFile');
+        return {
+          ok: true,
+          json: async () => ({ ok: true, result: { file_path: 'voice/file.ogg' } }),
+        } as Response;
+      }
+      if (url.includes('/file/bot')) {
+        order.push('telegram:download');
+        return {
+          ok: true,
+          arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+        } as Response;
+      }
+
+      order.push('transcription');
+      expect(url).toBe('https://internal.example/api/transcription');
+      expect(init?.headers).toMatchObject({
+        'x-nopause-internal-token': 'internal-token',
+      });
+      return {
+        ok: true,
+        json: async () => ({
+          transcript: 'hello world again',
+          words: [
+            { word: 'hello', start: 0, end: 1 },
+            { word: 'world', start: 2, end: 3 },
+            { word: 'again', start: 5, end: 6 },
+          ],
+        }),
+      } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { handleVoiceMessage } = await import('@/lib/telegram/voiceHandler');
+    const replies: Array<[string, unknown?]> = [];
+    const ctx = {
+      from: { id: 123, username: 'speaker' },
+      chat: { type: 'private' },
+      message: { voice: { file_id: 'file-1', duration: 90 } },
+      reply: vi.fn(async (message: string, options?: unknown) => {
+        replies.push([message, options]);
+      }),
+    };
+
+    await handleVoiceMessage(ctx as never, 123);
+
+    expect(order).toEqual([
+      'telegram:getFile',
+      'telegram:download',
+      'transcription',
+      'analyze',
+      'insert:sessions',
+      'upsert:streaks',
+    ]);
+    expect(insertedSessions[0]).toMatchObject({
+      mode: 'speaking',
+      source: 'telegram',
+      transcript: 'hello world again',
+    });
+    expect(replies.at(-1)?.[0]).toContain('Speaking Mode Result');
+    expect(upsertedStreaks).toHaveLength(1);
+  });
+});
+

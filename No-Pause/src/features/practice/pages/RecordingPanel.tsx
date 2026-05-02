@@ -29,7 +29,7 @@ export function RecordingPanel({
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
       <div className="flex min-h-[92px] w-full shrink-0 flex-col items-center justify-center md:min-h-[128px]">
         <p className="text-[10px] text-primary uppercase tracking-widest font-black mb-1.5">
-          Free Speaking
+          Speaking Mode
         </p>
         <p className="font-serif font-medium text-foreground leading-tight text-balance max-w-4xl text-2xl md:text-5xl lg:text-6xl">
           {promptText || 'Speak freely'}

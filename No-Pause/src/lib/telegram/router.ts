@@ -2,6 +2,7 @@ import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
 import { buildPracticeStats, getStreak, getTelegramSessions } from "../core/queries.js";
+import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import {
@@ -53,14 +54,6 @@ function getStartPayload(ctx: Context): string {
 
 function formatAverageFlowScore(score: number | null): string {
   return score === null ? "N/A" : String(score);
-}
-
-function getPracticeTimeParts(totalSeconds: number) {
-  const safeSeconds = Math.max(0, Math.round(totalSeconds));
-  return {
-    minutes: Math.floor(safeSeconds / 60),
-    seconds: safeSeconds % 60,
-  };
 }
 
 function formatRelativeDate(dateText: string | null): string {
@@ -123,15 +116,12 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     return;
   }
 
-  const practiceTime = getPracticeTimeParts(stats.totalPracticeTime);
   const modeStats = {
-    free: stats.modeBreakdown.find((item) => item.mode === "free"),
-    lemon: stats.modeBreakdown.find((item) => item.mode === "lemon"),
-    topic: stats.modeBreakdown.find((item) => item.mode === "topic"),
+    speaking: stats.modeBreakdown.find((item) => item.mode === "speaking"),
   };
 
   await ctx.reply(
-    `📊 <b>Your NoPause Stats</b>\n\n<b>Current streak:</b>\n${stats.currentStreak} day(s)\n\n<b>Best streak:</b>\n${stats.bestStreak} day(s)\n\n<b>Overall Flow:</b>\n${stats.avgFlowScore}\n\n<b>Scored sessions:</b>\n${stats.scoredSessions}\n\n<b>Practice time:</b>\n${practiceTime.minutes}m ${practiceTime.seconds}s\n\n📈 <b>Practice Breakdown</b>\n\n<b>Free Speaking sessions:</b>\n${modeStats.free?.totalSessions ?? 0}\n\n<b>Free Speaking average flow:</b>\n${formatAverageFlowScore(modeStats.free?.avgFlowScore ?? null)}\n\n<b>Lemon sessions:</b>\n${modeStats.lemon?.totalSessions ?? 0}\n\n<b>Lemon average flow:</b>\n${formatAverageFlowScore(modeStats.lemon?.avgFlowScore ?? null)}\n\n<b>Topic sessions:</b>\n${modeStats.topic?.totalSessions ?? 0}\n\n<b>Topic average flow:</b>\n${formatAverageFlowScore(modeStats.topic?.avgFlowScore ?? null)}\n\n🏆 <b>Highlights</b>\n\n<b>Best Flow Score:</b>\n${stats.bestFlowScore}\n\n<b>Last session:</b>\n${formatRelativeDate(stats.lastSessionDate)}`,
+    `📊 <b>Your NoPause Stats</b>\n\n<b>Current streak:</b>\n${stats.currentStreak} day(s)\n\n<b>Best streak:</b>\n${stats.bestStreak} day(s)\n\n<b>Overall Flow:</b>\n${stats.avgFlowScore}\n\n<b>Scored sessions:</b>\n${stats.scoredSessions}\n\n<b>Practice time:</b>\n${formatDuration(Math.round(stats.totalPracticeTime))}\n\n📈 <b>Practice Breakdown</b>\n\n<b>Speaking Mode sessions:</b>\n${modeStats.speaking?.totalSessions ?? 0}\n\n<b>Speaking Mode average flow:</b>\n${formatAverageFlowScore(modeStats.speaking?.avgFlowScore ?? null)}\n\n🏆 <b>Highlights</b>\n\n<b>Best Flow Score:</b>\n${stats.bestFlowScore}\n\n<b>Last session:</b>\n${formatRelativeDate(stats.lastSessionDate)}`,
     { ...replyKeyboard, parse_mode: "HTML" },
   );
 }

@@ -3,10 +3,6 @@ const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const WHISPER_MODEL = "whisper-large-v3-turbo";
 const CHAT_MODEL = "llama-3.3-70b-versatile";
 
-type HesitationAnalysis = {
-  hesitation_count: number;
-};
-
 export type TranscribedWord = {
   word: string;
   start: number;
@@ -19,20 +15,12 @@ export type VerboseTranscription = {
   words: TranscribedWord[];
 };
 
-export type Base64TranscriptionInput = {
-  audioBase64: string;
-  mimeType: string;
-  language?: string;
-  durationSec?: number;
-};
-
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
   flowScore?: number;
   hesitationCount?: number;
   speakingTime?: number;
   wordCount?: number;
-  mode?: string;
 };
 
 function getGroqApiKey(): string {
@@ -65,37 +53,6 @@ function getAudioFilename(audio: File | Blob): string {
   };
   const mimeType = audio.type.split(";")[0] || "audio/webm";
   return `recording.${extensionByMime[mimeType] || "webm"}`;
-}
-
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  if (typeof atob !== "function") {
-    throw new Error("Base64 decoding is not available in this runtime");
-  }
-
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return new Blob([bytes], { type: mimeType });
-}
-
-function parseHesitationAnalysis(content: string): HesitationAnalysis {
-  const jsonText = content
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const parsed = JSON.parse(jsonText) as {
-    hesitation_count?: unknown;
-  };
-  const numberValue = Number(parsed.hesitation_count);
-
-  return {
-    hesitation_count: Number.isFinite(numberValue)
-      ? Math.max(0, Math.min(9999, Math.round(numberValue)))
-      : 0,
-  };
 }
 
 function parseTranscribedWords(words: unknown): TranscribedWord[] {
@@ -148,78 +105,6 @@ export function isUsableTranscript(transcript: string): boolean {
   return getWordCount(transcript) >= 3;
 }
 
-export async function transcribeAudio(audio: File | Blob): Promise<string> {
-  try {
-    if (audio.size === 0) {
-      throw new Error("Audio payload is empty");
-    }
-
-    const formData = new FormData();
-    formData.append("file", audio, getAudioFilename(audio));
-    formData.append("model", WHISPER_MODEL);
-
-    const response = await fetch(GROQ_TRANSCRIPTION_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getGroqApiKey()}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq transcription failed: ${response.status} ${errorText.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const transcript = String(data?.text ?? "").trim();
-    return isUsableTranscript(transcript) ? transcript : "";
-  } catch (error) {
-    console.error("Groq transcription failed", {
-      message: error instanceof Error ? error.message : String(error),
-      mimeType: audio.type,
-      size: audio.size,
-    });
-    throw error;
-  }
-}
-
-export async function transcribeBase64Audio(input: Base64TranscriptionInput): Promise<string> {
-  try {
-    const safeMimeType = input.mimeType.split(";")[0] || "audio/webm";
-    const audioByteLength = Math.floor((input.audioBase64.length * 3) / 4);
-    const MAX_BYTES = 15 * 1024 * 1024;
-    const MIN_BYTES = 5 * 1024;
-    if (audioByteLength === 0) {
-      throw new Error("Audio payload is empty");
-    }
-    if (input.durationSec !== undefined && input.durationSec < 1) {
-      return "";
-    }
-    if (audioByteLength < MIN_BYTES) {
-      return "";
-    }
-    if (audioByteLength > MAX_BYTES) {
-      throw new Error(`Audio payload too large: ${audioByteLength} bytes`);
-    }
-
-    const audioBlob = base64ToBlob(input.audioBase64, safeMimeType);
-    const transcript = await transcribeAudio(audioBlob);
-    if (!transcript) return "";
-
-    return transcript;
-  } catch (error) {
-    console.error("Groq base64 transcription failed", {
-      message: error instanceof Error ? error.message : String(error),
-      mimeType: input.mimeType,
-      language: input.language ?? null,
-      durationSec: input.durationSec ?? null,
-      base64Length: input.audioBase64.length,
-    });
-    throw error;
-  }
-}
-
 export async function transcribeAudioVerbose(audio: File | Blob): Promise<VerboseTranscription> {
   try {
     if (audio.size === 0) {
@@ -265,53 +150,6 @@ export async function transcribeAudioVerbose(audio: File | Blob): Promise<Verbos
       message: error instanceof Error ? error.message : String(error),
       mimeType: audio.type,
       size: audio.size,
-    });
-    throw error;
-  }
-}
-
-export async function analyzeSpeech(transcript: string): Promise<HesitationAnalysis> {
-  try {
-    const trimmed = transcript.trim();
-    if (!trimmed) {
-      throw new Error("Transcript is empty");
-    }
-
-    const response = await fetch(GROQ_CHAT_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getGroqApiKey()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content:
-              'You count only spoken filler hesitations in transcript text. Count words/sounds like "um", "uh", "er", and "ah". Do not infer silent pauses. Return ONLY valid JSON: { "hesitation_count": <number> }',
-          },
-          {
-            role: "user",
-            content: trimmed,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Groq speech analysis failed: ${response.status} ${errorText.slice(0, 200)}`);
-    }
-
-    const data = await response.json();
-    const content = String(data?.choices?.[0]?.message?.content ?? "").trim();
-    return parseHesitationAnalysis(content);
-  } catch (error) {
-    console.error("Groq speech analysis failed", {
-      message: error instanceof Error ? error.message : String(error),
-      transcriptLength: transcript.length,
     });
     throw error;
   }
@@ -384,15 +222,6 @@ Return feedback in markdown with:
 - End with a single motivational sentence under ### 🚀 Next Time
 Keep it under 200 words, punchy and energetic in tone — not corporate or boring.`;
 
-const buildVoiceActingPrompt = (transcript: string) =>
-  `You are a drama coach and voice acting director. The user just read a dramatic passage aloud. Analyze their transcript for emotional expression, clarity, pacing, and dramatic delivery. Give energetic, encouraging feedback like a real acting coach. Reference specific words or phrases from their reading. Keep it under 200 words and use markdown formatting with emoji headers.
-
-Transcript: ${transcript}`;
-
-export async function transcribePracticeAudio(input: Base64TranscriptionInput): Promise<string> {
-  return transcribeBase64Audio(input);
-}
-
 export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
   try {
     const trimmed = input.transcript.trim();
@@ -404,7 +233,6 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
     const hesitationCount = input.hesitationCount ?? 0;
     const speakingTime = input.speakingTime ?? 0;
     const wordCount = input.wordCount ?? 0;
-    const mode = input.mode ?? "default";
 
     console.log("analyzeSpeech request", {
       transcriptLength: trimmed.length,
@@ -412,20 +240,17 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
       hesitationCount,
       speakingTime,
       wordCount,
-      mode,
     });
 
     const output = await getAIFeedback(
       trimmed,
-      mode === "voiceacting"
-        ? buildVoiceActingPrompt(trimmed)
-        : buildPracticeFeedbackPrompt({
-            transcript: trimmed,
-            flowScore,
-            hesitationCount,
-            speakingTime,
-            wordCount,
-          }),
+      buildPracticeFeedbackPrompt({
+        transcript: trimmed,
+        flowScore,
+        hesitationCount,
+        speakingTime,
+        wordCount,
+      }),
     );
     console.log("analyzeSpeech response", {
       responseLength: output.length,

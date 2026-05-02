@@ -1,5 +1,6 @@
 import { Markup } from "telegraf";
 import { APP_URL } from "../core/constants.js";
+import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 
 export const SITE_URL = APP_URL;
@@ -16,7 +17,7 @@ export const SPEAK_GROUP_TOPIC_ACTION_PREFIX = "sg:";
 export const SHARE_TO_GROUP_ACTION_PREFIX = "shg:";
 export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
-export const TRY_AGAIN_ACTION = "try_again:free_speaking";
+export const TRY_AGAIN_ACTION = "try_again:speaking";
 export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 
 export const TELEGRAM_CHALLENGE_TABLES_SQL = `create table if not exists public.challenges (
@@ -102,7 +103,7 @@ export function getGroupResultText(input: {
   topic: string;
   analysis: FlowAnalysis;
 }): string {
-  return `🎤 Group Challenge Result\n\nSpeaker:\n${input.username}\n\nTopic:\n${input.topic}\n\nFlow Score:\n${input.analysis.flowScore}\n\nPauses:\n${input.analysis.pauseCount}\n\nHesitations:\n${input.analysis.hesitationCount}\n\nSpeaking time:\n${input.analysis.speakingTimeSec}s`;
+  return `🎤 Group Challenge Result\n\nSpeaker:\n${input.username}\n\nTopic:\n${input.topic}\n\nFlow Score:\n${input.analysis.flowScore}\n\nPauses:\n${input.analysis.pauseCount}\n\nHesitations:\n${input.analysis.hesitationCount}\n\nSpeaking time:\n${formatDuration(input.analysis.speakingTimeSec)}`;
 }
 
 export function getGroupShareResultMessage(input: {
@@ -113,7 +114,7 @@ export function getGroupShareResultMessage(input: {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
 
-  return `🎤 <b>Group Challenge Result</b>\n\n<b>Speaker:</b>\n${nameLine}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
+  return `🎤 <b>Group Challenge Result</b>\n\n<b>Speaker:</b>\n${nameLine}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(input.analysis.speakingTimeSec)}`;
 }
 
 export function getResultShareUrl(resultText: string): string {
@@ -165,7 +166,7 @@ export function getFriendChallengeResultActions(input: {
 }
 
 export function getChallengeResultMessage(input: { topic: string; analysis: FlowAnalysis }): string {
-  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${input.analysis.speakingTimeSec}s`;
+  return `⚔️ <b>Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n<b>Flow Score:</b>\n${input.analysis.flowScore}\n\n<b>Pauses:</b>\n${input.analysis.pauseCount}\n\n<b>Hesitations:</b>\n${input.analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(input.analysis.speakingTimeSec)}`;
 }
 
 export function getChallengeCreatorNotification(input: {

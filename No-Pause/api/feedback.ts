@@ -30,7 +30,6 @@ function getFeedbackInput(body: Record<string, unknown>): AnalyzePracticeSpeechI
     hesitationCount: Number.isFinite(Number(body.hesitationCount)) ? Number(body.hesitationCount) : undefined,
     speakingTime: Number.isFinite(Number(body.speakingTime)) ? Number(body.speakingTime) : undefined,
     wordCount: Number.isFinite(Number(body.wordCount)) ? Number(body.wordCount) : undefined,
-    mode: typeof body.mode === "string" ? body.mode : undefined,
   };
 }
 

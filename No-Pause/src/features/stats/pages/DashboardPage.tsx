@@ -5,6 +5,7 @@ import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
+import { formatDuration } from '@/lib/core/time';
 import { opinionPrompts } from '@/lib/core/prompts';
 import {
   Dialog,
@@ -62,7 +63,7 @@ const emptyStats: PracticeStats = {
 
 function formatPracticeMinutes(seconds: number) {
   const minutes = Math.round(Math.max(0, seconds || 0) / 60);
-  return `${minutes}m`;
+  return formatDuration(minutes * 60);
 }
 
 export default function DashboardPage() {
@@ -96,7 +97,7 @@ export default function DashboardPage() {
   }, [user?.id]);
 
   const handleCardClick = () => {
-    navigate('/practice/free-speaking');
+    navigate('/practice');
   };
 
   const handleInstallClick = async () => {
@@ -225,7 +226,7 @@ export default function DashboardPage() {
             </div>
             <h3 className="mb-3 text-3xl font-serif font-medium text-foreground md:text-4xl">Start with your voice</h3>
             <p className="max-w-md text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-              Open Free Speaking, record a short session, then review Flow Score and pauses.
+              Record a short session, then review Flow Score and pauses.
             </p>
           </button>
         </div>
@@ -249,7 +250,7 @@ export default function DashboardPage() {
                 <button
                   key={prompt}
                   type="button"
-                  onClick={() => navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(prompt)}`)}
+                  onClick={() => navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`)}
                   className="min-h-[118px] w-[218px] shrink-0 rounded-[18px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:w-[240px]"
                 >
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-elevated text-primary">

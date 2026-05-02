@@ -8,9 +8,7 @@ import {
 } from '@/features/practice/lib/speechAnalyzer';
 import { transcribeAudio } from '@/lib/practiceApi';
 import {
-  LEMON_MIN_TOTAL_SECONDS,
   PAUSE_THRESHOLD_BY_LEVEL,
-  TOPIC_MIN_TOTAL_SECONDS,
 } from '@/lib/core/constants';
 import type { PracticeStateStore } from '@/features/practice/pages/types';
 import type { BuildSessionResultOutput } from './useScoring';
@@ -22,12 +20,10 @@ type SessionData = {
 
 type UseRecordingOptions = {
   buildSessionResult: (input: {
-    mode: string;
     results: Awaited<ReturnType<AudioAnalyzer['stop']>>;
     startTime: number;
   }) => BuildSessionResultOutput;
   difficultyLevel: keyof typeof PAUSE_THRESHOLD_BY_LEVEL;
-  mode: string;
   navigate: NavigateFunction;
   saveFinishedSession: (input: BuildSessionResultOutput) => Promise<void>;
   selectedTimerSeconds?: number;
@@ -41,7 +37,6 @@ interface CustomWindow extends Window {
 export function useRecording({
   buildSessionResult,
   difficultyLevel,
-  mode,
   navigate,
   saveFinishedSession,
   selectedTimerSeconds = 0,
@@ -101,7 +96,6 @@ export function useRecording({
 
       const startTime = sessionDataRef.current?.startTime || Date.now();
       const sessionBuild = buildSessionResult({
-        mode,
         results,
         startTime,
       });
@@ -113,7 +107,7 @@ export function useRecording({
       isRecordingRef.current = false;
       setShowMicRetry(false);
     }
-  }, [buildSessionResult, mode, saveFinishedSession, setLastResults, setState, setShowMicRetry]);
+  }, [buildSessionResult, saveFinishedSession, setLastResults, setState, setShowMicRetry]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -159,7 +153,7 @@ export function useRecording({
 
       sessionDataRef.current = { startTime: Date.now(), sessionId };
 
-      const duration = mode === 'lemon' ? LEMON_MIN_TOTAL_SECONDS : (mode === 'topic' ? TOPIC_MIN_TOTAL_SECONDS : selectedTimerSeconds);
+      const duration = selectedTimerSeconds;
       setTimeLeft(duration);
       setElapsedTime(0);
       setShowMicRetry(false);
@@ -187,7 +181,7 @@ export function useRecording({
       setTranscriptError('Failed to start recording. Please try again.');
       setState('setup');
     }
-  }, [mode, selectedTimerSeconds, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
+  }, [selectedTimerSeconds, setTranscriptError, setState, setShowMicRetry, setTimeLeft, setElapsedTime, stopRecording]);
 
   const handleStart = useCallback(async (forceRetryMic = false) => {
     try {

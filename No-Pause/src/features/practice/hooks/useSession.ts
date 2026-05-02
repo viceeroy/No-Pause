@@ -102,7 +102,6 @@ export function useSession({
         hesitationCount: lastResults.hesitationCount,
         speakingTime: lastResults.totalSpeakingTime,
         wordCount: lastResults.wordCount ?? undefined,
-        mode: lastResults.mode,
       });
       await updateSession({
         sessionId: lastResults.sessionId,

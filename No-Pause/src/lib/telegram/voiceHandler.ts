@@ -2,6 +2,7 @@ import type { Context } from "telegraf";
 import { SCORING_VERSION, TELEGRAM_MIN_DURATION } from "../core/constants.js";
 import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD_MS } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
+import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import {
   analyzeSpeech as analyzeGroqSpeech,
@@ -64,7 +65,9 @@ function requireEnv(value: string | undefined, name: string): string {
 }
 
 function toHttpHeaderValue(value: string, name: string): string {
-  const headerValue = value.trim().replace(/[^\x00-\xff]/g, "");
+  const headerValue = Array.from(value.trim())
+    .filter((char) => char.charCodeAt(0) <= 255)
+    .join("");
   if (!headerValue) {
     throw new Error(`${name} does not contain a valid HTTP header value`);
   }
@@ -229,7 +232,7 @@ async function analyzeTranscript(
   const speakingTimeSec = getSpeakingTimeSec(words, totalSessionTimeSec);
   const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words);
   const scoreResult = calculateFlowScore(pauseCount, {
-    mode: "free",
+    mode: "speaking",
     speakingTimeSec,
     totalSessionTimeSec,
     hasSpeechEvidence: transcript.trim().length > 0 || words.length > 0 || pauseCount > 0,
@@ -289,7 +292,7 @@ async function insertTelegramSession(input: {
 }) {
   const sessionId = await insertSession(sessionSupabase, {
     userId: input.userId,
-    mode: "free",
+    mode: "speaking",
     transcript: input.transcript,
     flowScore: input.analysis.flowScore,
     completed: input.analysis.isCompleted,
@@ -419,7 +422,7 @@ export async function handleVoiceMessage(
 
     if (groupChat) {
       await ctx.reply(
-        `🎤 <b>Voice Result</b>\n\n<b>Speaker:</b>\n${escapeTelegramHtml(username)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s`,
+        `🎤 <b>Voice Result</b>\n\n<b>Speaker:</b>\n${escapeTelegramHtml(username)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(analysis.speakingTimeSec)}`,
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
@@ -468,7 +471,7 @@ export async function handleVoiceMessage(
       const groupId = Number(pendingChallenge.group_id ?? challenge.creator_telegram_id);
 
       await ctx.reply(
-        `⚔️ <b>Group Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(challenge.topic)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${analysis.speakingTimeSec}s\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
+        `⚔️ <b>Group Challenge Result</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(challenge.topic)}\n\n<b>Flow Score:</b>\n${analysis.flowScore}\n\n<b>Pauses:</b>\n${analysis.pauseCount}\n\n<b>Hesitations:</b>\n${analysis.hesitationCount}\n\n<b>Speaking time:</b>\n${formatDuration(analysis.speakingTimeSec)}\n\n📝 <b>Transcript</b>\n\n${escapeTelegramHtml(transcript)}`,
         {
           ...getGroupChallengeResultActions({
             resultText,
@@ -483,7 +486,7 @@ export async function handleVoiceMessage(
     }
 
     await ctx.reply(
-      `🎤 Free Speaking Result\n\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.pauseCount} | Hesitations: ${analysis.hesitationCount} | Speaking time: ${analysis.speakingTimeSec}s\n\n📝 Transcript:\n${escapeTelegramHtml(transcript)}`,
+      `🎤 Speaking Mode Result\n\nFlow Score: ${analysis.flowScore}\nPauses: ${analysis.pauseCount} | Hesitations: ${analysis.hesitationCount} | Speaking time: ${formatDuration(analysis.speakingTimeSec)}\n\n📝 Transcript:\n${escapeTelegramHtml(transcript)}`,
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {

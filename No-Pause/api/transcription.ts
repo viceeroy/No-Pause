@@ -30,7 +30,9 @@ function getBoundary(contentType: string | undefined): string | null {
 }
 
 function toHttpHeaderValue(value: string): string {
-  return value.trim().replace(/[^\x00-\xff]/g, "");
+  return Array.from(value.trim())
+    .filter((char) => char.charCodeAt(0) <= 255)
+    .join("");
 }
 
 async function requireAuthenticatedUser(req: IncomingMessage): Promise<boolean> {

@@ -1,16 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Clock, Send, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'lucide-react';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
+import { formatDuration } from '@/lib/core/time';
 import { useAuth } from '@/providers/AuthContext';
-
-function getDurationParts(seconds: number) {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  return {
-    mins: Math.floor(safeSeconds / 60),
-    secs: safeSeconds % 60,
-  };
-}
 
 function formatDate(isoString?: string): string {
   if (!isoString) return 'Unknown date';
@@ -30,11 +23,11 @@ type StatsPageProps = {
 
 export default function StatsPage({
   emptyStateTitle = 'No sessions yet',
-  emptyStateMessage = 'Complete a Free Speaking session to see scored stats.',
+  emptyStateMessage = 'Complete a Speaking Mode session to see scored stats.',
   showEmptyStateAction = true,
 }: StatsPageProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [limit, setLimit] = useState(15);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
@@ -79,16 +72,16 @@ export default function StatsPage({
   const recentSessions = stats.recentSessions;
   const hasAnySession = recentSessions.length > 0;
   const flowProgress = Math.max(0, Math.min(100, stats.avgFlowScore || 0));
-
-  const renderDurationValue = (seconds: number) => {
-    const { mins, secs } = getDurationParts(seconds);
-    return `${mins}m ${secs}s`;
-  };
-
-  const renderDurationInline = (seconds: number) => {
-    const { mins, secs } = getDurationParts(seconds);
-    return `${mins}m ${secs}s`;
-  };
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
+  const email = user?.email || '';
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'NP';
 
   return (
     <div className="min-h-screen bg-surface-base px-5 pb-24 pt-6 md:px-12 md:pt-8 lg:px-20">
@@ -103,8 +96,39 @@ export default function StatsPage({
 
         <header className="mb-8 text-left">
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Stats</h1>
-          <p className="text-base font-sans text-muted-foreground">Free Speaking progress</p>
+          <p className="text-base font-sans text-muted-foreground">Speaking progress</p>
         </header>
+
+        <section className="mb-6 flex flex-col gap-4 rounded-[22px] border border-border bg-surface-card p-5 shadow-card sm:flex-row sm:items-center sm:justify-between md:p-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-primary shadow-card md:h-16 md:w-16">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{initials}</span>
+              )}
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="truncate text-lg font-serif font-medium leading-tight text-foreground md:text-xl">
+                {displayName}
+              </p>
+              <p className="mt-1 truncate text-sm font-sans text-muted-foreground">
+                {email}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              void signOut();
+            }}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-border bg-surface-elevated px-5 py-2 text-sm font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-card sm:w-auto"
+          >
+            <LogOut size={16} className="text-primary" />
+            Sign out
+          </button>
+        </section>
 
         <section className="mb-6 rounded-[28px] border border-border bg-surface-card p-6 shadow-card md:p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
@@ -138,12 +162,17 @@ export default function StatsPage({
             <Clock size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Total practice</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {statsLoading ? '...' : renderDurationValue(stats.totalPracticeTime)}
+              {statsLoading ? '...' : formatDuration(stats.totalPracticeTime)}
             </p>
           </article>
         </section>
 
-        <section className="mb-8 flex items-center gap-4 rounded-[20px] border border-border bg-surface-card p-5 shadow-card">
+        <a
+          href="https://t.me/NoPauseAI_bot"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-8 flex min-h-[88px] cursor-pointer items-center gap-4 rounded-[20px] border border-border bg-surface-card p-5 shadow-card transition-colors btn-press hover:border-primary/40 hover:bg-surface-elevated"
+        >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
             <Send size={22} />
           </span>
@@ -153,7 +182,10 @@ export default function StatsPage({
               Optional voice note practice outside the web app.
             </p>
           </div>
-        </section>
+          <span className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-primary">
+            <ArrowUpRight size={16} />
+          </span>
+        </a>
 
         {statsError && (
           <div className="mb-8 rounded-2xl border border-border bg-surface-card p-4 text-sm font-sans text-destructive shadow-card">
@@ -183,9 +215,9 @@ export default function StatsPage({
                   className="flex min-h-[64px] items-center justify-between gap-4 rounded-[18px] border border-border bg-surface-card p-4 shadow-card"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-sans font-semibold text-foreground">Free Speaking</p>
+                    <p className="text-sm font-sans font-semibold text-foreground">Speaking Mode</p>
                     <p className="truncate text-xs font-sans text-muted-foreground">
-                      {formatDate(session.created_at)} | {renderDurationInline(session.duration || 0)} - {session.hesitationCount || 0} pauses
+                      {formatDate(session.created_at)} | {formatDuration(session.duration || 0)} - {session.hesitationCount || 0} pauses
                     </p>
                   </div>
                   {session.flowScore ? (

@@ -6,7 +6,7 @@ export default function PromptsPage() {
   const navigate = useNavigate();
 
   const openPrompt = (prompt: string) => {
-    navigate(`/practice/free-speaking?prompt_text=${encodeURIComponent(prompt)}`);
+    navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`);
   };
 
   return (
@@ -21,10 +21,9 @@ export default function PromptsPage() {
         </button>
 
         <header className="mb-8 text-left">
-          <p className="mb-2 text-xs font-sans font-black uppercase tracking-widest text-primary">Free Speaking</p>
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Prompts</h1>
           <p className="max-w-2xl text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-            Pick a prompt, then practice it in Free Speaking.
+            Pick a prompt, then use it for your next speaking session.
           </p>
         </header>
 

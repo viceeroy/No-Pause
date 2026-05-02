@@ -64,7 +64,8 @@ export type StreakUpdateValues = ExistingStreakRecord & {
 };
 
 function normalizeSessionMode(mode: string): string {
-  return mode === "free_speaking" ? "free" : mode;
+  void mode;
+  return "speaking";
 }
 
 export function formatLocalDate(date: Date): string {
@@ -104,7 +105,7 @@ export function buildSessionInsertValues(input: InsertSessionInput) {
     filler_count: input.fillerCount ?? null,
     hesitations_per_minute: input.hesitationsPerMinute ?? null,
     words: input.words,
-    mode: normalizeSessionMode(input.mode ?? "free"),
+    mode: normalizeSessionMode(input.mode ?? "speaking"),
     duration: input.duration,
     completed: input.completed ?? false,
     hesitation_log: input.hesitationLog ?? null,

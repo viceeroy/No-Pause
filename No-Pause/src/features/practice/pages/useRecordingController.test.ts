@@ -33,7 +33,7 @@ const wrapper = ({ children }: { children: ReactNode }) =>
   MockAuthProvider({ children });
 
 describe('useRecordingController', () => {
-  it('resets setup state on retry for lemon mode', () => {
+  it('resets setup state on retry', () => {
     const setState = vi.fn();
     const setAudioData = vi.fn();
     const setLastResults = vi.fn();
@@ -68,7 +68,6 @@ describe('useRecordingController', () => {
     } satisfies PracticeStateStore;
 
     const { result } = renderHook(() => useRecordingController({
-      mode: 'lemon',
       navigate: vi.fn(),
       state: mockState,
     }), { wrapper });
@@ -80,6 +79,6 @@ describe('useRecordingController', () => {
     expect(setState).toHaveBeenCalledWith('setup');
     expect(setAudioData).toHaveBeenCalledWith(null);
     expect(setLastResults).toHaveBeenCalledWith(null);
-    expect(setTimeLeft).toHaveBeenCalledWith(60);
+    expect(setTimeLeft).toHaveBeenCalledWith(0);
   });
 });

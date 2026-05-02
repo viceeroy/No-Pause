@@ -1,28 +1,22 @@
-const SECONDS_PER_MINUTE = 60;
-
-const formatMinutesSeconds = (seconds: number) => {
-  const mins = Math.floor(seconds / SECONDS_PER_MINUTE);
-  const secs = seconds % SECONDS_PER_MINUTE;
-  return `${mins}m ${secs}s`;
-};
+import { formatDuration } from '@/lib/core/time';
 
 /**
- * Formats a duration in `Xm Ys` form.
+ * Formats a duration with spaced minute/second units.
  */
 export const toMMSS = (seconds: number) => {
-  return formatMinutesSeconds(seconds);
+  return formatDuration(seconds);
 };
 
 /**
- * Formats a duration for the live timer display in `Xm Ys` form.
+ * Formats a duration for the live timer display with spaced minute/second units.
  */
 export const formatTime = (seconds: number) => {
-  return formatMinutesSeconds(seconds);
+  return formatDuration(seconds);
 };
 
 /**
- * Formats a duration in `Xm Ys` form.
+ * Formats a duration with spaced minute/second units.
  */
 export const formatMMSS = (seconds: number) => {
-  return formatMinutesSeconds(seconds);
+  return formatDuration(seconds);
 };

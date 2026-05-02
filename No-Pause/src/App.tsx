@@ -55,10 +55,7 @@ const RouteSeoManager = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const { title, description, canonicalPath, robots, structuredData } = getRouteSeoConfig(
-      location.pathname,
-      location.search,
-    );
+    const { title, description, canonicalPath, robots, structuredData } = getRouteSeoConfig(location.pathname);
     const canonicalUrl = `${seoDefaults.siteUrl}${canonicalPath}`;
 
     document.title = title;
@@ -101,7 +98,6 @@ const AppRoutes = () => {
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/practice" element={<PracticePage />} />
-          <Route path="/practice/free-speaking" element={<PracticePage />} />
           <Route path="/prompts" element={<PromptsPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/history" element={<Navigate to="/stats" replace />} />

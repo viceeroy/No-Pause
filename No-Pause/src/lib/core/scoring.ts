@@ -1,40 +1,35 @@
 import {
   CAP_AT_MIN_RATIO,
-  FREE_SPEAKING_MIN_TOTAL_SECONDS,
   GETTING_THERE_MIN_SCORE,
   GOOD_FLOW_MIN_SCORE,
   GRACE_RATE,
   GREAT_FLOW_MIN_SCORE,
-  LEMON_MIN_TOTAL_SECONDS,
   MIN_RATIO_FOR_UNCAPPED,
   MIN_SPEAKING_RATIO_FOR_SCORE,
   PENALTY_PER_HPM,
   PERFECT_FLOW_MIN_SCORE,
-  TOPIC_MIN_TOTAL_SECONDS,
+  SPEAKING_MIN_TOTAL_SECONDS,
 } from "./constants.js";
 
 export {
   CAP_AT_MIN_RATIO,
   DEFAULT_PAUSE_THRESHOLD_LEVEL,
   DEFAULT_PAUSE_THRESHOLD_MS,
-  FREE_SPEAKING_MIN_TOTAL_SECONDS,
   GRACE_RATE,
-  LEMON_MIN_TOTAL_SECONDS,
   MIN_RATIO_FOR_UNCAPPED,
   MIN_SPEAKING_RATIO_FOR_SCORE,
   PAUSE_THRESHOLD_BY_LEVEL,
   PENALTY_PER_HPM,
+  SPEAKING_MIN_TOTAL_SECONDS,
   THRESHOLD_ADVANCED,
   THRESHOLD_BEGINNER,
   THRESHOLD_INTERMEDIATE,
-  TOPIC_MIN_TOTAL_SECONDS,
   type PauseThresholdLevel,
 } from "./constants.js";
 
 type ScoreReason = "duration" | "speaking";
 
 export interface FlowScoreOptions {
-  mode?: string;
   speakingTimeSec?: number;
   totalSessionTimeSec?: number;
   hasSpeechEvidence?: boolean;
@@ -65,41 +60,18 @@ export function calculateFlowScore(
 ): FlowScoreResult {
   const speakingTime = options?.speakingTimeSec ?? 0;
   const totalSession = options?.totalSessionTimeSec ?? 0;
-  const mode = options?.mode ?? "free";
+  const mode = "speaking";
   const hesitationCount = rawHesitationCount ?? 0;
   const speakingRatio = totalSession > 0 ? speakingTime / totalSession : 0;
 
   if (totalSession <= 0) return { score: 0, isCompleted: false, reason: "duration" };
 
-  let isCompleted = false;
-  let reason: ScoreReason | undefined;
-
-  if (mode === "lemon") {
-    const durationComplete = totalSession >= LEMON_MIN_TOTAL_SECONDS;
-    if (!durationComplete) {
-      reason = "duration";
-    } else if (speakingRatio < MIN_SPEAKING_RATIO_FOR_SCORE) {
-      reason = "speaking";
-    } else {
-      isCompleted = true;
-    }
-  } else if (mode === "topic") {
-    const durationComplete = totalSession >= TOPIC_MIN_TOTAL_SECONDS;
-    if (!durationComplete) {
-      reason = "duration";
-    } else if (speakingRatio < MIN_SPEAKING_RATIO_FOR_SCORE) {
-      reason = "speaking";
-    } else {
-      isCompleted = true;
-    }
-  } else {
-    isCompleted =
-      totalSession >= FREE_SPEAKING_MIN_TOTAL_SECONDS &&
-      speakingRatio >= MIN_SPEAKING_RATIO_FOR_SCORE;
-    if (!isCompleted) {
-      reason = totalSession < FREE_SPEAKING_MIN_TOTAL_SECONDS ? "duration" : "speaking";
-    }
-  }
+  const isCompleted =
+    totalSession >= SPEAKING_MIN_TOTAL_SECONDS &&
+    speakingRatio >= MIN_SPEAKING_RATIO_FOR_SCORE;
+  const reason: ScoreReason | undefined = !isCompleted
+    ? totalSession < SPEAKING_MIN_TOTAL_SECONDS ? "duration" : "speaking"
+    : undefined;
 
   if (!isCompleted) {
     debugScoreBreakdown({

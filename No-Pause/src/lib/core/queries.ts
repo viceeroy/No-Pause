@@ -61,37 +61,6 @@ async function getServerSupabase() {
   return supabaseServer;
 }
 
-export async function getSessions(userId: string, limit = 15): Promise<SessionRecord[]> {
-  const supabase = await getServerSupabase();
-  const { data, error } = await supabase
-    .from("sessions")
-    .select(SESSION_COLUMNS)
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    if (isMissingSessionAnalysisColumnError(error)) {
-      const { data: legacyData, error: legacyError } = await supabase
-        .from("sessions")
-        .select(LEGACY_SESSION_COLUMNS)
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(limit);
-
-      if (legacyError) {
-        throw legacyError;
-      }
-
-      return (legacyData ?? []) as SessionRecord[];
-    }
-
-    throw error;
-  }
-
-  return (data ?? []) as SessionRecord[];
-}
-
 export async function getTelegramSessions(userId: string, limit = 15): Promise<SessionRecord[]> {
   const supabase = await getServerSupabase();
   const { data, error } = await supabase
@@ -157,7 +126,7 @@ export function getSessionFlowScore(session: SessionRecord): number | null {
 }
 
 export function getNormalizedSessionMode(session: SessionRecord): string {
-  return normalizeMode((session.mode || "free").toLowerCase());
+  return normalizeMode((session.mode || "speaking").toLowerCase());
 }
 
 export function groupSessionsByMode(sessions: SessionRecord[]): Record<string, SessionRecord[]> {

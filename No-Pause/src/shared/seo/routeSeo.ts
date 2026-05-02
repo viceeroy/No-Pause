@@ -36,33 +36,13 @@ const buildWebPageSchema = (title: string, description: string, canonicalPath: s
   },
 });
 
-const practiceSeoByMode = (mode: string): Pick<RouteSeoConfig, "title" | "description"> => {
-  if (mode === "lemon") {
-    return {
-      title: "Lemon Technique Practice | No Pause",
-      description:
-        "Train fast-thinking speech with Lemon Technique prompts and improve fluency under pressure.",
-    };
-  }
-
-  if (mode === "topic") {
-    return {
-      title: "Topic Score Practice | No Pause",
-      description:
-        "Practice topic-based speaking and track your fluency score to improve clarity and flow.",
-    };
-  }
-
-  return {
-    title: "Free Speaking Practice | No Pause",
-    description:
-      "Practice continuous speaking in free mode, reduce hesitation, and build stronger speaking flow.",
-  };
+const practiceSeo: Pick<RouteSeoConfig, "title" | "description"> = {
+  title: "Speaking Mode | No Pause",
+  description:
+    "Practice continuous speaking, reduce hesitation, and build stronger speaking flow.",
 };
 
-export const getRouteSeoConfig = (pathname: string, search: string): RouteSeoConfig => {
-  const searchParams = new URLSearchParams(search);
-
+export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   if (pathname === "/") {
     const description =
       "No Pause is a real-time speaking analytics tool that helps you improve speaking fluency, reduce hesitations, and track your Flow Score.";
@@ -75,21 +55,8 @@ export const getRouteSeoConfig = (pathname: string, search: string): RouteSeoCon
     };
   }
 
-  if (pathname === "/practice/free-speaking") {
-    const title = "Free Speaking Mode | No Pause";
-    const description =
-      "Practice uninterrupted free speaking with No Pause and build confidence in real-time speech delivery.";
-    return {
-      title,
-      description,
-      canonicalPath: "/practice/free-speaking",
-      structuredData: buildWebPageSchema(title, description, "/practice/free-speaking"),
-    };
-  }
-
   if (pathname === "/practice") {
-    const mode = searchParams.get("mode") || "free";
-    const { title, description } = practiceSeoByMode(mode);
+    const { title, description } = practiceSeo;
     return {
       title,
       description,

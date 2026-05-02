@@ -71,7 +71,7 @@ export function SetupCountdownPanel({
             'flex w-full flex-col items-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:px-10 md:py-12',
             promptText && 'justify-center md:min-h-[300px]'
           )}>
-            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Free Speaking</p>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
             <p className={cn(
               'mx-auto font-serif font-medium leading-tight text-balance text-foreground',
               promptText

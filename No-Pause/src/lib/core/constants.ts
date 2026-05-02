@@ -2,9 +2,7 @@ export const SCORING_VERSION = "1.0";
 export const TELEGRAM_MIN_DURATION = 1;
 export const APP_URL = "https://nopause.org";
 
-export const FREE_SPEAKING_MIN_TOTAL_SECONDS = 60;
-export const TOPIC_MIN_TOTAL_SECONDS = 120;
-export const LEMON_MIN_TOTAL_SECONDS = 60;
+export const SPEAKING_MIN_TOTAL_SECONDS = 60;
 
 export const THRESHOLD_BEGINNER = 1.8;
 export const THRESHOLD_INTERMEDIATE = 1.2;

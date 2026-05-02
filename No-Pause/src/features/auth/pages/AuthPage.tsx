@@ -18,7 +18,6 @@ const AuthPage = () => {
           </div>
         </div>
 
-        <p className="mb-2 text-xs font-sans font-black uppercase tracking-widest text-primary">Free Speaking</p>
         <h1 className="mb-3 text-4xl font-serif font-medium tracking-tight text-foreground md:text-5xl">
           No Pause
         </h1>
@@ -28,7 +27,7 @@ const AuthPage = () => {
 
         <div className="mb-8 grid gap-3 text-left">
           {[
-            { icon: Mic, label: "Start Free Speaking" },
+            { icon: Mic, label: "Start Speaking Mode" },
             { icon: TrendingUp, label: "Track Flow Score" },
             { icon: Flame, label: "Build speaking consistency" },
           ].map(({ icon: Icon, label }) => (

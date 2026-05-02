@@ -4,16 +4,14 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 ## Product Surface
 
-- Web UI exposes authenticated Free Speaking practice. `/practice` and `/practice/free-speaking` both render `PracticePage`; `PracticePage` currently uses mode `free`.
-- `/prompts` is an authenticated prompt picker. Selected prompt text is passed into Free Speaking as display/practice context and is scored as `free`.
+- Web UI exposes authenticated Speaking Mode at `/practice`; `PracticePage` currently uses mode `speaking`.
+- `/prompts` is an authenticated prompt picker. Selected prompt text is passed into Speaking Mode as display/practice context and is scored as `speaking`.
 - Telegram uses prompts and friend/group challenges. Do not remove `src/lib/core/prompts.ts` unless Telegram prompt/challenge behavior is replaced.
-- `lemon`, `topic`, and `readingchallenge` mode values may exist in old data or Telegram-related copy, but they are not separate current web practice modes.
 
 ## Exposed Routes
 
 - `/`: authenticated dashboard, `DashboardPage`.
-- `/practice`: Free Speaking practice, `PracticePage`.
-- `/practice/free-speaking`: Free Speaking practice, `PracticePage`.
+- `/practice`: Speaking Mode, `PracticePage`.
 - `/prompts`: authenticated prompt picker.
 - `/stats`: stats/session history, `StatsPage`.
 - `/history`: redirects to `/stats`.
@@ -68,7 +66,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## Core Functions / Modules
 
 - `calculateFlowScore(rawHesitationCount, options)`: authoritative scoring function.
-- `insertSession(supabase, input)`: normalizes `free_speaking` to `free`, writes session rows, falls back when newer analysis columns are missing.
+- `insertSession(supabase, input)`: writes session rows with mode `speaking`, falling back when newer analysis columns are missing.
 - `updateStreak(supabase, input)`: updates daily streak counters.
 - `buildPracticeStats(sessions, streak)`: aggregates dashboard/stat values.
 - `SpeechAnalyzer`: top-level browser practice orchestrator.
@@ -78,14 +76,14 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `createTelegramBot()`: registers Telegram commands, actions, and voice handling.
 - `handleVoiceMessage()`: Telegram voice analysis pipeline.
 - `transcribeAudioVerbose()`: server-side Groq Whisper transcription with word timestamps.
-- `analyzeSpeech()` / `getAIFeedback()` / `analyzePracticeSpeech()`: server-side Groq chat-based filler counting and feedback.
+- `getAIFeedback()` / `analyzePracticeSpeech()`: server-side Groq chat-based feedback.
 
 ## Active Data Flow
 
-### Web Free Speaking
+### Web Speaking Mode
 
-1. Authenticated user opens `/practice`, `/practice/free-speaking`, or chooses a prompt from `/prompts`.
-2. `PracticePage` runs Free Speaking mode; optional `prompt_text` becomes prompt context.
+1. Authenticated user opens `/practice` or chooses a prompt from `/prompts`.
+2. `PracticePage` runs Speaking Mode; optional `prompt_text` becomes prompt context.
 3. `useRecordingController` initializes microphone services and the practice analyzer.
 4. `AudioCapture` samples Web Audio RMS, records chunks, and reports capture diagnostics.
 5. `SpeechSession` tracks speech/silence, emits pause units, and uses `calculateFlowScore` for preview/final scoring.
@@ -103,7 +101,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 4. `voiceHandler` uploads the audio to `/api/transcription` with `x-nopause-internal-token`; the transcription endpoint calls Groq Whisper server-side and returns transcript plus word timestamps.
 5. Telegram rejects unusable transcripts under 3 words.
 6. Pause units are calculated from inter-word timestamp gaps; spoken filler count is calculated by server-side Groq chat.
-7. `calculateFlowScore` scores pause units as mode `free`.
+7. `calculateFlowScore` scores pause units as mode `speaking`.
 8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
 9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback.
 10. Friend/group challenge state uses `challenges` and `telegram_challenge_state`; prompt text comes from `src/lib/core/prompts.ts`.
@@ -120,7 +118,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 - Only `src/lib/core/scoring.ts` defines Flow Score. UI/analyzer modules import it directly; do not fork constants or formulas.
 - `rawHesitationCount` means penalized pause units for scoring.
-- Current completion rules: `free` and `lemon` require at least 60s total session time and 50% speaking ratio; `topic` requires at least 120s and 50% speaking ratio.
+- Current completion rule: Speaking Mode requires at least 60s total session time and 50% speaking ratio.
 - Incomplete sessions return score `0` with reason `duration` or `speaking`.
 - Pause thresholds by difficulty: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`; Telegram uses the default beginner threshold.
 - Web `hesitationCount` is audio-derived pause units and affects score.
