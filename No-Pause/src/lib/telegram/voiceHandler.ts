@@ -5,7 +5,6 @@ import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from 
 import { formatDuration } from "../core/time.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import {
-  analyzeSpeech as analyzeGroqSpeech,
   getAIFeedback,
   isUsableTranscript,
   type TranscribedWord,
@@ -54,6 +53,10 @@ type VerboseTranscriptionResponse = {
   transcript?: unknown;
   text?: unknown;
   words?: unknown;
+};
+
+type HesitationAnalysis = {
+  hesitation_count: number;
 };
 
 function requireEnv(value: string | undefined, name: string): string {
@@ -149,6 +152,32 @@ function estimateDurationSec(voiceDuration?: number): number {
 
 function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
+}
+
+function parseGroqHesitationAnalysis(content: string): HesitationAnalysis {
+  const jsonText = content
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const parsed = JSON.parse(jsonText) as {
+    hesitation_count?: unknown;
+  };
+  const numberValue = Number(parsed.hesitation_count);
+
+  return {
+    hesitation_count: Number.isFinite(numberValue)
+      ? Math.max(0, Math.min(9999, Math.round(numberValue)))
+      : 0,
+  };
+}
+
+async function analyzeGroqSpeech(transcript: string): Promise<HesitationAnalysis> {
+  const feedback = await getAIFeedback(
+    transcript,
+    'You count only spoken filler hesitations in transcript text. Count words/sounds like "um", "uh", "er", and "ah". Do not infer silent pauses. Return ONLY valid JSON: { "hesitation_count": <number> }',
+  );
+
+  return parseGroqHesitationAnalysis(feedback);
 }
 
 function getSpeakingTimeSec(words: TranscribedWord[], fallbackDurationSec: number): number {
