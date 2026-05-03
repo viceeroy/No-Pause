@@ -1,4 +1,5 @@
 import { Readable } from 'stream';
+import type { IncomingMessage } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import { buildPracticeStats, buildRecentSessionSummaries, type SessionRecord } from '@/lib/core/queries';
@@ -90,10 +91,7 @@ function createRequest(input: {
   body?: string | Buffer;
 }) {
   const body = input.body ? [Buffer.isBuffer(input.body) ? input.body : Buffer.from(input.body)] : [];
-  const req = Readable.from(body) as Readable & {
-    method?: string;
-    headers: Record<string, string>;
-  };
+  const req = Readable.from(body) as unknown as IncomingMessage;
   req.method = input.method ?? 'POST';
   req.headers = input.headers ?? {};
   return req;
@@ -395,11 +393,10 @@ describe('HTTP header ASCII normalization', () => {
     expect(JSON.parse(res.body)).toEqual({ error: 'Expected multipart/form-data audio upload' });
   });
 
-  it('voiceHandler sends only normalized HTTP-header characters to the transcription endpoint', async () => {
+  it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {
     const order: string[] = [];
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
-    process.env.NOPAUSE_INTERNAL_API_TOKEN = 'internal-token✅';
-    process.env.NOPAUSE_API_URL = 'https://internal.example';
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
 
     vi.doMock('@/services/groq', () => ({
       getAIFeedback: vi.fn(async () => {
@@ -461,15 +458,16 @@ describe('HTTP header ASCII normalization', () => {
       },
     }));
 
-    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-      if (url.includes('/getFile')) {
+    const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      const urlString = String(url);
+      if (urlString.includes('/getFile')) {
         order.push('telegram:getFile');
         return {
           ok: true,
           json: async () => ({ ok: true, result: { file_path: 'voice/file.ogg' } }),
         } as Response;
       }
-      if (url.includes('/file/bot')) {
+      if (urlString.includes('/file/bot')) {
         order.push('telegram:download');
         return {
           ok: true,
@@ -477,20 +475,31 @@ describe('HTTP header ASCII normalization', () => {
         } as Response;
       }
 
-      order.push('transcription');
-      expect(url).toBe('https://internal.example/api/transcription');
+      order.push('deepgram');
+      expect(urlString).toContain('https://api.deepgram.com/v1/listen');
+      expect(urlString).toContain('model=nova-3');
+      expect(urlString).toContain('smart_format=true');
+      expect(urlString).toContain('punctuate=true');
+      expect(urlString).toContain('words=true');
       expect(init?.headers).toMatchObject({
-        'x-nopause-internal-token': 'internal-token',
+        Authorization: 'Token deepgram-key',
+        'Content-Type': 'audio/ogg',
       });
       return {
         ok: true,
         json: async () => ({
-          transcript: 'hello world again',
-          words: [
-            { word: 'hello', start: 0, end: 1 },
-            { word: 'world', start: 2, end: 3 },
-            { word: 'again', start: 5, end: 6 },
-          ],
+          results: {
+            channels: [{
+              alternatives: [{
+                transcript: 'hello world again',
+                words: [
+                  { word: 'hello', start: 0, end: 1 },
+                  { word: 'world', start: 2, end: 3 },
+                  { word: 'again', start: 5, end: 6 },
+                ],
+              }],
+            }],
+          },
         }),
       } as Response;
     });
@@ -512,7 +521,7 @@ describe('HTTP header ASCII normalization', () => {
     expect(order).toEqual([
       'telegram:getFile',
       'telegram:download',
-      'transcription',
+      'deepgram',
       'analyze',
       'insert:sessions',
       'upsert:streaks',

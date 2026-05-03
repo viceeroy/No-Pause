@@ -14,6 +14,7 @@ import {
   isUsableTranscript,
   type TranscribedWord,
 } from "../../services/groq.js";
+import { transcribeAudioWithDeepgram } from "../../services/deepgram.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
@@ -101,20 +102,6 @@ function requireEnv(value: string | undefined, name: string): string {
   return value;
 }
 
-function toHttpHeaderValue(value: string, name: string): string {
-  const headerValue = Array.from(value.trim())
-    .filter((char) => char.charCodeAt(0) <= 255)
-    .join("");
-  if (!headerValue) {
-    throw new Error(`${name} does not contain a valid HTTP header value`);
-  }
-  if (headerValue !== value) {
-    console.warn(`${name} contained characters that cannot be sent in an HTTP header`);
-  }
-
-  return headerValue;
-}
-
 export function getBotToken(): string {
   return requireEnv(process.env.TELEGRAM_BOT_TOKEN, "TELEGRAM_BOT_TOKEN");
 }
@@ -137,20 +124,6 @@ export function getPlainTelegramUsername(ctx: Context): string {
 
 export async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
   await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
-}
-
-function getTranscriptionEndpointUrl(): string {
-  const configuredUrl = process.env.NOPAUSE_API_URL ?? process.env.NOPAUSE_INTERNAL_API_URL;
-  if (configuredUrl) {
-    return `${configuredUrl.replace(/\/$/, "")}/api/transcription`;
-  }
-
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl) {
-    return `https://${vercelUrl.replace(/\/$/, "")}/api/transcription`;
-  }
-
-  return "https://nopause.org/api/transcription";
 }
 
 function parseTranscribedWords(words: unknown): TranscribedWord[] {
@@ -265,24 +238,7 @@ function detectPausesFromWordTimestamps(words: TranscribedWord[], pauseThreshold
 }
 
 async function transcribeAudio(audioBuffer: ArrayBuffer) {
-  const formData = new FormData();
-  formData.append("audio", new File([audioBuffer], "voice.ogg", { type: "audio/ogg" }));
-  const internalToken = process.env.NOPAUSE_INTERNAL_API_TOKEN ?? getBotToken();
-
-  const response = await fetch(getTranscriptionEndpointUrl(), {
-    method: "POST",
-    headers: {
-      "x-nopause-internal-token": toHttpHeaderValue(internalToken, "NOPAUSE_INTERNAL_API_TOKEN"),
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`NoPause transcription endpoint failed: ${response.status} ${errorText.slice(0, 200)}`);
-  }
-
-  const data = (await response.json()) as VerboseTranscriptionResponse;
+  const data = await transcribeAudioWithDeepgram(audioBuffer) as VerboseTranscriptionResponse;
   const transcript = String(data.transcript ?? data.text ?? "").trim();
   const words = parseTranscribedWords(data.words);
   console.log("transcript words:", words.length);
