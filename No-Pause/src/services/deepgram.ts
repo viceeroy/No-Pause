@@ -56,7 +56,10 @@ function getDeepgramAlternative(data: unknown) {
   return maybeData?.results?.channels?.[0]?.alternatives?.[0];
 }
 
-export async function transcribeAudioWithDeepgram(audioBuffer: ArrayBuffer): Promise<DeepgramTranscription> {
+export async function transcribeAudioWithDeepgram(
+  audioBuffer: ArrayBuffer,
+  mimeType = "audio/ogg",
+): Promise<DeepgramTranscription> {
   if (audioBuffer.byteLength === 0) {
     throw new Error("Audio payload is empty");
   }
@@ -71,7 +74,7 @@ export async function transcribeAudioWithDeepgram(audioBuffer: ArrayBuffer): Pro
     method: "POST",
     headers: {
       Authorization: `Token ${getDeepgramApiKey()}`,
-      "Content-Type": "audio/ogg",
+      "Content-Type": mimeType,
     },
     body: audioBuffer,
   });

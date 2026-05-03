@@ -324,13 +324,15 @@ describe('module export architecture', () => {
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
     process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
-    process.env.GROQ_API_KEY = 'groq-key';
+    process.env.GEMINI_API_KEY = 'gemini-key';
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
   });
 
   it('router, voiceHandler, and challenges exports resolve with their server dependencies mocked', async () => {
-    vi.doMock('@/services/groq', () => ({
-      analyzeSpeech: vi.fn(async () => ({ hesitation_count: 0 })),
-      getAIFeedback: vi.fn(async () => 'Feedback'),
+    vi.doMock('@/services/aiFeedback', () => ({
+      analyzePracticeSpeech: vi.fn(async () => 'Feedback'),
+      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      generateFillerCount: vi.fn(async () => '{"hesitation_count":0}'),
       isUsableTranscript: vi.fn(() => true),
     }));
     vi.doMock('@/services/supabaseServer', () => ({
@@ -374,7 +376,7 @@ describe('HTTP header ASCII normalization', () => {
     process.env = { ...originalEnv };
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
-    process.env.GROQ_API_KEY = 'groq-key';
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
   });
 
   it('api/transcription accepts an internally normalized token containing non-header characters', async () => {
@@ -398,8 +400,9 @@ describe('HTTP header ASCII normalization', () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
     process.env.DEEPGRAM_API_KEY = 'deepgram-key';
 
-    vi.doMock('@/services/groq', () => ({
-      getAIFeedback: vi.fn(async () => {
+    vi.doMock('@/services/aiFeedback', () => ({
+      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      generateFillerCount: vi.fn(async () => {
         order.push('analyze');
         return '{"hesitation_count":1}';
       }),
@@ -538,8 +541,9 @@ describe('HTTP header ASCII normalization', () => {
   it('voiceHandler rejects voice notes over 300 seconds before analysis work starts', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
 
-    vi.doMock('@/services/groq', () => ({
-      getAIFeedback: vi.fn(async () => 'Feedback'),
+    vi.doMock('@/services/aiFeedback', () => ({
+      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      generateFillerCount: vi.fn(async () => '{"hesitation_count":0}'),
       isUsableTranscript: vi.fn(() => true),
     }));
 

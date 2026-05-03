@@ -10,11 +10,11 @@ import { calculateFlowScore } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import {
-  getAIFeedback,
+  generateAiFeedback,
+  generateFillerCount,
   isUsableTranscript,
-  type TranscribedWord,
-} from "../../services/groq.js";
-import { transcribeAudioWithDeepgram } from "../../services/deepgram.js";
+} from "../../services/aiFeedback.js";
+import { transcribeAudioWithDeepgram, type DeepgramTranscribedWord } from "../../services/deepgram.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
@@ -126,7 +126,7 @@ export async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
   await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
 }
 
-function parseTranscribedWords(words: unknown): TranscribedWord[] {
+function parseTranscribedWords(words: unknown): DeepgramTranscribedWord[] {
   if (!Array.isArray(words)) {
     return [];
   }
@@ -161,7 +161,7 @@ function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
 }
 
-function parseGroqHesitationAnalysis(content: string): HesitationAnalysis {
+function parseGeminiHesitationAnalysis(content: string): HesitationAnalysis {
   const jsonText = content
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
@@ -171,7 +171,7 @@ function parseGroqHesitationAnalysis(content: string): HesitationAnalysis {
   };
   const numberValue = Number(parsed.hesitation_count);
   if (!Number.isFinite(numberValue)) {
-    console.warn("Groq hesitation analysis returned missing or non-finite hesitation_count", {
+    console.warn("Gemini hesitation analysis returned missing or non-finite hesitation_count", {
       hesitation_count: parsed.hesitation_count,
     });
   }
@@ -183,16 +183,13 @@ function parseGroqHesitationAnalysis(content: string): HesitationAnalysis {
   };
 }
 
-async function analyzeGroqSpeech(transcript: string): Promise<HesitationAnalysis> {
-  const feedback = await getAIFeedback(
-    transcript,
-    'You count only spoken filler hesitations in transcript text. Count words/sounds like "um", "uh", "er", and "ah". Do not infer silent pauses. Return ONLY valid JSON: { "hesitation_count": <number> }',
-  );
+async function analyzeGeminiSpeech(transcript: string): Promise<HesitationAnalysis> {
+  const feedback = await generateFillerCount(transcript);
 
-  return parseGroqHesitationAnalysis(feedback);
+  return parseGeminiHesitationAnalysis(feedback);
 }
 
-function getSpeakingTimeSec(words: TranscribedWord[], fallbackDurationSec: number): number {
+function getSpeakingTimeSec(words: DeepgramTranscribedWord[], fallbackDurationSec: number): number {
   const speakingSeconds = words.reduce((sum, word) => {
     const duration = Math.max(0, word.end - word.start);
     return sum + duration;
@@ -205,7 +202,7 @@ function getSpeakingTimeSec(words: TranscribedWord[], fallbackDurationSec: numbe
   return fallbackDurationSec;
 }
 
-function detectPausesFromWordTimestamps(words: TranscribedWord[], pauseThresholdMs: number) {
+function detectPausesFromWordTimestamps(words: DeepgramTranscribedWord[], pauseThresholdMs: number) {
   const orderedWords = [...words]
     .filter((word) => Number.isFinite(word.start) && Number.isFinite(word.end) && word.end >= word.start)
     .sort((a, b) => a.start - b.start);
@@ -248,11 +245,11 @@ async function transcribeAudio(audioBuffer: ArrayBuffer) {
 
 async function analyzeTranscript(
   transcript: string,
-  words: TranscribedWord[],
+  words: DeepgramTranscribedWord[],
   totalSessionTimeSec: number,
   pauseThresholdMs: number,
 ): Promise<FlowAnalysis> {
-  const { hesitation_count: hesitationCount } = await analyzeGroqSpeech(transcript);
+  const { hesitation_count: hesitationCount } = await analyzeGeminiSpeech(transcript);
   const speakingTimeSec = getSpeakingTimeSec(words, totalSessionTimeSec);
   const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words, pauseThresholdMs);
   const scoreResult = calculateFlowScore(pauseCount, {
@@ -270,10 +267,6 @@ async function analyzeTranscript(
     isCompleted: scoreResult.isCompleted,
     pauseLog,
   };
-}
-
-async function generateAiFeedback(transcript: string): Promise<string> {
-  return getAIFeedback(transcript);
 }
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {

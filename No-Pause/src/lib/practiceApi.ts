@@ -84,7 +84,7 @@ export async function transcribeAudio(input: Base64TranscriptionInput): Promise<
     headers: await getAuthHeaders(),
     body: formData,
   });
-  const body = await readEndpointJson<{ transcript?: unknown }>(response);
+  const body = await readEndpointJson<{ transcript?: unknown; words?: unknown }>(response);
   return String(body.transcript ?? "");
 }
 

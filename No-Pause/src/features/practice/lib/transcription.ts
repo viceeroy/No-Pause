@@ -210,17 +210,17 @@ export class TranscriptionController {
 
       const audioBase64 = arrayBufferToBase64(await input.audioBlob.arrayBuffer());
       const durationSec = Math.round(input.totalRecordingTimeMs / 1000);
-      const groqTranscript = await this.transcribeWithRetry({
+      const deepgramTranscript = await this.transcribeWithRetry({
         audioBase64,
         mimeType: input.normalizedMimeType,
         durationSec,
       });
-      if (groqTranscript && groqTranscript.trim().length > 0) {
-        finalTranscript = groqTranscript.trim();
+      if (deepgramTranscript && deepgramTranscript.trim().length > 0) {
+        finalTranscript = deepgramTranscript.trim();
         this.transcript = finalTranscript;
       }
     } catch (error) {
-      debugError('[Transcript] Groq transcription failed:', error);
+      debugError('[Transcript] Deepgram transcription failed:', error);
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String((error as { message?: unknown }).message)
@@ -241,7 +241,7 @@ export class TranscriptionController {
     try {
       return await this.transcribeAudio!(payload);
     } catch (error) {
-      debugWarn('[Transcript] Groq transcription failed, retrying once...', error);
+      debugWarn('[Transcript] Deepgram transcription failed, retrying once...', error);
       return await this.transcribeAudio!(payload);
     }
   }
