@@ -327,6 +327,13 @@ export function createTelegramBot() {
 
   bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
     await ctx.answerCbQuery();
+    console.log("Telegram AI feedback callback received", {
+      callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,
+      sessionId: ctx.match?.[1],
+      chatId: ctx.chat?.id,
+      chatType: ctx.chat?.type,
+      fromId: ctx.from?.id,
+    });
     const telegramId = getTelegramId(ctx);
 
     if (!telegramId) {

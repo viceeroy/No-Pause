@@ -276,6 +276,21 @@ async function generateAiFeedback(transcript: string): Promise<string> {
   return getAIFeedback(transcript);
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
   const token = getBotToken();
   const fileResponse = await fetch(
@@ -652,16 +667,34 @@ export async function replyWithAiFeedback(
       await ctx.reply(MESSAGES.feedbackTranscriptMissing, { parse_mode: "HTML" });
       return;
     }
+    console.log("Telegram AI feedback session loaded", {
+      telegramId,
+      sessionId,
+      userId,
+      transcriptLength: transcript.length,
+    });
 
     try {
-      const feedback = await generateAiFeedback(transcript);
+      await ctx.reply("🤖 AI feedback is being generated...");
+      console.log("Telegram AI feedback started", {
+        telegramId,
+        sessionId,
+        transcriptLength: transcript.length,
+      });
+      const feedback = await withTimeout(generateAiFeedback(transcript), 25_000, "AI feedback timed out");
+      console.log("Telegram AI feedback completed", {
+        telegramId,
+        sessionId,
+        feedbackLength: feedback.length,
+      });
       await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
     } catch (error) {
-      console.error("Telegram AI feedback generation failed", error);
-      await ctx.reply(
-        "⏳ <b>AI Feedback</b>\n\nFeedback is taking too long right now. Please try again in a moment.",
-        { parse_mode: "HTML" },
-      );
+      console.error("Telegram AI feedback failed", {
+        message: error instanceof Error ? error.message : String(error),
+        telegramId,
+        sessionId,
+      });
+      await ctx.reply("AI feedback is taking too long. Try again in a moment.");
     }
   } catch (error) {
     console.error("Telegram AI feedback failed", error);

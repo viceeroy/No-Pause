@@ -23,8 +23,8 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## API Endpoints
 
 - `POST /api/transcription`: `api/transcription.ts`; accepts `multipart/form-data` audio upload in `audio` or `file`, requires either a Supabase bearer token or an internal token, calls Groq Whisper with the server-side `GROQ_API_KEY`, and returns transcript text plus word timestamps.
-- `POST /api/feedback`: `api/feedback.ts`; accepts transcript text and scoring data as JSON, requires a Supabase bearer token, calls Groq chat with the server-side `GROQ_API_KEY`, and returns coaching feedback.
-- `POST /api/telegram/webhook`: `api/telegram/webhook.ts`; receives Telegram updates and delegates to Telegraf.
+- `POST /api/feedback`: `api/feedback.ts`; accepts transcript text and scoring data as JSON, requires a Supabase bearer token, calls Gemini 2.5 Flash with the server-side `GEMINI_API_KEY`, and returns coaching feedback.
+- `POST /api/telegram/webhook`: `api/telegram/webhook.ts`; receives Telegram updates and delegates to Telegraf. Vercel `maxDuration` is configured to 30 seconds for this function.
 - `POST /api/telegram/connect`: `api/telegram/connect.ts`; requires Supabase bearer token, validates the user, upserts `telegram_connections`, and sends a Telegram welcome message.
 
 ## Important Files
@@ -35,7 +35,8 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/services/supabase.ts`: browser Supabase anon client.
 - `src/services/supabaseServer.ts`: server Supabase service-role client.
 - `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients when present in the worktree.
-- `src/services/groq.ts`: server-only Groq implementation for Whisper transcription, verbose word timestamps, and AI feedback. Browser code must not import this file.
+- `src/services/groq.ts`: server-only Groq Whisper transcription implementation plus legacy `getAIFeedback()` / `analyzePracticeSpeech()` exports that now delegate text generation to Gemini. Browser code must not import this file.
+- `src/services/gemini.ts`: server-only Gemini 2.5 Flash REST client for text generation. Uses a 15 second `AbortController` timeout, disables thinking with `thinkingBudget: 0`, and caps feedback output at 300 tokens.
 - `api/transcription.ts`: serverless audio transcription boundary.
 - `api/feedback.ts`: serverless AI feedback boundary.
 - `src/pages/PracticePage.tsx`: current web practice screen; maps optional `prompt_text` into the session context.
@@ -48,7 +49,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/features/practice/lib/speechSession.ts`: speech/silence state, pause-unit tracking, scoring preview, and mic state-machine integration.
 - `src/features/practice/lib/transcription.ts`: browser SpeechRecognition plus Android/server transcription fallback coordination.
 - `src/features/practice/lib/speechTypes.ts`: shared practice analyzer types.
-- `src/lib/practiceApi.ts`: browser-facing API facade for sessions, streaks, stats, transcription, and feedback. Groq work is routed through `/api/transcription` and `/api/feedback`.
+- `src/lib/practiceApi.ts`: browser-facing API facade for sessions, streaks, stats, transcription, and feedback. AI provider work is routed through `/api/transcription` and `/api/feedback`.
 - `src/lib/telegram/router.ts`: Telegraf command/action routing, connection checks, stats, and prompt messages.
 - `src/lib/telegram/voiceHandler.ts`: Telegram voice download, transcription endpoint call, pause/filler analysis, persistence, and reply formatting.
 - `src/lib/telegram/challenges.ts`: friend/group challenge creation, state, callbacks, and result updates.
@@ -75,7 +76,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `createTelegramBot()`: registers Telegram commands, actions, and voice handling.
 - `handleVoiceMessage()`: Telegram voice analysis pipeline.
 - `transcribeAudioVerbose()`: server-side Groq Whisper transcription with word timestamps.
-- `getAIFeedback()` / `analyzePracticeSpeech()`: server-side Groq chat-based feedback.
+- `getAIFeedback()` / `analyzePracticeSpeech()`: server-side Gemini 2.5 Flash feedback via `src/services/gemini.ts`.
 
 ## Active Data Flow
 
@@ -89,7 +90,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 6. Browser SpeechRecognition may produce an initial transcript. Android fallback or manual transcription sends the audio blob through `practiceApi.transcribeAudio()` to `/api/transcription`.
 7. `/api/transcription` validates the Supabase bearer token, calls Groq Whisper server-side, and returns transcript text and optional word timestamps.
 8. `saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
-9. Optional coaching feedback sends transcript and scoring data through `practiceApi.analyzeSpeech()` to `/api/feedback`; the endpoint calls Groq server-side and stores/returns feedback through the session flow.
+9. Optional coaching feedback sends transcript and scoring data through `practiceApi.analyzeSpeech()` to `/api/feedback`; the endpoint calls Gemini server-side and stores/returns feedback through the session flow.
 10. Stats pages read `sessions` and `streaks` through `getPracticeStats` / `buildPracticeStats`.
 
 ### Telegram Voice / Challenge
@@ -99,17 +100,17 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 3. `voiceHandler` downloads Telegram voice files from Telegram.
 4. `voiceHandler` uploads the audio to `/api/transcription` with `x-nopause-internal-token`; the transcription endpoint calls Groq Whisper server-side and returns transcript plus word timestamps.
 5. Telegram rejects unusable transcripts under 3 words.
-6. Pause units are calculated from inter-word timestamp gaps; spoken filler count may be included for display/storage when available.
+6. Pause units are calculated from inter-word timestamp gaps; spoken filler count is LLM-counted with Gemini and may be included for display/storage when available.
 7. `calculateFlowScore` scores pause units as mode `speaking`.
 8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
-9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback.
+9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback. AI feedback button responses use Gemini with a 15 second provider timeout and a friendly retry message on generation failure.
 10. Friend/group challenge state uses `challenges` and `telegram_challenge_state`; prompt text comes from `src/lib/core/prompts.ts`.
 
 ## External Service Boundaries
 
 - Browser code may call Supabase with the anon key and local serverless endpoints under `/api/*`.
-- Browser code must not call Groq URLs directly and must not import `src/services/groq.ts`.
-- `api/transcription.ts`, `api/feedback.ts`, and server-side Telegram code are the Groq boundary.
+- Browser code must not call Groq or Gemini URLs directly and must not import `src/services/groq.ts` or `src/services/gemini.ts`.
+- `api/transcription.ts` and server-side Telegram transcription are the Groq boundary. `api/feedback.ts` and server-side Telegram feedback/filler analysis are the Gemini boundary.
 - Telegram voice transcription goes through `/api/transcription` even though it runs server-side, so the Whisper upload path stays centralized.
 - Supabase service-role access is server-only. Browser data writes use authenticated Supabase client calls or serverless endpoints that validate the user.
 
@@ -138,16 +139,17 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## Environment Variables
 
 - Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
-- Server/API Groq: `GROQ_API_KEY`.
+- Server/API Groq transcription: `GROQ_API_KEY`.
+- Server/API Gemini text generation: `GEMINI_API_KEY`.
 - Server/Vercel/Supabase: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`.
 - Internal Telegram-to-API auth/routing: `NOPAUSE_INTERNAL_API_TOKEN`, `NOPAUSE_API_URL`, `NOPAUSE_INTERNAL_API_URL`, `VERCEL_URL`.
 - Runtime flags used by code: `import.meta.env.DEV`, `import.meta.env.VITEST`, `import.meta.env.MODE`.
-- Do not add `VITE_GROQ_API_KEY`; Groq keys are server-only.
+- Do not add `VITE_GROQ_API_KEY` or `VITE_GEMINI_API_KEY`; provider keys are server-only.
 
 ## Architecture Risks / Constraints
 
-- Never expose `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, Telegram tokens, or internal API tokens to browser code; `VITE_*` values are bundled client-side.
-- Groq must remain behind serverless/server code. Browser transcription and feedback must use `/api/transcription` and `/api/feedback`.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, Telegram tokens, or internal API tokens to browser code; `VITE_*` values are bundled client-side.
+- Groq and Gemini must remain behind serverless/server code. Browser transcription and feedback must use `/api/transcription` and `/api/feedback`.
 - `/api/transcription` accepts either a Supabase bearer token or the internal token used by Telegram. `/api/feedback` currently requires a Supabase bearer token.
 - Base `sessions` and `streaks` schema/RLS policies are incomplete in repo migrations; verify production Supabase before changing access patterns.
 - `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count`, `filler_count`, or `hesitations_per_minute`.
