@@ -326,22 +326,35 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
-    await ctx.answerCbQuery();
-    console.log("Telegram AI feedback callback received", {
-      callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,
-      sessionId: ctx.match?.[1],
-      chatId: ctx.chat?.id,
-      chatType: ctx.chat?.type,
-      fromId: ctx.from?.id,
-    });
-    const telegramId = getTelegramId(ctx);
+    try {
+      await ctx.answerCbQuery();
+      console.log("Telegram AI feedback callback received", {
+        callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,
+        sessionId: ctx.match?.[1],
+        chatId: ctx.chat?.id,
+        chatType: ctx.chat?.type,
+        fromId: ctx.from?.id,
+      });
+      const telegramId = getTelegramId(ctx);
 
-    if (!telegramId) {
-      await ctx.reply(MESSAGES.feedbackIdentifyError, { parse_mode: "HTML" });
-      return;
+      if (!telegramId) {
+        await ctx.reply(MESSAGES.feedbackIdentifyError, { parse_mode: "HTML" });
+        return;
+      }
+
+      console.log("Telegram AI feedback handler dispatching", {
+        telegramId,
+        sessionId: ctx.match?.[1],
+      });
+      await replyWithAiFeedback(ctx, telegramId);
+    } catch (error) {
+      console.error("Telegram AI feedback callback failed", {
+        message: error instanceof Error ? error.message : String(error),
+        sessionId: ctx.match?.[1],
+        fromId: ctx.from?.id,
+      });
+      await ctx.reply("AI feedback is taking too long. Try again in a moment.");
     }
-
-    await replyWithAiFeedback(ctx, telegramId);
   });
 
   bot.on(["photo", "video", "document", "sticker", "audio", "animation", "video_note"], async (ctx) => {

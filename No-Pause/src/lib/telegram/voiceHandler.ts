@@ -654,6 +654,10 @@ export async function replyWithAiFeedback(
   telegramId: number,
 ) {
   const sessionId = ctx.match[1];
+  console.log("Telegram AI feedback handler entered", {
+    telegramId,
+    sessionId,
+  });
 
   try {
     const userId = await resolveTelegramUser(telegramId);
@@ -664,7 +668,7 @@ export async function replyWithAiFeedback(
 
     const transcript = await getTelegramSessionTranscript({ userId, sessionId });
     if (!transcript) {
-      await ctx.reply(MESSAGES.feedbackTranscriptMissing, { parse_mode: "HTML" });
+      await ctx.reply("Session not found or expired.");
       return;
     }
     console.log("Telegram AI feedback session loaded", {
