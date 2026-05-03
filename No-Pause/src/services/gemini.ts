@@ -40,9 +40,12 @@ export async function generateGeminiText(prompt: string): Promise<string> {
 
   const url = new URL(GEMINI_GENERATE_CONTENT_URL);
   url.searchParams.set("key", getGeminiApiKey());
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
 
   const response = await fetch(url, {
     method: "POST",
+    signal: controller.signal,
     headers: {
       "Content-Type": "application/json",
     },
@@ -52,8 +55,12 @@ export async function generateGeminiText(prompt: string): Promise<string> {
           parts: [{ text: trimmed }],
         },
       ],
+      generationConfig: {
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 300,
+      },
     }),
-  });
+  }).finally(() => clearTimeout(timeoutId));
 
   if (!response.ok) {
     const errorText = await response.text();
