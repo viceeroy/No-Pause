@@ -653,8 +653,16 @@ export async function replyWithAiFeedback(
       return;
     }
 
-    const feedback = await generateAiFeedback(transcript);
-    await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
+    try {
+      const feedback = await generateAiFeedback(transcript);
+      await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
+    } catch (error) {
+      console.error("Telegram AI feedback generation failed", error);
+      await ctx.reply(
+        "⏳ <b>AI Feedback</b>\n\nFeedback is taking too long right now. Please try again in a moment.",
+        { parse_mode: "HTML" },
+      );
+    }
   } catch (error) {
     console.error("Telegram AI feedback failed", error);
     await ctx.reply(MESSAGES.feedbackError, { parse_mode: "HTML" });
