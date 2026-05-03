@@ -549,6 +549,28 @@ export async function handleVoiceMessage(
       getSpeakingResultMessage({ analysis, transcript }),
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
+
+    try {
+      console.log("Telegram automatic AI feedback started", {
+        telegramId,
+        sessionId: String(sessionId),
+        transcriptLength: transcript.length,
+      });
+      const feedback = await withTimeout(generateAiFeedback(transcript), 25_000, "AI feedback timed out");
+      console.log("Telegram automatic AI feedback completed", {
+        telegramId,
+        sessionId: String(sessionId),
+        feedbackLength: feedback.length,
+      });
+      await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
+    } catch (error) {
+      console.error("Telegram automatic AI feedback failed", {
+        message: error instanceof Error ? error.message : String(error),
+        telegramId,
+        sessionId: String(sessionId),
+      });
+      await ctx.reply("AI feedback is taking too long. Try again later.");
+    }
   } catch (error) {
     console.error("Telegram voice handling failed", error);
     await ctx.reply(MESSAGES.analysisError, { parse_mode: "HTML" });

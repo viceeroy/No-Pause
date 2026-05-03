@@ -341,11 +341,9 @@ export function getConnectUrl(telegramId: number): string {
 }
 
 export function getSessionActions(sessionId: string) {
+  void sessionId;
   return Markup.inlineKeyboard([
-    [
-      Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
-      Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${sessionId}`),
-    ],
+    [Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION)],
     [Markup.button.url("📊 View on NoPause", SITE_URL)],
   ]);
 }
