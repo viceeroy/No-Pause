@@ -48,6 +48,7 @@ export type PracticeStats = {
     id: string;
     created_at: string;
     duration: number;
+    speakingTime: number;
     hesitationCount: number;
     flowScore: number | null;
     mode: string;
@@ -245,6 +246,7 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
     id: session.id,
     created_at: session.created_at,
     duration: getSessionDuration(session),
+    speakingTime: getSessionSpeakingTime(session),
     hesitationCount: getSessionHesitationCount(session),
     flowScore: getSessionFlowScore(session),
     mode: getNormalizedSessionMode(session),

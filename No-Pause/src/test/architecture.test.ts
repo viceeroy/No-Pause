@@ -3,6 +3,7 @@ import type { IncomingMessage } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import { buildPracticeStats, buildRecentSessionSummaries, type SessionRecord } from '@/lib/core/queries';
+import { buildSessionResult } from '@/features/practice/hooks/useScoring';
 import {
   buildSessionInsertValues,
   calculateNextStreak,
@@ -142,6 +143,39 @@ describe('speaking mode scoring architecture', () => {
     });
   });
 
+  it('passes analyzer speaking time and pause count into web session scoring', () => {
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(10_000);
+
+    const result = buildSessionResult({
+      startTime: 4_000,
+      results: {
+        totalSpeakingTime: 6,
+        totalSilenceTime: 0,
+        hesitationSilenceTime: 0,
+        hesitationCount: 0,
+        fillerWordCount: 0,
+        hesitationLog: [],
+        longestFlowStreak: 0,
+        frameCount: 1,
+        noiseFloor: 0,
+        totalTime: 6_000,
+        avgVolume: 0.1,
+        audioBlob: null,
+        audioMimeType: 'audio/webm',
+        transcript: 'hello world',
+      },
+    });
+
+    expect(result.sessionResult).toMatchObject({
+      totalSpeakingTime: 6,
+      totalSessionTime: 6,
+      hesitationCount: 0,
+      flowScore: 6,
+    });
+
+    nowSpy.mockRestore();
+  });
+
   it.each([
     { score: 300, label: 'Perfect Flow' },
     { score: 299, label: 'Great Flow' },
@@ -179,7 +213,10 @@ describe('stats architecture', () => {
     ];
 
     expect(buildPracticeStats(sessions, null).recentSessions[0]).toMatchObject({
+      duration: 90,
+      speakingTime: 80,
       hesitationCount: 3,
+      flowScore: 120,
       source: 'telegram',
     });
   });
@@ -226,6 +263,7 @@ describe('stats summary architecture', () => {
     ] as SessionRecord[]);
 
     expect(summaries[0].source).toBe('telegram');
+    expect(summaries[0].speakingTime).toBe(55);
   });
 });
 
@@ -402,10 +440,6 @@ describe('HTTP header ASCII normalization', () => {
 
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
-      generateFillerCount: vi.fn(async () => {
-        order.push('analyze');
-        return '{"hesitation_count":1}';
-      }),
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
     }));
 
@@ -484,6 +518,7 @@ describe('HTTP header ASCII normalization', () => {
       expect(urlString).toContain('smart_format=true');
       expect(urlString).toContain('punctuate=true');
       expect(urlString).toContain('words=true');
+      expect(urlString).toContain('filler_words=true');
       expect(init?.headers).toMatchObject({
         Authorization: 'Token deepgram-key',
         'Content-Type': 'audio/ogg',
@@ -497,6 +532,7 @@ describe('HTTP header ASCII normalization', () => {
                 transcript: 'hello world again',
                 words: [
                   { word: 'hello', start: 0, end: 1 },
+                  { word: 'um', start: 1.1, end: 1.2, type: 'filler' },
                   { word: 'world', start: 2, end: 3 },
                   { word: 'again', start: 5, end: 6 },
                 ],
@@ -525,7 +561,6 @@ describe('HTTP header ASCII normalization', () => {
       'telegram:getFile',
       'telegram:download',
       'deepgram',
-      'analyze',
       'insert:sessions',
       'upsert:streaks',
     ]);
@@ -533,8 +568,9 @@ describe('HTTP header ASCII normalization', () => {
       mode: 'speaking',
       source: 'telegram',
       transcript: 'hello world again',
+      filler_count: 1,
     });
-    expect(replies.at(-1)?.[0]).toContain('Speaking Result');
+    expect(replies.some(([message]) => message.includes('Speaking Result') && message.includes('Fillers'))).toBe(true);
     expect(upsertedStreaks).toHaveLength(1);
   });
 

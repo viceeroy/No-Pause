@@ -136,13 +136,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const audioBuffer = audio.data.buffer.slice(
-      audio.data.byteOffset,
-      audio.data.byteOffset + audio.data.byteLength,
-    );
+    const audioBuffer = new ArrayBuffer(audio.data.byteLength);
+    new Uint8Array(audioBuffer).set(audio.data);
     const transcription = await transcribeAudioWithDeepgram(audioBuffer, audio.mimeType);
 
-    sendJson(res, 200, { transcript: transcription.text, words: transcription.words });
+    sendJson(res, 200, {
+      transcript: transcription.text,
+      words: transcription.words,
+      fillerCount: transcription.fillerCount,
+    });
   } catch (error) {
     console.error("transcription endpoint error:", error);
     const message = error instanceof Error ? error.message : String(error);

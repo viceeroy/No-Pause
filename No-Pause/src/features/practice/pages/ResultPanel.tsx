@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, Timer, TrendingUp } from 'lucide-react';
+import { Check, Copy, FileText, MessageSquare, Mic, Pause, Quote, Share2, Timer, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -18,37 +18,6 @@ type ResultPanelProps = {
 
 interface CustomWindow extends Window {
   __nopauseExportLogs?: () => void;
-}
-
-const TIMELINE_WIDTH = 320;
-const TIMELINE_HEIGHT = 128;
-const TIMELINE_PADDING_X = 18;
-const TIMELINE_PADDING_Y = 18;
-const TIMELINE_LABEL_Y = 120;
-
-function formatTimelineTime(seconds: number) {
-  return formatMMSS(seconds);
-}
-
-function getHesitationRangeMs(item: SessionResult['hesitationLog'][number]) {
-  const timestamp = Math.max(0, Number(item.timestamp || 0));
-  const duration = Math.max(0, Number(item.duration || 0));
-  const start = Math.max(0, timestamp - duration);
-  const end = Math.max(start, timestamp);
-  return { start, end };
-}
-
-function buildSmoothPath(points: Array<{ x: number; y: number }>) {
-  if (points.length === 0) return '';
-  if (points.length === 1) return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-
-  return points.reduce((path, point, index) => {
-    if (index === 0) return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-
-    const previous = points[index - 1];
-    const controlX = (previous.x + point.x) / 2;
-    return `${path} C ${controlX.toFixed(2)} ${previous.y.toFixed(2)}, ${controlX.toFixed(2)} ${point.y.toFixed(2)}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
-  }, '');
 }
 
 export function ResultPanel({
@@ -101,52 +70,10 @@ export function ResultPanel({
     !transcript.startsWith('Transcription failed');
   const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
   const feedbackAvailable = !!lastResults.analysisFeedback || lastResults.analysisFeedbackLoading;
-  const sessionDuration = Math.max(0, lastResults.totalSessionTime || 0);
-  const timelineAvailable = sessionDuration >= 10;
+  const speakingTime = Math.max(0, lastResults.totalSpeakingTime || 0);
+  const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
+  const fillerCount = Math.max(0, Math.round(Number(lastResults.fillerCount ?? 0)));
   const coachingNote = getCoachingNote();
-  const timelineData = useMemo(() => {
-    if (!timelineAvailable) return null;
-
-    const durationMs = sessionDuration * 1000;
-    const pauseRanges = (lastResults.hesitationLog || [])
-      .map(getHesitationRangeMs)
-      .filter((range) => range.end > range.start);
-    const sampleCount: number = 48;
-    const chartWidth = TIMELINE_WIDTH - TIMELINE_PADDING_X * 2;
-    const chartBottom = 82;
-    const chartHeight = chartBottom - TIMELINE_PADDING_Y;
-    const points = Array.from({ length: sampleCount }, (_, index) => {
-      const progress = sampleCount === 1 ? 0 : index / (sampleCount - 1);
-      const currentMs = progress * durationMs;
-      const pauseInfluence = pauseRanges.reduce((strongest, range) => {
-        const midpoint = range.start + (range.end - range.start) / 2;
-        const halfWidth = Math.max(900, (range.end - range.start) / 2);
-        const distance = Math.abs(currentMs - midpoint);
-        const influence = Math.max(0, 1 - distance / halfWidth);
-        return Math.max(strongest, influence);
-      }, 0);
-      const baseline = 0.72 + Math.sin(progress * Math.PI * 4) * 0.05;
-      const activity = Math.max(0.2, Math.min(0.86, baseline - pauseInfluence * 0.5));
-      const x = TIMELINE_PADDING_X + progress * chartWidth;
-      const y = TIMELINE_PADDING_Y + (1 - activity) * chartHeight;
-      return { x, y };
-    });
-    const path = buildSmoothPath(points);
-    const pauseMarkers = pauseRanges.map((range) => {
-      const approximateMs = Math.min(durationMs, Math.max(0, range.start + (range.end - range.start) / 2));
-      const x = TIMELINE_PADDING_X + (approximateMs / durationMs) * chartWidth;
-      const nearestPoint = points.reduce((nearest, point) => (
-        Math.abs(point.x - x) < Math.abs(nearest.x - x) ? point : nearest
-      ), points[0]);
-      return {
-        x,
-        y: nearestPoint.y,
-        label: formatTimelineTime(approximateMs / 1000),
-      };
-    });
-
-    return { path, pauseMarkers };
-  }, [lastResults.hesitationLog, sessionDuration, timelineAvailable]);
 
   return (
     <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -174,93 +101,23 @@ export function ResultPanel({
           </div>
         </section>
 
-        <section className="rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
-          <div className="mb-4 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="mb-1 flex items-center gap-2 text-lg font-serif font-medium text-foreground">
-                <Activity size={20} className="text-primary" /> Session timeline
-              </h3>
-              <p className="text-xs font-sans text-muted-foreground">
-                Voice activity and pause moments from this session.
-              </p>
-            </div>
-            <p className="shrink-0 text-xs font-sans font-bold text-muted-foreground">
-              {formatTimelineTime(sessionDuration)}
-            </p>
-          </div>
-          {timelineData ? (
-            <>
-              <div className="overflow-hidden rounded-[18px] border border-border bg-surface-elevated p-3">
-                <svg
-                  viewBox={`0 0 ${TIMELINE_WIDTH} ${TIMELINE_HEIGHT}`}
-                  role="img"
-                  aria-label="Session voice activity timeline"
-                  className="h-32 w-full"
-                  preserveAspectRatio="none"
-                >
-                  <line
-                    x1={TIMELINE_PADDING_X}
-                    y1={82}
-                    x2={TIMELINE_WIDTH - TIMELINE_PADDING_X}
-                    y2={82}
-                    className="stroke-border"
-                    strokeWidth="1"
-                  />
-                  <path
-                    d={timelineData.path}
-                    fill="none"
-                    className="stroke-primary"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {timelineData.pauseMarkers.map((x, index) => (
-                    <g key={`${x.x}-${index}`}>
-                      <circle
-                        cx={x.x}
-                        cy={x.y}
-                        r="4"
-                        className="fill-primary"
-                      />
-                      <text
-                        x={x.x}
-                        y={TIMELINE_LABEL_Y}
-                        textAnchor="middle"
-                        className="fill-muted-foreground text-[10px] font-sans font-semibold"
-                      >
-                        {x.label}
-                      </text>
-                    </g>
-                  ))}
-                </svg>
-              </div>
-              <div className="mt-3 flex items-center justify-between text-[11px] font-sans font-semibold text-muted-foreground">
-                <span>{formatTimelineTime(0)}</span>
-                <span>{timelineData.pauseMarkers.length} pauses</span>
-                <span>{formatTimelineTime(sessionDuration)}</span>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-[18px] border border-border bg-surface-elevated px-4 py-8 text-center">
-              <p className="text-sm font-sans text-muted-foreground">
-                Timeline will appear after a longer session.
-              </p>
-            </div>
-          )}
-        </section>
-
-        <section className="grid grid-cols-2 gap-3 md:gap-4">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4">
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Timer size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Speaking time</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {renderDurationText(lastResults.totalSpeakingTime || lastResults.totalSessionTime)}
+              {renderDurationText(speakingTime)}
             </p>
           </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Pause size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Pauses</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{lastResults.hesitationCount}</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{pauseCount}</p>
+          </article>
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <Quote size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Fillers</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{fillerCount}</p>
           </article>
         </section>
 
@@ -371,7 +228,7 @@ export function ResultPanel({
           <button
             onClick={async () => {
               const shareTranscript = lastResults.transcript || '';
-              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${lastResults.hesitationCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${pauseCount}\nFillers: ${fillerCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {

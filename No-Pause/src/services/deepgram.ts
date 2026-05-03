@@ -4,11 +4,13 @@ export type DeepgramTranscribedWord = {
   word: string;
   start: number;
   end: number;
+  type?: string;
 };
 
 export type DeepgramTranscription = {
   text: string;
   words: DeepgramTranscribedWord[];
+  fillerCount: number;
 };
 
 function getDeepgramApiKey(): string {
@@ -26,19 +28,28 @@ function parseDeepgramWords(words: unknown): DeepgramTranscribedWord[] {
   }
 
   return words.flatMap((word) => {
-    const maybeWord = word as { word?: unknown; start?: unknown; end?: unknown };
+    const maybeWord = word as { word?: unknown; start?: unknown; end?: unknown; type?: unknown };
     const start = Number(maybeWord.start);
     const end = Number(maybeWord.end);
     if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
       return [];
     }
 
+    const tokenType = typeof maybeWord.type === "string" ? maybeWord.type.trim() : "";
+
     return [{
       word: String(maybeWord.word ?? "").trim(),
       start,
       end,
+      ...(tokenType ? { type: tokenType } : {}),
     }];
   });
+}
+
+function countFillerWords(words: DeepgramTranscribedWord[]): number {
+  return words.reduce((count, word) => (
+    word.type?.toLowerCase() === "filler" ? count + 1 : count
+  ), 0);
 }
 
 function getDeepgramAlternative(data: unknown) {
@@ -69,6 +80,7 @@ export async function transcribeAudioWithDeepgram(
   url.searchParams.set("smart_format", "true");
   url.searchParams.set("punctuate", "true");
   url.searchParams.set("words", "true");
+  url.searchParams.set("filler_words", "true");
 
   const response = await fetch(url, {
     method: "POST",
@@ -86,9 +98,11 @@ export async function transcribeAudioWithDeepgram(
 
   const data = await response.json();
   const alternative = getDeepgramAlternative(data);
+  const words = parseDeepgramWords(alternative?.words);
 
   return {
     text: String(alternative?.transcript ?? "").trim(),
-    words: parseDeepgramWords(alternative?.words),
+    words,
+    fillerCount: countFillerWords(words),
   };
 }

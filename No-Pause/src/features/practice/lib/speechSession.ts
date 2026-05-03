@@ -12,7 +12,8 @@ import {
 
 const SPEECH_THRESHOLD = 0.01;
 const SPEECH_OFF_MULTIPLIER = 0.7;
-const CALIBRATION_NOISE_MULTIPLIER = 3;
+const CALIBRATION_NOISE_MULTIPLIER = 2;
+const CALIBRATION_SPEECH_RESET_THRESHOLD = SPEECH_THRESHOLD * 2;
 const MAX_CALIBRATED_SPEECH_THRESHOLD = 0.06;
 const HESITATION_MIN_DURATION = DEFAULT_PAUSE_THRESHOLD_MS;
 const MICRO_PAUSE_IGNORE = 300;
@@ -171,6 +172,11 @@ export class SpeechSession {
 
   private updateCalibration(now: number, rms: number) {
     if (!this.isCalibrating || !this.calibrationStartTime) return;
+    if (rms >= CALIBRATION_SPEECH_RESET_THRESHOLD) {
+      this.calibrationStartTime = now;
+      this.calibrationSamples = [];
+      return;
+    }
     this.calibrationSamples.push(rms);
     if (now - this.calibrationStartTime < CALIBRATION_DURATION) return;
     this.isCalibrating = false;

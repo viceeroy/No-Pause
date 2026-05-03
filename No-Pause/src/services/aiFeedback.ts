@@ -52,19 +52,12 @@ const buildPracticeFeedbackPrompt = (input: {
   speakingTime: number;
   wordCount: number;
 }) =>
-  `You are a speech analysis expert. The user just completed a speaking session. Flow Score is open-ended and grows with sustained speaking time, so do not describe it as a percentage or fixed 100-point score.
+  `Analyze this speaking practice session. Evaluate fluency, filler words, pacing, clarity, confidence, and specific areas for improvement. Flow Score is open-ended and grows with sustained speaking time, so do not describe it as a percentage or fixed 100-point score.
 - Flow Score: ${input.flowScore}
 - Pauses: ${input.hesitationCount}
 - Speaking Time: ${input.speakingTime} seconds
 - Word Count: ${input.wordCount}
-- Transcript: ${input.transcript}
-
-Return feedback in markdown with:
-- A short punchy header (e.g. ## 🎯 Your Session Breakdown)
-- Bold the key stats when mentioned (flow score, pause count)
-- 2-3 short sections with emoji headers like ### 💪 What You Did Well and ### 🎯 Focus On This
-- End with a single motivational sentence under ### 🚀 Next Time
-Keep it under 200 words, punchy and energetic in tone — not corporate or boring.`;
+- Transcript: ${input.transcript}`;
 
 export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
   try {

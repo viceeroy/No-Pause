@@ -1,4 +1,9 @@
-import { insertSession, updateStreak as updateCoreStreak, type SupabaseLike } from "./core/session";
+import {
+  insertSession,
+  isMissingSessionAnalysisColumnError,
+  updateStreak as updateCoreStreak,
+  type SupabaseLike,
+} from "./core/session";
 import {
   buildRecentSessionSummaries,
   buildPracticeStats,
@@ -19,6 +24,11 @@ export type Base64TranscriptionInput = {
   mimeType: string;
   language?: string;
   durationSec?: number;
+};
+
+export type TranscriptionResult = {
+  transcript: string;
+  fillerCount: number;
 };
 
 export type AnalyzePracticeSpeechInput = {
@@ -72,7 +82,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export async function transcribeAudio(input: Base64TranscriptionInput): Promise<string> {
+export async function transcribeAudio(input: Base64TranscriptionInput): Promise<TranscriptionResult> {
   const safeMimeType = input.mimeType.split(";")[0] || "audio/webm";
   const formData = new FormData();
   formData.append("audio", base64ToBlob(input.audioBase64, safeMimeType), getAudioFilename(safeMimeType));
@@ -84,8 +94,12 @@ export async function transcribeAudio(input: Base64TranscriptionInput): Promise<
     headers: await getAuthHeaders(),
     body: formData,
   });
-  const body = await readEndpointJson<{ transcript?: unknown; words?: unknown }>(response);
-  return String(body.transcript ?? "");
+  const body = await readEndpointJson<{ transcript?: unknown; words?: unknown; fillerCount?: unknown }>(response);
+  const fillerCount = Number(body.fillerCount);
+  return {
+    transcript: String(body.transcript ?? ""),
+    fillerCount: Number.isFinite(fillerCount) ? Math.max(0, Math.round(fillerCount)) : 0,
+  };
 }
 
 export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
@@ -107,6 +121,8 @@ type SaveSessionInput = {
   duration: number;
   speakingTime?: number;
   pauses: number;
+  pauseCount?: number | null;
+  fillerCount?: number | null;
   words?: number | null;
   mode: string;
   flowScore?: number | null;
@@ -130,6 +146,8 @@ export async function saveSession(input: SaveSessionInput): Promise<string | nul
     speakingTime: input.speakingTime,
     flowScore: input.flowScore,
     pauses: input.pauses,
+    pauseCount: input.pauseCount ?? input.pauses,
+    fillerCount: input.fillerCount ?? null,
     words: input.words,
     mode: input.mode,
     source: "web",
@@ -147,6 +165,7 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
   const updates: Record<string, string | number | null> = {};
   if (input.transcript !== undefined) updates.transcript = input.transcript;
   if (input.words !== undefined) updates.words = input.words;
+  if (input.fillerCount !== undefined) updates.filler_count = input.fillerCount;
   if (input.analysisFeedback !== undefined) updates.analysis_feedback = input.analysisFeedback;
   if (Object.keys(updates).length === 0) return;
 
@@ -155,6 +174,18 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
     .update(updates)
     .eq("id", input.sessionId)
     .eq("user_id", input.userId);
+
+  if (error && input.fillerCount !== undefined && isMissingSessionAnalysisColumnError(error)) {
+    const legacyUpdates = { ...updates };
+    delete legacyUpdates.filler_count;
+    const { error: legacyError } = await browserSupabase
+      .from("sessions")
+      .update(legacyUpdates)
+      .eq("id", input.sessionId)
+      .eq("user_id", input.userId);
+    if (legacyError) throw legacyError;
+    return;
+  }
 
   if (error) throw error;
 }

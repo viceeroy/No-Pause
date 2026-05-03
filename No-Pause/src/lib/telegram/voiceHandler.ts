@@ -11,7 +11,6 @@ import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from 
 import { escapeTelegramHtml } from "../core/utils.js";
 import {
   generateAiFeedback,
-  generateFillerCount,
   isUsableTranscript,
 } from "../../services/aiFeedback.js";
 import { transcribeAudioWithDeepgram, type DeepgramTranscribedWord } from "../../services/deepgram.js";
@@ -61,10 +60,7 @@ type VerboseTranscriptionResponse = {
   transcript?: unknown;
   text?: unknown;
   words?: unknown;
-};
-
-type HesitationAnalysis = {
-  hesitation_count: number;
+  fillerCount?: unknown;
 };
 
 function isPauseThresholdLevel(value: unknown): value is PauseThresholdLevel {
@@ -161,34 +157,6 @@ function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
 }
 
-function parseGeminiHesitationAnalysis(content: string): HesitationAnalysis {
-  const jsonText = content
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const parsed = JSON.parse(jsonText) as {
-    hesitation_count?: unknown;
-  };
-  const numberValue = Number(parsed.hesitation_count);
-  if (!Number.isFinite(numberValue)) {
-    console.warn("Gemini hesitation analysis returned missing or non-finite hesitation_count", {
-      hesitation_count: parsed.hesitation_count,
-    });
-  }
-
-  return {
-    hesitation_count: Number.isFinite(numberValue)
-      ? Math.max(0, Math.min(9999, Math.round(numberValue)))
-      : 0,
-  };
-}
-
-async function analyzeGeminiSpeech(transcript: string): Promise<HesitationAnalysis> {
-  const feedback = await generateFillerCount(transcript);
-
-  return parseGeminiHesitationAnalysis(feedback);
-}
-
 function getSpeakingTimeSec(words: DeepgramTranscribedWord[], fallbackDurationSec: number): number {
   const speakingSeconds = words.reduce((sum, word) => {
     const duration = Math.max(0, word.end - word.start);
@@ -238,18 +206,20 @@ async function transcribeAudio(audioBuffer: ArrayBuffer) {
   const data = await transcribeAudioWithDeepgram(audioBuffer) as VerboseTranscriptionResponse;
   const transcript = String(data.transcript ?? data.text ?? "").trim();
   const words = parseTranscribedWords(data.words);
+  const rawFillerCount = Number(data.fillerCount);
+  const fillerCount = Number.isFinite(rawFillerCount) ? Math.max(0, Math.round(rawFillerCount)) : 0;
   console.log("transcript words:", words.length);
 
-  return { text: transcript, words };
+  return { text: transcript, words, fillerCount };
 }
 
 async function analyzeTranscript(
   transcript: string,
   words: DeepgramTranscribedWord[],
+  fillerCount: number,
   totalSessionTimeSec: number,
   pauseThresholdMs: number,
 ): Promise<FlowAnalysis> {
-  const { hesitation_count: hesitationCount } = await analyzeGeminiSpeech(transcript);
   const speakingTimeSec = getSpeakingTimeSec(words, totalSessionTimeSec);
   const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words, pauseThresholdMs);
   const scoreResult = calculateFlowScore(pauseCount, {
@@ -261,7 +231,7 @@ async function analyzeTranscript(
   return {
     flowScore: Number.isFinite(scoreResult.score) ? scoreResult.score : 0,
     pauseCount,
-    hesitationCount,
+    hesitationCount: fillerCount,
     speakingTimeSec,
     totalSessionTimeSec,
     isCompleted: scoreResult.isCompleted,
@@ -465,7 +435,13 @@ export async function handleVoiceMessage(
     }
 
     const totalSessionTimeSec = estimateDurationSec(voice.duration);
-    const analysis = await analyzeTranscript(transcript, transcription.words, totalSessionTimeSec, pauseThresholdMs);
+    const analysis = await analyzeTranscript(
+      transcript,
+      transcription.words,
+      transcription.fillerCount,
+      totalSessionTimeSec,
+      pauseThresholdMs,
+    );
     const sessionId = await insertTelegramSession({
       userId,
       transcript,

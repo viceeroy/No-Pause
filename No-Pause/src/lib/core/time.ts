@@ -15,3 +15,14 @@ export function formatDuration(seconds: number): string {
 
   return `${minutes} m ${remainingSeconds} s`;
 }
+
+export function formatPracticeTotalDuration(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  const minutes = Math.floor(safeSeconds / SECONDS_PER_MINUTE);
+
+  if (minutes === 0) {
+    return `${safeSeconds} s`;
+  }
+
+  return `${minutes} m`;
+}

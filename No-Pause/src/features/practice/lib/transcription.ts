@@ -33,7 +33,7 @@ export type TranscribeAudio = (payload: {
   audioBase64: string;
   mimeType: string;
   durationSec?: number;
-}) => Promise<string>;
+}) => Promise<string | { transcript?: unknown; text?: unknown; fillerCount?: unknown }>;
 
 export const processTranscriptForFillerWords = (
   rawTranscript: string,
@@ -210,14 +210,25 @@ export class TranscriptionController {
 
       const audioBase64 = arrayBufferToBase64(await input.audioBlob.arrayBuffer());
       const durationSec = Math.round(input.totalRecordingTimeMs / 1000);
-      const deepgramTranscript = await this.transcribeWithRetry({
+      const deepgramResult = await this.transcribeWithRetry({
         audioBase64,
         mimeType: input.normalizedMimeType,
         durationSec,
       });
+      const deepgramTranscript = typeof deepgramResult === 'string'
+        ? deepgramResult
+        : String(deepgramResult.transcript ?? deepgramResult.text ?? '');
+      const deepgramFillerCount = typeof deepgramResult === 'string'
+        ? NaN
+        : Number(deepgramResult.fillerCount);
       if (deepgramTranscript && deepgramTranscript.trim().length > 0) {
         finalTranscript = deepgramTranscript.trim();
         this.transcript = finalTranscript;
+      }
+      if (Number.isFinite(deepgramFillerCount)) {
+        this.fillerWordCount = Math.max(0, Math.round(deepgramFillerCount));
+      } else {
+        this.fillerWordCount = processTranscriptForFillerWords(finalTranscript).count;
       }
     } catch (error) {
       debugError('[Transcript] Deepgram transcription failed:', error);

@@ -168,7 +168,7 @@ function formatResultFields(input: {
     "",
     `⏱ ${label("Speaking time:")} ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}`,
     `🔇 ${label("Pauses:")} ${input.analysis.pauseCount} (silent gaps)`,
-    `💬 ${label("Hesitations:")} ${input.analysis.hesitationCount} (um, uh, er, ah)`,
+    `💬 ${label("Fillers:")} ${input.analysis.hesitationCount} (um, uh, er, ah)`,
   ].join("\n");
 
   if (!transcript) {

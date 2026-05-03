@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'lucide-react';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
-import { formatDuration } from '@/lib/core/time';
+import { formatDuration, formatPracticeTotalDuration } from '@/lib/core/time';
 import { useAuth, type DifficultyLevel } from '@/providers/AuthContext';
 
 const difficultyOptions: Array<{ level: DifficultyLevel; label: string }> = [
@@ -29,6 +29,10 @@ function getSessionModeLabel(mode: string): string {
   }
 
   return MODE_LABELS[normalizeMode(normalizedMode)];
+}
+
+function shouldShowRecentFlowScore(score: number | null | undefined): score is number {
+  return Number(score) > 10;
 }
 
 type StatsPageProps = {
@@ -182,7 +186,7 @@ export default function StatsPage({
             <Clock size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Total practice</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {statsLoading ? '...' : formatDuration(stats.totalPracticeTime)}
+              {statsLoading ? '...' : formatPracticeTotalDuration(stats.totalPracticeTime)}
             </p>
           </article>
         </section>
@@ -292,21 +296,27 @@ export default function StatsPage({
                           {getSessionModeLabel(session.mode)}
                         </p>
                         {isTelegramSession && (
-                          <span className="rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] font-sans font-bold text-muted-foreground">
-                            via Telegram
+                          <span
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-surface-elevated text-muted-foreground"
+                            aria-label="Telegram session"
+                            title="Telegram session"
+                          >
+                            <Send size={13} aria-hidden="true" />
                           </span>
                         )}
                       </div>
                       <p className="truncate text-xs font-sans text-muted-foreground">
-                        {formatDate(session.created_at)} | {formatDuration(session.duration || 0)} - {session.hesitationCount || 0} pauses
+                        {formatDate(session.created_at)} | {formatDuration(session.speakingTime || 0)} - {session.hesitationCount || 0} pauses
                       </p>
                     </div>
-                    {session.flowScore !== null && session.flowScore !== undefined ? (
+                    {shouldShowRecentFlowScore(session.flowScore) ? (
                       <div className="shrink-0 text-right">
                         <p className="text-2xl font-serif font-medium leading-none text-primary">{session.flowScore}</p>
                         <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="w-12 shrink-0" aria-hidden="true" />
+                    )}
                   </article>
                 );
               })}

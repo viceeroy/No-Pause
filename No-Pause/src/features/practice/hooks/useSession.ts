@@ -55,6 +55,8 @@ export function useSession({
           duration,
           speakingTime: sessionResult.totalSpeakingTime,
           pauses: sessionResult.hesitationCount,
+          pauseCount: sessionResult.pauseCount ?? sessionResult.hesitationCount,
+          fillerCount: sessionResult.fillerCount ?? null,
           words,
           mode: normalizedMode,
           flowScore: sessionResult.flowScore,
@@ -146,11 +148,12 @@ export function useSession({
 
     try {
       const base64Audio = arrayBufferToBase64(await lastResults.audioBlob.arrayBuffer());
-      const transcript = await transcribeAudio({
+      const transcription = await transcribeAudio({
         audioBase64: base64Audio,
         mimeType: lastResults.audioMimeType || 'audio/webm',
         durationSec: lastResults.totalSessionTime,
       });
+      const transcript = transcription.transcript;
       const words = transcript.trim().length > 0
         ? transcript.trim().split(/\s+/).filter(Boolean).length
         : null;
@@ -159,6 +162,7 @@ export function useSession({
         userId,
         transcript,
         words,
+        fillerCount: transcription.fillerCount,
       });
       setLastResults((prev) => {
         if (!prev) return prev;
@@ -166,6 +170,7 @@ export function useSession({
           ...prev,
           transcript,
           wordCount: words,
+          fillerCount: transcription.fillerCount,
           transcriptionLoading: false,
           transcriptionError: undefined,
           analysisFeedback: undefined,
