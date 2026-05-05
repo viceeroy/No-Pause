@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Loader2, MessageCircle, ShieldAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/services/supabase";
@@ -11,6 +11,9 @@ const ConnectTelegram = () => {
   const { isLoading, session, user } = useAuth();
   const [state, setState] = useState<ConnectState>("connecting");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const submittedConnectionKeysRef = useRef<Set<string>>(new Set());
+  const sessionAccessToken = session?.access_token;
+  const userId = user?.id;
 
   const telegramId = useMemo(() => {
     const value = new URLSearchParams(location.search).get("tg");
@@ -27,7 +30,7 @@ const ConnectTelegram = () => {
       return;
     }
 
-    if (!session || !user) {
+    if (!sessionAccessToken || !userId) {
       setState("signing-in");
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
         `/connect?tg=${telegramId}`,
@@ -47,17 +50,22 @@ const ConnectTelegram = () => {
     }
 
     let isCancelled = false;
+    const connectionKey = `${telegramId}:${userId}`;
+    if (submittedConnectionKeysRef.current.has(connectionKey)) {
+      return;
+    }
+    submittedConnectionKeysRef.current.add(connectionKey);
     setState("connecting");
 
     void fetch("/api/telegram/connect", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${sessionAccessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         telegram_id: Number(telegramId),
-        user_id: user.id,
+        user_id: userId,
       }),
     })
       .then(async (response) => {
@@ -71,6 +79,7 @@ const ConnectTelegram = () => {
       })
       .catch((error) => {
         console.error("Telegram connect failed:", error);
+        submittedConnectionKeysRef.current.delete(connectionKey);
         if (!isCancelled) {
           setErrorMessage("Could not connect Telegram. Please try the link again.");
           setState("error");
@@ -80,7 +89,7 @@ const ConnectTelegram = () => {
     return () => {
       isCancelled = true;
     };
-  }, [isLoading, session, telegramId, user]);
+  }, [isLoading, sessionAccessToken, telegramId, userId]);
 
   const content = {
     missing: {

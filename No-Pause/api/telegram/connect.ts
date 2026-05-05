@@ -35,11 +35,21 @@ function getFirstName(userMetadata: Record<string, unknown> | undefined) {
   return "there";
 }
 
+function getDebugStackSnippet() {
+  return new Error().stack?.split("\n").slice(1, 6).join("\n");
+}
+
 async function sendTelegramWelcomeMessage(input: { telegramId: number; firstName: string }) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
     throw new Error("TELEGRAM_BOT_TOKEN is not set");
   }
+
+  console.log("Telegram welcome debug", {
+    triggerSource: "api/telegram/connect.ts:sendTelegramWelcomeMessage",
+    telegramId: input.telegramId,
+    stack: getDebugStackSnippet(),
+  });
 
   const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
@@ -108,13 +118,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    await upsertTelegramConnection({ telegramId, userId });
-    await sendTelegramWelcomeMessage({
-      telegramId,
-      firstName: getFirstName(data.user.user_metadata),
-    });
+    const { shouldSendWelcome } = await upsertTelegramConnection({ telegramId, userId });
+    if (shouldSendWelcome) {
+      await sendTelegramWelcomeMessage({
+        telegramId,
+        firstName: getFirstName(data.user.user_metadata),
+      });
+    }
 
-    sendJson(res, 200, { success: true });
+    sendJson(res, 200, { success: true, welcomeSent: shouldSendWelcome });
   } catch (err) {
     console.error("telegram connect error:", err);
     const message = err instanceof Error ? err.message : String(err);
