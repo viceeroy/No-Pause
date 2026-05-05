@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Copy, FileText, MessageSquare, Mic, Pause, Quote, Share2, Timer, TrendingUp } from 'lucide-react';
+import { Activity, Check, Copy, FileText, MessageSquare, Mic, Pause, Quote, Share2, Timer, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -62,7 +62,7 @@ export function ResultPanel({
     const raw = (lastResults.totalSpeakingTime / lastResults.totalSessionTime) * 100;
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
-  const scoreWidth = Math.max(0, lastResults.flowScore);
+  const scoreWidth = Math.max(0, Math.min(100, (lastResults.flowScore / 500) * 100));
   const transcript = (lastResults.transcript || '').trim();
   const transcriptReady =
     transcript.length > 0 &&
@@ -71,9 +71,13 @@ export function ResultPanel({
   const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
   const feedbackAvailable = !!lastResults.analysisFeedback || lastResults.analysisFeedbackLoading;
   const speakingTime = Math.max(0, lastResults.totalSpeakingTime || 0);
+  const sessionLength = Math.max(0, lastResults.totalSessionTime || 0);
   const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
   const fillerCount = Math.max(0, Math.round(Number(lastResults.fillerCount ?? 0)));
   const coachingNote = getCoachingNote();
+  const statusNote = speakingTime < 5
+    ? 'Session was too short to score. Speak for at least 5 seconds.'
+    : lastResults.statusNote;
 
   return (
     <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -99,14 +103,24 @@ export function ResultPanel({
           <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
             <div className="h-full rounded-full bg-primary" style={{ width: `${scoreWidth}%` }} />
           </div>
+          {statusNote && (
+            <p className="mt-3 text-sm font-sans text-muted-foreground">{statusNote}</p>
+          )}
         </section>
 
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4">
+        <section className="grid grid-cols-2 gap-3 md:gap-4">
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Timer size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Speaking time</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
               {renderDurationText(speakingTime)}
+            </p>
+          </article>
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <Activity size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Session length</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+              {renderDurationText(sessionLength)}
             </p>
           </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
@@ -228,7 +242,7 @@ export function ResultPanel({
           <button
             onClick={async () => {
               const shareTranscript = lastResults.transcript || '';
-              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPauses: ${pauseCount}\nFillers: ${fillerCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPause units: ${pauseCount}\nFillers: ${fillerCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {

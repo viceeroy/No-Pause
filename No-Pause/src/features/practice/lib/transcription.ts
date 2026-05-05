@@ -194,7 +194,8 @@ export class TranscriptionController {
     totalRecordingTimeMs: number;
   }): Promise<string> {
     let finalTranscript = this.transcript.trim() || EMPTY_TRANSCRIPT;
-    if (!IS_ANDROID || !this.enableTranscription || !this.transcribeAudio || !input.audioBlob) {
+    const needsServerFallback = !finalTranscript.trim() || finalTranscript === EMPTY_TRANSCRIPT;
+    if (!needsServerFallback || !this.enableTranscription || !this.transcribeAudio || !input.audioBlob) {
       return finalTranscript;
     }
 

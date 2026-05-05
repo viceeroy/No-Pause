@@ -36,6 +36,99 @@ interface CustomWindow extends Window {
   __nopauseExportLogs?: () => void;
 }
 
+const DIAGNOSTICS_SPEECH_RMS_THRESHOLD = 0.01;
+const DIAGNOSTICS_PAUSE_THRESHOLD_SEC = 1.8;
+const DIAGNOSTICS_GOOD_DROP_RATE = 0.1;
+const DIAGNOSTICS_WARNING_DROP_RATE = 0.2;
+const DIAGNOSTICS_WARNING_AVG_RMS = 0.008;
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function getFiniteNumbers(values: number[]): number[] {
+  return values.filter((value) => Number.isFinite(value) && value >= 0);
+}
+
+function buildChunkDurationsMs(chunkCount: number, intervalsMs: number[]): number[] {
+  const safeIntervals = getFiniteNumbers(intervalsMs);
+  const fallbackMs = safeIntervals.length > 0 ? average(safeIntervals) : 100;
+
+  return Array.from({ length: chunkCount }, (_, index) => (
+    index > 0 && safeIntervals[index - 1] !== undefined
+      ? safeIntervals[index - 1]
+      : fallbackMs
+  ));
+}
+
+function buildDiagnosticsSummary(snapshot: AnalyzerDiagnosticsSnapshot) {
+  const avgRmsPerChunk = getFiniteNumbers(snapshot.voiceDiagnostics.avgRmsPerChunk);
+  const peakRmsPerChunk = getFiniteNumbers(snapshot.voiceDiagnostics.peakRmsPerChunk);
+  const chunkDurationsMs = buildChunkDurationsMs(
+    avgRmsPerChunk.length,
+    snapshot.recorder.chunkIntervalMs,
+  );
+  const dropCount = snapshot.voiceDiagnostics.dropFlags.filter(Boolean).length;
+  const lowAmplitudeCount = snapshot.voiceDiagnostics.lowAmplitudeFlags.filter(Boolean).length;
+  const totalDurationSec = chunkDurationsMs.reduce((sum, duration) => sum + duration, 0) / 1000;
+  const speakingTimeSec = avgRmsPerChunk.reduce((sum, rms, index) => (
+    rms > DIAGNOSTICS_SPEECH_RMS_THRESHOLD
+      ? sum + ((chunkDurationsMs[index] ?? 0) / 1000)
+      : sum
+  ), 0);
+  const silenceTimeSec = Math.max(0, totalDurationSec - speakingTimeSec);
+  const silenceGapsSec: number[] = [];
+  let currentSilenceGapSec = 0;
+  avgRmsPerChunk.forEach((rms, index) => {
+    const durationSec = (chunkDurationsMs[index] ?? 0) / 1000;
+    if (rms <= DIAGNOSTICS_SPEECH_RMS_THRESHOLD) {
+      currentSilenceGapSec += durationSec;
+      return;
+    }
+
+    if (currentSilenceGapSec > 0) silenceGapsSec.push(currentSilenceGapSec);
+    currentSilenceGapSec = 0;
+  });
+  if (currentSilenceGapSec > 0) silenceGapsSec.push(currentSilenceGapSec);
+  const pauseGapsSec = silenceGapsSec.filter((gapSec) => gapSec > DIAGNOSTICS_PAUSE_THRESHOLD_SEC);
+  const expectedPauseUnits = pauseGapsSec.reduce(
+    (sum, gapSec) => sum + Math.floor(gapSec / DIAGNOSTICS_PAUSE_THRESHOLD_SEC),
+    0,
+  );
+  const expectedScore = Math.max(
+    0,
+    Math.floor(
+      speakingTimeSec +
+      Math.floor(speakingTimeSec / 60) * 40 -
+      expectedPauseUnits * 10,
+    ),
+  );
+  const avgRms = average(avgRmsPerChunk);
+  const peakRms = peakRmsPerChunk.length > 0 ? Math.max(...peakRmsPerChunk) : 0;
+  const dropRate = avgRmsPerChunk.length > 0 ? dropCount / avgRmsPerChunk.length : 0;
+  const healthVerdict =
+    dropRate < DIAGNOSTICS_GOOD_DROP_RATE && avgRms > DIAGNOSTICS_SPEECH_RMS_THRESHOLD
+      ? 'Good'
+      : dropRate < DIAGNOSTICS_WARNING_DROP_RATE && avgRms > DIAGNOSTICS_WARNING_AVG_RMS
+        ? 'Warning'
+        : 'Poor';
+
+  return {
+    totalDurationSec,
+    speakingTimeSec,
+    silenceTimeSec,
+    pauseCount: pauseGapsSec.length,
+    dropCount,
+    lowAmplitudeCount,
+    avgRms,
+    peakRms,
+    expectedPauseUnits,
+    expectedScore,
+    healthVerdict,
+  };
+}
+
 export function useRecording({
   buildSessionResult,
   difficultyLevel,
@@ -293,6 +386,7 @@ export function useRecording({
         : 'desktop';
 
     const diagnostics = {
+      summary: buildDiagnosticsSummary(snapshot),
       sessionId: sessionDataRef.current?.sessionId || snapshot.sessionId || `session-${now}`,
       timestamp: now,
       platform: snapshot.platform,

@@ -1,4 +1,4 @@
-import { generateGeminiText } from "./gemini.js";
+import { getAIFeedback } from "./groq.js";
 
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
@@ -23,10 +23,9 @@ async function generateTextFromTranscript(transcript: string, systemPrompt?: str
       throw new Error("Transcript is empty");
     }
 
-    const prompt = `${systemPrompt ?? "You are a speech fluency coach. Give specific, actionable feedback on this speech transcript in 3-4 sentences. Focus on clarity, confidence, and areas to improve."}\n\nTranscript:\n${trimmed}`;
-    return generateGeminiText(prompt);
+    return getAIFeedback(trimmed, systemPrompt);
   } catch (error) {
-    console.error("Gemini feedback failed", {
+    console.error("Groq feedback failed", {
       message: error instanceof Error ? error.message : String(error),
       transcriptLength: transcript.length,
     });
@@ -94,7 +93,7 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
     });
     return output;
   } catch (error) {
-    console.error("Gemini analyzeSpeech failed", {
+    console.error("Groq analyzeSpeech failed", {
       message: error instanceof Error ? error.message : String(error),
       transcriptLength: input.transcript.length,
     });

@@ -100,24 +100,39 @@ function createRequest(input: {
 
 describe('speaking mode scoring architecture', () => {
   it.each([
-    { hesitations: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100 },
-    { hesitations: 0, speakingTimeSec: 59, totalSessionTimeSec: 59, expected: 59 },
-    { hesitations: 0, speakingTimeSec: 150, totalSessionTimeSec: 150, expected: 230 },
-    { hesitations: 10, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 100 },
-    { hesitations: 20, speakingTimeSec: 1, totalSessionTimeSec: 60, expected: 0 },
-    { hesitations: 0, speakingTimeSec: 300, totalSessionTimeSec: 300, expected: 500 },
-    { hesitations: 0, speakingTimeSec: 1, totalSessionTimeSec: 1, expected: 1 },
-    { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 90 },
-    { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 70 },
-    { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 140 },
-    { hesitations: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 31 },
-    { hesitations: 2, speakingTimeSec: 125, totalSessionTimeSec: 300, expected: 185 },
+    { hesitations: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100, isCompleted: true },
+    { hesitations: 0, speakingTimeSec: 59, totalSessionTimeSec: 59, expected: 59, isCompleted: true },
+    { hesitations: 0, speakingTimeSec: 150, totalSessionTimeSec: 150, expected: 230, isCompleted: true },
+    { hesitations: 10, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 100, isCompleted: true },
+    {
+      hesitations: 20,
+      speakingTimeSec: 1,
+      totalSessionTimeSec: 60,
+      expected: 0,
+      isCompleted: false,
+      note: 'Session was too short to score. Speak for at least 5 seconds.',
+    },
+    { hesitations: 0, speakingTimeSec: 300, totalSessionTimeSec: 300, expected: 500, isCompleted: true },
+    {
+      hesitations: 0,
+      speakingTimeSec: 1,
+      totalSessionTimeSec: 1,
+      expected: 0,
+      isCompleted: false,
+      note: 'Session was too short to score. Speak for at least 5 seconds.',
+    },
+    { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 90, isCompleted: true },
+    { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 70, isCompleted: true },
+    { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 140, isCompleted: true },
+    { hesitations: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 31, isCompleted: true },
+    { hesitations: 2, speakingTimeSec: 125, totalSessionTimeSec: 300, expected: 185, isCompleted: true },
   ])(
     'scores $expected for $hesitations hesitations over $speakingTimeSec/$totalSessionTimeSec seconds',
-    ({ hesitations, speakingTimeSec, totalSessionTimeSec, expected }) => {
+    ({ hesitations, speakingTimeSec, totalSessionTimeSec, expected, isCompleted, note }) => {
       expect(calculateFlowScore(hesitations, { speakingTimeSec, totalSessionTimeSec })).toEqual({
         score: expected,
-        isCompleted: true,
+        isCompleted,
+        ...(note ? { note } : {}),
       });
     },
   );
@@ -362,7 +377,7 @@ describe('module export architecture', () => {
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
     process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
-    process.env.GEMINI_API_KEY = 'gemini-key';
+    process.env.GROQ_API_KEY = 'groq-key';
     process.env.DEEPGRAM_API_KEY = 'deepgram-key';
   });
 
@@ -431,6 +446,49 @@ describe('HTTP header ASCII normalization', () => {
 
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body)).toEqual({ error: 'Expected multipart/form-data audio upload' });
+  });
+
+  it('api/telegram/connect does not send a welcome when the connection already exists for the user', async () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    vi.doMock('../../src/services/supabaseServer.js', () => ({
+      supabaseServer: {
+        auth: {
+          getUser: vi.fn(async () => ({
+            data: {
+              user: {
+                id: 'user-1',
+                user_metadata: { first_name: 'Ada' },
+              },
+            },
+            error: null,
+          })),
+        },
+      },
+    }));
+    vi.doMock('../../src/lib/telegramAuth.js', () => ({
+      upsertTelegramConnection: vi.fn(async () => ({ shouldSendWelcome: false })),
+    }));
+
+    const { default: handler } = await import('../../api/telegram/connect');
+    const req = createRequest({
+      headers: {
+        authorization: 'Bearer access-token',
+      },
+      body: JSON.stringify({
+        telegram_id: 123,
+        user_id: 'user-1',
+      }),
+    });
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body)).toEqual({ success: true, welcomeSent: false });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {

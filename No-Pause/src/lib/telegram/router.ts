@@ -52,6 +52,10 @@ function getStartPayload(ctx: Context): string {
   return payload.trim();
 }
 
+function getDebugStackSnippet() {
+  return new Error().stack?.split("\n").slice(1, 6).join("\n");
+}
+
 function formatRelativeDate(dateText: string | null): string {
   if (!dateText) {
     return "N/A";
@@ -152,6 +156,11 @@ export function createTelegramBot() {
   bot.start(async (ctx) => {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
+      console.log("Telegram welcome debug", {
+        triggerSource: "router.ts:bot.start:welcomeIdentify",
+        telegramId,
+        stack: getDebugStackSnippet(),
+      });
       await ctx.reply(MESSAGES.welcomeIdentify, { parse_mode: "HTML" });
       return;
     }
@@ -162,6 +171,11 @@ export function createTelegramBot() {
       if (handled) return;
     }
 
+    console.log("Telegram welcome debug", {
+      triggerSource: "router.ts:bot.start:welcome",
+      telegramId,
+      stack: getDebugStackSnippet(),
+    });
     await ctx.reply(MESSAGES.welcome, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
   });
 

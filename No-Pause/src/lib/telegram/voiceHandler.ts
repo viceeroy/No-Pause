@@ -118,7 +118,16 @@ export function getPlainTelegramUsername(ctx: Context): string {
   return ctx.from?.username ?? String(ctx.from?.id ?? "there");
 }
 
+function getDebugStackSnippet() {
+  return new Error().stack?.split("\n").slice(1, 6).join("\n");
+}
+
 export async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
+  console.log("Telegram welcome debug", {
+    triggerSource: "voiceHandler.ts:replyWithConnectPrompt",
+    telegramId,
+    stack: getDebugStackSnippet(),
+  });
   await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
 }
 

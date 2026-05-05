@@ -51,8 +51,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      sendJson(res, 500, { error: "GEMINI_API_KEY is not set" });
+    if (!process.env.GROQ_API_KEY) {
+      sendJson(res, 500, { error: "GROQ_API_KEY is not set" });
       return;
     }
 
