@@ -448,9 +448,9 @@ describe('HTTP header ASCII normalization', () => {
     expect(JSON.parse(res.body)).toEqual({ error: 'Expected multipart/form-data audio upload' });
   });
 
-  it('api/telegram/connect does not send a welcome when the connection already exists for the user', async () => {
+  it('api/telegram/connect sends a welcome when the connection already exists for the user', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn(async () => ({ ok: true }));
     vi.stubGlobal('fetch', fetchMock);
 
     vi.doMock('../../src/services/supabaseServer.js', () => ({
@@ -488,7 +488,7 @@ describe('HTTP header ASCII normalization', () => {
 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body)).toEqual({ success: true, welcomeSent: false });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {
