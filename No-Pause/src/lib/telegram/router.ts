@@ -27,7 +27,6 @@ import {
   changeGroupChallengeTopic,
   handleChallengeDeepLink,
   replyWithNewFriendChallenge,
-  replyWithNewGroupChallenge,
   retryGroupChallenge,
   sendGroupChallengeTopic,
 } from "./challenges.js";
@@ -144,10 +143,6 @@ export function createTelegramBot() {
 
   void bot.telegram.setMyCommands([
     { command: "start", description: "Start or connect NoPause" },
-    { command: "stats", description: "View your speaking stats" },
-    { command: "scoring", description: "See how scoring works" },
-    { command: "challenge", description: "Learn about challenges" },
-    { command: "nopause", description: "Start a group challenge" },
     { command: "about", description: "About NoPause" },
   ]).catch((error) => {
     console.error("Telegram command menu registration failed", error);
@@ -179,56 +174,8 @@ export function createTelegramBot() {
     await ctx.reply(MESSAGES.welcome, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
   });
 
-  bot.command("status", async (ctx) => {
-    if (isGroupChat(ctx)) {
-      await ctx.reply(MESSAGES.statsPrivate, { parse_mode: "HTML" });
-      return;
-    }
-
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) return;
-
-    await replyWithStatus(ctx, telegramId);
-  });
-
-  bot.command("scoring", async (ctx) => {
-    await ctx.reply(MESSAGES.scoringInfo, { parse_mode: "HTML" });
-  });
-
-  bot.command("challenge", async (ctx) => {
-    await ctx.reply(MESSAGES.challengeInfo, { parse_mode: "HTML" });
-  });
-
-  bot.command("stats", async (ctx) => {
-    if (isGroupChat(ctx)) {
-      await ctx.reply(MESSAGES.statsPrivate, { parse_mode: "HTML" });
-      return;
-    }
-
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) return;
-
-    await replyWithStatus(ctx, telegramId);
-  });
-
   bot.command("about", async (ctx) => {
     await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
-  });
-
-  bot.command("prompt", async (ctx) => {
-    await replyWithPrompt(ctx);
-  });
-
-  bot.command("nopause", async (ctx) => {
-    if (!isGroupChat(ctx)) {
-      await ctx.reply("👥 This command only works in groups. Add NoPause to a group to start a group challenge.");
-      return;
-    }
-
-    const chatId = ctx.chat?.id;
-    if (!chatId) return;
-
-    await replyWithNewGroupChallenge(ctx, chatId);
   });
 
   bot.hears(CHALLENGE_LABEL, async (ctx) => {

@@ -241,7 +241,7 @@ export async function handleChallengeDeepLink(
     });
 
     await ctx.reply(
-      getFriendChallengeReceivedMessage({ creatorUsername, topic: challenge.topic }),
+      getFriendChallengeReceivedMessage({ creatorUsername, topic: challenge.topic, challengeId: challenge.id }),
       { parse_mode: "HTML" },
     );
     return true;
@@ -332,7 +332,7 @@ export async function sendGroupChallengeTopic(
   try {
     const challenge = await getFriendChallenge(challengeId);
     if (!challenge) {
-      await ctx.answerCbQuery("This challenge topic expired. Run /nopause again.", { show_alert: true });
+      await ctx.answerCbQuery("This challenge topic expired. Start a new Challenge.", { show_alert: true });
       return;
     }
 

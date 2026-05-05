@@ -105,19 +105,21 @@ export function getFriendChallengeShareMessage(input: { topic: string; challenge
 💬 <b>Topic</b>
 ${escapeTelegramHtml(input.topic)}
 
-<a href="${getChallengeDeepLink(input.challengeId)}">Accept Challenge 🎤</a>
-
 Say anything — just speak your mind! 🎤`;
 }
 
-export function getFriendChallengeReceivedMessage(input: { creatorUsername: string; topic: string }): string {
-  return `⚔️ <b>Challenge received</b>
+export function getFriendChallengeReceivedMessage(input: { creatorUsername: string; topic: string; challengeId: string }): string {
+  const creatorName = input.creatorUsername.trim().replace(/^@+/, "") || "Someone";
+  const challengeLink = getChallengeDeepLink(input.challengeId);
 
-👤 @${escapeTelegramHtml(input.creatorUsername)}
+  return `⚔️ <b>${escapeTelegramHtml(creatorName)}'s Challenge</b>
 
-💬 ${escapeTelegramHtml(input.topic)}
+💬 <b>Topic</b>
+${escapeTelegramHtml(input.topic)}
 
-🎤 Send a voice note and let's see what you've got.`;
+Say anything — just speak your mind!
+
+<a href="${challengeLink}">${challengeLink}</a>`;
 }
 
 function formatTelegramResultDuration(seconds: number): string {
@@ -427,7 +429,7 @@ export const MESSAGES = {
   challengeRestartError:
     "⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not restart that challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
   groupChallengeGone:
-    "⚠️ <b>Challenge not found</b>\n\n<b>Status:</b>\nI could not find that group challenge anymore.\n\n<b>Action:</b>\nAsk the group to run /nopause again.",
+    "⚠️ <b>Challenge not found</b>\n\n<b>Status:</b>\nI could not find that group challenge anymore.\n\n<b>Action:</b>\nAsk the group to start a new Challenge.",
   voiceReceived:
     "🎧 <b>Voice note received</b>\n\n<b>Status:</b>\nAnalyzing your voice note now.",
   unusableTranscript: "Couldn't hear anything clearly. Please speak louder and try again 🎤",
@@ -448,9 +450,9 @@ export const MESSAGES = {
   statsInfo:
     "📊 <b>How stats work</b>\n\nYour stats combine everything.\nSessions from the web app and voice notes from Telegram all count together.\n\nYou can see your streak, best score, total practice time, and recent progress.",
   nopauseInfo:
-    "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button or type /nopause to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
+    "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
   about:
-    "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nCheck your streak, best score, and practice time with /stats.\n\n💡 <b>Prompts</b>\nNeed something to talk about? Tap Get Prompt for a random topic.\n\n🌐 nopause.org",
+    "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time.\n\n🏆 <b>How scoring works</b>\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTap My Stats to check your streak, best score, and practice time.\n\n💡 <b>Prompts</b>\nNeed something to talk about? Tap Get Prompt for a random topic.\n\n🌐 nopause.org",
   readyPrivate:
     "🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
   welcomeIdentify:

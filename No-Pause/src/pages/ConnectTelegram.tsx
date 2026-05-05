@@ -109,8 +109,8 @@ const ConnectTelegram = () => {
     },
     success: {
       icon: CheckCircle2,
-      title: "Telegram connected",
-      body: "✅ Connected! Go back to @NoPauseAI_bot and send a voice message.",
+      title: "You're all set!",
+      body: "Go to @NoPauseAI_bot and send a voice message to start practicing.",
     },
     error: {
       icon: ShieldAlert,
@@ -121,6 +121,7 @@ const ConnectTelegram = () => {
 
   const Icon = content.icon;
   const isLoadingState = state === "signing-in" || state === "connecting";
+  const connectedEmail = user?.email;
 
   return (
     <main className="min-h-screen bg-surface-base flex items-center justify-center p-5">
@@ -133,14 +134,27 @@ const ConnectTelegram = () => {
           Telegram
         </div>
         <h1 className="mb-3 text-3xl font-serif font-medium text-foreground">{content.title}</h1>
-        <p className="font-sans text-sm leading-relaxed text-muted-foreground">{content.body}</p>
-        {state === "success" && (
-          <a
-            href="https://t.me/NoPauseAI_bot"
-            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2.5 font-sans text-sm font-semibold text-primary-foreground transition-all hover:brightness-110"
-          >
-            Open Telegram
-          </a>
+        {state === "success" ? (
+          <>
+            <p className="font-sans text-sm leading-relaxed text-muted-foreground">{content.body}</p>
+            {connectedEmail && (
+              <div className="mt-6 rounded-2xl border border-border bg-surface-card px-4 py-3">
+                <p className="font-sans text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Connected as
+                </p>
+                <p className="mt-1 break-words font-sans text-sm font-semibold text-foreground">{connectedEmail}</p>
+              </div>
+            )}
+            <div className="my-6 h-px bg-border" />
+            <a
+              href="https://t.me/NoPauseAI_bot"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2.5 font-sans text-sm font-semibold text-primary-foreground transition-all hover:brightness-110"
+            >
+              Open Telegram
+            </a>
+          </>
+        ) : (
+          <p className="font-sans text-sm leading-relaxed text-muted-foreground">{content.body}</p>
         )}
       </section>
     </main>

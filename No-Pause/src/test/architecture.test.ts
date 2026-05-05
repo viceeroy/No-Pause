@@ -488,7 +488,22 @@ describe('HTTP header ASCII normalization', () => {
 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body)).toEqual({ success: true, welcomeSent: false });
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const messagePayload = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    const photoPayload = JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://api.telegram.org/bottelegram-token/sendMessage',
+      expect.any(Object),
+    );
+    expect(messagePayload.parse_mode).toBe('HTML');
+    expect(messagePayload.text).toContain('<a href="https://www.nopause.org">www.nopause.org</a>');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://api.telegram.org/bottelegram-token/sendPhoto',
+      expect.any(Object),
+    );
+    expect(photoPayload.photo).toBe('https://www.nopause.org/preview.png');
   });
 
   it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {

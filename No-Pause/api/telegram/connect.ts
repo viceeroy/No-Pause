@@ -3,7 +3,9 @@ import { supabaseServer } from "../../src/services/supabaseServer.js";
 import { upsertTelegramConnection } from "../../src/lib/telegramAuth.js";
 import { escapeTelegramHtml } from "../../src/lib/core/utils.js";
 
-const SITE_URL = "https://nopause.org";
+const SITE_URL = "https://www.nopause.org";
+const SITE_DISPLAY_URL = "www.nopause.org";
+const SITE_PREVIEW_IMAGE_URL = `${SITE_URL}/preview.png`;
 
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
@@ -51,7 +53,7 @@ async function sendTelegramWelcomeMessage(input: { telegramId: number; firstName
     stack: getDebugStackSnippet(),
   });
 
-  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+  const messageResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -72,13 +74,27 @@ Here's what you can do with <b>@NoPauseAI_bot</b>:
 📈 <b>My Stats</b> — check your streak, Flow Score, and practice time anytime.
 
 Your full history and detailed results are always at:
-<a href='${SITE_URL}'>${SITE_URL}</a>`,
+<a href="${SITE_URL}">${SITE_DISPLAY_URL}</a>`,
     }),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    throw new Error(`Telegram welcome message failed: ${response.status} ${errorText}`);
+  if (!messageResponse.ok) {
+    const errorText = await messageResponse.text().catch(() => "");
+    throw new Error(`Telegram welcome message failed: ${messageResponse.status} ${errorText}`);
+  }
+
+  const photoResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: input.telegramId,
+      photo: SITE_PREVIEW_IMAGE_URL,
+    }),
+  });
+
+  if (!photoResponse.ok) {
+    const errorText = await photoResponse.text().catch(() => "");
+    throw new Error(`Telegram welcome photo failed: ${photoResponse.status} ${errorText}`);
   }
 }
 
