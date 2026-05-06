@@ -5,7 +5,6 @@ import { escapeTelegramHtml } from "../../src/lib/core/utils.js";
 
 const SITE_URL = "https://www.nopause.org";
 const SITE_DISPLAY_URL = "www.nopause.org";
-const SITE_PREVIEW_IMAGE_URL = `${SITE_URL}/preview.png`;
 
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
@@ -59,6 +58,7 @@ async function sendTelegramWelcomeMessage(input: { telegramId: number; firstName
     body: JSON.stringify({
       chat_id: input.telegramId,
       parse_mode: "HTML",
+      disable_web_page_preview: true,
       text: `👋 Hi <b>${escapeTelegramHtml(input.firstName)}</b>!
 
 ✅ Your NoPause account is now connected.
@@ -81,20 +81,6 @@ Your full history and detailed results are always at:
   if (!messageResponse.ok) {
     const errorText = await messageResponse.text().catch(() => "");
     throw new Error(`Telegram welcome message failed: ${messageResponse.status} ${errorText}`);
-  }
-
-  const photoResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: input.telegramId,
-      photo: SITE_PREVIEW_IMAGE_URL,
-    }),
-  });
-
-  if (!photoResponse.ok) {
-    const errorText = await photoResponse.text().catch(() => "");
-    throw new Error(`Telegram welcome photo failed: ${photoResponse.status} ${errorText}`);
   }
 }
 
