@@ -1,4 +1,5 @@
 const DEEPGRAM_TRANSCRIPTION_URL = "https://api.deepgram.com/v1/listen";
+const DEEPGRAM_TIMEOUT_MS = 20_000;
 
 export type DeepgramTranscribedWord = {
   word: string;
@@ -82,14 +83,23 @@ export async function transcribeAudioWithDeepgram(
   url.searchParams.set("words", "true");
   url.searchParams.set("filler_words", "true");
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Token ${getDeepgramApiKey()}`,
-      "Content-Type": mimeType,
-    },
-    body: audioBuffer,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEEPGRAM_TIMEOUT_MS);
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${getDeepgramApiKey()}`,
+        "Content-Type": mimeType,
+      },
+      body: audioBuffer,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

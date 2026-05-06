@@ -25,6 +25,7 @@
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -34,5 +35,10 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/test",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
   ]
 }

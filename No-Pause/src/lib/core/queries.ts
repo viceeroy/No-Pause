@@ -64,6 +64,13 @@ export type StatsSessionSets = {
   monthlySessions: SessionRecord[];
 };
 
+type SupabaseRpcLike = {
+  rpc(
+    fn: string,
+    args: Record<string, unknown>,
+  ): PromiseLike<{ data: unknown; error: unknown }>;
+};
+
 const SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 const LEGACY_SESSION_COLUMNS =
@@ -146,6 +153,122 @@ export async function getTelegramSessions(userId: string): Promise<StatsSessionS
     allTimeSessions: (allTimeData ?? []) as SessionRecord[],
     monthlySessions: (monthlyData ?? []) as SessionRecord[],
   };
+}
+
+function isMissingPracticeStatsRpcError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null;
+  return (
+    maybeError?.code === "PGRST202" ||
+    maybeError?.code === "42883" ||
+    maybeError?.message?.includes("get_practice_stats") === true
+  );
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function toInteger(value: unknown, fallback = 0): number {
+  return Math.round(toNumber(value, fallback));
+}
+
+function parseModeBreakdown(value: unknown): PracticeStats["modeBreakdown"] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const record = toRecord(item);
+    if (!record) return [];
+    const avgFlowScore = record.avgFlowScore;
+    return [{
+      mode: String(record.mode ?? "speaking"),
+      totalSessions: toInteger(record.totalSessions),
+      totalDuration: toInteger(record.totalDuration),
+      avgFlowScore: avgFlowScore === null || avgFlowScore === undefined ? null : toInteger(avgFlowScore),
+    }];
+  });
+}
+
+function parseRecentSessions(value: unknown): PracticeStats["recentSessions"] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const record = toRecord(item);
+    if (!record) return [];
+    const flowScore = record.flowScore;
+    return [{
+      id: String(record.id ?? ""),
+      created_at: String(record.created_at ?? ""),
+      duration: toInteger(record.duration),
+      speakingTime: toInteger(record.speakingTime),
+      hesitationCount: toInteger(record.hesitationCount),
+      flowScore: flowScore === null || flowScore === undefined ? null : toInteger(flowScore),
+      mode: String(record.mode ?? "speaking"),
+      source: record.source === null || record.source === undefined ? null : String(record.source),
+    }];
+  });
+}
+
+export function parsePracticeStats(value: unknown): PracticeStats | null {
+  const record = toRecord(value);
+  if (!record) return null;
+  const monthly = toRecord(record.monthlyStats) ?? {};
+  return {
+    scoredSessions: toInteger(record.scoredSessions),
+    totalPracticeTime: toInteger(record.totalPracticeTime),
+    avgFlowScore: toInteger(record.avgFlowScore),
+    bestFlowScore: toInteger(record.bestFlowScore),
+    monthlyStats: {
+      totalSessions: toInteger(monthly.totalSessions),
+      totalSpeakingTime: toInteger(monthly.totalSpeakingTime),
+      avgFlowScore: toInteger(monthly.avgFlowScore),
+    },
+    lastSessionDate: record.lastSessionDate === null || record.lastSessionDate === undefined
+      ? null
+      : String(record.lastSessionDate),
+    currentStreak: toInteger(record.currentStreak),
+    bestStreak: toInteger(record.bestStreak),
+    modeBreakdown: parseModeBreakdown(record.modeBreakdown),
+    recentSessions: parseRecentSessions(record.recentSessions),
+  };
+}
+
+export async function getPracticeStatsFromRpc(
+  supabase: SupabaseRpcLike,
+  userId: string,
+  limit = 15,
+): Promise<PracticeStats | null> {
+  const { data, error } = await supabase.rpc("get_practice_stats", {
+    p_user_id: userId,
+    p_recent_limit: limit,
+  });
+
+  if (error) {
+    if (isMissingPracticeStatsRpcError(error)) {
+      return null;
+    }
+    throw error;
+  }
+
+  return parsePracticeStats(data);
+}
+
+export async function getTelegramPracticeStats(userId: string, limit = 15): Promise<PracticeStats> {
+  const supabase = await getServerSupabase();
+  const stats = await getPracticeStatsFromRpc(supabase as unknown as SupabaseRpcLike, userId, limit);
+  if (stats) {
+    return stats;
+  }
+
+  const [streak, sessionSets] = await Promise.all([
+    getStreak(userId),
+    getTelegramSessions(userId),
+  ]);
+  return buildPracticeStats(sessionSets.allTimeSessions, streak, sessionSets.monthlySessions);
 }
 
 export async function getStreak(userId: string): Promise<StreakRecord | null> {

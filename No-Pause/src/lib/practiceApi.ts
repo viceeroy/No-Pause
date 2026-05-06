@@ -7,6 +7,7 @@ import {
 import {
   buildRecentSessionSummaries,
   buildPracticeStats,
+  getPracticeStatsFromRpc,
   type PracticeStats,
   type SessionRecord,
   type StreakRecord,
@@ -137,6 +138,7 @@ type UpdateSessionInput = {
   userId: string | null;
   words?: number | null;
   transcript?: string | null;
+  fillerCount?: number | null;
   analysisFeedback?: string | null;
 };
 
@@ -215,6 +217,11 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
       modeBreakdown: [],
       recentSessions: [],
     };
+  }
+
+  const rpcStats = await getPracticeStatsFromRpc(browserSupabase, userId, limit);
+  if (rpcStats) {
+    return rpcStats;
   }
 
   const [

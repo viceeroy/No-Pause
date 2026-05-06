@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
-import { buildPracticeStats, getStreak, getTelegramSessions } from "../core/queries.js";
+import { getTelegramPracticeStats } from "../core/queries.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import {
@@ -99,11 +99,7 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
 
   let stats;
   try {
-    const [streak, sessionSets] = await Promise.all([
-      getStreak(userId),
-      getTelegramSessions(userId),
-    ]);
-    stats = buildPracticeStats(sessionSets.allTimeSessions, streak, sessionSets.monthlySessions);
+    stats = await getTelegramPracticeStats(userId);
   } catch (error) {
     console.error("Telegram stats lookup failed", error);
     await ctx.reply(MESSAGES.statsError, { ...replyKeyboard, parse_mode: "HTML" });

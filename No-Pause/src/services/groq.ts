@@ -1,5 +1,14 @@
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const CHAT_MODEL = "llama-3.3-70b-versatile";
+const GROQ_TIMEOUT_MS = 20_000;
+
+type GroqChatCompletionResponse = {
+  choices?: Array<{
+    message?: {
+      content?: unknown;
+    };
+  }>;
+};
 
 function getGroqApiKey(): string {
   const processEnv =
@@ -22,35 +31,44 @@ export async function getAIFeedback(transcript: string, systemPrompt?: string): 
       throw new Error("Transcript is empty");
     }
 
-    const response = await fetch(GROQ_CHAT_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getGroqApiKey()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        messages: [
-          {
-            role: "system",
-            content:
-              systemPrompt ??
-              "You are a speech fluency coach. Give specific, actionable feedback on this speech transcript in 3-4 sentences. Focus on clarity, confidence, and areas to improve.",
-          },
-          {
-            role: "user",
-            content: trimmed,
-          },
-        ],
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+    let response: Response;
+
+    try {
+      response = await fetch(GROQ_CHAT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getGroqApiKey()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: CHAT_MODEL,
+          messages: [
+            {
+              role: "system",
+              content:
+                systemPrompt ??
+                "You are a speech fluency coach. Give specific, actionable feedback on this speech transcript in 3-4 sentences. Focus on clarity, confidence, and areas to improve.",
+            },
+            {
+              role: "user",
+              content: trimmed,
+            },
+          ],
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Groq feedback failed: ${response.status} ${errorText.slice(0, 200)}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as GroqChatCompletionResponse;
     return String(data?.choices?.[0]?.message?.content ?? "").trim() || "I could not generate feedback right now.";
   } catch (error) {
     console.error("Groq feedback failed", {

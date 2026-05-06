@@ -250,11 +250,6 @@ export class TranscriptionController {
   }
 
   private async transcribeWithRetry(payload: Parameters<TranscribeAudio>[0]) {
-    try {
-      return await this.transcribeAudio!(payload);
-    } catch (error) {
-      debugWarn('[Transcript] Deepgram transcription failed, retrying once...', error);
-      return await this.transcribeAudio!(payload);
-    }
+    return await this.transcribeAudio!(payload);
   }
 }

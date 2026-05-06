@@ -121,10 +121,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     const { shouldSendWelcome } = await upsertTelegramConnection({ telegramId, userId });
-    await sendTelegramWelcomeMessage({
-      telegramId,
-      firstName: getFirstName(data.user.user_metadata),
-    });
+    if (shouldSendWelcome) {
+      await sendTelegramWelcomeMessage({
+        telegramId,
+        firstName: getFirstName(data.user.user_metadata),
+      });
+    }
 
     sendJson(res, 200, { success: true, welcomeSent: shouldSendWelcome });
   } catch (err) {

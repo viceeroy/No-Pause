@@ -13,6 +13,13 @@ import {
   generateAiFeedback,
   isUsableTranscript,
 } from "../../services/aiFeedback.js";
+import {
+  DAILY_FEEDBACK_LIMIT,
+  DAILY_TRANSCRIPTION_LIMIT,
+  consumeApiQuota,
+  getQuotaExceededMessage,
+  isApiQuotaExceededError,
+} from "../../services/apiQuota.js";
 import { transcribeAudioWithDeepgram, type DeepgramTranscribedWord } from "../../services/deepgram.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
@@ -61,6 +68,13 @@ type VerboseTranscriptionResponse = {
   text?: unknown;
   words?: unknown;
   fillerCount?: unknown;
+};
+
+type TelegramGetFileResponse = {
+  ok?: unknown;
+  result?: {
+    file_path?: unknown;
+  };
 };
 
 function isPauseThresholdLevel(value: unknown): value is PauseThresholdLevel {
@@ -274,7 +288,7 @@ async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
     throw new Error(`Telegram getFile failed: ${fileResponse.status} ${errorText.slice(0, 200)}`);
   }
 
-  const fileData = await fileResponse.json();
+  const fileData = await fileResponse.json() as TelegramGetFileResponse;
   const filePath = String(fileData?.result?.file_path ?? "");
   if (!fileData?.ok || !filePath) {
     throw new Error(`Telegram getFile returned no file_path: ${JSON.stringify(fileData).slice(0, 200)}`);
@@ -433,8 +447,16 @@ export async function handleVoiceMessage(
     if (pendingChallenge && !challenge) {
       await deletePendingChallenge(telegramId);
     }
+    const isRegularPrivateSession = !groupChat && !pendingChallenge;
 
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
+    if (isRegularPrivateSession) {
+      await consumeApiQuota({
+        userId,
+        kind: "transcription",
+        limit: DAILY_TRANSCRIPTION_LIMIT,
+      });
+    }
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;
 
@@ -527,29 +549,11 @@ export async function handleVoiceMessage(
       getSpeakingResultMessage({ analysis, transcript }),
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
-
-    try {
-      console.log("Telegram automatic AI feedback started", {
-        telegramId,
-        sessionId: String(sessionId),
-        transcriptLength: transcript.length,
-      });
-      const feedback = await withTimeout(generateAiFeedback(transcript), 25_000, "AI feedback timed out");
-      console.log("Telegram automatic AI feedback completed", {
-        telegramId,
-        sessionId: String(sessionId),
-        feedbackLength: feedback.length,
-      });
-      await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
-    } catch (error) {
-      console.error("Telegram automatic AI feedback failed", {
-        message: error instanceof Error ? error.message : String(error),
-        telegramId,
-        sessionId: String(sessionId),
-      });
-      await ctx.reply("AI feedback is taking too long. Try again later.");
-    }
   } catch (error) {
+    if (isApiQuotaExceededError(error)) {
+      await ctx.reply(getQuotaExceededMessage(error.kind));
+      return;
+    }
     console.error("Telegram voice handling failed", error);
     await ctx.reply(MESSAGES.analysisError, { parse_mode: "HTML" });
   }
@@ -680,6 +684,11 @@ export async function replyWithAiFeedback(
 
     try {
       await ctx.reply("🤖 AI feedback is being generated...");
+      await consumeApiQuota({
+        userId,
+        kind: "feedback",
+        limit: DAILY_FEEDBACK_LIMIT,
+      });
       console.log("Telegram AI feedback started", {
         telegramId,
         sessionId,
@@ -693,6 +702,10 @@ export async function replyWithAiFeedback(
       });
       await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
     } catch (error) {
+      if (isApiQuotaExceededError(error)) {
+        await ctx.reply(getQuotaExceededMessage(error.kind));
+        return;
+      }
       console.error("Telegram AI feedback failed", {
         message: error instanceof Error ? error.message : String(error),
         telegramId,

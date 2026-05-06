@@ -1,5 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { supabaseServer } from "../src/services/supabaseServer.js";
+import {
+  DAILY_TRANSCRIPTION_LIMIT,
+  consumeApiQuota,
+  getQuotaExceededMessage,
+  isApiQuotaExceededError,
+} from "../src/services/apiQuota.js";
 import { transcribeAudioWithDeepgram } from "../src/services/deepgram.js";
 
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
@@ -9,10 +15,29 @@ type UploadedAudio = {
   mimeType: string;
 };
 
-async function readBody(req: IncomingMessage): Promise<Buffer> {
+type AuthResult = {
+  authenticated: boolean;
+  internal: boolean;
+  userId: string | null;
+};
+
+class PayloadTooLargeError extends Error {
+  constructor() {
+    super("Audio upload is too large");
+    this.name = "PayloadTooLargeError";
+  }
+}
+
+async function readBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
   const chunks: Buffer[] = [];
+  let totalBytes = 0;
   for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += buffer.byteLength;
+    if (totalBytes > maxBytes) {
+      throw new PayloadTooLargeError();
+    }
+    chunks.push(buffer);
   }
 
   return Buffer.concat(chunks);
@@ -35,7 +60,7 @@ function toHttpHeaderValue(value: string): string {
     .join("");
 }
 
-async function requireAuthenticatedUser(req: IncomingMessage): Promise<boolean> {
+async function requireAuthenticatedUser(req: IncomingMessage): Promise<AuthResult> {
   const internalToken = process.env.NOPAUSE_INTERNAL_API_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
   const expectedInternalToken = internalToken ? toHttpHeaderValue(internalToken) : "";
   const internalHeader = req.headers["x-nopause-internal-token"];
@@ -44,15 +69,19 @@ async function requireAuthenticatedUser(req: IncomingMessage): Promise<boolean> 
     typeof internalHeader === "string" &&
     internalHeader === expectedInternalToken
   ) {
-    return true;
+    return { authenticated: true, internal: true, userId: null };
   }
 
   const authHeader = req.headers.authorization;
   const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
-  if (!accessToken) return false;
+  if (!accessToken) return { authenticated: false, internal: false, userId: null };
 
   const { data, error } = await supabaseServer.auth.getUser(accessToken);
-  return !error && Boolean(data.user);
+  return {
+    authenticated: !error && Boolean(data.user),
+    internal: false,
+    userId: data.user?.id ?? null,
+  };
 }
 
 function parseMultipartAudio(body: Buffer, boundary: string): UploadedAudio | null {
@@ -108,7 +137,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    if (!(await requireAuthenticatedUser(req))) {
+    const auth = await requireAuthenticatedUser(req);
+    if (!auth.authenticated) {
       sendJson(res, 401, { error: "Authorization token is required" });
       return;
     }
@@ -119,7 +149,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const body = await readBody(req);
+    const body = await readBody(req, MAX_AUDIO_BYTES + 2048);
     if (body.length > MAX_AUDIO_BYTES + 2048) {
       sendJson(res, 413, { error: "Audio upload is too large" });
       return;
@@ -136,6 +166,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    if (!auth.internal && auth.userId) {
+      await consumeApiQuota({
+        userId: auth.userId,
+        kind: "transcription",
+        limit: DAILY_TRANSCRIPTION_LIMIT,
+      });
+    }
+
     const audioBuffer = new ArrayBuffer(audio.data.byteLength);
     new Uint8Array(audioBuffer).set(audio.data);
     const transcription = await transcribeAudioWithDeepgram(audioBuffer, audio.mimeType);
@@ -146,8 +184,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       fillerCount: transcription.fillerCount,
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      sendJson(res, 413, { error: "Audio upload is too large" });
+      return;
+    }
+    if (isApiQuotaExceededError(error)) {
+      sendJson(res, 429, { error: getQuotaExceededMessage(error.kind) });
+      return;
+    }
     console.error("transcription endpoint error:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    sendJson(res, 500, { error: message });
+    sendJson(res, 500, { error: "Transcription failed. Please try again." });
   }
 }

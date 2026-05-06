@@ -1,5 +1,11 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { supabaseServer } from "../src/services/supabaseServer.js";
+import {
+  DAILY_FEEDBACK_LIMIT,
+  consumeApiQuota,
+  getQuotaExceededMessage,
+  isApiQuotaExceededError,
+} from "../src/services/apiQuota.js";
 import { analyzePracticeSpeech, type AnalyzePracticeSpeechInput } from "../src/services/aiFeedback.js";
 
 async function readJsonBody(req: IncomingMessage) {
@@ -33,13 +39,13 @@ function getFeedbackInput(body: Record<string, unknown>): AnalyzePracticeSpeechI
   };
 }
 
-async function requireAuthenticatedUser(req: IncomingMessage): Promise<boolean> {
+async function requireAuthenticatedUser(req: IncomingMessage): Promise<string | null> {
   const authHeader = req.headers.authorization;
   const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
-  if (!accessToken) return false;
+  if (!accessToken) return null;
 
   const { data, error } = await supabaseServer.auth.getUser(accessToken);
-  return !error && Boolean(data.user);
+  return !error && data.user ? data.user.id : null;
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -56,7 +62,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    if (!(await requireAuthenticatedUser(req))) {
+    const userId = await requireAuthenticatedUser(req);
+    if (!userId) {
       sendJson(res, 401, { error: "Authorization token is required" });
       return;
     }
@@ -68,11 +75,20 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
+    await consumeApiQuota({
+      userId,
+      kind: "feedback",
+      limit: DAILY_FEEDBACK_LIMIT,
+    });
+
     const feedback = await analyzePracticeSpeech(input);
     sendJson(res, 200, { feedback });
   } catch (error) {
+    if (isApiQuotaExceededError(error)) {
+      sendJson(res, 429, { error: getQuotaExceededMessage(error.kind) });
+      return;
+    }
     console.error("feedback endpoint error:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    sendJson(res, 500, { error: message });
+    sendJson(res, 500, { error: "Feedback generation failed. Please try again." });
   }
 }

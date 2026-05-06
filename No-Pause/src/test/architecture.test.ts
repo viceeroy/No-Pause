@@ -2,7 +2,12 @@ import { Readable } from 'stream';
 import type { IncomingMessage } from 'http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
-import { buildPracticeStats, buildRecentSessionSummaries, type SessionRecord } from '@/lib/core/queries';
+import {
+  buildPracticeStats,
+  buildRecentSessionSummaries,
+  getPracticeStatsFromRpc,
+  type SessionRecord,
+} from '@/lib/core/queries';
 import { buildSessionResult } from '@/features/practice/hooks/useScoring';
 import {
   buildSessionInsertValues,
@@ -280,6 +285,51 @@ describe('stats summary architecture', () => {
     expect(summaries[0].source).toBe('telegram');
     expect(summaries[0].speakingTime).toBe(55);
   });
+
+  it('reads bounded practice stats from the Supabase RPC shape', async () => {
+    const rpc = vi.fn(async () => ({
+      data: {
+        scoredSessions: 2,
+        totalPracticeTime: 120,
+        avgFlowScore: 90,
+        bestFlowScore: 100,
+        monthlyStats: { totalSessions: 1, totalSpeakingTime: 55, avgFlowScore: 90 },
+        lastSessionDate: '2026-05-02T00:00:00.000Z',
+        currentStreak: 3,
+        bestStreak: 5,
+        modeBreakdown: [{ mode: 'speaking', totalSessions: 2, totalDuration: 120, avgFlowScore: 90 }],
+        recentSessions: [{
+          id: 'session-1',
+          created_at: '2026-05-02T00:00:00.000Z',
+          duration: 60,
+          speakingTime: 55,
+          hesitationCount: 1,
+          flowScore: 90,
+          mode: 'speaking',
+          source: 'web',
+        }],
+      },
+      error: null,
+    }));
+
+    await expect(getPracticeStatsFromRpc({ rpc }, 'user-1', 25)).resolves.toMatchObject({
+      scoredSessions: 2,
+      recentSessions: [{ id: 'session-1', hesitationCount: 1 }],
+    });
+    expect(rpc).toHaveBeenCalledWith('get_practice_stats', {
+      p_user_id: 'user-1',
+      p_recent_limit: 25,
+    });
+  });
+
+  it('falls back when the practice stats RPC is unavailable', async () => {
+    const rpc = vi.fn(async () => ({
+      data: null,
+      error: { code: 'PGRST202', message: 'get_practice_stats was not found' },
+    }));
+
+    await expect(getPracticeStatsFromRpc({ rpc }, 'user-1', 25)).resolves.toBeNull();
+  });
 });
 
 describe('session persistence architecture', () => {
@@ -448,7 +498,170 @@ describe('HTTP header ASCII normalization', () => {
     expect(JSON.parse(res.body)).toEqual({ error: 'Expected multipart/form-data audio upload' });
   });
 
-  it('api/telegram/connect sends a welcome when the connection already exists for the user', async () => {
+  it('api/transcription returns 429 when regular session transcription quota is exhausted', async () => {
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    vi.doMock('../../src/services/supabaseServer.js', () => ({
+      supabaseServer: {
+        auth: {
+          getUser: vi.fn(async () => ({ data: { user: { id: 'user-1' } }, error: null })),
+        },
+      },
+    }));
+    vi.doMock('../../src/services/apiQuota.js', () => ({
+      DAILY_TRANSCRIPTION_LIMIT: 20,
+      consumeApiQuota: vi.fn(async () => {
+        throw { kind: 'transcription' };
+      }),
+      getQuotaExceededMessage: vi.fn(() => 'Daily transcription limit reached. Try again tomorrow.'),
+      isApiQuotaExceededError: vi.fn((error) => (error as { kind?: string })?.kind === 'transcription'),
+    }));
+    vi.doMock('../../src/services/deepgram.js', () => ({
+      transcribeAudioWithDeepgram: vi.fn(async () => {
+        throw new Error('should not call provider');
+      }),
+    }));
+
+    const { default: handler } = await import('../../api/transcription');
+    const body = Buffer.from(
+      '--x\r\nContent-Disposition: form-data; name="audio"; filename="a.webm"\r\nContent-Type: audio/webm\r\n\r\nabc\r\n--x--\r\n',
+    );
+    const req = createRequest({
+      headers: {
+        authorization: 'Bearer access-token',
+        'content-type': 'multipart/form-data; boundary=x',
+      },
+      body,
+    });
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).toBe(429);
+    expect(JSON.parse(res.body)).toEqual({ error: 'Daily transcription limit reached. Try again tomorrow.' });
+  });
+
+  it('api/transcription rejects oversized bodies while reading the request', async () => {
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    vi.doMock('../../src/services/supabaseServer.js', () => ({
+      supabaseServer: {
+        auth: {
+          getUser: vi.fn(async () => ({ data: { user: { id: 'user-1' } }, error: null })),
+        },
+      },
+    }));
+    vi.doMock('../../src/services/apiQuota.js', () => ({
+      DAILY_TRANSCRIPTION_LIMIT: 20,
+      consumeApiQuota: vi.fn(),
+      getQuotaExceededMessage: vi.fn(),
+      isApiQuotaExceededError: vi.fn(() => false),
+    }));
+
+    const { default: handler } = await import('../../api/transcription');
+    const req = createRequest({
+      headers: {
+        authorization: 'Bearer access-token',
+        'content-type': 'multipart/form-data; boundary=x',
+      },
+      body: Buffer.alloc((15 * 1024 * 1024) + 2049),
+    });
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).toBe(413);
+    expect(JSON.parse(res.body)).toEqual({ error: 'Audio upload is too large' });
+  });
+
+  it('api/feedback returns 429 when regular session feedback quota is exhausted', async () => {
+    process.env.GROQ_API_KEY = 'groq-key';
+    vi.doMock('../../src/services/supabaseServer.js', () => ({
+      supabaseServer: {
+        auth: {
+          getUser: vi.fn(async () => ({ data: { user: { id: 'user-1' } }, error: null })),
+        },
+      },
+    }));
+    vi.doMock('../../src/services/apiQuota.js', () => ({
+      DAILY_FEEDBACK_LIMIT: 20,
+      consumeApiQuota: vi.fn(async () => {
+        throw { kind: 'feedback' };
+      }),
+      getQuotaExceededMessage: vi.fn(() => 'Daily feedback limit reached. Try again tomorrow.'),
+      isApiQuotaExceededError: vi.fn((error) => (error as { kind?: string })?.kind === 'feedback'),
+    }));
+    vi.doMock('../../src/services/aiFeedback.js', () => ({
+      analyzePracticeSpeech: vi.fn(async () => 'should not call provider'),
+    }));
+
+    const { default: handler } = await import('../../api/feedback');
+    const req = createRequest({
+      headers: {
+        authorization: 'Bearer access-token',
+      },
+      body: JSON.stringify({ transcript: 'hello world again' }),
+    });
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).toBe(429);
+    expect(JSON.parse(res.body)).toEqual({ error: 'Daily feedback limit reached. Try again tomorrow.' });
+  });
+
+  it('api/telegram/webhook returns 401 when Telegram secret header is missing', async () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
+    process.env.TELEGRAM_WEBHOOK_SECRET = 'webhook-secret';
+    const webhookCallback = vi.fn(async (_req, res) => {
+      res.statusCode = 200;
+      res.end('ok');
+    });
+    vi.doMock('../../src/lib/telegram/router.js', () => ({
+      createTelegramBot: vi.fn(() => ({
+        webhookCallback: vi.fn(() => webhookCallback),
+      })),
+    }));
+
+    const { default: handler } = await import('../../api/telegram/webhook');
+    const req = createRequest({});
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body).toBe('Unauthorized');
+    expect(webhookCallback).not.toHaveBeenCalled();
+  });
+
+  it('api/telegram/webhook allows requests with the configured Telegram secret header', async () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
+    process.env.TELEGRAM_WEBHOOK_SECRET = 'webhook-secret';
+    const webhookCallback = vi.fn(async (_req, res) => {
+      res.statusCode = 200;
+      res.end('ok');
+    });
+    vi.doMock('../../src/lib/telegram/router.js', () => ({
+      createTelegramBot: vi.fn(() => ({
+        webhookCallback: vi.fn(() => webhookCallback),
+      })),
+    }));
+
+    const { default: handler } = await import('../../api/telegram/webhook');
+    const req = createRequest({
+      headers: {
+        'x-telegram-bot-api-secret-token': process.env.TELEGRAM_WEBHOOK_SECRET,
+      },
+    });
+    const res = createResponseRecorder();
+
+    await handler(req, res as never);
+
+    expect(res.statusCode).not.toBe(401);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe('ok');
+    expect(webhookCallback).toHaveBeenCalledTimes(1);
+  });
+
+  it('api/telegram/connect does not resend a welcome when the connection already exists for the user', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
     const fetchMock = vi.fn(async () => ({ ok: true }));
     vi.stubGlobal('fetch', fetchMock);
@@ -488,22 +701,7 @@ describe('HTTP header ASCII normalization', () => {
 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body)).toEqual({ success: true, welcomeSent: false });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    const messagePayload = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
-    const photoPayload = JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string);
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://api.telegram.org/bottelegram-token/sendMessage',
-      expect.any(Object),
-    );
-    expect(messagePayload.parse_mode).toBe('HTML');
-    expect(messagePayload.text).toContain('<a href="https://www.nopause.org">www.nopause.org</a>');
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://api.telegram.org/bottelegram-token/sendPhoto',
-      expect.any(Object),
-    );
-    expect(photoPayload.photo).toBe('https://www.nopause.org/preview.png');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {
@@ -511,9 +709,19 @@ describe('HTTP header ASCII normalization', () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
     process.env.DEEPGRAM_API_KEY = 'deepgram-key';
 
+    const generateAiFeedback = vi.fn(async () => 'Feedback');
     vi.doMock('@/services/aiFeedback', () => ({
-      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      generateAiFeedback,
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
+    }));
+    vi.doMock('@/services/apiQuota', () => ({
+      DAILY_FEEDBACK_LIMIT: 20,
+      DAILY_TRANSCRIPTION_LIMIT: 20,
+      consumeApiQuota: vi.fn(async (input: { kind: string }) => {
+        order.push(`quota:${input.kind}`);
+      }),
+      getQuotaExceededMessage: vi.fn((kind: string) => `quota exceeded: ${kind}`),
+      isApiQuotaExceededError: vi.fn(() => false),
     }));
 
     vi.doMock('@/lib/core/user', () => ({
@@ -633,6 +841,7 @@ describe('HTTP header ASCII normalization', () => {
     expect(order).toEqual([
       'telegram:getFile',
       'telegram:download',
+      'quota:transcription',
       'deepgram',
       'insert:sessions',
       'upsert:streaks',
@@ -644,6 +853,8 @@ describe('HTTP header ASCII normalization', () => {
       filler_count: 1,
     });
     expect(replies.some(([message]) => message.includes('Speaking Result') && message.includes('Fillers'))).toBe(true);
+    expect(replies.some(([message]) => message.includes('AI Feedback'))).toBe(false);
+    expect(generateAiFeedback).not.toHaveBeenCalled();
     expect(upsertedStreaks).toHaveLength(1);
   });
 
