@@ -26,8 +26,10 @@ import { supabaseServer } from "../../services/supabaseServer.js";
 import {
   deletePendingChallenge,
   getFriendChallenge,
+  getGroupChallengeAttemptCount,
   getPendingChallenge,
   isMissingChallengesTableError,
+  recordGroupChallengeAttempt,
   updateFriendChallengeCreatorScore,
   upsertPendingChallenge,
 } from "./challenges.js";
@@ -39,8 +41,8 @@ import {
   getConnectAccountKeyboard,
   getFriendChallengeResultActions,
   getGroupChallengeResultActions,
-  getGroupResultText,
   getGroupShareResultMessage,
+  getGroupChallengeApprovalMessage,
   getSessionActions,
   getSpeakingResultMessage,
   groupTryAgainKeyboard,
@@ -130,6 +132,10 @@ export function getTelegramUsername(ctx: Context): string {
 
 export function getPlainTelegramUsername(ctx: Context): string {
   return ctx.from?.username ?? String(ctx.from?.id ?? "there");
+}
+
+function getTelegramFirstName(ctx: Context): string {
+  return ctx.from?.first_name ?? getPlainTelegramUsername(ctx);
 }
 
 function getDebugStackSnippet() {
@@ -521,23 +527,28 @@ export async function handleVoiceMessage(
     }
 
     if (pendingChallenge?.challenge_type === "group" && challenge) {
-      await deletePendingChallenge(telegramId);
-      const resultText = getGroupResultText({
-        username: pendingChallenge.participant_username ?? username,
-        topic: challenge.topic,
-        analysis,
-        transcript,
-      });
       const groupId = Number(pendingChallenge.group_id ?? challenge.creator_telegram_id);
+      const attemptCount = await recordGroupChallengeAttempt({
+        challengeId: challenge.id,
+        telegramId,
+        sessionId: String(sessionId),
+      });
+      await deletePendingChallenge(telegramId);
 
       await ctx.reply(
-        getChallengeResultMessage({ title: "Group Challenge Result", topic: challenge.topic, analysis, transcript }),
+        getChallengeResultMessage({
+          title: "Group Challenge Result",
+          topic: challenge.topic,
+          analysis,
+          transcript,
+          attemptCount,
+        }),
         {
           ...getGroupChallengeResultActions({
-            resultText,
             sessionId: String(sessionId),
             groupId,
             challengeId: challenge.id,
+            attemptCount,
           }),
           parse_mode: "HTML",
         },
@@ -650,6 +661,91 @@ export async function shareResultToGroup(
   } catch (error) {
     console.error("Telegram share to group failed", error);
     await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
+  }
+}
+
+export async function postGroupChallengeResultToGroup(
+  ctx: Context & { match: RegExpExecArray },
+  telegramId: number,
+) {
+  const challengeId = ctx.match[1];
+  const sessionId = ctx.match[2];
+
+  try {
+    const [userId, challenge] = await Promise.all([
+      resolveTelegramUser(telegramId),
+      getFriendChallenge(challengeId),
+    ]);
+    if (!userId || !challenge) {
+      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
+      return;
+    }
+
+    const session = await getTelegramSession({ userId, sessionId });
+    if (!session) {
+      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
+      return;
+    }
+
+    const attemptCount = await getGroupChallengeAttemptCount({ challengeId: challenge.id, telegramId });
+    await ctx.telegram.sendMessage(
+      Number(challenge.creator_telegram_id),
+      getGroupShareResultMessage({
+        firstName: getTelegramFirstName(ctx),
+        username: ctx.from?.username,
+        topic: challenge.topic,
+        attemptCount,
+        analysis: getSessionAnalysis(session),
+        transcript: session.transcript,
+      }),
+      { parse_mode: "HTML" },
+    );
+    await ctx.answerCbQuery("Sent to the group.");
+  } catch (error) {
+    console.error("Telegram group challenge result post failed", error);
+    await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
+  }
+}
+
+export async function approveGroupChallengeResult(
+  ctx: Context & { match: RegExpExecArray },
+  telegramId: number,
+) {
+  const challengeId = ctx.match[1];
+  const sessionId = ctx.match[2];
+
+  try {
+    const [userId, challenge] = await Promise.all([
+      resolveTelegramUser(telegramId),
+      getFriendChallenge(challengeId),
+    ]);
+    if (!userId || !challenge) {
+      await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
+      return;
+    }
+
+    const session = await getTelegramSession({ userId, sessionId });
+    if (!session) {
+      await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
+      return;
+    }
+
+    const attemptCount = await getGroupChallengeAttemptCount({ challengeId: challenge.id, telegramId });
+    await ctx.telegram.sendMessage(
+      Number(challenge.creator_telegram_id),
+      getGroupChallengeApprovalMessage({
+        firstName: getTelegramFirstName(ctx),
+        username: ctx.from?.username,
+        topic: challenge.topic,
+        analysis: getSessionAnalysis(session),
+        attemptCount,
+      }),
+      { parse_mode: "HTML" },
+    );
+    await ctx.answerCbQuery("Approved for the group.");
+  } catch (error) {
+    console.error("Telegram group challenge approval failed", error);
+    await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
   }
 }
 

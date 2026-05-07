@@ -16,7 +16,17 @@ import {
   updateStreak,
   type SupabaseLike,
 } from '@/lib/core/session';
-import { getSpeakingResultMessage } from '@/lib/telegram/constants';
+import {
+  APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
+  CHANGE_GROUP_TOPIC_ACTION_PREFIX,
+  getGroupChallengeApprovalMessage,
+  getGroupChallengeDeepLink,
+  getGroupChallengeResultActions,
+  getGroupShareResultMessage,
+  getNoPauseGroupChallengeKeyboard,
+  getSpeakingResultMessage,
+  POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
+} from '@/lib/telegram/constants';
 
 const originalEnv = { ...process.env };
 
@@ -260,6 +270,70 @@ describe('result message formatting architecture', () => {
     expect(message.length).toBeLessThanOrEqual(4000);
     expect(message).toContain('... (truncated)');
   });
+
+  it('builds group challenge deep links and result actions', () => {
+    const keyboard = getNoPauseGroupChallengeKeyboard('challenge-1').reply_markup.inline_keyboard;
+
+    expect(getGroupChallengeDeepLink('challenge-1')).toBe('https://t.me/NoPauseAI_bot?start=group_challenge-1');
+    expect(keyboard[0][0]).toMatchObject({
+      text: '🎤 Speak',
+      url: 'https://t.me/NoPauseAI_bot?start=group_challenge-1',
+    });
+    expect(keyboard[0][1]).toMatchObject({
+      text: '🔄 Change Prompt',
+      callback_data: `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}challenge-1`,
+    });
+
+    const resultActions = getGroupChallengeResultActions({
+      sessionId: 'session-1',
+      groupId: -100123,
+      challengeId: 'challenge-1',
+      attemptCount: 2,
+    }).reply_markup.inline_keyboard;
+    expect(resultActions[0][0]).toMatchObject({
+      text: '📤 Send to Group',
+      callback_data: `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}challenge-1:session-1`,
+    });
+    expect(resultActions[0][1]).toMatchObject({
+      text: '✅ Approve',
+      callback_data: `${APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}challenge-1:session-1`,
+    });
+  });
+
+  it('formats group challenge result and approval messages with attempt count', () => {
+    const analysis = {
+      flowScore: 88,
+      pauseCount: 2,
+      hesitationCount: 1,
+      speakingTimeSec: 50,
+      totalSessionTimeSec: 60,
+      isCompleted: true,
+      pauseLog: [],
+    };
+
+    const result = getGroupShareResultMessage({
+      firstName: 'Sam',
+      username: 'speaker',
+      topic: 'Talk about focus',
+      attemptCount: 3,
+      analysis,
+      transcript: 'I stayed focused today.',
+    });
+    expect(result).toContain('Group Challenge Result');
+    expect(result).toContain('Attempt:</b> #3');
+    expect(result).toContain('Talk about focus');
+
+    const approval = getGroupChallengeApprovalMessage({
+      firstName: 'Sam',
+      username: 'speaker',
+      topic: 'Talk about focus',
+      analysis,
+      attemptCount: 3,
+    });
+    expect(approval).toContain('✅ <b>Approved for leaderboard</b>');
+    expect(approval).toContain('Flow Score:</b> 88');
+    expect(approval).toContain('Leaderboard storage is coming next.');
+  });
 });
 
 describe('stats summary architecture', () => {
@@ -423,6 +497,8 @@ describe('module export architecture', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
+    vi.doUnmock('../../src/services/deepgram.js');
+    vi.doUnmock('@/services/deepgram');
     process.env = { ...originalEnv };
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
@@ -714,6 +790,25 @@ describe('HTTP header ASCII normalization', () => {
       generateAiFeedback,
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
     }));
+    const deepgramMock = vi.fn(async () => {
+      order.push('deepgram');
+      return {
+        transcript: 'hello world again',
+        words: [
+          { word: 'hello', start: 0, end: 1 },
+          { word: 'um', start: 1.1, end: 1.2 },
+          { word: 'world', start: 2, end: 3 },
+          { word: 'again', start: 5, end: 6 },
+        ],
+        fillerCount: 1,
+      };
+    });
+    vi.doMock('@/services/deepgram', () => ({
+      transcribeAudioWithDeepgram: deepgramMock,
+    }));
+    vi.doMock('../../src/services/deepgram.js', () => ({
+      transcribeAudioWithDeepgram: deepgramMock,
+    }));
     vi.doMock('@/services/apiQuota', () => ({
       DAILY_FEEDBACK_LIMIT: 20,
       DAILY_TRANSCRIPTION_LIMIT: 20,
@@ -731,8 +826,10 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/lib/telegram/challenges', () => ({
       deletePendingChallenge: vi.fn(),
       getFriendChallenge: vi.fn(),
+      getGroupChallengeAttemptCount: vi.fn(),
       getPendingChallenge: vi.fn(async () => null),
       isMissingChallengesTableError: vi.fn(() => false),
+      recordGroupChallengeAttempt: vi.fn(),
       updateFriendChallengeCreatorScore: vi.fn(),
       upsertPendingChallenge: vi.fn(),
     }));
@@ -793,35 +890,7 @@ describe('HTTP header ASCII normalization', () => {
         } as Response;
       }
 
-      order.push('deepgram');
-      expect(urlString).toContain('https://api.deepgram.com/v1/listen');
-      expect(urlString).toContain('model=nova-3');
-      expect(urlString).toContain('smart_format=true');
-      expect(urlString).toContain('punctuate=true');
-      expect(urlString).toContain('words=true');
-      expect(urlString).toContain('filler_words=true');
-      expect(init?.headers).toMatchObject({
-        Authorization: 'Token deepgram-key',
-        'Content-Type': 'audio/ogg',
-      });
-      return {
-        ok: true,
-        json: async () => ({
-          results: {
-            channels: [{
-              alternatives: [{
-                transcript: 'hello world again',
-                words: [
-                  { word: 'hello', start: 0, end: 1 },
-                  { word: 'um', start: 1.1, end: 1.2, type: 'filler' },
-                  { word: 'world', start: 2, end: 3 },
-                  { word: 'again', start: 5, end: 6 },
-                ],
-              }],
-            }],
-          },
-        }),
-      } as Response;
+      throw new Error(`Unexpected fetch: ${urlString} ${String(init?.method ?? 'GET')}`);
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -874,8 +943,10 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/lib/telegram/challenges', () => ({
       deletePendingChallenge: vi.fn(),
       getFriendChallenge: vi.fn(),
+      getGroupChallengeAttemptCount: vi.fn(),
       getPendingChallenge: vi.fn(),
       isMissingChallengesTableError: vi.fn(() => false),
+      recordGroupChallengeAttempt: vi.fn(),
       updateFriendChallengeCreatorScore: vi.fn(),
       upsertPendingChallenge: vi.fn(),
     }));

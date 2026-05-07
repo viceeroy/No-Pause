@@ -13,17 +13,16 @@ import {
   CHALLENGE_LABEL,
   GET_PROMPT_LABEL,
   getConnectAccountKeyboard,
-  getNoPauseGroupChallengeKeyboard,
-  getNoPauseGroupChallengeMessage,
   getNoPauseGroupWelcomeMessage,
   getTelegramStatsMessage,
   MESSAGES,
   MY_STATS_LABEL,
   NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX,
+  APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
+  POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
   SHARE_TO_GROUP_ACTION_PREFIX,
-  SPEAK_GROUP_TOPIC_ACTION_PREFIX,
   TELEGRAM_BOT_USERNAME,
   TRY_AGAIN_ACTION,
   TRY_GROUP_CHALLENGE_ACTION_PREFIX,
@@ -31,9 +30,10 @@ import {
 import {
   changeGroupChallengeTopic,
   handleChallengeDeepLink,
+  handleGroupChallengeDeepLink,
   replyWithNewFriendChallenge,
+  replyWithNewGroupChallenge,
   retryGroupChallenge,
-  sendGroupChallengeTopic,
 } from "./challenges.js";
 import {
   getBotToken,
@@ -44,6 +44,8 @@ import {
   replyWithAiFeedback,
   replyWithConnectPrompt,
   sendFriendChallengeResult,
+  approveGroupChallengeResult,
+  postGroupChallengeResultToGroup,
   shareResultToGroup,
 } from "./voiceHandler.js";
 
@@ -181,6 +183,15 @@ export function createTelegramBot() {
       const handled = await handleChallengeDeepLink(ctx, telegramId, startPayload.replace(/^challenge_/, ""));
       if (handled) return;
     }
+    if (startPayload.startsWith("group_")) {
+      const handled = await handleGroupChallengeDeepLink(
+        ctx,
+        telegramId,
+        startPayload.replace(/^group_/, ""),
+        getTelegramUsername(ctx),
+      );
+      if (handled) return;
+    }
 
     console.log("Telegram welcome debug", {
       triggerSource: "router.ts:bot.start:welcome",
@@ -199,11 +210,7 @@ export function createTelegramBot() {
   bot.command("nopause", async (ctx) => {
     if (!isGroupChat(ctx)) return;
 
-    const prompt = getRandomPrompt();
-    await ctx.reply(getNoPauseGroupChallengeMessage(prompt), {
-      ...getNoPauseGroupChallengeKeyboard(),
-      parse_mode: "HTML",
-    });
+    await replyWithNewGroupChallenge(ctx, Number(ctx.chat.id));
   });
 
   bot.on("new_chat_members", async (ctx) => {
@@ -243,16 +250,6 @@ export function createTelegramBot() {
     await changeGroupChallengeTopic(ctx);
   });
 
-  bot.action(new RegExp(`^${SPEAK_GROUP_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) {
-      await ctx.answerCbQuery("I could not start this challenge right now.");
-      return;
-    }
-
-    await sendGroupChallengeTopic(ctx, telegramId, getTelegramUsername(ctx));
-  });
-
   bot.action(new RegExp(`^${SEND_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
@@ -271,6 +268,26 @@ export function createTelegramBot() {
     }
 
     await shareResultToGroup(ctx, telegramId);
+  });
+
+  bot.action(new RegExp(`^${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) {
+      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
+      return;
+    }
+
+    await postGroupChallengeResultToGroup(ctx, telegramId);
+  });
+
+  bot.action(new RegExp(`^${APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) {
+      await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
+      return;
+    }
+
+    await approveGroupChallengeResult(ctx, telegramId);
   });
 
   bot.action(new RegExp(`^${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}(.+)$`), async (ctx) => {

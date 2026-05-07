@@ -14,6 +14,8 @@ export const CHANGE_PROMPT_ACTION = "change_prompt";
 export const CHANGE_GROUP_TOPIC_ACTION_PREFIX = "cg:";
 export const SPEAK_GROUP_TOPIC_ACTION_PREFIX = "sg:";
 export const SHARE_TO_GROUP_ACTION_PREFIX = "shg:";
+export const POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "pgr:";
+export const APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "agr:";
 export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
@@ -41,6 +43,14 @@ create table if not exists public.telegram_challenge_state (
   creator_username text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists public.telegram_challenge_attempts (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id text not null references public.challenges(id) on delete cascade,
+  telegram_id bigint not null,
+  session_id uuid,
+  created_at timestamptz not null default now()
 );`;
 
 export type FlowAnalysis = {
@@ -66,11 +76,15 @@ export const groupTryAgainKeyboard = Markup.inlineKeyboard([
   Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
 ]);
 
-export function getNoPauseGroupChallengeKeyboard() {
+export function getGroupChallengeDeepLink(challengeId: string): string {
+  return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=group_${encodeURIComponent(challengeId)}`;
+}
+
+export function getNoPauseGroupChallengeKeyboard(challengeId: string) {
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback("🎤 Speak", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}speak`),
-      Markup.button.callback("🔄 Change Prompt", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}prompt`),
+      Markup.button.url("🎤 Speak", getGroupChallengeDeepLink(challengeId)),
+      Markup.button.callback("🔄 Change Prompt", `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}${challengeId}`),
     ],
     [
       Markup.button.callback("🏆 Leaderboard", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}leaderboard`),
@@ -81,8 +95,8 @@ export function getNoPauseGroupChallengeKeyboard() {
 export function getGroupChallengeKeyboard(challengeId: string) {
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback("🗣 Speak", `${SPEAK_GROUP_TOPIC_ACTION_PREFIX}${challengeId}`),
-      Markup.button.callback("🔄 Change Topic", `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}${challengeId}`),
+      Markup.button.url("🎤 Speak", getGroupChallengeDeepLink(challengeId)),
+      Markup.button.callback("🔄 Change Prompt", `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}${challengeId}`),
     ],
   ]);
 }
@@ -127,7 +141,13 @@ export function getGroupChallengeMessage(topic: string): string {
 }
 
 export function getPrivateChallengeMessage(topic: string): string {
-  return `⚔️ <b>Group Challenge</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`;
+  return `⚔️🎤 <b>Group Challenge</b>
+
+💬 <b>Topic</b>
+${escapeTelegramHtml(topic)}
+
+🎙 <b>Your turn</b>
+Send a fresh voice note in this DM when you are ready.`;
 }
 
 export function getFriendChallengeShareMessage(input: { topic: string; challengeId: string }): string {
@@ -256,13 +276,17 @@ export function getGroupResultText(input: {
 export function getGroupShareResultMessage(input: {
   firstName: string;
   username?: string;
+  topic?: string;
+  attemptCount?: number;
   analysis: FlowAnalysis;
   transcript?: string | null;
 }): string {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
+  const topicText = input.topic ? `\n\n💬 <b>Topic:</b>\n${escapeTelegramHtml(input.topic)}` : "";
+  const attemptText = input.attemptCount ? `\n\n🔁 <b>Attempt:</b> #${input.attemptCount}` : "";
 
-  const prefix = `🎤 <b>Group Challenge Result</b>\n\n👤 <b>Speaker:</b> ${nameLine}\n\n`;
+  const prefix = `🎤 <b>Group Challenge Result</b>\n\n👤 <b>Speaker:</b> ${nameLine}${topicText}${attemptText}\n\n`;
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
@@ -276,15 +300,16 @@ export function getResultShareUrl(resultText: string): string {
 }
 
 export function getGroupChallengeResultActions(input: {
-  resultText: string;
   sessionId: string;
   groupId: number;
   challengeId: string;
+  attemptCount: number;
 }) {
+  void input.groupId;
   return Markup.inlineKeyboard([
     [
-      Markup.button.callback("📤 Share to Group", `${SHARE_TO_GROUP_ACTION_PREFIX}${input.sessionId}:${input.groupId}`),
-      Markup.button.url("👥 Share to Friends", getResultShareUrl(input.resultText)),
+      Markup.button.callback("📤 Send to Group", `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`),
+      Markup.button.callback("✅ Approve", `${APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`),
     ],
     [Markup.button.callback("🔄 Try Again", `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}${input.challengeId}`)],
   ]);
@@ -327,8 +352,10 @@ export function getChallengeResultMessage(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
   title?: string;
+  attemptCount?: number;
 }): string {
-  const prefix = `⚔️ <b>${escapeTelegramHtml(input.title ?? "Challenge Result")}</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}\n\n`;
+  const attemptText = input.attemptCount ? `\n\n🔁 <b>Attempt:</b> #${input.attemptCount}` : "";
+  const prefix = `⚔️ <b>${escapeTelegramHtml(input.title ?? "Challenge Result")}</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(input.topic)}${attemptText}\n\n`;
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
@@ -369,6 +396,38 @@ export function getChallengeCreatorNotification(input: {
 
 export function getConnectUrl(telegramId: number): string {
   return `${SITE_URL}/connect?tg=${encodeURIComponent(String(telegramId))}`;
+}
+
+export function getGroupChallengeConnectMessage(input: { username: string }): string {
+  return `🔐 <b>NoPause account needed</b>
+
+👤 <b>Player:</b> ${escapeTelegramHtml(input.username)}
+
+<b>Status:</b>
+This player is not connected to NoPause yet.
+
+<b>Action:</b>
+Sign in and connect Telegram first, then tap Speak again to join the challenge.`;
+}
+
+export function getGroupChallengeApprovalMessage(input: {
+  firstName: string;
+  username?: string;
+  topic: string;
+  analysis: FlowAnalysis;
+  attemptCount: number;
+}): string {
+  const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
+  const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
+
+  return `✅ <b>Approved for leaderboard</b>
+
+👤 <b>Speaker:</b> ${nameLine}
+💬 <b>Topic:</b> ${escapeTelegramHtml(input.topic)}
+📊 <b>Flow Score:</b> ${input.analysis.flowScore}
+🔁 <b>Attempt:</b> #${input.attemptCount}
+
+Leaderboard storage is coming next.`;
 }
 
 export function getSessionActions(sessionId: string) {

@@ -1,13 +1,18 @@
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
+import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
   getChallengeShareActions,
   getChallengesTableMissingMessage,
+  getConnectAccountKeyboard,
   getFriendChallengeReceivedMessage,
   getFriendChallengeShareMessage,
+  getGroupChallengeConnectMessage,
   getGroupChallengeKeyboard,
   getGroupChallengeMessage,
+  getNoPauseGroupChallengeKeyboard,
+  getNoPauseGroupChallengeMessage,
   getPrivateChallengeMessage,
   MESSAGES,
   replyKeyboard,
@@ -170,6 +175,54 @@ export async function deletePendingChallenge(telegramId: number) {
   }
 }
 
+export async function recordGroupChallengeAttempt(input: {
+  challengeId: string;
+  telegramId: number;
+  sessionId: string;
+}): Promise<number> {
+  const { error: insertError } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .insert({
+      challenge_id: input.challengeId,
+      telegram_id: input.telegramId,
+      session_id: input.sessionId || null,
+      created_at: new Date().toISOString(),
+    });
+
+  if (insertError) {
+    throw insertError;
+  }
+
+  const { count, error: countError } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("challenge_id", input.challengeId)
+    .eq("telegram_id", input.telegramId);
+
+  if (countError) {
+    throw countError;
+  }
+
+  return Math.max(1, count ?? 1);
+}
+
+export async function getGroupChallengeAttemptCount(input: {
+  challengeId: string;
+  telegramId: number;
+}): Promise<number> {
+  const { count, error } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("challenge_id", input.challengeId)
+    .eq("telegram_id", input.telegramId);
+
+  if (error) {
+    throw error;
+  }
+
+  return Math.max(1, count ?? 1);
+}
+
 export async function updateFriendChallengeCreatorScore(challengeId: string, score: number) {
   const { error } = await supabaseServer
     .from("challenges")
@@ -258,6 +311,52 @@ export async function handleChallengeDeepLink(
   }
 }
 
+export async function handleGroupChallengeDeepLink(
+  ctx: Context,
+  telegramId: number,
+  challengeId: string,
+  participantUsername: string,
+): Promise<boolean> {
+  try {
+    const challenge = await getFriendChallenge(challengeId);
+    if (!challenge || challenge.status !== "group_pending") {
+      await ctx.reply(MESSAGES.groupChallengeGone, { parse_mode: "HTML" });
+      return true;
+    }
+
+    const groupId = Number(challenge.creator_telegram_id);
+    const userId = await resolveTelegramUser(telegramId);
+    if (!userId) {
+      await ctx.telegram.sendMessage(
+        groupId,
+        getGroupChallengeConnectMessage({ username: participantUsername }),
+        { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" },
+      );
+      return true;
+    }
+
+    await upsertPendingChallenge({
+      telegramId,
+      challengeId: challenge.id,
+      challengeType: "group",
+      groupId,
+      participantUsername,
+    });
+
+    await ctx.reply(getPrivateChallengeMessage(challenge.topic), { parse_mode: "HTML" });
+    return true;
+  } catch (error) {
+    console.error("Telegram group challenge deep link failed", error);
+    if (isMissingChallengesTableError(error)) {
+      await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
+      return true;
+    }
+
+    await ctx.reply(MESSAGES.challengeLoadError, { ...replyKeyboard, parse_mode: "HTML" });
+    return true;
+  }
+}
+
 export async function replyWithNewGroupChallenge(ctx: Context, groupId: number) {
   const prompt = getRandomPrompt();
   const challengeId = createChallengeId();
@@ -269,8 +368,8 @@ export async function replyWithNewGroupChallenge(ctx: Context, groupId: number) 
       groupId,
     });
 
-    await ctx.reply(getGroupChallengeMessage(prompt), {
-      ...getGroupChallengeKeyboard(challengeId),
+    await ctx.reply(getNoPauseGroupChallengeMessage(prompt), {
+      ...getNoPauseGroupChallengeKeyboard(challengeId),
       parse_mode: "HTML",
     });
   } catch (error) {
@@ -293,22 +392,12 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
       return;
     }
 
-    const creatorTelegramId = String(challenge.creator_telegram_id);
-    const userTelegramId = ctx.from?.id === undefined ? null : String(ctx.from.id);
-    const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
-    if (creatorTelegramId !== userTelegramId && creatorTelegramId !== chatId) {
-      await ctx.answerCbQuery("Only the person who started the challenge can change the topic.", {
-        show_alert: true,
-      });
-      return;
-    }
-
     const prompt = getRandomPrompt(challenge.topic);
     await updateChallengeTopic(challengeId, prompt);
 
     await ctx.answerCbQuery();
-    await ctx.editMessageText(getGroupChallengeMessage(prompt), {
-      ...getGroupChallengeKeyboard(challengeId),
+    await ctx.editMessageText(getNoPauseGroupChallengeMessage(prompt), {
+      ...getNoPauseGroupChallengeKeyboard(challengeId),
       parse_mode: "HTML",
     });
   } catch (error) {
