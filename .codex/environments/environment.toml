@@ -8,4 +8,4 @@ script = ""
 [[actions]]
 name = "Run"
 icon = "run"
-command = "npm install npm run"
+command = "cd No-Pause && npm install && npm run dev"
