@@ -1,8 +1,7 @@
 import { calculateFlowScore } from '@/lib/core/scoring';
-import { SPEAKING_MIN_TOTAL_SECONDS } from '@/lib/core/constants';
 import type { AnalyzerResults } from '@/features/practice/lib/speechAnalyzer';
 import type { SessionResult } from '@/features/practice/pages/types';
-import { formatMMSS, toMMSS } from '@/features/practice/pages/time';
+import { formatMMSS } from '@/features/practice/pages/time';
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -20,7 +19,7 @@ export type BuildSessionResultOutput = {
 };
 
 function getIncompleteStatusNote(speakingTimeSec: number): string {
-  return `Speaking Mode requires at least ${toMMSS(SPEAKING_MIN_TOTAL_SECONDS)} total session and 50% speaking time. You spoke for ${formatMMSS(speakingTimeSec)} this session.`;
+  return `Speaking Mode requires at least 5 seconds of speaking time. You spoke for ${formatMMSS(speakingTimeSec)} this session.`;
 }
 
 function normalizeNonNegativeNumber(value: unknown): number {

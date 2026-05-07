@@ -13,13 +13,18 @@ import {
   CHALLENGE_LABEL,
   GET_PROMPT_LABEL,
   getConnectAccountKeyboard,
+  getNoPauseGroupChallengeKeyboard,
+  getNoPauseGroupChallengeMessage,
+  getNoPauseGroupWelcomeMessage,
   getTelegramStatsMessage,
   MESSAGES,
   MY_STATS_LABEL,
+  NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
   SHARE_TO_GROUP_ACTION_PREFIX,
   SPEAK_GROUP_TOPIC_ACTION_PREFIX,
+  TELEGRAM_BOT_USERNAME,
   TRY_AGAIN_ACTION,
   TRY_GROUP_CHALLENGE_ACTION_PREFIX,
 } from "./constants.js";
@@ -53,6 +58,14 @@ function getStartPayload(ctx: Context): string {
 
 function getDebugStackSnippet() {
   return new Error().stack?.split("\n").slice(1, 6).join("\n");
+}
+
+function wasNoPauseAddedToGroup(ctx: Context): boolean {
+  const message = ctx.message as { new_chat_members?: Array<{ username?: string }> } | undefined;
+  return Boolean(
+    isGroupChat(ctx) &&
+      message?.new_chat_members?.some((member) => member.username === TELEGRAM_BOT_USERNAME),
+  );
 }
 
 function formatRelativeDate(dateText: string | null): string {
@@ -140,11 +153,18 @@ export function createTelegramBot() {
   void bot.telegram.setMyCommands([
     { command: "start", description: "Start or connect NoPause" },
     { command: "about", description: "About NoPause" },
-  ]).catch((error) => {
+  ], { scope: { type: "all_private_chats" } }).catch((error) => {
     console.error("Telegram command menu registration failed", error);
+  });
+  void bot.telegram.setMyCommands([
+    { command: "nopause", description: "Start a group challenge" },
+  ], { scope: { type: "all_group_chats" } }).catch((error) => {
+    console.error("Telegram group command menu registration failed", error);
   });
 
   bot.start(async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
       console.log("Telegram welcome debug", {
@@ -171,7 +191,25 @@ export function createTelegramBot() {
   });
 
   bot.command("about", async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
     await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
+  });
+
+  bot.command("nopause", async (ctx) => {
+    if (!isGroupChat(ctx)) return;
+
+    const prompt = getRandomPrompt();
+    await ctx.reply(getNoPauseGroupChallengeMessage(prompt), {
+      ...getNoPauseGroupChallengeKeyboard(),
+      parse_mode: "HTML",
+    });
+  });
+
+  bot.on("new_chat_members", async (ctx) => {
+    if (!wasNoPauseAddedToGroup(ctx)) return;
+
+    await ctx.reply(getNoPauseGroupWelcomeMessage(), { parse_mode: "HTML" });
   });
 
   bot.hears(CHALLENGE_LABEL, async (ctx) => {
@@ -233,6 +271,20 @@ export function createTelegramBot() {
     }
 
     await shareResultToGroup(ctx, telegramId);
+  });
+
+  bot.action(new RegExp(`^${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    const action = ctx.match?.[1];
+    const label =
+      action === "speak"
+        ? "Speak"
+        : action === "prompt"
+          ? "Change Prompt"
+          : action === "leaderboard"
+            ? "Leaderboard"
+            : "This";
+
+    await ctx.answerCbQuery(`${label} is coming soon.`);
   });
 
   bot.action(CHANGE_PROMPT_ACTION, async (ctx) => {

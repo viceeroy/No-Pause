@@ -18,6 +18,7 @@ export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
 export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
+export const NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX = "nopause_group_placeholder:";
 const TELEGRAM_SAFE_MESSAGE_LENGTH = 4000;
 const TRUNCATED_TRANSCRIPT_NOTE = "... (truncated)";
 
@@ -65,6 +66,18 @@ export const groupTryAgainKeyboard = Markup.inlineKeyboard([
   Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
 ]);
 
+export function getNoPauseGroupChallengeKeyboard() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback("🎤 Speak", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}speak`),
+      Markup.button.callback("🔄 Change Prompt", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}prompt`),
+    ],
+    [
+      Markup.button.callback("🏆 Leaderboard", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}leaderboard`),
+    ],
+  ]);
+}
+
 export function getGroupChallengeKeyboard(challengeId: string) {
   return Markup.inlineKeyboard([
     [
@@ -89,6 +102,24 @@ export function getChallengeDeepLink(challengeId: string): string {
 
 export function getChallengesTableMissingMessage(): string {
   return `⚠️ <b>Setup needed</b>\n\n<b>Issue:</b>\nI could not find the Supabase Telegram challenge tables.\n\n<b>SQL:</b>\n<pre>${escapeTelegramHtml(TELEGRAM_CHALLENGE_TABLES_SQL)}</pre>`;
+}
+
+export function getNoPauseGroupWelcomeMessage(): string {
+  return `⚔️🎤 <b>NoPause is in the group!</b>
+
+Start quick speaking challenges with your friends.
+I’ll give the group a topic, then members can jump in and practice.
+
+Type <b>/nopause</b> to start a group challenge.`;
+}
+
+export function getNoPauseGroupChallengeMessage(topic: string): string {
+  return `⚔️ <b>NoPause Group Challenge</b>
+
+💬 <b>Topic</b>
+${escapeTelegramHtml(topic)}
+
+🎤 Tap Speak when you are ready.`;
 }
 
 export function getGroupChallengeMessage(topic: string): string {
@@ -259,18 +290,15 @@ export function getGroupChallengeResultActions(input: {
   ]);
 }
 
-export function getChallengeShareActions(challengeId: string, createdByViewer = false, topic?: string) {
+export function getChallengeShareActions(challengeId: string, createdByViewer = false) {
   const challengeDeepLink = getChallengeDeepLink(challengeId);
 
   return Markup.inlineKeyboard([
     [
       createdByViewer
         ? Markup.button.url(
-            "Share Challenge 🔗",
-            getTelegramShareUrl({
-              url: challengeDeepLink,
-              text: topic ? `Topic: ${topic}\n\nSay anything — just speak your mind! 🎤` : undefined,
-            }),
+            "⚔️ Accept Challenge",
+            challengeDeepLink,
           )
         : Markup.button.url("Accept Challenge 🎤", challengeDeepLink),
     ],

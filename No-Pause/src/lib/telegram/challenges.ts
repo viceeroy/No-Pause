@@ -198,10 +198,11 @@ export async function replyWithNewFriendChallenge(ctx: Context, telegramId: numb
     await ctx.reply(
       getFriendChallengeShareMessage({ topic, challengeId }),
       {
-        ...getChallengeShareActions(challengeId, true, topic),
+        ...getChallengeShareActions(challengeId, true),
         parse_mode: "HTML",
       },
     );
+    await ctx.reply("👆 Forward the message above to your friends so they can accept your challenge!");
   } catch (error) {
     console.error("Telegram challenge creation failed", error);
     if (isMissingChallengesTableError(error)) {
