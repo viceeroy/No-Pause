@@ -17,9 +17,7 @@ import {
   type SupabaseLike,
 } from '@/lib/core/session';
 import {
-  APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
-  getGroupChallengeApprovalMessage,
   getGroupChallengeDeepLink,
   getGroupChallengeCreatorTelegramId,
   getGroupChallengeLeaderboardMessage,
@@ -31,6 +29,8 @@ import {
   getSpeakingResultMessage,
   isGroupChallengeRecord,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
+  TRY_AGAIN_ACTION,
+  TRY_GROUP_CHALLENGE_ACTION_PREFIX,
 } from '@/lib/telegram/constants';
 
 const originalEnv = { ...process.env };
@@ -303,13 +303,17 @@ describe('result message formatting architecture', () => {
       text: '📤 Send to Group',
       callback_data: `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}challenge-1:session-1`,
     });
-    expect(resultActions[0][1]).toMatchObject({
-      text: '✅ Approve',
-      callback_data: `${APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}challenge-1:session-1`,
+    expect(resultActions[1][0]).toMatchObject({
+      text: '🔄 Try Again',
+      callback_data: `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}challenge-1`,
     });
+    expect(resultActions[1][0].callback_data).not.toBe(TRY_AGAIN_ACTION);
+    expect(resultActions.flat()).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ text: '✅ Approve' })]),
+    );
   });
 
-  it('formats group challenge result and approval messages with attempt count', () => {
+  it('formats group challenge result messages with compact attempt details', () => {
     const analysis = {
       flowScore: 88,
       pauseCount: 2,
@@ -326,22 +330,18 @@ describe('result message formatting architecture', () => {
       topic: 'Talk about focus',
       attemptCount: 3,
       analysis,
-      transcript: 'I stayed focused today.',
     });
     expect(result).toContain('Group Challenge Result');
-    expect(result).toContain('Attempt:</b> #3');
+    expect(result).toContain('Speaker:</b> Sam (@speaker)');
     expect(result).toContain('Talk about focus');
-
-    const approval = getGroupChallengeApprovalMessage({
-      firstName: 'Sam',
-      username: 'speaker',
-      topic: 'Talk about focus',
-      analysis,
-      attemptCount: 3,
-    });
-    expect(approval).toContain('✅ <b>Approved for leaderboard</b>');
-    expect(approval).toContain('Flow Score:</b> 88');
-    expect(approval).toContain('Leaderboard storage is coming next.');
+    expect(result).toContain('Flow Score:</b> 88');
+    expect(result).toContain('Attempt:</b> #3');
+    expect(result).toContain('Speaking time:</b> 50s');
+    expect(result).toContain('Pauses:</b> 2');
+    expect(result).toContain('Fillers:</b> 1');
+    expect(result).not.toContain('Transcript');
+    expect(result).not.toContain('Session length');
+    expect(result).not.toContain('Bonus');
   });
 
   it('formats live, empty, and expired group challenge leaderboards', () => {
@@ -596,6 +596,119 @@ describe('module export architecture', () => {
     expect(transcription.processTranscriptForFillerWords).toEqual(expect.any(Function));
     expect(micStateMachine.applyMicStateFrame).toEqual(expect.any(Function));
     expect(micStateMachine.finalizeMicState).toEqual(expect.any(Function));
+  });
+});
+
+describe('Telegram group challenge retry architecture', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+    process.env = { ...originalEnv };
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
+  });
+
+  function mockChallengeSupabase(input: {
+    challenge: unknown;
+    pendingChallenge?: unknown;
+  }) {
+    const upserts: unknown[] = [];
+    const from = vi.fn((table: string) => {
+      if (table === 'challenges') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: vi.fn(async () => ({ data: input.challenge, error: null })),
+            })),
+          })),
+        };
+      }
+
+      if (table === 'telegram_challenge_state') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: vi.fn(async () => ({ data: input.pendingChallenge ?? null, error: null })),
+            })),
+          })),
+          upsert: vi.fn(async (values: unknown) => {
+            upserts.push(values);
+            return { error: null };
+          }),
+        };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const mock = { supabaseServer: { from } };
+    vi.doMock('@/services/supabaseServer', () => mock);
+    vi.doMock('../../src/services/supabaseServer.js', () => mock);
+
+    return { upserts, from };
+  }
+
+  it('resets pending state for the same group challenge when Try Again is clicked', async () => {
+    const { upserts } = mockChallengeSupabase({
+      challenge: {
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: -100123,
+        creator_score: null,
+        status: 'group_pending:123',
+        created_at: new Date().toISOString(),
+      },
+    });
+    const { retryGroupChallenge } = await import('@/lib/telegram/challenges');
+    const ctx = {
+      match: ['tg:challenge-1', 'challenge-1'],
+      reply: vi.fn(),
+      telegram: { sendMessage: vi.fn() },
+    };
+
+    await retryGroupChallenge(ctx as never, 123, '@speaker');
+
+    expect(upserts[0]).toMatchObject({
+      telegram_id: 123,
+      challenge_id: 'challenge-1',
+      challenge_type: 'group',
+      group_id: -100123,
+      participant_username: '@speaker',
+    });
+    expect(ctx.reply).toHaveBeenCalledWith(
+      expect.stringContaining('Send a new voice message'),
+      { parse_mode: 'HTML' },
+    );
+    expect(ctx.telegram.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('does not reopen expired group challenges from Try Again', async () => {
+    const { upserts } = mockChallengeSupabase({
+      challenge: {
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: -100123,
+        creator_score: null,
+        status: 'group_pending:123',
+        created_at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+      },
+    });
+    const { retryGroupChallenge } = await import('@/lib/telegram/challenges');
+    const ctx = {
+      match: ['tg:challenge-1', 'challenge-1'],
+      reply: vi.fn(),
+      telegram: { sendMessage: vi.fn() },
+    };
+
+    await retryGroupChallenge(ctx as never, 123, '@speaker');
+
+    expect(upserts).toEqual([]);
+    expect(ctx.reply).not.toHaveBeenCalled();
+    expect(ctx.telegram.sendMessage).toHaveBeenCalledWith(
+      -100123,
+      expect.stringContaining('Challenge ended'),
+      { parse_mode: 'HTML' },
+    );
   });
 });
 
@@ -976,6 +1089,149 @@ describe('HTTP header ASCII normalization', () => {
     expect(replies.some(([message]) => message.includes('AI Feedback'))).toBe(false);
     expect(generateAiFeedback).not.toHaveBeenCalled();
     expect(upsertedStreaks).toHaveLength(1);
+  });
+
+  it('voiceHandler automatically records group challenge attempts when scoring finishes', async () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+
+    vi.doMock('@/services/aiFeedback', () => ({
+      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
+    }));
+    const deepgramMock = vi.fn(async () => ({
+      transcript: 'hello group challenge',
+      words: [
+        { word: 'hello', start: 0, end: 1 },
+        { word: 'group', start: 1.2, end: 2 },
+        { word: 'challenge', start: 2.2, end: 3 },
+      ],
+      fillerCount: 0,
+    }));
+    vi.doMock('@/services/deepgram', () => ({
+      transcribeAudioWithDeepgram: deepgramMock,
+    }));
+    vi.doMock('../../src/services/deepgram.js', () => ({
+      transcribeAudioWithDeepgram: deepgramMock,
+    }));
+    vi.doMock('@/services/apiQuota', () => ({
+      DAILY_FEEDBACK_LIMIT: 20,
+      DAILY_TRANSCRIPTION_LIMIT: 20,
+      consumeApiQuota: vi.fn(),
+      getQuotaExceededMessage: vi.fn((kind: string) => `quota exceeded: ${kind}`),
+      isApiQuotaExceededError: vi.fn(() => false),
+    }));
+    vi.doMock('@/lib/core/user', () => ({
+      resolveTelegramUser: vi.fn(async () => 'user-1'),
+    }));
+
+    const recordGroupChallengeAttempt = vi.fn(async () => 2);
+    const deletePendingChallenge = vi.fn();
+    vi.doMock('@/lib/telegram/challenges', () => ({
+      deletePendingChallenge,
+      getFriendChallenge: vi.fn(async () => ({
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: -100123,
+        creator_score: null,
+        status: 'group_pending:123',
+        created_at: new Date().toISOString(),
+      })),
+      getGroupChallengeAttemptCount: vi.fn(),
+      getPendingChallenge: vi.fn(async () => ({
+        telegram_id: 123,
+        challenge_id: 'challenge-1',
+        challenge_type: 'group',
+        group_id: -100123,
+        group_message_id: null,
+        participant_username: '@speaker',
+        creator_username: null,
+        created_at: null,
+        updated_at: null,
+      })),
+      isMissingChallengesTableError: vi.fn(() => false),
+      recordGroupChallengeAttempt,
+      updateFriendChallengeCreatorScore: vi.fn(),
+      upsertPendingChallenge: vi.fn(),
+    }));
+
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: {
+        auth: {
+          admin: {
+            getUserById: vi.fn(async () => ({
+              data: { user: { user_metadata: { difficulty: 'beginner' } } },
+              error: null,
+            })),
+          },
+        },
+        from: vi.fn((table: string) => ({
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(async () => ({ data: { id: 'telegram-session-1' }, error: null })),
+            })),
+          })),
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: vi.fn(async () => ({
+                data: { current_streak: 0, longest_streak: 0, last_session_date: null },
+                error: null,
+              })),
+            })),
+          })),
+          upsert: vi.fn(async () => ({ data: null, error: null })),
+        })),
+      },
+    }));
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => {
+      const urlString = String(url);
+      if (urlString.includes('/getFile')) {
+        return {
+          ok: true,
+          json: async () => ({ ok: true, result: { file_path: 'voice/file.ogg' } }),
+        } as Response;
+      }
+      if (urlString.includes('/file/bot')) {
+        return {
+          ok: true,
+          arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+        } as Response;
+      }
+
+      throw new Error(`Unexpected fetch: ${urlString}`);
+    }));
+
+    const { handleVoiceMessage } = await import('@/lib/telegram/voiceHandler');
+    const replies: Array<[string, { reply_markup?: { inline_keyboard?: Array<Array<{ text: string }>> } }?]> = [];
+    const ctx = {
+      from: { id: 123, username: 'speaker' },
+      chat: { type: 'private' },
+      message: { voice: { file_id: 'file-1', duration: 90 } },
+      reply: vi.fn(async (message: string, options?: { reply_markup?: { inline_keyboard?: Array<Array<{ text: string }>> } }) => {
+        replies.push([message, options]);
+      }),
+    };
+
+    await handleVoiceMessage(ctx as never, 123);
+
+    expect(recordGroupChallengeAttempt).toHaveBeenCalledWith({
+      challengeId: 'challenge-1',
+      telegramId: 123,
+      sessionId: 'telegram-session-1',
+    });
+    expect(deletePendingChallenge).toHaveBeenCalledWith(123);
+    const resultReply = replies.find(([message]) => message.includes('Group Challenge Result'));
+    expect(resultReply?.[0]).toContain('Attempt:</b> #2');
+    expect(resultReply?.[1]?.reply_markup?.inline_keyboard?.flat()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: '📤 Send to Group' }),
+        expect.objectContaining({ text: '🔄 Try Again' }),
+      ]),
+    );
+    expect(resultReply?.[1]?.reply_markup?.inline_keyboard?.flat()).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ text: '✅ Approve' })]),
+    );
   });
 
   it('voiceHandler rejects voice notes over 300 seconds before analysis work starts', async () => {

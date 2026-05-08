@@ -13,6 +13,7 @@ import {
   getGroupChallengeLeaderboardMessage,
   getGroupChallengeKeyboard,
   getGroupChallengeMessage,
+  getGroupChallengeRetryMessage,
   getGroupChallengeCreatorTelegramId,
   getGroupChallengeStatus,
   getNoPauseGroupChallengeKeyboard,
@@ -630,27 +631,10 @@ export async function retryGroupChallenge(
   participantUsername: string,
 ) {
   const challengeId = ctx.match[1];
-  console.log("Telegram retryGroupChallenge started", {
-    telegramId,
-    challengeId,
-    participantUsername,
-  });
 
   try {
-    console.log("Telegram retryGroupChallenge fetching challenge", {
-      challengeId,
-    });
     const challenge = await getFriendChallenge(challengeId);
-    console.log("Telegram retryGroupChallenge challenge fetched", {
-      challengeId,
-      found: Boolean(challenge),
-      creatorTelegramId: challenge?.creator_telegram_id,
-      status: challenge?.status,
-    });
     if (!challenge) {
-      console.log("Telegram retryGroupChallenge challenge missing, replying gone", {
-        challengeId,
-      });
       await ctx.reply(MESSAGES.groupChallengeGone, { parse_mode: "HTML" });
       return;
     }
@@ -664,13 +648,6 @@ export async function retryGroupChallenge(
       return;
     }
 
-    console.log("Telegram retryGroupChallenge calling upsertPendingChallenge", {
-      telegramId,
-      challengeId: challenge.id,
-      challengeType: "group",
-      groupId,
-      participantUsername,
-    });
     await upsertPendingChallenge({
       telegramId,
       challengeId: challenge.id,
@@ -678,20 +655,7 @@ export async function retryGroupChallenge(
       groupId,
       participantUsername,
     });
-    console.log("Telegram retryGroupChallenge upsertPendingChallenge completed", {
-      telegramId,
-      challengeId: challenge.id,
-    });
-    console.log("Telegram retryGroupChallenge sending retry prompt reply", {
-      telegramId,
-      challengeId: challenge.id,
-      topicLength: challenge.topic.length,
-    });
-    await ctx.reply(getPrivateChallengeMessage(challenge.topic), { parse_mode: "HTML" });
-    console.log("Telegram retryGroupChallenge retry prompt reply sent", {
-      telegramId,
-      challengeId: challenge.id,
-    });
+    await ctx.reply(getGroupChallengeRetryMessage(challenge.topic), { parse_mode: "HTML" });
   } catch (error) {
     console.error("Telegram group retry failed", error);
     if (isMissingChallengesTableError(error)) {

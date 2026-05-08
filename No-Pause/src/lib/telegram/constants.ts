@@ -15,7 +15,6 @@ export const CHANGE_GROUP_TOPIC_ACTION_PREFIX = "cg:";
 export const SPEAK_GROUP_TOPIC_ACTION_PREFIX = "sg:";
 export const SHARE_TO_GROUP_ACTION_PREFIX = "shg:";
 export const POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "pgr:";
-export const APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "agr:";
 export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
@@ -169,6 +168,16 @@ ${escapeTelegramHtml(topic)}
 Send a fresh voice note in this DM when you are ready.`;
 }
 
+export function getGroupChallengeRetryMessage(topic: string): string {
+  return `⚔️🎤 <b>Try this topic again</b>
+
+💬 <b>Topic</b>
+${escapeTelegramHtml(topic)}
+
+🎙 <b>Your turn</b>
+Send a new voice message in this DM. Once it is scored, I'll add it to the leaderboard automatically.`;
+}
+
 export function getFriendChallengeShareMessage(input: { topic: string; challengeId: string }): string {
   return `⚔️ <b>Challenge your friends</b>
 
@@ -298,20 +307,21 @@ export function getGroupShareResultMessage(input: {
   topic?: string;
   attemptCount?: number;
   analysis: FlowAnalysis;
-  transcript?: string | null;
 }): string {
   const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
   const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
-  const topicText = input.topic ? `\n\n💬 <b>Topic:</b>\n${escapeTelegramHtml(input.topic)}` : "";
-  const attemptText = input.attemptCount ? `\n\n🔁 <b>Attempt:</b> #${input.attemptCount}` : "";
+  const topicText = input.topic ? escapeTelegramHtml(input.topic) : "Group practice";
+  const attemptText = input.attemptCount ? `#${input.attemptCount}` : "n/a";
 
-  const prefix = `🎤 <b>Group Challenge Result</b>\n\n👤 <b>Speaker:</b> ${nameLine}${topicText}${attemptText}\n\n`;
-  return `${prefix}${formatResultFields({
-    analysis: input.analysis,
-    transcript: input.transcript,
-    html: true,
-    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
-  })}`;
+  return `🎤 <b>Group Challenge Result</b>
+
+👤 <b>Speaker:</b> ${nameLine}
+💬 <b>Topic:</b> ${topicText}
+📊 <b>Flow Score:</b> ${input.analysis.flowScore}
+🔁 <b>Attempt:</b> ${attemptText}
+⏱ <b>Speaking time:</b> ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}
+🔇 <b>Pauses:</b> ${input.analysis.pauseCount}
+💬 <b>Fillers:</b> ${input.analysis.hesitationCount}`;
 }
 
 export function getResultShareUrl(resultText: string): string {
@@ -325,10 +335,10 @@ export function getGroupChallengeResultActions(input: {
   attemptCount: number;
 }) {
   void input.groupId;
+  void input.attemptCount;
   return Markup.inlineKeyboard([
     [
       Markup.button.callback("📤 Send to Group", `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`),
-      Markup.button.callback("✅ Approve", `${APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`),
     ],
     [Markup.button.callback("🔄 Try Again", `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}${input.challengeId}`)],
   ]);
@@ -485,26 +495,6 @@ Be the first to jump in and set the pace.`;
 ${topic}${status}
 
 ${rows.join("\n\n")}`;
-}
-
-export function getGroupChallengeApprovalMessage(input: {
-  firstName: string;
-  username?: string;
-  topic: string;
-  analysis: FlowAnalysis;
-  attemptCount: number;
-}): string {
-  const usernameText = input.username ? `(@${escapeTelegramHtml(input.username)})` : "";
-  const nameLine = [escapeTelegramHtml(input.firstName), usernameText].filter(Boolean).join(" ");
-
-  return `✅ <b>Approved for leaderboard</b>
-
-👤 <b>Speaker:</b> ${nameLine}
-💬 <b>Topic:</b> ${escapeTelegramHtml(input.topic)}
-📊 <b>Flow Score:</b> ${input.analysis.flowScore}
-🔁 <b>Attempt:</b> #${input.attemptCount}
-
-Leaderboard storage is coming next.`;
 }
 
 export function getSessionActions(sessionId: string) {

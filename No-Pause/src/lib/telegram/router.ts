@@ -19,7 +19,6 @@ import {
   MESSAGES,
   MY_STATS_LABEL,
   NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX,
-  APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
@@ -46,7 +45,6 @@ import {
   replyWithAiFeedback,
   replyWithConnectPrompt,
   sendFriendChallengeResult,
-  approveGroupChallengeResult,
   postGroupChallengeResultToGroup,
   shareResultToGroup,
 } from "./voiceHandler.js";
@@ -282,16 +280,6 @@ export function createTelegramBot() {
     }
 
     await postGroupChallengeResultToGroup(ctx, telegramId);
-  });
-
-  bot.action(new RegExp(`^${APPROVE_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) {
-      await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
-      return;
-    }
-
-    await approveGroupChallengeResult(ctx, telegramId);
   });
 
   bot.action(new RegExp(`^${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}(.+)$`), async (ctx) => {

@@ -42,7 +42,6 @@ import {
   getFriendChallengeResultActions,
   getGroupChallengeResultActions,
   getGroupShareResultMessage,
-  getGroupChallengeApprovalMessage,
   getSessionActions,
   getSpeakingResultMessage,
   groupTryAgainKeyboard,
@@ -653,7 +652,6 @@ export async function shareResultToGroup(
         firstName: ctx.from?.first_name ?? "Someone",
         username: ctx.from?.username,
         analysis: getSessionAnalysis(session),
-        transcript: session.transcript,
       }),
       { parse_mode: "HTML" },
     );
@@ -696,7 +694,6 @@ export async function postGroupChallengeResultToGroup(
         topic: challenge.topic,
         attemptCount,
         analysis: getSessionAnalysis(session),
-        transcript: session.transcript,
       }),
       { parse_mode: "HTML" },
     );
@@ -704,48 +701,6 @@ export async function postGroupChallengeResultToGroup(
   } catch (error) {
     console.error("Telegram group challenge result post failed", error);
     await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
-  }
-}
-
-export async function approveGroupChallengeResult(
-  ctx: Context & { match: RegExpExecArray },
-  telegramId: number,
-) {
-  const challengeId = ctx.match[1];
-  const sessionId = ctx.match[2];
-
-  try {
-    const [userId, challenge] = await Promise.all([
-      resolveTelegramUser(telegramId),
-      getFriendChallenge(challengeId),
-    ]);
-    if (!userId || !challenge) {
-      await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
-      return;
-    }
-
-    const session = await getTelegramSession({ userId, sessionId });
-    if (!session) {
-      await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
-      return;
-    }
-
-    const attemptCount = await getGroupChallengeAttemptCount({ challengeId: challenge.id, telegramId });
-    await ctx.telegram.sendMessage(
-      Number(challenge.creator_telegram_id),
-      getGroupChallengeApprovalMessage({
-        firstName: getTelegramFirstName(ctx),
-        username: ctx.from?.username,
-        topic: challenge.topic,
-        analysis: getSessionAnalysis(session),
-        attemptCount,
-      }),
-      { parse_mode: "HTML" },
-    );
-    await ctx.answerCbQuery("Approved for the group.");
-  } catch (error) {
-    console.error("Telegram group challenge approval failed", error);
-    await ctx.answerCbQuery("I could not approve that result right now.", { show_alert: true });
   }
 }
 
