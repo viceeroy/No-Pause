@@ -201,6 +201,16 @@ Say anything — just speak your mind!
 <a href="${challengeLink}">${challengeLink}</a>`;
 }
 
+export function getFriendChallengeAlreadyAcceptedMessage(topic: string): string {
+  return `⚔️ <b>Challenge already accepted</b>
+
+💬 <b>Topic</b>
+${escapeTelegramHtml(topic)}
+
+🎙 <b>Your turn</b>
+You have already accepted this challenge. If you have not sent your voice note yet, send it here when you are ready.`;
+}
+
 function formatTelegramResultDuration(seconds: number): string {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
   const minutes = Math.floor(safeSeconds / 60);

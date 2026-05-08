@@ -612,8 +612,10 @@ describe('Telegram group challenge retry architecture', () => {
   function mockChallengeSupabase(input: {
     challenge: unknown;
     pendingChallenge?: unknown;
+    submittedChallenge?: boolean;
   }) {
     const upserts: unknown[] = [];
+    const inserts: unknown[] = [];
     const from = vi.fn((table: string) => {
       if (table === 'challenges') {
         return {
@@ -639,13 +641,27 @@ describe('Telegram group challenge retry architecture', () => {
         };
       }
 
+      if (table === 'telegram_challenge_attempts') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(async () => ({ count: input.submittedChallenge ? 1 : 0, error: null })),
+            })),
+          })),
+          insert: vi.fn(async (values: unknown) => {
+            inserts.push(values);
+            return { error: null };
+          }),
+        };
+      }
+
       throw new Error(`Unexpected table: ${table}`);
     });
     const mock = { supabaseServer: { from } };
     vi.doMock('@/services/supabaseServer', () => mock);
     vi.doMock('../../src/services/supabaseServer.js', () => mock);
 
-    return { upserts, from };
+    return { inserts, upserts, from };
   }
 
   it('resets pending state for the same group challenge when Try Again is clicked', async () => {
@@ -707,6 +723,72 @@ describe('Telegram group challenge retry architecture', () => {
     expect(ctx.telegram.sendMessage).toHaveBeenCalledWith(
       -100123,
       expect.stringContaining('Challenge ended'),
+      { parse_mode: 'HTML' },
+    );
+  });
+
+  it('does not recreate pending state when a friend challenge is already accepted', async () => {
+    const { upserts } = mockChallengeSupabase({
+      challenge: {
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: 456,
+        creator_score: null,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      },
+      pendingChallenge: {
+        telegram_id: 123,
+        challenge_id: 'challenge-1',
+        challenge_type: 'friend',
+        group_id: null,
+        group_message_id: null,
+        participant_username: null,
+        creator_username: '456',
+        created_at: null,
+        updated_at: null,
+      },
+    });
+    const { handleChallengeDeepLink } = await import('@/lib/telegram/challenges');
+    const ctx = {
+      reply: vi.fn(),
+      telegram: { getChat: vi.fn() },
+    };
+
+    await handleChallengeDeepLink(ctx as never, 123, 'challenge-1');
+
+    expect(upserts).toEqual([]);
+    expect(ctx.telegram.getChat).not.toHaveBeenCalled();
+    expect(ctx.reply).toHaveBeenCalledWith(
+      expect.stringContaining('already accepted this challenge'),
+      { parse_mode: 'HTML' },
+    );
+  });
+
+  it('does not recreate pending state when a friend challenge was already submitted', async () => {
+    const { upserts } = mockChallengeSupabase({
+      challenge: {
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: 456,
+        creator_score: null,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      },
+      submittedChallenge: true,
+    });
+    const { handleChallengeDeepLink } = await import('@/lib/telegram/challenges');
+    const ctx = {
+      reply: vi.fn(),
+      telegram: { getChat: vi.fn() },
+    };
+
+    await handleChallengeDeepLink(ctx as never, 123, 'challenge-1');
+
+    expect(upserts).toEqual([]);
+    expect(ctx.telegram.getChat).not.toHaveBeenCalled();
+    expect(ctx.reply).toHaveBeenCalledWith(
+      expect.stringContaining('already accepted this challenge'),
       { parse_mode: 'HTML' },
     );
   });
@@ -993,6 +1075,7 @@ describe('HTTP header ASCII normalization', () => {
       getGroupChallengeAttemptCount: vi.fn(),
       getPendingChallenge: vi.fn(async () => null),
       isMissingChallengesTableError: vi.fn(() => false),
+      recordFriendChallengeSubmission: vi.fn(),
       recordGroupChallengeAttempt: vi.fn(),
       updateFriendChallengeCreatorScore: vi.fn(),
       upsertPendingChallenge: vi.fn(),
@@ -1150,6 +1233,7 @@ describe('HTTP header ASCII normalization', () => {
         updated_at: null,
       })),
       isMissingChallengesTableError: vi.fn(() => false),
+      recordFriendChallengeSubmission: vi.fn(),
       recordGroupChallengeAttempt,
       updateFriendChallengeCreatorScore: vi.fn(),
       upsertPendingChallenge: vi.fn(),
@@ -1253,6 +1337,7 @@ describe('HTTP header ASCII normalization', () => {
       getGroupChallengeAttemptCount: vi.fn(),
       getPendingChallenge: vi.fn(),
       isMissingChallengesTableError: vi.fn(() => false),
+      recordFriendChallengeSubmission: vi.fn(),
       recordGroupChallengeAttempt: vi.fn(),
       updateFriendChallengeCreatorScore: vi.fn(),
       upsertPendingChallenge: vi.fn(),

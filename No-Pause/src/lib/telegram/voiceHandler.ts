@@ -29,6 +29,7 @@ import {
   getGroupChallengeAttemptCount,
   getPendingChallenge,
   isMissingChallengesTableError,
+  recordFriendChallengeSubmission,
   recordGroupChallengeAttempt,
   updateFriendChallengeCreatorScore,
   upsertPendingChallenge,
@@ -493,6 +494,16 @@ export async function handleVoiceMessage(
     }
 
     if (pendingChallenge?.challenge_type === "friend" && challenge) {
+      try {
+        await recordFriendChallengeSubmission({
+          challengeId: challenge.id,
+          telegramId,
+          sessionId: String(sessionId),
+        });
+      } catch (error) {
+        console.error("Telegram friend challenge submission marker failed", error);
+      }
+
       await deletePendingChallenge(telegramId);
 
       if (Number(challenge.creator_telegram_id) === telegramId) {

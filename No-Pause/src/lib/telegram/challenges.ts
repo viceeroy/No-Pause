@@ -6,6 +6,7 @@ import {
   getChallengeShareActions,
   getChallengesTableMissingMessage,
   getConnectAccountKeyboard,
+  getFriendChallengeAlreadyAcceptedMessage,
   getFriendChallengeReceivedMessage,
   getFriendChallengeShareMessage,
   getGroupChallengeConnectMessage,
@@ -275,6 +276,46 @@ export async function getGroupChallengeAttemptCount(input: {
   return Math.max(1, count ?? 1);
 }
 
+export async function hasSubmittedFriendChallenge(input: {
+  challengeId: string;
+  telegramId: number;
+}): Promise<boolean> {
+  const { count, error } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("challenge_id", input.challengeId)
+    .eq("telegram_id", input.telegramId);
+
+  if (error) {
+    throw error;
+  }
+
+  return (count ?? 0) > 0;
+}
+
+export async function recordFriendChallengeSubmission(input: {
+  challengeId: string;
+  telegramId: number;
+  sessionId: string;
+}) {
+  if (await hasSubmittedFriendChallenge(input)) {
+    return;
+  }
+
+  const { error } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .insert({
+      challenge_id: input.challengeId,
+      telegram_id: input.telegramId,
+      session_id: input.sessionId || null,
+      created_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function getGroupChallengeLeaderboard(challengeId: string): Promise<ChallengeLeaderboardParticipant[]> {
   const { data: attemptsData, error: attemptsError } = await supabaseServer
     .from("telegram_challenge_attempts")
@@ -441,6 +482,20 @@ export async function handleChallengeDeepLink(
     const challenge = await getFriendChallenge(challengeId);
     if (!challenge) {
       await ctx.reply(MESSAGES.challengeNotFound, { ...replyKeyboard, parse_mode: "HTML" });
+      return true;
+    }
+
+    const pendingChallenge = await getPendingChallenge(telegramId);
+    if (
+      pendingChallenge?.challenge_type === "friend" &&
+      pendingChallenge.challenge_id === challenge.id
+    ) {
+      await ctx.reply(getFriendChallengeAlreadyAcceptedMessage(challenge.topic), { parse_mode: "HTML" });
+      return true;
+    }
+
+    if (await hasSubmittedFriendChallenge({ challengeId: challenge.id, telegramId })) {
+      await ctx.reply(getFriendChallengeAlreadyAcceptedMessage(challenge.topic), { parse_mode: "HTML" });
       return true;
     }
 
