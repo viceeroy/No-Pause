@@ -9,14 +9,21 @@ import {
   getFriendChallengeReceivedMessage,
   getFriendChallengeShareMessage,
   getGroupChallengeConnectMessage,
+  getGroupChallengeEndedMessage,
+  getGroupChallengeLeaderboardMessage,
   getGroupChallengeKeyboard,
   getGroupChallengeMessage,
+  getGroupChallengeCreatorTelegramId,
+  getGroupChallengeStatus,
   getNoPauseGroupChallengeKeyboard,
   getNoPauseGroupChallengeMessage,
   getPrivateChallengeMessage,
+  isGroupChallengeRecord,
   MESSAGES,
   replyKeyboard,
 } from "./constants.js";
+
+const GROUP_CHALLENGE_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
 export type FriendChallengeRecord = {
   id: string;
@@ -39,6 +46,24 @@ export type PendingChallengeRecord = {
   updated_at: string | null;
 };
 
+type ChallengeAttemptRecord = {
+  id: string;
+  telegram_id: number;
+  session_id: string | null;
+  created_at: string | null;
+};
+
+type ChallengeSessionScoreRecord = {
+  id: string;
+  flow_score: number | null;
+};
+
+type ChallengeLeaderboardParticipant = {
+  telegramId: number;
+  bestFlowScore: number;
+  attemptCount: number;
+};
+
 export function createChallengeId(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
 }
@@ -46,6 +71,31 @@ export function createChallengeId(): string {
 export function isMissingChallengesTableError(error: unknown): boolean {
   const maybeError = error as { code?: string; message?: string } | null;
   return maybeError?.code === "42P01" || maybeError?.message?.includes("challenges") === true;
+}
+
+export function isGroupChallengeExpired(
+  challenge: Pick<FriendChallengeRecord, "created_at">,
+  now = new Date(),
+): boolean {
+  if (!challenge.created_at) {
+    return false;
+  }
+
+  const createdAt = new Date(challenge.created_at).getTime();
+  if (!Number.isFinite(createdAt)) {
+    return false;
+  }
+
+  return now.getTime() - createdAt >= GROUP_CHALLENGE_EXPIRY_MS;
+}
+
+function formatTelegramDisplayName(chat: { username?: string; first_name?: string; last_name?: string } | null, telegramId: number): string {
+  if (chat?.username) {
+    return `@${chat.username}`;
+  }
+
+  const fullName = [chat?.first_name, chat?.last_name].filter(Boolean).join(" ").trim();
+  return fullName || `@${telegramId}`;
 }
 
 async function createChallenge(input: {
@@ -86,12 +136,13 @@ export async function createGroupChallenge(input: {
   id: string;
   topic: string;
   groupId: number;
+  creatorTelegramId: number;
 }): Promise<FriendChallengeRecord> {
   return createChallenge({
     id: input.id,
     topic: input.topic,
     creatorTelegramId: input.groupId,
-    status: "group_pending",
+    status: getGroupChallengeStatus(input.creatorTelegramId),
   });
 }
 
@@ -223,6 +274,119 @@ export async function getGroupChallengeAttemptCount(input: {
   return Math.max(1, count ?? 1);
 }
 
+export async function getGroupChallengeLeaderboard(challengeId: string): Promise<ChallengeLeaderboardParticipant[]> {
+  const { data: attemptsData, error: attemptsError } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("id, telegram_id, session_id, created_at")
+    .eq("challenge_id", challengeId);
+
+  if (attemptsError) {
+    throw attemptsError;
+  }
+
+  const attempts = (attemptsData ?? []) as ChallengeAttemptRecord[];
+  if (attempts.length === 0) {
+    return [];
+  }
+
+  const sessionIds = Array.from(new Set(
+    attempts
+      .map((attempt) => attempt.session_id)
+      .filter((sessionId): sessionId is string => Boolean(sessionId)),
+  ));
+  if (sessionIds.length === 0) {
+    return [];
+  }
+
+  const { data: sessionsData, error: sessionsError } = await supabaseServer
+    .from("sessions")
+    .select("id, flow_score")
+    .in("id", sessionIds);
+
+  if (sessionsError) {
+    throw sessionsError;
+  }
+
+  const scoreBySessionId = new Map(
+    ((sessionsData ?? []) as ChallengeSessionScoreRecord[])
+      .flatMap((session) => {
+        const score = Number(session.flow_score);
+        return Number.isFinite(score) ? [[session.id, Math.round(score)] as const] : [];
+      }),
+  );
+  const byTelegramId = new Map<number, ChallengeLeaderboardParticipant>();
+
+  attempts.forEach((attempt) => {
+    const score = attempt.session_id ? scoreBySessionId.get(attempt.session_id) : undefined;
+    if (score === undefined) {
+      return;
+    }
+
+    const current = byTelegramId.get(Number(attempt.telegram_id));
+    byTelegramId.set(Number(attempt.telegram_id), {
+      telegramId: Number(attempt.telegram_id),
+      bestFlowScore: Math.max(current?.bestFlowScore ?? 0, score),
+      attemptCount: (current?.attemptCount ?? 0) + 1,
+    });
+  });
+
+  return Array.from(byTelegramId.values())
+    .sort((a, b) => b.bestFlowScore - a.bestFlowScore || a.telegramId - b.telegramId)
+    .slice(0, 20);
+}
+
+export async function showGroupChallengeLeaderboard(ctx: Context & { match: RegExpExecArray }) {
+  const challengeId = ctx.match[1];
+
+  try {
+    const challenge = await getFriendChallenge(challengeId);
+    if (!challenge || !isGroupChallengeRecord(challenge)) {
+      await ctx.answerCbQuery("This challenge is no longer available.", { show_alert: true });
+      return;
+    }
+
+    const participants = await getGroupChallengeLeaderboard(challenge.id);
+    const entries = await Promise.all(participants.map(async (participant, index) => {
+      try {
+        const chat = await ctx.telegram.getChat(participant.telegramId) as {
+          username?: string;
+          first_name?: string;
+          last_name?: string;
+        };
+        return {
+          rank: index + 1,
+          username: formatTelegramDisplayName(chat, participant.telegramId),
+          bestFlowScore: participant.bestFlowScore,
+          attemptCount: participant.attemptCount,
+        };
+      } catch (error) {
+        console.error("Telegram leaderboard username lookup failed", error);
+        return {
+          rank: index + 1,
+          username: `@${participant.telegramId}`,
+          bestFlowScore: participant.bestFlowScore,
+          attemptCount: participant.attemptCount,
+        };
+      }
+    }));
+
+    await ctx.answerCbQuery();
+    await ctx.reply(getGroupChallengeLeaderboardMessage({
+      topic: challenge.topic,
+      entries,
+      expired: isGroupChallengeExpired(challenge),
+    }), { parse_mode: "HTML" });
+  } catch (error) {
+    console.error("Telegram group leaderboard failed", error);
+    if (isMissingChallengesTableError(error)) {
+      await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
+      return;
+    }
+
+    await ctx.answerCbQuery("I could not load the leaderboard right now.", { show_alert: true });
+  }
+}
+
 export async function updateFriendChallengeCreatorScore(challengeId: string, score: number) {
   const { error } = await supabaseServer
     .from("challenges")
@@ -319,12 +483,19 @@ export async function handleGroupChallengeDeepLink(
 ): Promise<boolean> {
   try {
     const challenge = await getFriendChallenge(challengeId);
-    if (!challenge || challenge.status !== "group_pending") {
+    if (!challenge || !isGroupChallengeRecord(challenge)) {
       await ctx.reply(MESSAGES.groupChallengeGone, { parse_mode: "HTML" });
       return true;
     }
 
     const groupId = Number(challenge.creator_telegram_id);
+    if (isGroupChallengeExpired(challenge)) {
+      await ctx.telegram.sendMessage(groupId, getGroupChallengeEndedMessage({ topic: challenge.topic }), {
+        parse_mode: "HTML",
+      });
+      return true;
+    }
+
     const userId = await resolveTelegramUser(telegramId);
     if (!userId) {
       await ctx.telegram.sendMessage(
@@ -357,7 +528,7 @@ export async function handleGroupChallengeDeepLink(
   }
 }
 
-export async function replyWithNewGroupChallenge(ctx: Context, groupId: number) {
+export async function replyWithNewGroupChallenge(ctx: Context, groupId: number, creatorTelegramId: number) {
   const prompt = getRandomPrompt();
   const challengeId = createChallengeId();
 
@@ -366,6 +537,7 @@ export async function replyWithNewGroupChallenge(ctx: Context, groupId: number) 
       id: challengeId,
       topic: prompt,
       groupId,
+      creatorTelegramId,
     });
 
     await ctx.reply(getNoPauseGroupChallengeMessage(prompt), {
@@ -389,6 +561,14 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
     const challenge = await getFriendChallenge(challengeId);
     if (!challenge) {
       await ctx.answerCbQuery("I could not update this challenge right now.");
+      return;
+    }
+
+    const creatorTelegramId = getGroupChallengeCreatorTelegramId(challenge);
+    if (!creatorTelegramId || ctx.from?.id !== creatorTelegramId) {
+      await ctx.answerCbQuery("🔒 Only the person who started this challenge can change the topic.", {
+        show_alert: true,
+      });
       return;
     }
 
@@ -477,6 +657,12 @@ export async function retryGroupChallenge(
 
     const pendingChallenge = await getPendingChallenge(telegramId);
     const groupId = Number(pendingChallenge?.group_id ?? challenge.creator_telegram_id);
+    if (isGroupChallengeExpired(challenge)) {
+      await ctx.telegram.sendMessage(groupId, getGroupChallengeEndedMessage({ topic: challenge.topic }), {
+        parse_mode: "HTML",
+      });
+      return;
+    }
 
     console.log("Telegram retryGroupChallenge calling upsertPendingChallenge", {
       telegramId,

@@ -11,6 +11,9 @@ create index if not exists telegram_challenge_attempts_challenge_user_idx
 
 alter table public.telegram_challenge_attempts enable row level security;
 
+drop policy if exists "Service role manages Telegram challenge attempts"
+  on public.telegram_challenge_attempts;
+
 create policy "Service role manages Telegram challenge attempts"
   on public.telegram_challenge_attempts
   for all

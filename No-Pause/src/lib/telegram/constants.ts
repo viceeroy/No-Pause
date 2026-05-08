@@ -20,7 +20,9 @@ export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
 export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
+export const GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX = "gcl:";
 export const NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX = "nopause_group_placeholder:";
+export const GROUP_CHALLENGE_STATUS_PREFIX = "group_pending";
 const TELEGRAM_SAFE_MESSAGE_LENGTH = 4000;
 const TRUNCATED_TRANSCRIPT_NOTE = "... (truncated)";
 
@@ -80,6 +82,23 @@ export function getGroupChallengeDeepLink(challengeId: string): string {
   return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=group_${encodeURIComponent(challengeId)}`;
 }
 
+export function getGroupChallengeStatus(creatorTelegramId: number): string {
+  return `${GROUP_CHALLENGE_STATUS_PREFIX}:${creatorTelegramId}`;
+}
+
+export function isGroupChallengeRecord(challenge: { status: string }): boolean {
+  return challenge.status === GROUP_CHALLENGE_STATUS_PREFIX || challenge.status.startsWith(`${GROUP_CHALLENGE_STATUS_PREFIX}:`);
+}
+
+export function getGroupChallengeCreatorTelegramId(challenge: { status: string }): number | null {
+  if (!challenge.status.startsWith(`${GROUP_CHALLENGE_STATUS_PREFIX}:`)) {
+    return null;
+  }
+
+  const creatorId = Number(challenge.status.slice(GROUP_CHALLENGE_STATUS_PREFIX.length + 1));
+  return Number.isFinite(creatorId) ? creatorId : null;
+}
+
 export function getNoPauseGroupChallengeKeyboard(challengeId: string) {
   return Markup.inlineKeyboard([
     [
@@ -87,7 +106,7 @@ export function getNoPauseGroupChallengeKeyboard(challengeId: string) {
       Markup.button.callback("🔄 Change Prompt", `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}${challengeId}`),
     ],
     [
-      Markup.button.callback("🏆 Leaderboard", `${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}leaderboard`),
+      Markup.button.callback("🏆 Leaderboard", `${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}${challengeId}`),
     ],
   ]);
 }
@@ -408,6 +427,64 @@ This player is not connected to NoPause yet.
 
 <b>Action:</b>
 Sign in and connect Telegram first, then tap Speak again to join the challenge.`;
+}
+
+export function getGroupChallengeEndedMessage(input: { topic: string }): string {
+  return `⏰ <b>Challenge ended</b>
+
+💬 <b>Topic:</b>
+${escapeTelegramHtml(input.topic)}
+
+🏁 This challenge is closed now.
+Tap <b>Leaderboard</b> on the group card to see the final scores.`;
+}
+
+export type GroupChallengeLeaderboardEntry = {
+  rank: number;
+  username: string;
+  bestFlowScore: number;
+  attemptCount: number;
+};
+
+function formatLeaderboardRank(rank: number): string {
+  if (rank === 1) return "🥇";
+  if (rank === 2) return "🥈";
+  if (rank === 3) return "🥉";
+  return `#${rank}`;
+}
+
+export function getGroupChallengeLeaderboardMessage(input: {
+  topic: string;
+  entries: GroupChallengeLeaderboardEntry[];
+  expired: boolean;
+}): string {
+  const topic = escapeTelegramHtml(input.topic);
+  const status = input.expired
+    ? "\n\n⏰ <b>Final board:</b> This challenge has expired."
+    : "\n\n🔥 <b>Live board:</b> Keep speaking to climb higher.";
+
+  if (input.entries.length === 0) {
+    return `🏆✨ <b>Challenge Leaderboard</b> ✨🏆
+
+💬 <b>Topic:</b>
+${topic}${status}
+
+🎤 No scores yet.
+Be the first to jump in and set the pace.`;
+  }
+
+  const rows = input.entries.map((entry) => {
+    const rank = formatLeaderboardRank(entry.rank);
+    const attempts = entry.attemptCount === 1 ? "1 try" : `${entry.attemptCount} tries`;
+    return `${rank} <b>${escapeTelegramHtml(entry.username)}</b>\n   📊 ${entry.bestFlowScore} Flow Score  |  🔁 ${attempts}`;
+  });
+
+  return `🏆✨ <b>Challenge Leaderboard</b> ✨🏆
+
+💬 <b>Topic:</b>
+${topic}${status}
+
+${rows.join("\n\n")}`;
 }
 
 export function getGroupChallengeApprovalMessage(input: {

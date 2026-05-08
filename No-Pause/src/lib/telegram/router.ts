@@ -15,6 +15,7 @@ import {
   getConnectAccountKeyboard,
   getNoPauseGroupWelcomeMessage,
   getTelegramStatsMessage,
+  GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   MESSAGES,
   MY_STATS_LABEL,
   NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX,
@@ -34,6 +35,7 @@ import {
   replyWithNewFriendChallenge,
   replyWithNewGroupChallenge,
   retryGroupChallenge,
+  showGroupChallengeLeaderboard,
 } from "./challenges.js";
 import {
   getBotToken,
@@ -209,8 +211,10 @@ export function createTelegramBot() {
 
   bot.command("nopause", async (ctx) => {
     if (!isGroupChat(ctx)) return;
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) return;
 
-    await replyWithNewGroupChallenge(ctx, Number(ctx.chat.id));
+    await replyWithNewGroupChallenge(ctx, Number(ctx.chat.id), telegramId);
   });
 
   bot.on("new_chat_members", async (ctx) => {
@@ -288,6 +292,10 @@ export function createTelegramBot() {
     }
 
     await approveGroupChallengeResult(ctx, telegramId);
+  });
+
+  bot.action(new RegExp(`^${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    await showGroupChallengeLeaderboard(ctx);
   });
 
   bot.action(new RegExp(`^${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}(.+)$`), async (ctx) => {

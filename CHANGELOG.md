@@ -1,5 +1,13 @@
 # Changelog
 
+## May 8, 2026
+
+Finished the group challenge leaderboard and owner controls in Telegram. The leaderboard button now shows the top scores for a challenge, including each person's best Flow Score and how many times they tried. Challenges now close after 24 hours, and only the person who started the group challenge can change the prompt.
+
+## May 7, 2026
+
+Built out the Telegram group challenge flow. The bot now adds a welcome message in groups, shows a styled challenge card from `/nopause`, and quietly ignores `/start` and `/about` in group chats. The Speak path now sends people from the group into a private chat with the bot, lets them send a voice note there, keeps track of how many times they have tried that challenge, and adds buttons to send the result back to the group or approve it with a simple green check message.
+
 ## May 7, 2026
 
 Cleaned up the repository so local setup files, deployment metadata, environment files, and generated artifacts are not tracked as app changes. The ignore rules were tightened, example environment values were kept for reference, and older scoring notes were removed from the active tracked files.

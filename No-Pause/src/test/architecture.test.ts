@@ -21,10 +21,15 @@ import {
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
   getGroupChallengeApprovalMessage,
   getGroupChallengeDeepLink,
+  getGroupChallengeCreatorTelegramId,
+  getGroupChallengeLeaderboardMessage,
   getGroupChallengeResultActions,
+  getGroupChallengeStatus,
   getGroupShareResultMessage,
+  GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   getNoPauseGroupChallengeKeyboard,
   getSpeakingResultMessage,
+  isGroupChallengeRecord,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
 } from '@/lib/telegram/constants';
 
@@ -283,6 +288,10 @@ describe('result message formatting architecture', () => {
       text: '🔄 Change Prompt',
       callback_data: `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}challenge-1`,
     });
+    expect(keyboard[1][0]).toMatchObject({
+      text: '🏆 Leaderboard',
+      callback_data: `${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}challenge-1`,
+    });
 
     const resultActions = getGroupChallengeResultActions({
       sessionId: 'session-1',
@@ -333,6 +342,48 @@ describe('result message formatting architecture', () => {
     expect(approval).toContain('✅ <b>Approved for leaderboard</b>');
     expect(approval).toContain('Flow Score:</b> 88');
     expect(approval).toContain('Leaderboard storage is coming next.');
+  });
+
+  it('formats live, empty, and expired group challenge leaderboards', () => {
+    const live = getGroupChallengeLeaderboardMessage({
+      topic: 'Speak about focus',
+      expired: false,
+      entries: [
+        { rank: 1, username: '@sam', bestFlowScore: 120, attemptCount: 2 },
+        { rank: 2, username: '@lee', bestFlowScore: 90, attemptCount: 1 },
+        { rank: 4, username: '@mika', bestFlowScore: 70, attemptCount: 5 },
+      ],
+    });
+    expect(live).toContain('🥇 <b>@sam</b>');
+    expect(live).toContain('🥈 <b>@lee</b>');
+    expect(live).toContain('#4 <b>@mika</b>');
+    expect(live).toContain('120 Flow Score');
+    expect(live).toContain('5 tries');
+
+    const empty = getGroupChallengeLeaderboardMessage({
+      topic: 'Speak about focus',
+      expired: false,
+      entries: [],
+    });
+    expect(empty).toContain('No scores yet');
+
+    const expired = getGroupChallengeLeaderboardMessage({
+      topic: 'Speak about focus',
+      expired: true,
+      entries: [{ rank: 1, username: '@sam', bestFlowScore: 120, attemptCount: 2 }],
+    });
+    expect(expired).toContain('Final board');
+    expect(expired).toContain('expired');
+  });
+
+  it('stores the group challenge creator in the challenge status', () => {
+    const status = getGroupChallengeStatus(123);
+
+    expect(status).toBe('group_pending:123');
+    expect(isGroupChallengeRecord({ status })).toBe(true);
+    expect(isGroupChallengeRecord({ status: 'group_pending' })).toBe(true);
+    expect(getGroupChallengeCreatorTelegramId({ status })).toBe(123);
+    expect(getGroupChallengeCreatorTelegramId({ status: 'group_pending' })).toBeNull();
   });
 });
 
