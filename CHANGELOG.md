@@ -4,6 +4,10 @@
 
 Finished the group challenge leaderboard and owner controls in Telegram. The leaderboard button now shows the top scores for a challenge, including each person's best Flow Score and how many times they tried. Challenges now close after 24 hours, and only the person who started the group challenge can change the prompt.
 
+Fixed friend challenge accept links so tapping the same challenge again does not create duplicate pending state. If someone already accepted or submitted that challenge, the bot now reminds them that it is already accepted and tells them to send their voice note if they have not yet.
+
+Changed the Telegram private reply keyboard so the old Get Prompt button is now Speak. Tapping Speak now explains that users can send any voice note to be scored, with an inline Get Prompt button available when they want a topic first.
+
 ## May 7, 2026
 
 Built out the Telegram group challenge flow. The bot now adds a welcome message in groups, shows a styled challenge card from `/nopause`, and quietly ignores `/start` and `/about` in group chats. The Speak path now sends people from the group into a private chat with the bot, lets them send a voice note there, keeps track of how many times they have tried that challenge, and adds buttons to send the result back to the group or approve it with a simple green check message.

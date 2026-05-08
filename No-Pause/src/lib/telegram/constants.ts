@@ -7,9 +7,11 @@ export const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
 
 export const CHALLENGE_LABEL = "⚔️ Challenge";
 export const MY_STATS_LABEL = "📈 My Stats";
+export const SPEAK_LABEL = "🎤 Speak";
 export const GET_PROMPT_LABEL = "💡 Get Prompt";
 export const ABOUT_LABEL = "ℹ️ About";
 
+export const GET_PROMPT_ACTION = "get_prompt";
 export const CHANGE_PROMPT_ACTION = "change_prompt";
 export const CHANGE_GROUP_TOPIC_ACTION_PREFIX = "cg:";
 export const SPEAK_GROUP_TOPIC_ACTION_PREFIX = "sg:";
@@ -65,9 +67,13 @@ export type FlowAnalysis = {
 };
 
 export const replyKeyboard = Markup.keyboard([
-  [CHALLENGE_LABEL, MY_STATS_LABEL, GET_PROMPT_LABEL],
+  [CHALLENGE_LABEL, MY_STATS_LABEL, SPEAK_LABEL],
   [ABOUT_LABEL],
 ]).resize();
+
+export const speakPromptKeyboard = Markup.inlineKeyboard([
+  Markup.button.callback(GET_PROMPT_LABEL, GET_PROMPT_ACTION),
+]);
 
 export const changePromptKeyboard = Markup.inlineKeyboard([
   Markup.button.callback("🔄 Change Prompt", CHANGE_PROMPT_ACTION),
@@ -607,6 +613,8 @@ export const MESSAGES = {
     "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not generate feedback right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
   statsPrivate:
     "📊 <b>Stats are private</b>\n\n<b>Action:</b>\nOpen @NoPauseAI_bot directly to view your stats.",
+  speakPrivate:
+    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your fluency, pauses, and Flow Score.\n\nNeed an idea first?",
   scoringInfo:
     "🏆 <b>How scoring works</b>\n\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points",
   challengeInfo:

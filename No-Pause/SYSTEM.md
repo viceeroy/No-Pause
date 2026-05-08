@@ -105,11 +105,13 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 7. `calculateFlowScore` scores pause units as mode `speaking`.
 8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
 9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback. AI feedback button responses use Groq with an application-level timeout and a friendly retry message on generation failure.
-10. `/nopause` in a group creates a group challenge card with Speak, Change Prompt, and Leaderboard actions. `/start` and `/about` are ignored in groups.
-11. Group Speak opens a private deep link, stores pending challenge context, processes the voice note in DM, records an attempt in `telegram_challenge_attempts`, and offers Send to Group / Approve result buttons.
-12. Group challenge leaderboards read attempts plus saved session scores, show each player’s best Flow Score and attempt count, and become final after the 24-hour challenge window.
-13. Group challenge records keep the group chat ID in `challenges.creator_telegram_id`; the human who ran `/nopause` is encoded in the group challenge `status` as `group_pending:<telegram_id>` for Change Prompt ownership.
-14. Friend/group challenge state uses `challenges`, `telegram_challenge_state`, and `telegram_challenge_attempts`; prompt text comes from `src/lib/core/prompts.ts`.
+10. The private reply keyboard uses `Challenge`, `My Stats`, `Speak`, and `About`; `Speak` explains that any voice note can be scored and offers an inline `Get Prompt` button for users who want a random topic first.
+11. `/nopause` in a group creates a group challenge card with Speak, Change Prompt, and Leaderboard actions. `/start` and `/about` are ignored in groups.
+12. Group Speak opens a private deep link, stores pending challenge context, processes the voice note in DM, records an attempt in `telegram_challenge_attempts`, and offers Send to Group / Approve result buttons.
+13. Group challenge leaderboards read attempts plus saved session scores, show each player’s best Flow Score and attempt count, and become final after the 24-hour challenge window.
+14. Group challenge records keep the group chat ID in `challenges.creator_telegram_id`; the human who ran `/nopause` is encoded in the group challenge `status` as `group_pending:<telegram_id>` for Change Prompt ownership.
+15. Friend challenge accept deep links check existing pending state and submitted attempts before writing `telegram_challenge_state`, so repeat taps reply with the already-accepted message instead of creating duplicate pending state.
+16. Friend/group challenge state uses `challenges`, `telegram_challenge_state`, and `telegram_challenge_attempts`; prompt text comes from `src/lib/core/prompts.ts`.
 
 ## External Service Boundaries
 

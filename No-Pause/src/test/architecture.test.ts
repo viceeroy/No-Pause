@@ -24,11 +24,14 @@ import {
   getGroupChallengeResultActions,
   getGroupChallengeStatus,
   getGroupShareResultMessage,
+  GET_PROMPT_ACTION,
   GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   getNoPauseGroupChallengeKeyboard,
   getSpeakingResultMessage,
   isGroupChallengeRecord,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
+  replyKeyboard,
+  speakPromptKeyboard,
   TRY_AGAIN_ACTION,
   TRY_GROUP_CHALLENGE_ACTION_PREFIX,
 } from '@/lib/telegram/constants';
@@ -258,6 +261,16 @@ describe('stats architecture', () => {
 });
 
 describe('result message formatting architecture', () => {
+  it('uses Speak in the private reply keyboard and keeps prompt as an inline action', () => {
+    expect(replyKeyboard.reply_markup.keyboard[0][2]).toBe('🎤 Speak');
+
+    const promptAction = speakPromptKeyboard.reply_markup.inline_keyboard[0][0];
+    expect(promptAction).toMatchObject({
+      text: '💡 Get Prompt',
+      callback_data: GET_PROMPT_ACTION,
+    });
+  });
+
   it('truncates long Telegram transcripts below the safe message limit', () => {
     const message = getSpeakingResultMessage({
       analysis: {

@@ -12,6 +12,7 @@ import {
   changePromptKeyboard,
   CHALLENGE_LABEL,
   GET_PROMPT_LABEL,
+  GET_PROMPT_ACTION,
   getConnectAccountKeyboard,
   getNoPauseGroupWelcomeMessage,
   getTelegramStatsMessage,
@@ -23,6 +24,8 @@ import {
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
   SHARE_TO_GROUP_ACTION_PREFIX,
+  SPEAK_LABEL,
+  speakPromptKeyboard,
   TELEGRAM_BOT_USERNAME,
   TRY_AGAIN_ACTION,
   TRY_GROUP_CHALLENGE_ACTION_PREFIX,
@@ -240,8 +243,8 @@ export function createTelegramBot() {
     await replyWithStatus(ctx, telegramId);
   });
 
-  bot.hears(GET_PROMPT_LABEL, async (ctx) => {
-    await replyWithPrompt(ctx);
+  bot.hears(SPEAK_LABEL, async (ctx) => {
+    await ctx.reply(MESSAGES.speakPrivate, { ...speakPromptKeyboard, parse_mode: "HTML" });
   });
 
   bot.hears(ABOUT_LABEL, async (ctx) => {
@@ -308,6 +311,11 @@ export function createTelegramBot() {
       ? `💬 <b>Prompt</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`
       : `💬 <b>Prompt</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`;
     await ctx.editMessageText(message, { ...changePromptKeyboard, parse_mode: "HTML" });
+  });
+
+  bot.action(GET_PROMPT_ACTION, async (ctx) => {
+    await ctx.answerCbQuery();
+    await replyWithPrompt(ctx);
   });
 
   bot.action(TRY_AGAIN_ACTION, async (ctx) => {
