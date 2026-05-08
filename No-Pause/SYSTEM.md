@@ -53,7 +53,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/lib/practiceApi.ts`: browser-facing API facade for sessions, streaks, stats, transcription, and feedback. AI provider work is routed through `/api/transcription` and `/api/feedback`.
 - `src/lib/telegram/router.ts`: Telegraf command/action routing, connection checks, stats, and prompt messages.
 - `src/lib/telegram/voiceHandler.ts`: Telegram voice download, transcription endpoint call, pause/filler analysis, persistence, and reply formatting.
-- `src/lib/telegram/challenges.ts`: friend/group challenge creation, state, callbacks, and result updates.
+- `src/lib/telegram/challenges.ts`: friend/group challenge creation, state, leaderboard, expiry, callbacks, and result updates.
 - `src/lib/telegram/constants.ts`: Telegram bot constants.
 - `src/lib/telegramAuth.ts`: Telegram connection upsert.
 - `src/lib/core/scoring.ts`: Flow Score source of truth.
@@ -105,7 +105,11 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 7. `calculateFlowScore` scores pause units as mode `speaking`.
 8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
 9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback. AI feedback button responses use Groq with an application-level timeout and a friendly retry message on generation failure.
-10. Friend/group challenge state uses `challenges` and `telegram_challenge_state`; prompt text comes from `src/lib/core/prompts.ts`.
+10. `/nopause` in a group creates a group challenge card with Speak, Change Prompt, and Leaderboard actions. `/start` and `/about` are ignored in groups.
+11. Group Speak opens a private deep link, stores pending challenge context, processes the voice note in DM, records an attempt in `telegram_challenge_attempts`, and offers Send to Group / Approve result buttons.
+12. Group challenge leaderboards read attempts plus saved session scores, show each player’s best Flow Score and attempt count, and become final after the 24-hour challenge window.
+13. Group challenge records keep the group chat ID in `challenges.creator_telegram_id`; the human who ran `/nopause` is encoded in the group challenge `status` as `group_pending:<telegram_id>` for Change Prompt ownership.
+14. Friend/group challenge state uses `challenges`, `telegram_challenge_state`, and `telegram_challenge_attempts`; prompt text comes from `src/lib/core/prompts.ts`.
 
 ## External Service Boundaries
 
@@ -135,8 +139,9 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `public.sessions`: practice records. Used fields include `id`, `user_id`, `created_at`, `mode`, `duration`, `speaking_time`, `pauses`, `pause_count`, `filler_count`, `hesitations_per_minute`, `words`, `flow_score`, `completed`, `hesitation_log`, `transcript`, `analysis_feedback`, `scoring_version`, `source`.
 - `public.streaks`: streak counters. Used fields: `user_id`, `current_streak`, `longest_streak`, `last_session_date`.
 - `public.telegram_connections`: Telegram account links. Used fields: `telegram_id`, `user_id`, `connected_at`.
-- `public.challenges`: Telegram friend/group challenge records. Used fields: `id`, `topic`, `creator_telegram_id`, `creator_score`, `status`, `created_at`.
+- `public.challenges`: Telegram friend/group challenge records. Used fields: `id`, `topic`, `creator_telegram_id`, `creator_score`, `status`, `created_at`. For group challenges, `creator_telegram_id` is the group chat ID and `status` may be `group_pending:<telegram_id>` to identify the person allowed to change the prompt.
 - `public.telegram_challenge_state`: pending Telegram challenge context. Used fields: `telegram_id`, `challenge_id`, `challenge_type`, `group_id`, `group_message_id`, `participant_username`, `creator_username`, `created_at`, `updated_at`.
+- `public.telegram_challenge_attempts`: Telegram group challenge attempts. Used fields: `id`, `challenge_id`, `telegram_id`, `session_id`, `created_at`. Leaderboards join attempts to saved `sessions.flow_score` in application code.
 
 ## Environment Variables
 
@@ -162,6 +167,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count`, `filler_count`, or `hesitations_per_minute`.
 - Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not be represented accurately.
 - Telegram prompt/challenge behavior is active and shares prompt data with the web prompt picker.
+- Telegram group challenge ownership currently depends on the encoded `challenges.status` value for newly created challenges; older `group_pending` rows have no human owner and will not allow Change Prompt.
 - AI feedback generation depends on stored or generated transcripts; no separate durable transcript cache exists beyond `sessions.transcript`.
 - `APP_URL`, `SITE_URL`, and Google redirect URLs are hardcoded in code and may require code changes for non-production domains.
 - Microphone capture requires secure context except localhost and depends on browser MediaRecorder/Web Audio support.
