@@ -82,8 +82,8 @@ async function getServerSupabase() {
 }
 
 export function getCurrentMonthRange(now = new Date()): { start: string; end: string } {
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
@@ -378,13 +378,13 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
 }
 
 export function getCurrentMonthSessions(sessions: SessionRecord[], now = new Date()): SessionRecord[] {
+  const monthRange = getCurrentMonthRange(now);
+  const monthStart = new Date(monthRange.start).getTime();
+  const monthEnd = new Date(monthRange.end).getTime();
+
   return sessions.filter((session) => {
-    const sessionDate = new Date(session.created_at);
-    return (
-      Number.isFinite(sessionDate.getTime()) &&
-      sessionDate.getFullYear() === now.getFullYear() &&
-      sessionDate.getMonth() === now.getMonth()
-    );
+    const sessionTime = new Date(session.created_at).getTime();
+    return Number.isFinite(sessionTime) && sessionTime >= monthStart && sessionTime < monthEnd;
   });
 }
 

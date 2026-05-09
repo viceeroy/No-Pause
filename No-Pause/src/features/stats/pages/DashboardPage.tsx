@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Download, TrendingUp, Clock, CalendarDays, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
@@ -8,6 +8,7 @@ import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import { formatPracticeTotalDuration } from '@/lib/core/time';
 import { opinionPrompts } from '@/lib/core/prompts';
 import { HelpSection } from '@/features/stats/pages/HelpSection';
+import { getCurrentUtcMonthKey, useMonthlyStatsRefresh } from '@/features/stats/hooks/useMonthlyStatsRefresh';
 import {
   Dialog,
   DialogContent,
@@ -38,27 +39,42 @@ export default function DashboardPage() {
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
+  const isMountedRef = useRef(false);
+  const lastLoadedMonthRef = useRef<string | null>(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
-    let cancelled = false;
-
-    setStatsLoading(true);
-    getPracticeStats(user?.id ?? null, 1000)
-      .then((nextStats) => {
-        if (!cancelled) setStats(nextStats);
-      })
-      .catch((error) => {
-        console.error('Failed to load dashboard stats:', error);
-        if (!cancelled) setStats(emptyStats);
-      })
-      .finally(() => {
-        if (!cancelled) setStatsLoading(false);
-      });
-
+    isMountedRef.current = true;
     return () => {
-      cancelled = true;
+      isMountedRef.current = false;
     };
+  }, []);
+
+  const loadStats = useCallback(async () => {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    setStatsLoading(true);
+    try {
+      const nextStats = await getPracticeStats(user?.id ?? null, 1000);
+      if (!isMountedRef.current || requestId !== requestIdRef.current) return;
+      setStats(nextStats);
+      lastLoadedMonthRef.current = getCurrentUtcMonthKey();
+    } catch (error) {
+      console.error('Failed to load dashboard stats:', error);
+      if (isMountedRef.current && requestId === requestIdRef.current) setStats(emptyStats);
+    } finally {
+      if (isMountedRef.current && requestId === requestIdRef.current) setStatsLoading(false);
+    }
   }, [user?.id]);
+
+  useMonthlyStatsRefresh({
+    lastLoadedMonthRef,
+    refreshStats: loadStats,
+  });
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats]);
 
   const handleCardClick = () => {
     navigate('/practice');
