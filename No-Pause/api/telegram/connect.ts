@@ -69,7 +69,7 @@ Here's what you can do with <b>@NoPauseAI_bot</b>:
 
 📊 <b>Open NoPause</b> — view your full stats, session history, and progress dashboard.
 
-💡 <b>Get a Prompt</b> — receive a speaking topic and practice on the spot.
+🎤 <b>Speak</b> — get a quick reminder that you can speak about anything, with an inline Get Prompt button if you want a topic first.
 
 📈 <b>My Stats</b> — check your streak, Flow Score, and practice time anytime.
 

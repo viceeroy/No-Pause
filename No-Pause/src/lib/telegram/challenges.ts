@@ -12,8 +12,6 @@ import {
   getGroupChallengeConnectMessage,
   getGroupChallengeEndedMessage,
   getGroupChallengeLeaderboardMessage,
-  getGroupChallengeKeyboard,
-  getGroupChallengeMessage,
   getGroupChallengeRetryMessage,
   getGroupChallengeCreatorTelegramId,
   getGroupChallengeStatus,
@@ -314,6 +312,31 @@ export async function recordFriendChallengeSubmission(input: {
   if (error) {
     throw error;
   }
+}
+
+export async function claimFriendChallengeResultSend(input: {
+  challengeId: string;
+  telegramId: number;
+  sessionId: string;
+}): Promise<boolean> {
+  const { error } = await supabaseServer
+    .from("telegram_friend_result_sends")
+    .insert({
+      challenge_id: input.challengeId,
+      telegram_id: input.telegramId,
+      session_id: input.sessionId,
+      sent_at: new Date().toISOString(),
+    });
+
+  if (!error) {
+    return true;
+  }
+
+  if (error.code === "23505") {
+    return false;
+  }
+
+  throw error;
 }
 
 export async function getGroupChallengeLeaderboard(challengeId: string): Promise<ChallengeLeaderboardParticipant[]> {
@@ -639,44 +662,6 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
   } catch (error) {
     console.error("Telegram group topic change failed", error);
     await ctx.answerCbQuery("I could not update this challenge right now.", { show_alert: true });
-  }
-}
-
-export async function sendGroupChallengeTopic(
-  ctx: Context & { match: RegExpExecArray },
-  telegramId: number,
-  participantUsername: string,
-) {
-  const challengeId = ctx.match[1];
-  const message = ctx.callbackQuery && "message" in ctx.callbackQuery ? ctx.callbackQuery.message : undefined;
-  const messageId = message?.message_id;
-  if (!messageId) {
-    await ctx.answerCbQuery("I could not start this challenge right now.");
-    return;
-  }
-
-  try {
-    const challenge = await getFriendChallenge(challengeId);
-    if (!challenge) {
-      await ctx.answerCbQuery("This challenge topic expired. Start a new Challenge.", { show_alert: true });
-      return;
-    }
-
-    await ctx.telegram.sendMessage(telegramId, getPrivateChallengeMessage(challenge.topic), { parse_mode: "HTML" });
-    await upsertPendingChallenge({
-      telegramId,
-      challengeId: challenge.id,
-      challengeType: "group",
-      groupId: Number(challenge.creator_telegram_id),
-      groupMessageId: messageId,
-      participantUsername,
-    });
-    await ctx.answerCbQuery("I sent you the topic privately.");
-  } catch (error) {
-    console.error("Telegram group challenge DM failed", error);
-    await ctx.answerCbQuery("Open @NoPauseAI_bot and press Start first. Then tap Speak again.", {
-      show_alert: true,
-    });
   }
 }
 

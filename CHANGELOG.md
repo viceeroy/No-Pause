@@ -1,5 +1,11 @@
 # Changelog
 
+## May 9, 2026
+
+Tightened the Telegram group behavior so private reply-keyboard actions stay private. If someone types the private keyboard labels in a group, Speak, Challenge, My Stats, and About now silently do nothing instead of posting private-flow messages into the group.
+
+Removed old unreachable Telegram callback helpers and refreshed bot copy so Speak owns the prompt entrypoint. The connect welcome and About message now describe Get Prompt as an inline option under Speak, and the system notes now describe group challenge results as Send to Group / Try Again.
+
 ## May 8, 2026
 
 Finished the group challenge leaderboard and owner controls in Telegram. The leaderboard button now shows the top scores for a challenge, including each person's best Flow Score and how many times they tried. Challenges now close after 24 hours, and only the person who started the group challenge can change the prompt.

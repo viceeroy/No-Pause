@@ -19,11 +19,9 @@ import {
   GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   MESSAGES,
   MY_STATS_LABEL,
-  NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
-  SHARE_TO_GROUP_ACTION_PREFIX,
   SPEAK_LABEL,
   speakPromptKeyboard,
   TELEGRAM_BOT_USERNAME,
@@ -49,7 +47,6 @@ import {
   replyWithConnectPrompt,
   sendFriendChallengeResult,
   postGroupChallengeResultToGroup,
-  shareResultToGroup,
 } from "./voiceHandler.js";
 
 const VOICE_ONLY_MESSAGE = "🎤 NoPause only accepts voice notes. Please send a voice note to get your Flow Score.";
@@ -225,6 +222,8 @@ export function createTelegramBot() {
   });
 
   bot.hears(CHALLENGE_LABEL, async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
 
@@ -232,10 +231,7 @@ export function createTelegramBot() {
   });
 
   bot.hears(MY_STATS_LABEL, async (ctx) => {
-    if (isGroupChat(ctx)) {
-      await ctx.reply(MESSAGES.statsPrivate, { parse_mode: "HTML" });
-      return;
-    }
+    if (isGroupChat(ctx)) return;
 
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
@@ -244,10 +240,14 @@ export function createTelegramBot() {
   });
 
   bot.hears(SPEAK_LABEL, async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
     await ctx.reply(MESSAGES.speakPrivate, { ...speakPromptKeyboard, parse_mode: "HTML" });
   });
 
   bot.hears(ABOUT_LABEL, async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
     await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
   });
 
@@ -265,16 +265,6 @@ export function createTelegramBot() {
     await sendFriendChallengeResult(ctx, telegramId);
   });
 
-  bot.action(new RegExp(`^${SHARE_TO_GROUP_ACTION_PREFIX}([^:]+):(-?\\d+)$`), async (ctx) => {
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) {
-      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
-      return;
-    }
-
-    await shareResultToGroup(ctx, telegramId);
-  });
-
   bot.action(new RegExp(`^${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) {
@@ -287,20 +277,6 @@ export function createTelegramBot() {
 
   bot.action(new RegExp(`^${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}(.+)$`), async (ctx) => {
     await showGroupChallengeLeaderboard(ctx);
-  });
-
-  bot.action(new RegExp(`^${NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX}(.+)$`), async (ctx) => {
-    const action = ctx.match?.[1];
-    const label =
-      action === "speak"
-        ? "Speak"
-        : action === "prompt"
-          ? "Change Prompt"
-          : action === "leaderboard"
-            ? "Leaderboard"
-            : "This";
-
-    await ctx.answerCbQuery(`${label} is coming soon.`);
   });
 
   bot.action(CHANGE_PROMPT_ACTION, async (ctx) => {

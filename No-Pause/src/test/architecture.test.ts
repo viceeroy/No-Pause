@@ -1,5 +1,6 @@
 import { Readable } from 'stream';
 import type { IncomingMessage } from 'http';
+import { readFileSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import {
@@ -268,6 +269,16 @@ describe('result message formatting architecture', () => {
     expect(promptAction).toMatchObject({
       text: '💡 Get Prompt',
       callback_data: GET_PROMPT_ACTION,
+    });
+  });
+
+  it('keeps reply keyboard text handlers silent in group chats', () => {
+    const routerSource = readFileSync(`${process.cwd()}/src/lib/telegram/router.ts`, 'utf8');
+
+    ['CHALLENGE_LABEL', 'MY_STATS_LABEL', 'SPEAK_LABEL', 'ABOUT_LABEL'].forEach((label) => {
+      expect(routerSource).toMatch(new RegExp(
+        `bot\\.hears\\(${label}, async \\(ctx\\) => \\{\\s+if \\(isGroupChat\\(ctx\\)\\) return;`,
+      ));
     });
   });
 
@@ -1083,6 +1094,7 @@ describe('HTTP header ASCII normalization', () => {
     }));
 
     vi.doMock('@/lib/telegram/challenges', () => ({
+      claimFriendChallengeResultSend: vi.fn(async () => true),
       deletePendingChallenge: vi.fn(),
       getFriendChallenge: vi.fn(),
       getGroupChallengeAttemptCount: vi.fn(),
@@ -1210,10 +1222,11 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('../../src/services/deepgram.js', () => ({
       transcribeAudioWithDeepgram: deepgramMock,
     }));
+    const consumeApiQuota = vi.fn();
     vi.doMock('@/services/apiQuota', () => ({
       DAILY_FEEDBACK_LIMIT: 20,
       DAILY_TRANSCRIPTION_LIMIT: 20,
-      consumeApiQuota: vi.fn(),
+      consumeApiQuota,
       getQuotaExceededMessage: vi.fn((kind: string) => `quota exceeded: ${kind}`),
       isApiQuotaExceededError: vi.fn(() => false),
     }));
@@ -1224,6 +1237,7 @@ describe('HTTP header ASCII normalization', () => {
     const recordGroupChallengeAttempt = vi.fn(async () => 2);
     const deletePendingChallenge = vi.fn();
     vi.doMock('@/lib/telegram/challenges', () => ({
+      claimFriendChallengeResultSend: vi.fn(async () => true),
       deletePendingChallenge,
       getFriendChallenge: vi.fn(async () => ({
         id: 'challenge-1',
@@ -1312,6 +1326,11 @@ describe('HTTP header ASCII normalization', () => {
 
     await handleVoiceMessage(ctx as never, 123);
 
+    expect(consumeApiQuota).toHaveBeenCalledWith({
+      userId: 'user-1',
+      kind: 'transcription',
+      limit: 20,
+    });
     expect(recordGroupChallengeAttempt).toHaveBeenCalledWith({
       challengeId: 'challenge-1',
       telegramId: 123,
@@ -1331,6 +1350,210 @@ describe('HTTP header ASCII normalization', () => {
     );
   });
 
+  it('voiceHandler enforces transcription quota before Deepgram for friend challenge submissions', async () => {
+    process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
+    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+
+    vi.doMock('@/services/aiFeedback', () => ({
+      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      isUsableTranscript: vi.fn(() => true),
+    }));
+    const deepgramMock = vi.fn(async () => ({
+      transcript: 'should not transcribe',
+      words: [],
+      fillerCount: 0,
+    }));
+    vi.doMock('@/services/deepgram', () => ({
+      transcribeAudioWithDeepgram: deepgramMock,
+    }));
+    vi.doMock('../../src/services/deepgram.js', () => ({
+      transcribeAudioWithDeepgram: deepgramMock,
+    }));
+    const quotaError = { kind: 'transcription' };
+    const consumeApiQuota = vi.fn(async () => {
+      throw quotaError;
+    });
+    vi.doMock('@/services/apiQuota', () => ({
+      DAILY_FEEDBACK_LIMIT: 20,
+      DAILY_TRANSCRIPTION_LIMIT: 20,
+      consumeApiQuota,
+      getQuotaExceededMessage: vi.fn((kind: string) => `quota exceeded: ${kind}`),
+      isApiQuotaExceededError: vi.fn((error) => error === quotaError),
+    }));
+    vi.doMock('@/lib/core/user', () => ({
+      resolveTelegramUser: vi.fn(async () => 'user-1'),
+    }));
+    vi.doMock('@/lib/telegram/challenges', () => ({
+      claimFriendChallengeResultSend: vi.fn(async () => true),
+      deletePendingChallenge: vi.fn(),
+      getFriendChallenge: vi.fn(async () => ({
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: 456,
+        creator_score: null,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      })),
+      getGroupChallengeAttemptCount: vi.fn(),
+      getPendingChallenge: vi.fn(async () => ({
+        telegram_id: 123,
+        challenge_id: 'challenge-1',
+        challenge_type: 'friend',
+        group_id: null,
+        group_message_id: null,
+        participant_username: '@speaker',
+        creator_username: '@creator',
+        created_at: null,
+        updated_at: null,
+      })),
+      isMissingChallengesTableError: vi.fn(() => false),
+      recordFriendChallengeSubmission: vi.fn(),
+      recordGroupChallengeAttempt: vi.fn(),
+      updateFriendChallengeCreatorScore: vi.fn(),
+      upsertPendingChallenge: vi.fn(),
+    }));
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: {
+        auth: {
+          admin: {
+            getUserById: vi.fn(async () => ({
+              data: { user: { user_metadata: { difficulty: 'beginner' } } },
+              error: null,
+            })),
+          },
+        },
+        from: vi.fn(),
+      },
+    }));
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => {
+      const urlString = String(url);
+      if (urlString.includes('/getFile')) {
+        return {
+          ok: true,
+          json: async () => ({ ok: true, result: { file_path: 'voice/file.ogg' } }),
+        } as Response;
+      }
+      if (urlString.includes('/file/bot')) {
+        return {
+          ok: true,
+          arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+        } as Response;
+      }
+
+      throw new Error(`Unexpected fetch: ${urlString}`);
+    }));
+
+    const { handleVoiceMessage } = await import('@/lib/telegram/voiceHandler');
+    const replies: Array<[string, unknown?]> = [];
+    const ctx = {
+      from: { id: 123, username: 'speaker' },
+      chat: { type: 'private' },
+      message: { voice: { file_id: 'file-1', duration: 90 } },
+      reply: vi.fn(async (message: string, options?: unknown) => {
+        replies.push([message, options]);
+      }),
+    };
+
+    await handleVoiceMessage(ctx as never, 123);
+
+    expect(consumeApiQuota).toHaveBeenCalledWith({
+      userId: 'user-1',
+      kind: 'transcription',
+      limit: 20,
+    });
+    expect(deepgramMock).not.toHaveBeenCalled();
+    expect(replies).toContainEqual(['quota exceeded: transcription', undefined]);
+  });
+
+  it('sendFriendChallengeResult only sends a friend challenge result once per session', async () => {
+    vi.doMock('@/services/aiFeedback', () => ({
+      generateAiFeedback: vi.fn(async () => 'Feedback'),
+      isUsableTranscript: vi.fn(() => true),
+    }));
+    vi.doMock('@/services/deepgram', () => ({
+      transcribeAudioWithDeepgram: vi.fn(),
+    }));
+    vi.doMock('@/lib/core/user', () => ({
+      resolveTelegramUser: vi.fn(async () => 'user-1'),
+    }));
+
+    const claimFriendChallengeResultSend = vi.fn()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    const upsertPendingChallenge = vi.fn();
+    vi.doMock('@/lib/telegram/challenges', () => ({
+      claimFriendChallengeResultSend,
+      deletePendingChallenge: vi.fn(),
+      getFriendChallenge: vi.fn(async () => ({
+        id: 'challenge-1',
+        topic: 'Talk about focus',
+        creator_telegram_id: 456,
+        creator_score: null,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      })),
+      getGroupChallengeAttemptCount: vi.fn(),
+      getPendingChallenge: vi.fn(),
+      isMissingChallengesTableError: vi.fn(() => false),
+      recordFriendChallengeSubmission: vi.fn(),
+      recordGroupChallengeAttempt: vi.fn(),
+      updateFriendChallengeCreatorScore: vi.fn(),
+      upsertPendingChallenge,
+    }));
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: {
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: vi.fn(async () => ({
+                  data: {
+                    id: 'session-1',
+                    transcript: 'hello friend challenge',
+                    flow_score: 72,
+                    pauses: 1,
+                    pause_count: 1,
+                    filler_count: 0,
+                    speaking_time: 30,
+                    duration: 35,
+                    completed: true,
+                    hesitation_log: [],
+                  },
+                  error: null,
+                })),
+              })),
+            })),
+          })),
+        })),
+      },
+    }));
+
+    const { sendFriendChallengeResult } = await import('@/lib/telegram/voiceHandler');
+    const sendMessage = vi.fn();
+    const answerCbQuery = vi.fn();
+    const ctx = {
+      from: { id: 123, username: 'speaker' },
+      match: ['scr:challenge-1:session-1', 'challenge-1', 'session-1'],
+      telegram: { sendMessage },
+      answerCbQuery,
+    };
+
+    await sendFriendChallengeResult(ctx as never, 123);
+    await sendFriendChallengeResult(ctx as never, 123);
+
+    expect(claimFriendChallengeResultSend).toHaveBeenCalledTimes(2);
+    expect(claimFriendChallengeResultSend).toHaveBeenCalledWith({
+      challengeId: 'challenge-1',
+      telegramId: 123,
+      sessionId: 'session-1',
+    });
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    expect(upsertPendingChallenge).toHaveBeenCalledTimes(1);
+    expect(answerCbQuery).toHaveBeenNthCalledWith(1, 'Sent to the challenger.');
+    expect(answerCbQuery).toHaveBeenNthCalledWith(2, 'This result has already been sent.');
+  });
+
   it('voiceHandler rejects voice notes over 300 seconds before analysis work starts', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
 
@@ -1345,6 +1568,7 @@ describe('HTTP header ASCII normalization', () => {
     }));
 
     vi.doMock('@/lib/telegram/challenges', () => ({
+      claimFriendChallengeResultSend: vi.fn(async () => true),
       deletePendingChallenge: vi.fn(),
       getFriendChallenge: vi.fn(),
       getGroupChallengeAttemptCount: vi.fn(),

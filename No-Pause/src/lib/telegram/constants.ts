@@ -14,15 +14,12 @@ export const ABOUT_LABEL = "ℹ️ About";
 export const GET_PROMPT_ACTION = "get_prompt";
 export const CHANGE_PROMPT_ACTION = "change_prompt";
 export const CHANGE_GROUP_TOPIC_ACTION_PREFIX = "cg:";
-export const SPEAK_GROUP_TOPIC_ACTION_PREFIX = "sg:";
-export const SHARE_TO_GROUP_ACTION_PREFIX = "shg:";
 export const POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "pgr:";
 export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
 export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 export const GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX = "gcl:";
-export const NOPAUSE_GROUP_PLACEHOLDER_ACTION_PREFIX = "nopause_group_placeholder:";
 export const GROUP_CHALLENGE_STATUS_PREFIX = "group_pending";
 const TELEGRAM_SAFE_MESSAGE_LENGTH = 4000;
 const TRUNCATED_TRANSCRIPT_NOTE = "... (truncated)";
@@ -116,24 +113,6 @@ export function getNoPauseGroupChallengeKeyboard(challengeId: string) {
   ]);
 }
 
-export function getGroupChallengeKeyboard(challengeId: string) {
-  return Markup.inlineKeyboard([
-    [
-      Markup.button.url("🎤 Speak", getGroupChallengeDeepLink(challengeId)),
-      Markup.button.callback("🔄 Change Prompt", `${CHANGE_GROUP_TOPIC_ACTION_PREFIX}${challengeId}`),
-    ],
-  ]);
-}
-
-export function getTelegramShareUrl(input: { url: string; text?: string }): string {
-  const params = new URLSearchParams({ url: input.url });
-  if (input.text) {
-    params.set("text", input.text);
-  }
-
-  return `https://t.me/share/url?${params.toString()}`;
-}
-
 export function getChallengeDeepLink(challengeId: string): string {
   return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=challenge_${encodeURIComponent(challengeId)}`;
 }
@@ -158,10 +137,6 @@ export function getNoPauseGroupChallengeMessage(topic: string): string {
 ${escapeTelegramHtml(topic)}
 
 🎤 Tap Speak when you are ready.`;
-}
-
-export function getGroupChallengeMessage(topic: string): string {
-  return `⚔️ <b>Group Challenge</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(topic)}\n\n<b>Action:</b>\nTap Speak and I will send it privately 🎤`;
 }
 
 export function getPrivateChallengeMessage(topic: string): string {
@@ -303,20 +278,6 @@ export function getSpeakingResultMessage(input: {
   })}`;
 }
 
-export function getGroupResultText(input: {
-  username: string;
-  topic: string;
-  analysis: FlowAnalysis;
-  transcript?: string | null;
-}): string {
-  const prefix = `🎤 Group Challenge Result\n\nSpeaker: ${input.username}\n\nTopic: ${input.topic}\n\n`;
-  return `${prefix}${formatResultFields({
-    analysis: input.analysis,
-    transcript: input.transcript,
-    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
-  })}`;
-}
-
 export function getGroupShareResultMessage(input: {
   firstName: string;
   username?: string;
@@ -338,10 +299,6 @@ export function getGroupShareResultMessage(input: {
 ⏱ <b>Speaking time:</b> ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}
 🔇 <b>Pauses:</b> ${input.analysis.pauseCount}
 💬 <b>Fillers:</b> ${input.analysis.hesitationCount}`;
-}
-
-export function getResultShareUrl(resultText: string): string {
-  return getTelegramShareUrl({ url: SITE_URL, text: resultText });
 }
 
 export function getGroupChallengeResultActions(input: {
@@ -624,7 +581,7 @@ export const MESSAGES = {
   nopauseInfo:
     "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
   about:
-    "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time.\n\n🏆 <b>How scoring works</b>\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTap My Stats to check your streak, best score, and practice time.\n\n💡 <b>Prompts</b>\nNeed something to talk about? Tap Get Prompt for a random topic.\n\n🌐 nopause.org",
+    "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time. Tap Speak when you want a quick reminder, then use the inline Get Prompt button if you want a topic first.\n\n🏆 <b>How scoring works</b>\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTap My Stats to check your streak, best score, and practice time.\n\n🌐 nopause.org",
   readyPrivate:
     "🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
   welcomeIdentify:

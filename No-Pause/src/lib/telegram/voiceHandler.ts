@@ -24,6 +24,7 @@ import { transcribeAudioWithDeepgram, type DeepgramTranscribedWord } from "../..
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
+  claimFriendChallengeResultSend,
   deletePendingChallenge,
   getFriendChallenge,
   getGroupChallengeAttemptCount,
@@ -182,6 +183,20 @@ function estimateDurationSec(voiceDuration?: number): number {
   return Math.round(voiceDuration);
 }
 
+function isMissingTelegramMessageIdColumnError(error: unknown): boolean {
+  const maybeError = error as { code?: string; message?: string } | null;
+  return (
+    maybeError?.code === "PGRST204" ||
+    maybeError?.code === "42703" ||
+    maybeError?.message?.includes("telegram_chat_id") === true ||
+    maybeError?.message?.includes("telegram_message_id") === true
+  );
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === "23505";
+}
+
 function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
 }
@@ -319,6 +334,8 @@ async function insertTelegramSession(input: {
   userId: string;
   transcript: string;
   analysis: FlowAnalysis;
+  telegramChatId: number | null;
+  telegramMessageId: number | null;
 }) {
   const sessionId = await insertSession(sessionSupabase, {
     userId: input.userId,
@@ -339,6 +356,8 @@ async function insertTelegramSession(input: {
         : null,
     hesitationLog: input.analysis.pauseLog,
     words: countWords(input.transcript),
+    telegramChatId: input.telegramChatId,
+    telegramMessageId: input.telegramMessageId,
   });
 
   await updateStreak(sessionSupabase, {
@@ -347,6 +366,35 @@ async function insertTelegramSession(input: {
   });
 
   return String(sessionId);
+}
+
+async function getProcessedTelegramSessionId(input: {
+  userId: string;
+  telegramChatId: number | null;
+  telegramMessageId: number | null;
+}): Promise<string | null> {
+  if (!input.telegramChatId || !input.telegramMessageId) {
+    return null;
+  }
+
+  const { data, error } = await supabaseServer
+    .from("sessions")
+    .select("id")
+    .eq("user_id", input.userId)
+    .eq("source", "telegram")
+    .eq("telegram_chat_id", input.telegramChatId)
+    .eq("telegram_message_id", input.telegramMessageId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingTelegramMessageIdColumnError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  return typeof data?.id === "string" && data.id ? data.id : null;
 }
 
 export async function getTelegramSessionTranscript(input: {
@@ -418,6 +466,7 @@ export function getSessionAnalysis(session: TelegramSessionRecord): FlowAnalysis
 export async function handleVoiceMessage(
   ctx: Context & {
     message: {
+      message_id?: number;
       voice: { file_id: string; duration?: number };
       forward_origin?: unknown;
       forward_date?: unknown;
@@ -434,6 +483,8 @@ export async function handleVoiceMessage(
   }
 
   const voice = ctx.message.voice;
+  const telegramChatId = Number.isFinite(ctx.chat?.id) ? ctx.chat?.id ?? null : null;
+  const telegramMessageId = Number.isFinite(ctx.message.message_id) ? ctx.message.message_id : null;
   if (ctx.message.forward_origin || ctx.message.forward_date) {
     await ctx.reply("🎤 Please record a fresh voice note directly in this chat, not forwarded from somewhere else.");
     return;
@@ -445,6 +496,16 @@ export async function handleVoiceMessage(
   }
 
   const pauseThresholdMs = await getUserPauseThresholdMs(userId);
+  const processedSessionId = await getProcessedTelegramSessionId({ userId, telegramChatId, telegramMessageId });
+  if (processedSessionId) {
+    console.log("Telegram voice message already processed", {
+      telegramId,
+      telegramMessageId,
+      sessionId: processedSessionId,
+    });
+    return;
+  }
+
   await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
 
   try {
@@ -453,16 +514,12 @@ export async function handleVoiceMessage(
     if (pendingChallenge && !challenge) {
       await deletePendingChallenge(telegramId);
     }
-    const isRegularPrivateSession = !groupChat && !pendingChallenge;
-
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
-    if (isRegularPrivateSession) {
-      await consumeApiQuota({
-        userId,
-        kind: "transcription",
-        limit: DAILY_TRANSCRIPTION_LIMIT,
-      });
-    }
+    await consumeApiQuota({
+      userId,
+      kind: "transcription",
+      limit: DAILY_TRANSCRIPTION_LIMIT,
+    });
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;
 
@@ -479,11 +536,30 @@ export async function handleVoiceMessage(
       totalSessionTimeSec,
       pauseThresholdMs,
     );
-    const sessionId = await insertTelegramSession({
-      userId,
-      transcript,
-      analysis,
-    });
+    let sessionId: string;
+    try {
+      sessionId = await insertTelegramSession({
+        userId,
+        transcript,
+        analysis,
+        telegramChatId,
+        telegramMessageId,
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        const existingSessionId = await getProcessedTelegramSessionId({ userId, telegramChatId, telegramMessageId });
+        if (existingSessionId) {
+          console.log("Telegram voice message already inserted by another request", {
+            telegramId,
+            telegramMessageId,
+            sessionId: existingSessionId,
+          });
+          return;
+        }
+      }
+
+      throw error;
+    }
 
     if (groupChat) {
       await ctx.reply(
@@ -603,6 +679,16 @@ export async function sendFriendChallengeResult(
       return;
     }
 
+    const shouldSend = await claimFriendChallengeResultSend({
+      challengeId: challenge.id,
+      telegramId,
+      sessionId,
+    });
+    if (!shouldSend) {
+      await ctx.answerCbQuery("This result has already been sent.");
+      return;
+    }
+
     const analysis = getSessionAnalysis(session);
     const creatorTelegramId = Number(challenge.creator_telegram_id);
     const creatorUsername = String(challenge.creator_telegram_id);
@@ -630,46 +716,6 @@ export async function sendFriendChallengeResult(
   } catch (error) {
     console.error("Telegram challenge result send failed", error);
     await ctx.answerCbQuery("I could not send that result right now.", { show_alert: true });
-  }
-}
-
-export async function shareResultToGroup(
-  ctx: Context & { match: RegExpExecArray },
-  telegramId: number,
-) {
-  const sessionId = ctx.match[1];
-  const groupId = Number(ctx.match[2]);
-  if (!Number.isFinite(groupId)) {
-    await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
-    return;
-  }
-
-  try {
-    const userId = await resolveTelegramUser(telegramId);
-    if (!userId) {
-      await ctx.answerCbQuery("Connect your account first, then try again.", { show_alert: true });
-      return;
-    }
-
-    const session = await getTelegramSession({ userId, sessionId });
-    if (!session) {
-      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
-      return;
-    }
-
-    await ctx.telegram.sendMessage(
-      groupId,
-      getGroupShareResultMessage({
-        firstName: ctx.from?.first_name ?? "Someone",
-        username: ctx.from?.username,
-        analysis: getSessionAnalysis(session),
-      }),
-      { parse_mode: "HTML" },
-    );
-    await ctx.answerCbQuery("Shared to the group.");
-  } catch (error) {
-    console.error("Telegram share to group failed", error);
-    await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
   }
 }
 

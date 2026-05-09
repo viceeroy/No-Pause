@@ -46,6 +46,8 @@ export type InsertSessionInput = {
   analysisFeedback?: string | null;
   scoringVersion?: string;
   source?: "web" | "telegram";
+  telegramChatId?: number | null;
+  telegramMessageId?: number | null;
 };
 
 export type UpdateStreakInput = {
@@ -91,7 +93,9 @@ export function isMissingSessionAnalysisColumnError(error: unknown): boolean {
     maybeError?.code === "42703" ||
     maybeError?.message?.includes("pause_count") === true ||
     maybeError?.message?.includes("filler_count") === true ||
-    maybeError?.message?.includes("hesitations_per_minute") === true
+    maybeError?.message?.includes("hesitations_per_minute") === true ||
+    maybeError?.message?.includes("telegram_chat_id") === true ||
+    maybeError?.message?.includes("telegram_message_id") === true
   );
 }
 
@@ -113,6 +117,8 @@ export function buildSessionInsertValues(input: InsertSessionInput) {
     analysis_feedback: input.analysisFeedback ?? null,
     scoring_version: input.scoringVersion ?? SCORING_VERSION,
     source: input.source ?? "web",
+    telegram_chat_id: input.telegramChatId ?? null,
+    telegram_message_id: input.telegramMessageId ?? null,
   };
 }
 
@@ -123,6 +129,8 @@ export function buildLegacySessionInsertValues(input: InsertSessionInput) {
   delete legacyValues.pause_count;
   delete legacyValues.filler_count;
   delete legacyValues.hesitations_per_minute;
+  delete legacyValues.telegram_chat_id;
+  delete legacyValues.telegram_message_id;
 
   return legacyValues;
 }
