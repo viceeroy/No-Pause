@@ -362,7 +362,7 @@ describe('result message formatting architecture', () => {
     expect(result).toContain('Talk about focus');
     expect(result).toContain('Flow Score:</b> 88');
     expect(result).toContain('Attempt:</b> #3');
-    expect(result).toContain('Speaking time:</b> 50s');
+    expect(result).toContain('Speaking time:</b> 50s speaking · 10s gaps');
     expect(result).toContain('Pauses:</b> 2');
     expect(result).toContain('Fillers:</b> 1');
     expect(result).not.toContain('Transcript');
@@ -850,6 +850,191 @@ describe('Telegram group challenge retry architecture', () => {
       expect.stringContaining('already accepted this challenge'),
       { parse_mode: 'HTML' },
     );
+  });
+});
+
+describe('Telegram AI feedback handler architecture', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+    process.env = { ...originalEnv };
+    process.env.SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
+    process.env.GROQ_API_KEY = 'groq-key';
+  });
+
+  function mockAiFeedbackDependencies(input: {
+    resolveTelegramUser?: () => Promise<string | null>;
+    transcriptQuery?: () => Promise<{ data: { transcript: string } | null; error: null }>;
+    consumeApiQuota?: () => Promise<void>;
+    isApiQuotaExceededError?: (error: unknown) => boolean;
+  } = {}) {
+    const generateAiFeedback = vi.fn(async () => 'Speak with a clearer opening.');
+    const consumeApiQuota = vi.fn(input.consumeApiQuota ?? (async () => undefined));
+    const resolveTelegramUser = vi.fn(input.resolveTelegramUser ?? (async () => 'user-1'));
+    const transcriptQuery = vi.fn(input.transcriptQuery ?? (async () => ({
+      data: { transcript: 'hello from telegram session' },
+      error: null,
+    })));
+
+    vi.doMock('@/services/aiFeedback', () => ({
+      generateAiFeedback,
+      isUsableTranscript: vi.fn(() => true),
+    }));
+    vi.doMock('@/services/apiQuota', () => ({
+      DAILY_FEEDBACK_LIMIT: 20,
+      DAILY_TRANSCRIPTION_LIMIT: 20,
+      consumeApiQuota,
+      getQuotaExceededMessage: vi.fn((kind: string) => `quota exceeded: ${kind}`),
+      isApiQuotaExceededError: vi.fn(input.isApiQuotaExceededError ?? (() => false)),
+    }));
+    vi.doMock('@/lib/core/user', () => ({
+      resolveTelegramUser,
+    }));
+    vi.doMock('@/lib/telegram/challenges', () => ({
+      claimFriendChallengeResultSend: vi.fn(),
+      deletePendingChallenge: vi.fn(),
+      getFriendChallenge: vi.fn(),
+      getGroupChallengeAttemptCount: vi.fn(),
+      getPendingChallenge: vi.fn(),
+      isMissingChallengesTableError: vi.fn(() => false),
+      recordFriendChallengeSubmission: vi.fn(),
+      recordGroupChallengeAttempt: vi.fn(),
+      updateFriendChallengeCreatorScore: vi.fn(),
+      upsertPendingChallenge: vi.fn(),
+    }));
+    vi.doMock('@/services/supabaseServer', () => ({
+      supabaseServer: {
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: transcriptQuery,
+              })),
+            })),
+          })),
+        })),
+      },
+    }));
+
+    return { consumeApiQuota, generateAiFeedback, resolveTelegramUser, transcriptQuery };
+  }
+
+  function createAiFeedbackContext(sessionId = 'session-1') {
+    const replies: string[] = [];
+    const ctx = {
+      match: [`ai_feedback:${sessionId}`, sessionId],
+      reply: vi.fn(async (message: string) => {
+        replies.push(message);
+      }),
+    };
+
+    return { ctx, replies };
+  }
+
+  it('silently ignores duplicate AI feedback callbacks for the same session within 30 seconds', async () => {
+    const { consumeApiQuota, generateAiFeedback, resolveTelegramUser, transcriptQuery } = mockAiFeedbackDependencies();
+    const { replyWithAiFeedback } = await import('@/lib/telegram/voiceHandler');
+    const { ctx, replies } = createAiFeedbackContext();
+
+    await replyWithAiFeedback(ctx as never, 123);
+    await replyWithAiFeedback(ctx as never, 123);
+
+    expect(resolveTelegramUser).toHaveBeenCalledTimes(1);
+    expect(transcriptQuery).toHaveBeenCalledTimes(1);
+    expect(consumeApiQuota).toHaveBeenCalledTimes(1);
+    expect(generateAiFeedback).toHaveBeenCalledTimes(1);
+    expect(replies).toHaveLength(2);
+    expect(replies[0]).toBe('🤖 AI feedback is being generated...');
+    expect(replies[1]).toContain('AI Feedback');
+  });
+
+  it('replies with a temporary unavailable message when resolving the Telegram user times out', async () => {
+    vi.useFakeTimers();
+    try {
+      const { generateAiFeedback, transcriptQuery } = mockAiFeedbackDependencies({
+        resolveTelegramUser: async () => new Promise<string | null>(() => undefined),
+      });
+      const { replyWithAiFeedback } = await import('@/lib/telegram/voiceHandler');
+      const { ctx, replies } = createAiFeedbackContext();
+
+      const pending = replyWithAiFeedback(ctx as never, 123);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await pending;
+
+      expect(replies).toEqual(['AI feedback is temporarily unavailable. Please try again in a moment.']);
+      expect(transcriptQuery).not.toHaveBeenCalled();
+      expect(generateAiFeedback).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('replies with a temporary unavailable message when loading the transcript times out', async () => {
+    vi.useFakeTimers();
+    try {
+      const { generateAiFeedback, transcriptQuery } = mockAiFeedbackDependencies({
+        transcriptQuery: async () => new Promise<{ data: { transcript: string } | null; error: null }>(() => undefined),
+      });
+      const { replyWithAiFeedback } = await import('@/lib/telegram/voiceHandler');
+      const { ctx, replies } = createAiFeedbackContext();
+
+      const pending = replyWithAiFeedback(ctx as never, 123);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await pending;
+
+      expect(replies).toEqual(['AI feedback is temporarily unavailable. Please try again in a moment.']);
+      expect(transcriptQuery).toHaveBeenCalledTimes(1);
+      expect(generateAiFeedback).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('replies with a temporary unavailable message when feedback quota consumption times out', async () => {
+    vi.useFakeTimers();
+    try {
+      const { consumeApiQuota, generateAiFeedback } = mockAiFeedbackDependencies({
+        consumeApiQuota: async () => new Promise<void>(() => undefined),
+      });
+      const { replyWithAiFeedback } = await import('@/lib/telegram/voiceHandler');
+      const { ctx, replies } = createAiFeedbackContext();
+
+      const pending = replyWithAiFeedback(ctx as never, 123);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await pending;
+
+      expect(consumeApiQuota).toHaveBeenCalledTimes(1);
+      expect(generateAiFeedback).not.toHaveBeenCalled();
+      expect(replies).toEqual([
+        '🤖 AI feedback is being generated...',
+        'AI feedback is temporarily unavailable. Please try again in a moment.',
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the feedback quota exceeded reply unchanged', async () => {
+    const quotaError = { kind: 'feedback' };
+    const { consumeApiQuota, generateAiFeedback } = mockAiFeedbackDependencies({
+      consumeApiQuota: async () => {
+        throw quotaError;
+      },
+      isApiQuotaExceededError: (error) => error === quotaError,
+    });
+    const { replyWithAiFeedback } = await import('@/lib/telegram/voiceHandler');
+    const { ctx, replies } = createAiFeedbackContext();
+
+    await replyWithAiFeedback(ctx as never, 123);
+
+    expect(consumeApiQuota).toHaveBeenCalledTimes(1);
+    expect(generateAiFeedback).not.toHaveBeenCalled();
+    expect(replies).toEqual([
+      '🤖 AI feedback is being generated...',
+      'quota exceeded: feedback',
+    ]);
   });
 });
 

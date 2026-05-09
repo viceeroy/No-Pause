@@ -52,6 +52,12 @@ import {
 
 const sessionSupabase = supabaseServer as unknown as SupabaseLike;
 const MAX_TELEGRAM_VOICE_DURATION_SECONDS = 300;
+const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS = 10_000;
+const TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS = 30_000;
+const TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE =
+  "AI feedback is temporarily unavailable. Please try again in a moment.";
+const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR = "Telegram AI feedback Supabase call timed out";
+const aiFeedbackSessionDebounce = new Map<string, number>();
 
 export type TelegramSessionRecord = {
   id: string;
@@ -296,6 +302,27 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
       clearTimeout(timeoutId);
     }
   }
+}
+
+function isTelegramAiFeedbackSupabaseTimeout(error: unknown): boolean {
+  return error instanceof Error && error.message === TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR;
+}
+
+function claimAiFeedbackSession(sessionId: string): boolean {
+  const now = Date.now();
+  for (const [trackedSessionId, lastCallbackAt] of aiFeedbackSessionDebounce) {
+    if (now - lastCallbackAt >= TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS) {
+      aiFeedbackSessionDebounce.delete(trackedSessionId);
+    }
+  }
+
+  const lastCallbackAt = aiFeedbackSessionDebounce.get(sessionId);
+  if (lastCallbackAt !== undefined && now - lastCallbackAt < TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS) {
+    return false;
+  }
+
+  aiFeedbackSessionDebounce.set(sessionId, now);
+  return true;
 }
 
 async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
@@ -766,19 +793,31 @@ export async function replyWithAiFeedback(
   telegramId: number,
 ) {
   const sessionId = ctx.match[1];
+  if (!claimAiFeedbackSession(sessionId)) {
+    return;
+  }
+
   console.log("Telegram AI feedback handler entered", {
     telegramId,
     sessionId,
   });
 
   try {
-    const userId = await resolveTelegramUser(telegramId);
+    const userId = await withTimeout(
+      resolveTelegramUser(telegramId),
+      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
+      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
+    );
     if (!userId) {
       await replyWithConnectPrompt(ctx, telegramId);
       return;
     }
 
-    const transcript = await getTelegramSessionTranscript({ userId, sessionId });
+    const transcript = await withTimeout(
+      getTelegramSessionTranscript({ userId, sessionId }),
+      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
+      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
+    );
     if (!transcript) {
       await ctx.reply("Session not found or expired.");
       return;
@@ -792,11 +831,15 @@ export async function replyWithAiFeedback(
 
     try {
       await ctx.reply("🤖 AI feedback is being generated...");
-      await consumeApiQuota({
-        userId,
-        kind: "feedback",
-        limit: DAILY_FEEDBACK_LIMIT,
-      });
+      await withTimeout(
+        consumeApiQuota({
+          userId,
+          kind: "feedback",
+          limit: DAILY_FEEDBACK_LIMIT,
+        }),
+        TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
+        TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
+      );
       console.log("Telegram AI feedback started", {
         telegramId,
         sessionId,
@@ -814,6 +857,10 @@ export async function replyWithAiFeedback(
         await ctx.reply(getQuotaExceededMessage(error.kind));
         return;
       }
+      if (isTelegramAiFeedbackSupabaseTimeout(error)) {
+        await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
+        return;
+      }
       console.error("Telegram AI feedback failed", {
         message: error instanceof Error ? error.message : String(error),
         telegramId,
@@ -822,6 +869,10 @@ export async function replyWithAiFeedback(
       await ctx.reply("AI feedback is taking too long. Try again in a moment.");
     }
   } catch (error) {
+    if (isTelegramAiFeedbackSupabaseTimeout(error)) {
+      await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
+      return;
+    }
     console.error("Telegram AI feedback failed", error);
     await ctx.reply(MESSAGES.feedbackError, { parse_mode: "HTML" });
   }

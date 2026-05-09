@@ -49,6 +49,16 @@ export function ResultPanel({
     setTimeout(() => onCopied(false), 2000);
   };
   const renderDurationText = (seconds: number) => formatMMSS(seconds);
+  const renderSpeakingTimeText = (speakingSeconds: number, totalSeconds: number) => {
+    const microSilenceSeconds = Math.max(0, Math.floor(totalSeconds) - Math.floor(speakingSeconds));
+    const speakingText = `${renderDurationText(speakingSeconds)} speaking`;
+
+    if (microSilenceSeconds === 0) {
+      return speakingText;
+    }
+
+    return `${speakingText} · ${renderDurationText(microSilenceSeconds)} gaps`;
+  };
 
   const getCoachingNote = () => {
     if (lastResults.flowScore === 0) return '';
@@ -112,8 +122,8 @@ export function ResultPanel({
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Timer size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Speaking time</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {renderDurationText(speakingTime)}
+            <p className="text-xl font-serif font-medium text-foreground md:text-2xl">
+              {renderSpeakingTimeText(speakingTime, sessionLength)}
             </p>
           </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">

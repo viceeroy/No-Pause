@@ -208,6 +208,19 @@ function formatTelegramResultDuration(seconds: number): string {
   return `${minutes}m ${remainingSeconds}s`;
 }
 
+function formatTelegramSpeakingTimeBreakdown(speakingSeconds: number, totalSeconds: number): string {
+  const safeSpeakingSeconds = Math.max(0, Math.floor(speakingSeconds || 0));
+  const safeTotalSeconds = Math.max(0, Math.floor(totalSeconds || 0));
+  const microSilenceSeconds = Math.max(0, safeTotalSeconds - safeSpeakingSeconds);
+  const speakingText = `${formatTelegramResultDuration(safeSpeakingSeconds)} speaking`;
+
+  if (microSilenceSeconds === 0) {
+    return speakingText;
+  }
+
+  return `${speakingText} · ${formatTelegramResultDuration(microSilenceSeconds)} gaps`;
+}
+
 function formatCompletedMinutesLabel(minutes: number): string {
   return `${minutes} completed ${minutes === 1 ? "minute" : "minutes"}`;
 }
@@ -238,7 +251,7 @@ function formatResultFields(input: {
     `📊 ${label("Flow Score:")} ${input.analysis.flowScore}`,
     `🥇 ${label("Bonus:")} +${bonus} (${formatCompletedMinutesLabel(completedMinutes)})`,
     "",
-    `⏱ ${label("Speaking time:")} ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}`,
+    `⏱ ${label("Speaking time:")} ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}`,
     `🕒 ${label("Session length:")} ${formatTelegramResultDuration(input.analysis.totalSessionTimeSec)}`,
     `🔇 ${label("Pauses:")} ${input.analysis.pauseCount} (silent gaps)`,
     `💬 ${label("Fillers:")} ${input.analysis.hesitationCount} (um, uh, er, ah)`,
@@ -296,7 +309,7 @@ export function getGroupShareResultMessage(input: {
 💬 <b>Topic:</b> ${topicText}
 📊 <b>Flow Score:</b> ${input.analysis.flowScore}
 🔁 <b>Attempt:</b> ${attemptText}
-⏱ <b>Speaking time:</b> ${formatTelegramResultDuration(input.analysis.speakingTimeSec)}
+⏱ <b>Speaking time:</b> ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}
 🔇 <b>Pauses:</b> ${input.analysis.pauseCount}
 💬 <b>Fillers:</b> ${input.analysis.hesitationCount}`;
 }
