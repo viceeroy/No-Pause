@@ -155,6 +155,7 @@ export function createTelegramBot() {
   void bot.telegram.setMyCommands([
     { command: "start", description: "Start or connect NoPause" },
     { command: "about", description: "About NoPause" },
+    { command: "register", description: "Connect or switch account" },
   ], { scope: { type: "all_private_chats" } }).catch((error) => {
     console.error("Telegram command menu registration failed", error);
   });
@@ -211,6 +212,18 @@ export function createTelegramBot() {
     if (isGroupChat(ctx)) return;
 
     await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
+  });
+
+  bot.command("register", async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) {
+      await ctx.reply(MESSAGES.welcomeIdentify, { parse_mode: "HTML" });
+      return;
+    }
+
+    await ctx.reply(MESSAGES.register, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
   });
 
   bot.command("nopause", async (ctx) => {

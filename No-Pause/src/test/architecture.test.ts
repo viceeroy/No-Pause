@@ -32,6 +32,7 @@ import {
   getNoPauseGroupChallengeKeyboard,
   getSpeakingResultMessage,
   isGroupChallengeRecord,
+  MESSAGES,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   speakPromptKeyboard,
@@ -294,6 +295,29 @@ describe('result message formatting architecture', () => {
         'return;[\\s\\S]*' +
         'await ctx\\.reply\\(MESSAGES\\.welcome, \\{ \\.\\.\\.getConnectAccountKeyboard\\(telegramId\\), parse_mode: "HTML" \\}\\);',
     ));
+  });
+
+  it('registers /register only for private chats and sends the connect-account keyboard', () => {
+    const routerSource = readFileSync(`${process.cwd()}/src/lib/telegram/router.ts`, 'utf8');
+    const privateScopeIndex = routerSource.indexOf('scope: { type: "all_private_chats" }');
+    const groupScopeIndex = routerSource.indexOf('scope: { type: "all_group_chats" }');
+    const privateCommands = routerSource.slice(
+      routerSource.lastIndexOf('void bot.telegram.setMyCommands([', privateScopeIndex),
+      privateScopeIndex,
+    );
+    const groupCommands = routerSource.slice(
+      routerSource.lastIndexOf('void bot.telegram.setMyCommands([', groupScopeIndex),
+      groupScopeIndex,
+    );
+
+    expect(privateCommands).toContain('{ command: "register", description: "Connect or switch account" }');
+    expect(groupCommands).not.toContain('{ command: "register", description: "Connect or switch account" }');
+    expect(routerSource).toMatch(new RegExp(
+      'bot\\.command\\("register", async \\(ctx\\) => \\{\\s+' +
+        'if \\(isGroupChat\\(ctx\\)\\) return;[\\s\\S]*' +
+        'await ctx\\.reply\\(MESSAGES\\.register, \\{ \\.\\.\\.getConnectAccountKeyboard\\(telegramId\\), parse_mode: "HTML" \\}\\);',
+    ));
+    expect(MESSAGES.welcomeBack).toContain('/register');
   });
 
   it('keeps Telegram AI feedback work inside the webhook request', () => {

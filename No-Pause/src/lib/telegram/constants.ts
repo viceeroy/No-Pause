@@ -602,5 +602,7 @@ export const MESSAGES = {
   welcome:
     "👋 <b>Welcome to NoPause</b>\n\n<b>What it does:</b>\nTrack your speaking fluency.\nReduce pauses.\nImprove your Flow Score.\n\n<b>Action:</b>\nConnect your account to get started.",
   welcomeBack:
-    "👋 <b>Welcome back to NoPause</b>\n\n✅ <b>Status:</b>\nYour account is connected and ready to use.\n\n🎤 <b>Action:</b>\nSend a voice note whenever you are ready.",
+    "👋 <b>Welcome back to NoPause</b>\n\n✅ <b>Status:</b>\nYour account is connected and ready to use.\n\n🎤 <b>Action:</b>\nSend a voice note whenever you are ready.\n\nNeed to connect a different account? Use /register.",
+  register:
+    "🔐 <b>Register NoPause account</b>\n\n<b>Status:</b>\nYou can connect this Telegram chat to a NoPause account, or switch it to a different account.\n\n<b>Action:</b>\nTap Connect Account and sign in with the NoPause account you want to use.",
 };
