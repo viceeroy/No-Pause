@@ -390,7 +390,7 @@ export function getChallengeCreatorNotification(input: {
   const topic = escapeTelegramHtml(input.topic);
   if (input.creatorScore === null || input.creatorScore === undefined) {
     const prefix = `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n`;
-    const suffix = `\n\n<b>Action:</b>\nSend a voice note and let's see what you've got 🎤`;
+    const suffix = "\n\n🎤 Send a voice note when you are ready.";
     return `${prefix}${formatResultFields({
       analysis: input.analysis,
       transcript: input.transcript,
@@ -414,15 +414,9 @@ export function getConnectUrl(telegramId: number): string {
 }
 
 export function getGroupChallengeConnectMessage(input: { username: string }): string {
-  return `🔐 <b>NoPause account needed</b>
+  return `🔐 ${escapeTelegramHtml(input.username)} needs to connect NoPause first.
 
-👤 <b>Player:</b> ${escapeTelegramHtml(input.username)}
-
-<b>Status:</b>
-This player is not connected to NoPause yet.
-
-<b>Action:</b>
-Sign in and connect Telegram first, then tap Speak again to join the challenge.`;
+Sign in and connect Telegram, then tap Speak again to join the challenge.`;
 }
 
 export function getGroupChallengeEndedMessage(input: { topic: string }): string {
@@ -553,36 +547,36 @@ export function getTelegramStatsMessage(input: {
 
 export const MESSAGES = {
   connectPrompt:
-    "👋 <b>Connect your account</b>\n\n<b>Status:</b>\nYour NoPause account is not connected yet.\n\n<b>Action:</b>\nConnect first to get your Flow Score.",
+    "👋 Connect your NoPause account first.\n\nThen send a voice note to get your Flow Score.",
   statsError:
-    "⚠️ <b>Stats error</b>\n\n<b>Status:</b>\nI could not load your stats right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I could not load your stats right now.\n\nPlease try again in a moment.",
   noSessions:
-    "📊 <b>No sessions yet</b>\n\n<b>Status:</b>\nYou do not have any practice sessions yet.\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
+    "📊 You do not have any practice sessions yet.\n\nSend a voice note and let's see what you've got 🎤",
   challengeCreationError:
-    "⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not create a challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I could not create a challenge right now.\n\nPlease try again in a moment.",
   groupChallengeCreationError:
-    "⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not create a group challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I could not create a group challenge right now.\n\nPlease try again in a moment.",
   challengeNotFound:
-    "⚠️ <b>Challenge not found</b>\n\n<b>Status:</b>\nI could not find that challenge.\n\n<b>Action:</b>\nAsk your friend to send a fresh challenge link.",
+    "⚠️ I could not find that challenge.\n\nAsk your friend to send a fresh challenge link.",
   challengeLoadError:
-    "⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not load that challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I could not load that challenge right now.\n\nPlease try again in a moment.",
   challengeRestartError:
-    "⚠️ <b>Challenge error</b>\n\n<b>Status:</b>\nI could not restart that challenge right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I could not restart that challenge right now.\n\nPlease try again in a moment.",
   groupChallengeGone:
-    "⚠️ <b>Challenge not found</b>\n\n<b>Status:</b>\nI could not find that group challenge anymore.\n\n<b>Action:</b>\nAsk the group to start a new Challenge.",
+    "⚠️ I could not find that group challenge anymore.\n\nAsk the group to start a new Challenge.",
   voiceReceived:
-    "🎧 <b>Voice note received</b>\n\n<b>Status:</b>\nAnalyzing your voice note now.",
+    "🎧 Voice note received.\n\nAnalyzing it now.",
   unusableTranscript: "Couldn't hear anything clearly. Please speak louder and try again 🎤",
   analysisError:
-    "⚠️ <b>Analysis error</b>\n\n<b>Status:</b>\nI hit an issue analyzing that voice note.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I hit an issue analyzing that voice note.\n\nPlease try again in a moment.",
   feedbackIdentifyError:
-    "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not identify your Telegram account.",
+    "⚠️ I could not identify your Telegram account.",
   feedbackTranscriptMissing:
-    "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not find the transcript for that session.\n\n<b>Action:</b>\nSend a new voice note and try again.",
+    "⚠️ I could not find the transcript for that session.\n\nSend a new voice note and try again.",
   feedbackError:
-    "⚠️ <b>Feedback error</b>\n\n<b>Status:</b>\nI could not generate feedback right now.\n\n<b>Action:</b>\nPlease try again in a moment.",
+    "⚠️ I could not generate feedback right now.\n\nPlease try again in a moment.",
   statsPrivate:
-    "📊 <b>Stats are private</b>\n\n<b>Action:</b>\nOpen @NoPauseAI_bot directly to view your stats.",
+    "📊 Open @NoPauseAI_bot directly to view your stats.",
   speakPrivate:
     "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your fluency, pauses, and Flow Score.\n\nNeed an idea first?",
   scoringInfo:
@@ -596,13 +590,13 @@ export const MESSAGES = {
   about:
     "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time. Tap Speak when you want a quick reminder, then use the inline Get Prompt button if you want a topic first.\n\n🏆 <b>How scoring works</b>\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTap My Stats to check your streak, best score, and practice time.\n\n🌐 nopause.org",
   readyPrivate:
-    "🎤 <b>Ready when you are</b>\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤",
+    "🎤 Just send a voice note when you are ready.\n\nLet's see what you've got.",
   welcomeIdentify:
-    "👋 <b>Welcome to NoPause</b>\n\n<b>Status:</b>\nI could not identify your Telegram account.",
+    "👋 I could not identify your Telegram account.",
   welcome:
-    "👋 <b>Welcome to NoPause</b>\n\n<b>What it does:</b>\nTrack your speaking fluency.\nReduce pauses.\nImprove your Flow Score.\n\n<b>Action:</b>\nConnect your account to get started.",
+    "👋 Welcome to NoPause.\n\nConnect your account to track fluency, reduce pauses, and improve your Flow Score.",
   welcomeBack:
-    "👋 <b>Welcome back to NoPause</b>\n\n✅ <b>Status:</b>\nYour account is connected and ready to use.\n\n🎤 <b>Action:</b>\nSend a voice note whenever you are ready.\n\nNeed to connect a different account? Use /register.",
+    "👋 Your NoPause account is connected.\n\nSend a voice note whenever you are ready. Use /register to connect a different account.",
   register:
-    "🔐 <b>Register NoPause account</b>\n\n<b>Status:</b>\nYou can connect this Telegram chat to a NoPause account, or switch it to a different account.\n\n<b>Action:</b>\nTap Connect Account and sign in with the NoPause account you want to use.",
+    "🔐 Connect this Telegram chat to NoPause.\n\nSign in with the account you want to use.",
 };
