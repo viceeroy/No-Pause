@@ -105,9 +105,6 @@ const helpArticles: HelpArticle[] = [
   },
 ];
 
-const heroArticles = helpArticles.slice(0, 3);
-const collapsibleArticles = helpArticles.slice(3);
-
 function FlowVisual() {
   const steps = ['Speak', 'Analyze', 'Flow Score'];
 
@@ -376,20 +373,6 @@ function ArticleContent({ article }: { article: HelpArticle }) {
   );
 }
 
-function HeroArticleCard({ article }: { article: HelpArticle }) {
-  return (
-    <article className="w-full rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
-      <h2 className="mb-3 text-2xl font-serif font-medium leading-tight text-foreground md:text-3xl">
-        {article.title}
-      </h2>
-      <p className="mb-4 text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-        {article.summary}
-      </p>
-      <ArticleContent article={article} />
-    </article>
-  );
-}
-
 function CollapsibleArticleCard({
   article,
   isOpen,
@@ -454,14 +437,8 @@ export default function HelpPage() {
           </p>
         </header>
 
-        <section className="mb-4 flex flex-col gap-3 md:mb-5">
-          {heroArticles.map((article) => (
-            <HeroArticleCard key={article.title} article={article} />
-          ))}
-        </section>
-
         <section className="flex flex-col gap-3">
-          {collapsibleArticles.map((article) => {
+          {helpArticles.map((article) => {
             const isOpen = openArticleTitle === article.title;
 
             return (
