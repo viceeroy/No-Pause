@@ -198,6 +198,12 @@ export function createTelegramBot() {
       telegramId,
       stack: getDebugStackSnippet(),
     });
+    const userId = await resolveTelegramUser(telegramId);
+    if (userId) {
+      await ctx.reply(MESSAGES.welcomeBack, { ...replyKeyboard, parse_mode: "HTML" });
+      return;
+    }
+
     await ctx.reply(MESSAGES.welcome, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
   });
 

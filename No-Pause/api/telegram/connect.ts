@@ -84,6 +84,39 @@ Your full history and detailed results are always at:
   }
 }
 
+async function sendTelegramAlreadyConnectedMessage(input: { telegramId: number; firstName: string }) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    throw new Error("TELEGRAM_BOT_TOKEN is not set");
+  }
+
+  console.log("Telegram welcome debug", {
+    triggerSource: "api/telegram/connect.ts:sendTelegramAlreadyConnectedMessage",
+    telegramId: input.telegramId,
+    stack: getDebugStackSnippet(),
+  });
+
+  const messageResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: input.telegramId,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+      text: `👋 Hi <b>${escapeTelegramHtml(input.firstName)}</b>!
+
+✅ Your NoPause account is already connected and ready to use.
+
+🎤 Send a voice note whenever you are ready.`,
+    }),
+  });
+
+  if (!messageResponse.ok) {
+    const errorText = await messageResponse.text().catch(() => "");
+    throw new Error(`Telegram already-connected message failed: ${messageResponse.status} ${errorText}`);
+  }
+}
+
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
     if (req.method !== "POST") {
@@ -121,10 +154,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     const { shouldSendWelcome } = await upsertTelegramConnection({ telegramId, userId });
+    const firstName = getFirstName(data.user.user_metadata);
     if (shouldSendWelcome) {
       await sendTelegramWelcomeMessage({
         telegramId,
-        firstName: getFirstName(data.user.user_metadata),
+        firstName,
+      });
+    } else {
+      await sendTelegramAlreadyConnectedMessage({
+        telegramId,
+        firstName,
       });
     }
 

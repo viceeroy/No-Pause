@@ -284,6 +284,18 @@ describe('result message formatting architecture', () => {
     });
   });
 
+  it('checks existing Telegram connections before showing the /start connect prompt', () => {
+    const routerSource = readFileSync(`${process.cwd()}/src/lib/telegram/router.ts`, 'utf8');
+
+    expect(routerSource).toMatch(new RegExp(
+      'const userId = await resolveTelegramUser\\(telegramId\\);[\\s\\S]*' +
+        'if \\(userId\\) \\{[\\s\\S]*' +
+        'await ctx\\.reply\\(MESSAGES\\.welcomeBack, \\{ \\.\\.\\.replyKeyboard, parse_mode: "HTML" \\}\\);[\\s\\S]*' +
+        'return;[\\s\\S]*' +
+        'await ctx\\.reply\\(MESSAGES\\.welcome, \\{ \\.\\.\\.getConnectAccountKeyboard\\(telegramId\\), parse_mode: "HTML" \\}\\);',
+    ));
+  });
+
   it('keeps Telegram AI feedback work inside the webhook request', () => {
     const routerSource = readFileSync(`${process.cwd()}/src/lib/telegram/router.ts`, 'utf8');
 
@@ -1238,7 +1250,7 @@ describe('HTTP header ASCII normalization', () => {
     expect(webhookCallback).toHaveBeenCalledTimes(1);
   });
 
-  it('api/telegram/connect does not resend a welcome when the connection already exists for the user', async () => {
+  it('api/telegram/connect sends a short confirmation when the connection already exists for the user', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
     const fetchMock = vi.fn(async () => ({ ok: true }));
     vi.stubGlobal('fetch', fetchMock);
@@ -1278,7 +1290,14 @@ describe('HTTP header ASCII normalization', () => {
 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body)).toEqual({ success: true, welcomeSent: false });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.telegram.org/bottelegram-token/sendMessage',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('already connected and ready to use'),
+      }),
+    );
   });
 
   it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {

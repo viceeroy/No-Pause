@@ -601,4 +601,6 @@ export const MESSAGES = {
     "👋 <b>Welcome to NoPause</b>\n\n<b>Status:</b>\nI could not identify your Telegram account.",
   welcome:
     "👋 <b>Welcome to NoPause</b>\n\n<b>What it does:</b>\nTrack your speaking fluency.\nReduce pauses.\nImprove your Flow Score.\n\n<b>Action:</b>\nConnect your account to get started.",
+  welcomeBack:
+    "👋 <b>Welcome back to NoPause</b>\n\n✅ <b>Status:</b>\nYour account is connected and ready to use.\n\n🎤 <b>Action:</b>\nSend a voice note whenever you are ready.",
 };
