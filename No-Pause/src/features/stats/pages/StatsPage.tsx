@@ -322,7 +322,7 @@ export default function StatsPage({
                         )}
                       </div>
                       <p className="truncate text-xs font-sans text-muted-foreground">
-                        {formatDate(session.created_at)} | {formatDuration(session.speakingTime || 0)} - {session.hesitationCount || 0} pauses
+                        {formatDate(session.created_at)} | Silence {formatDuration(session.totalSilenceTime || 0)} - {session.hesitationCount || 0} pauses
                       </p>
                     </div>
                     {shouldShowRecentFlowScore(session.flowScore) ? (

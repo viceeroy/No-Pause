@@ -12,6 +12,7 @@ describe('usePracticeState', () => {
       result.current.setLastResults({
         flowScore: 0,
         totalSpeakingTime: 0,
+        totalSilenceTime: 60,
         totalSessionTime: 60,
         hesitationCount: 3,
         hesitationLog: [],

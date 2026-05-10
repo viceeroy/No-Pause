@@ -7,6 +7,7 @@ export type SessionRecord = {
   mode: string;
   duration: number;
   speaking_time: number | null;
+  total_silence_time?: number | null;
   pauses: number | null;
   pause_count?: number | null;
   filler_count?: number | null;
@@ -49,6 +50,7 @@ export type PracticeStats = {
     created_at: string;
     duration: number;
     speakingTime: number;
+    totalSilenceTime: number;
     hesitationCount: number;
     flowScore: number | null;
     mode: string;
@@ -72,7 +74,7 @@ type SupabaseRpcLike = {
 };
 
 const SESSION_COLUMNS =
-  "id, created_at, mode, duration, speaking_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
+  "id, created_at, mode, duration, speaking_time, total_silence_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 const LEGACY_SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 
@@ -205,6 +207,7 @@ function parseRecentSessions(value: unknown): PracticeStats["recentSessions"] {
       created_at: String(record.created_at ?? ""),
       duration: toInteger(record.duration),
       speakingTime: toInteger(record.speakingTime),
+      totalSilenceTime: toInteger(record.totalSilenceTime),
       hesitationCount: toInteger(record.hesitationCount),
       flowScore: flowScore === null || flowScore === undefined ? null : toInteger(flowScore),
       mode: String(record.mode ?? "speaking"),
@@ -298,6 +301,10 @@ export function getSessionSpeakingTime(session: SessionRecord): number {
   return Number(session.speaking_time ?? session.duration ?? 0);
 }
 
+export function getSessionSilenceTime(session: SessionRecord): number {
+  return Number(session.total_silence_time ?? 0);
+}
+
 export function getSessionHesitationCount(session: SessionRecord): number {
   return Number(session.pause_count ?? session.pauses ?? 0);
 }
@@ -370,6 +377,7 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
     created_at: session.created_at,
     duration: getSessionDuration(session),
     speakingTime: getSessionSpeakingTime(session),
+    totalSilenceTime: getSessionSilenceTime(session),
     hesitationCount: getSessionHesitationCount(session),
     flowScore: getSessionFlowScore(session),
     mode: getNormalizedSessionMode(session),

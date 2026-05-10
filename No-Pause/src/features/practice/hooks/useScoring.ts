@@ -38,6 +38,7 @@ export function buildSessionResult({
   const analyzerSeconds = Math.round(normalizeNonNegativeNumber(results.totalTime) / 1000);
   const totalSessionTimeSec = Math.max(analyzerSeconds, recordedSeconds);
   const speakingTimeSec = normalizeNonNegativeNumber(results.totalSpeakingTime);
+  const silenceTimeSec = normalizeNonNegativeNumber(results.totalSilenceTime);
   const hesitationCount = Math.round(normalizeNonNegativeNumber(results.hesitationCount));
 
   const transcriptHasSpeech = Boolean(
@@ -96,6 +97,7 @@ export function buildSessionResult({
       sessionId: null,
       flowScore: safeFlowScore,
       totalSpeakingTime: speakingTimeSec,
+      totalSilenceTime: silenceTimeSec,
       totalSessionTime: totalSessionTimeSec,
       isCompleted: scoreResult.isCompleted,
       hesitationCount,

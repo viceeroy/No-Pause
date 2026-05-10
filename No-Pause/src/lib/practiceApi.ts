@@ -18,6 +18,8 @@ export type { PracticeStats, SessionRecord } from "./core/queries";
 
 const sessionSupabase: SupabaseLike = browserSupabase as unknown as SupabaseLike;
 const SESSION_SUMMARY_COLUMNS =
+  "id, created_at, mode, duration, speaking_time, total_silence_time, pauses, pause_count, words, flow_score, completed, hesitation_log, source";
+const LEGACY_SESSION_SUMMARY_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, words, flow_score, completed, hesitation_log, source";
 
 export type Base64TranscriptionInput = {
@@ -121,6 +123,7 @@ type SaveSessionInput = {
   email?: string | null;
   duration: number;
   speakingTime?: number;
+  silenceTime?: number;
   pauses: number;
   pauseCount?: number | null;
   fillerCount?: number | null;
@@ -146,6 +149,7 @@ export async function saveSession(input: SaveSessionInput): Promise<string | nul
   return insertSession(sessionSupabase, {
     userId: input.userId,
     speakingTime: input.speakingTime,
+    silenceTime: input.silenceTime,
     flowScore: input.flowScore,
     pauses: input.pauses,
     pauseCount: input.pauseCount ?? input.pauses,
@@ -225,9 +229,9 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   }
 
   const [
-    { data: allTimeSessions, error: allTimeSessionsError },
-    { data: recentSessions, error: recentSessionsError },
-    { data: streak, error: streakError },
+    allTimeSessionsResult,
+    recentSessionsResult,
+    streakResult,
   ] = await Promise.all([
     browserSupabase
       .from("sessions")
@@ -246,6 +250,35 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
       .eq("user_id", userId)
       .maybeSingle(),
   ]);
+  let allTimeSessions = allTimeSessionsResult.data as SessionRecord[] | null;
+  let allTimeSessionsError = allTimeSessionsResult.error;
+  let recentSessions = recentSessionsResult.data as SessionRecord[] | null;
+  let recentSessionsError = recentSessionsResult.error;
+  const streak = streakResult.data;
+  const streakError = streakResult.error;
+
+  if (isMissingSessionAnalysisColumnError(allTimeSessionsError) || isMissingSessionAnalysisColumnError(recentSessionsError)) {
+    const [
+      legacyAllTimeSessionsResult,
+      legacyRecentSessionsResult,
+    ] = await Promise.all([
+      browserSupabase
+        .from("sessions")
+        .select(LEGACY_SESSION_SUMMARY_COLUMNS)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      browserSupabase
+        .from("sessions")
+        .select(LEGACY_SESSION_SUMMARY_COLUMNS)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit),
+    ]);
+    allTimeSessions = legacyAllTimeSessionsResult.data as SessionRecord[] | null;
+    allTimeSessionsError = legacyAllTimeSessionsResult.error;
+    recentSessions = legacyRecentSessionsResult.data as SessionRecord[] | null;
+    recentSessionsError = legacyRecentSessionsResult.error;
+  }
 
   if (allTimeSessionsError) throw allTimeSessionsError;
   if (recentSessionsError) throw recentSessionsError;

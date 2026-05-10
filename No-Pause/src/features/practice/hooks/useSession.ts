@@ -54,6 +54,7 @@ export function useSession({
           email: userEmail ?? undefined,
           duration,
           speakingTime: sessionResult.totalSpeakingTime,
+          silenceTime: sessionResult.totalSilenceTime,
           pauses: sessionResult.hesitationCount,
           pauseCount: sessionResult.pauseCount ?? sessionResult.hesitationCount,
           fillerCount: sessionResult.fillerCount ?? null,

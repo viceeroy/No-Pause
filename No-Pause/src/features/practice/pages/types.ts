@@ -15,6 +15,7 @@ export interface SessionResult {
   sessionId?: string | null;
   flowScore: number;
   totalSpeakingTime: number;
+  totalSilenceTime: number;
   totalSessionTime: number;
   hesitationCount: number;
   pauseCount?: number | null;

@@ -185,14 +185,14 @@ describe('speaking mode scoring architecture', () => {
     });
   });
 
-  it('passes analyzer speaking time and pause count into web session scoring', () => {
+  it('passes analyzer speaking time, silence time, and pause count into web session scoring', () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(10_000);
 
     const result = buildSessionResult({
       startTime: 4_000,
       results: {
         totalSpeakingTime: 6,
-        totalSilenceTime: 0,
+        totalSilenceTime: 2,
         hesitationSilenceTime: 0,
         hesitationCount: 0,
         fillerWordCount: 0,
@@ -210,6 +210,7 @@ describe('speaking mode scoring architecture', () => {
 
     expect(result.sessionResult).toMatchObject({
       totalSpeakingTime: 6,
+      totalSilenceTime: 2,
       totalSessionTime: 6,
       hesitationCount: 0,
       flowScore: 6,
@@ -241,6 +242,7 @@ describe('stats architecture', () => {
         mode: 'speaking',
         duration: 90,
         speaking_time: 80,
+        total_silence_time: 10,
         pauses: 99,
         pause_count: 3,
         filler_count: 2,
@@ -257,6 +259,7 @@ describe('stats architecture', () => {
     expect(buildPracticeStats(sessions, null).recentSessions[0]).toMatchObject({
       duration: 90,
       speakingTime: 80,
+      totalSilenceTime: 10,
       hesitationCount: 3,
       flowScore: 120,
       source: 'telegram',
@@ -502,6 +505,7 @@ describe('stats summary architecture', () => {
         mode: 'speaking',
         duration: 60,
         speaking_time: 55,
+        total_silence_time: 5,
         pauses: 1,
         pause_count: 1,
         filler_count: null,
@@ -515,6 +519,7 @@ describe('stats summary architecture', () => {
 
     expect(summaries[0].source).toBe('telegram');
     expect(summaries[0].speakingTime).toBe(55);
+    expect(summaries[0].totalSilenceTime).toBe(5);
   });
 
   it('reads bounded practice stats from the Supabase RPC shape', async () => {
@@ -534,6 +539,7 @@ describe('stats summary architecture', () => {
           created_at: '2026-05-02T00:00:00.000Z',
           duration: 60,
           speakingTime: 55,
+          totalSilenceTime: 5,
           hesitationCount: 1,
           flowScore: 90,
           mode: 'speaking',
@@ -545,7 +551,7 @@ describe('stats summary architecture', () => {
 
     await expect(getPracticeStatsFromRpc({ rpc }, 'user-1', 25)).resolves.toMatchObject({
       scoredSessions: 2,
-      recentSessions: [{ id: 'session-1', hesitationCount: 1 }],
+      recentSessions: [{ id: 'session-1', totalSilenceTime: 5, hesitationCount: 1 }],
     });
     expect(rpc).toHaveBeenCalledWith('get_practice_stats', {
       p_user_id: 'user-1',
@@ -570,12 +576,14 @@ describe('session persistence architecture', () => {
       duration: 60,
       pauses: 2,
       speakingTime: 55,
+      silenceTime: 5,
       mode: 'free_speaking',
       flowScore: 90,
       completed: true,
     });
 
     expect(values.mode).toBe('speaking');
+    expect(values.total_silence_time).toBe(5);
     expect(JSON.stringify(values)).not.toContain('free_speaking');
   });
 
