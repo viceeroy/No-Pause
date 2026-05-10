@@ -10,6 +10,7 @@ import { getRouteSeoConfig, seoDefaults } from "@/shared/seo/routeSeo";
 import DashboardPage from "@/features/stats/pages/DashboardPage";
 import PracticePage from "./pages/PracticePage";
 import PromptsPage from "./pages/PromptsPage";
+import HelpPage from "./pages/HelpPage";
 import StatsPage from "@/features/stats/pages/StatsPage";
 import AuthPage from "@/features/auth/pages/AuthPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
@@ -99,6 +100,7 @@ const AppRoutes = () => {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/prompts" element={<PromptsPage />} />
+          <Route path="/help" element={<HelpPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/history" element={<Navigate to="/stats" replace />} />
           <Route path="*" element={<NotFound />} />

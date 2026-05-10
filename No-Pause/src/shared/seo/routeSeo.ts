@@ -77,6 +77,18 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
     };
   }
 
+  if (pathname === "/help") {
+    const title = "Help | No Pause";
+    const description =
+      "Learn how No Pause scoring, pauses, prompts, streaks, challenges, and Telegram practice work.";
+    return {
+      title,
+      description,
+      canonicalPath: "/help",
+      structuredData: buildWebPageSchema(title, description, "/help"),
+    };
+  }
+
   if (pathname === "/connect") {
     const title = "Connect Telegram | No Pause";
     const description = "Connect your Telegram account to No Pause and get Flow Scores from voice notes.";
