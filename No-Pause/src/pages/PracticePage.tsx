@@ -5,6 +5,7 @@ import { cn } from '@/shared/lib/utils';
 import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPanel';
 import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
 import { ResultPanel } from '@/features/practice/pages/ResultPanel';
+import { ResultSkeletonPanel } from '@/features/practice/pages/ResultSkeletonPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
 import { getRandomPrompt, opinionPrompts } from '@/lib/core/prompts';
@@ -166,6 +167,10 @@ export default function PracticePage() {
           soundDetected={recording.soundDetectedRef.current}
           stopRecording={recording.stopRecording}
         />
+      )}
+
+      {state.state === 'finishing' && (
+        <ResultSkeletonPanel />
       )}
 
       {state.state === 'done' && state.lastResults && (

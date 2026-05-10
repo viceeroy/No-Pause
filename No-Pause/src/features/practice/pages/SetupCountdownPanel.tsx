@@ -181,11 +181,11 @@ export function SetupCountdownPanel({
         </div>
       </div>
 
-      <div className="shrink-0 pt-3">
-        {state === 'countdown' && (
+      {state === 'countdown' && (
+        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
           <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">{countdown}</div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

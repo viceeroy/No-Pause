@@ -1,7 +1,7 @@
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
 import type { Dispatch, SetStateAction } from 'react';
 
-export type PracticeState = 'setup' | 'countdown' | 'recording' | 'done';
+export type PracticeState = 'setup' | 'countdown' | 'recording' | 'finishing' | 'done';
 
 export type TopicPrompt = {
   id: string;

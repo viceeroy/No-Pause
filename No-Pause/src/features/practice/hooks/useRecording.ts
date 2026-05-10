@@ -185,6 +185,7 @@ export function useRecording({
 
   const stopRecording = useCallback(async () => {
     if (analyzerRef.current && analyzerRef.current.isRunning) {
+      setState('finishing');
       const results = await analyzerRef.current.stop().finally(() => micService.reset());
 
       if (timerRef.current) clearInterval(timerRef.current);
