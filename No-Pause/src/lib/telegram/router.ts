@@ -333,6 +333,7 @@ export function createTelegramBot() {
 
   bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
     try {
+      ctx.telegram.webhookReply = false;
       await ctx.answerCbQuery();
       console.log("Telegram AI feedback callback received", {
         callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,

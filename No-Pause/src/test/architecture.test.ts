@@ -284,6 +284,17 @@ describe('result message formatting architecture', () => {
     });
   });
 
+  it('keeps Telegram AI feedback work inside the webhook request', () => {
+    const routerSource = readFileSync(`${process.cwd()}/src/lib/telegram/router.ts`, 'utf8');
+
+    expect(routerSource).toMatch(new RegExp(
+      'bot\\.action\\(new RegExp\\(`\\^\\$\\{AI_FEEDBACK_ACTION_PREFIX\\}\\(\\.\\+\\)\\$`\\), async \\(ctx\\) => \\{[\\s\\S]*' +
+        'ctx\\.telegram\\.webhookReply = false;[\\s\\S]*' +
+        'await ctx\\.answerCbQuery\\(\\);[\\s\\S]*' +
+        'await replyWithAiFeedback\\(ctx, telegramId\\);',
+    ));
+  });
+
   it('truncates long Telegram transcripts below the safe message limit', () => {
     const message = getSpeakingResultMessage({
       analysis: {
