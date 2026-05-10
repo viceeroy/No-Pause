@@ -100,7 +100,6 @@ const AppRoutes = () => {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/prompts" element={<PromptsPage />} />
-          <Route path="/help" element={<HelpPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/history" element={<Navigate to="/stats" replace />} />
           <Route path="*" element={<NotFound />} />
@@ -153,6 +152,15 @@ const AuthAwareRoutes = () => {
       <Route
         path="/login/*"
         element={session ? <Navigate to={safeReturnTo} replace /> : <AuthPage />}
+      />
+      <Route
+        path="/help"
+        element={
+          <>
+            <RouteSeoManager />
+            <HelpPage />
+          </>
+        }
       />
       <Route
         path="/connect"

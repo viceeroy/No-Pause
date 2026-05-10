@@ -7,7 +7,6 @@ import { useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import { formatPracticeTotalDuration } from '@/lib/core/time';
 import { opinionPrompts } from '@/lib/core/prompts';
-import { HelpSection } from '@/features/stats/pages/HelpSection';
 import { getCurrentUtcMonthKey, useMonthlyStatsRefresh } from '@/features/stats/hooks/useMonthlyStatsRefresh';
 import {
   Dialog,
@@ -206,13 +205,22 @@ export default function DashboardPage() {
             <h2 id="prompt-blocks-heading" className="text-[1.1rem] font-serif font-medium text-foreground md:text-[1.375rem]">
               Prompts
             </h2>
-            <button
-              type="button"
-              onClick={() => navigate('/prompts')}
-              className="inline-flex min-h-9 items-center justify-center rounded-full border border-border bg-surface-card px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-elevated md:text-sm"
-            >
-              More
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/help')}
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-border bg-surface-card px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-elevated md:text-sm"
+              >
+                Help
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/prompts')}
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-border bg-surface-card px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-elevated md:text-sm"
+              >
+                More
+              </button>
+            </div>
           </div>
           <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden md:mx-0 md:px-0">
             <div className="flex w-max gap-3">
@@ -234,8 +242,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
-
-        <HelpSection />
 
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface-base/95 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
           <button
