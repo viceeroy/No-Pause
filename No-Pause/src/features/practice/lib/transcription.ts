@@ -6,7 +6,7 @@ const debugError = (...args: unknown[]) => { if (IS_DEV) console.error(...args);
 
 const MAX_TRANSCRIBE_BYTES = 15 * 1024 * 1024;
 const EMPTY_TRANSCRIPT = 'No speech detected.';
-const FILLER_WORDS = ['um', 'uh', 'like', 'you know', 'basically', 'literally', 'actually', 'right', 'so', 'well'];
+const FILLER_WORDS = ['um', 'uh', 'er', 'ah', 'like', 'you know', 'basically', 'literally', 'actually'];
 
 type SpeechRecognitionAlternativeLike = { transcript: string };
 type SpeechRecognitionResultLike = { isFinal: boolean; 0: SpeechRecognitionAlternativeLike };

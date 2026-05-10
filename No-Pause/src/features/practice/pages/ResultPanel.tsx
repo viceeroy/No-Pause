@@ -20,6 +20,39 @@ interface CustomWindow extends Window {
   __nopauseExportLogs?: () => void;
 }
 
+function stripFillerMarkers(text: string): string {
+  return text.replace(/\*\*([^*]+)\*\*/g, '$1');
+}
+
+function renderTranscriptWithFillerHighlights(text: string) {
+  const parts: Array<string | JSX.Element> = [];
+  const markerPattern = /\*\*([^*]+)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = markerPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    parts.push(
+      <span
+        key={`${match.index}-${match[1]}`}
+        className="rounded-md bg-primary/15 px-1 font-semibold text-primary"
+      >
+        {match[1]}
+      </span>,
+    );
+    lastIndex = markerPattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 export function ResultPanel({
   lastResults,
   showResultsDebugExport,
@@ -74,6 +107,7 @@ export function ResultPanel({
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
   const scoreWidth = Math.max(0, Math.min(100, (lastResults.flowScore / 500) * 100));
   const transcript = (lastResults.transcript || '').trim();
+  const transcriptForCopy = stripFillerMarkers(transcript);
   const transcriptReady =
     transcript.length > 0 &&
     transcript !== 'No speech detected.' &&
@@ -197,7 +231,7 @@ export function ResultPanel({
             {transcriptReady ? (
               <button
                 type="button"
-                onClick={() => copyText(transcript, setCopiedTranscript)}
+                onClick={() => copyText(transcriptForCopy, setCopiedTranscript)}
                 className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
               >
                 {copiedTranscript ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
@@ -206,7 +240,7 @@ export function ResultPanel({
             ) : null}
           </div>
           {transcriptReady ? (
-            <p className="font-sans text-sm leading-relaxed text-foreground">{lastResults.transcript}</p>
+            <p className="font-sans text-sm leading-relaxed text-foreground">{renderTranscriptWithFillerHighlights(transcript)}</p>
           ) : (
             <>
               <p className="mb-4 font-sans text-sm leading-relaxed text-muted-foreground">
@@ -251,7 +285,7 @@ export function ResultPanel({
           </button>
           <button
             onClick={async () => {
-              const shareTranscript = lastResults.transcript || '';
+              const shareTranscript = transcriptForCopy;
               const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPause units: ${pauseCount}\nFillers: ${fillerCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
