@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Download, TrendingUp, Clock, CalendarDays, type LucideIcon } from 'lucide-react';
+import { Mic, Download, TrendingUp, Clock, Flame, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import { formatPracticeTotalDuration } from '@/lib/core/time';
 import { opinionPrompts } from '@/lib/core/prompts';
-import { getCurrentUtcMonthKey, useMonthlyStatsRefresh } from '@/features/stats/hooks/useMonthlyStatsRefresh';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +38,6 @@ export default function DashboardPage() {
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
   const isMountedRef = useRef(false);
-  const lastLoadedMonthRef = useRef<string | null>(null);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -57,7 +55,6 @@ export default function DashboardPage() {
       const nextStats = await getPracticeStats(user?.id ?? null, 1000);
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       setStats(nextStats);
-      lastLoadedMonthRef.current = getCurrentUtcMonthKey();
     } catch (error) {
       console.error('Failed to load dashboard stats:', error);
       if (isMountedRef.current && requestId === requestIdRef.current) setStats(emptyStats);
@@ -65,11 +62,6 @@ export default function DashboardPage() {
       if (isMountedRef.current && requestId === requestIdRef.current) setStatsLoading(false);
     }
   }, [user?.id]);
-
-  useMonthlyStatsRefresh({
-    lastLoadedMonthRef,
-    refreshStats: loadStats,
-  });
 
   useEffect(() => {
     void loadStats();
@@ -104,7 +96,6 @@ export default function DashboardPage() {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() ?? '')
       .join('') || 'NP';
-  const sessionsThisMonth = stats.monthlyStats?.totalSessions ?? 0;
   const metricCards: Array<{
     label: string;
     value: string | number;
@@ -125,11 +116,10 @@ export default function DashboardPage() {
       valueClassName: 'text-foreground',
     },
     {
-      label: 'Sessions this month',
-      value: statsLoading ? '...' : sessionsThisMonth,
-      icon: CalendarDays,
+      label: 'Streak',
+      value: statsLoading ? '...' : `${stats.currentStreak}d`,
+      icon: Flame,
       valueClassName: 'text-foreground',
-      className: 'hidden md:flex',
     },
   ];
 
@@ -261,17 +251,17 @@ export default function DashboardPage() {
               <DialogDescription className="text-sm font-sans leading-relaxed text-muted-foreground">
                 {isIos ? (
                   <>
-                    1. Tap Share icon in Safari
+                    1. Tap the Share button at the bottom of the screen.
                     <br />
-                    2. Select "Add to Home Screen"
+                    2. Tap "Add to Home Screen".
                     <br />
-                    3. Confirm install
+                    3. Tap "Add".
                   </>
                 ) : isAndroid && !isAndroidChrome ? (
                   <>
-                    Open this page in Chrome to install No Pause on Android.
+                    For the best experience, open this page in Chrome.
                     <br />
-                    In Chrome, tap Install or "Add to Home screen".
+                    Then tap Install.
                   </>
                 ) : isAndroidChrome ? (
                   <>
@@ -282,7 +272,7 @@ export default function DashboardPage() {
                     3. If no prompt appears, open Chrome menu and choose "Add to Home screen"
                   </>
                 ) : isDesktop ? (
-                  <>Click Install in your browser prompt.</>
+                  <>Click the install icon in your browser address bar, or open this page in Chrome for the easiest install.</>
                 ) : (
                   <>Open this page in a browser that supports web app install prompts.</>
                 )}

@@ -5,7 +5,6 @@ import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration, formatPracticeTotalDuration } from '@/lib/core/time';
 import { useAuth, type DifficultyLevel } from '@/providers/AuthContext';
-import { getCurrentUtcMonthKey, useMonthlyStatsRefresh } from '@/features/stats/hooks/useMonthlyStatsRefresh';
 
 const difficultyOptions: Array<{ level: DifficultyLevel; label: string }> = [
   { level: 'beginner', label: 'Beginner' },
@@ -65,7 +64,6 @@ export default function StatsPage({
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const isMountedRef = useRef(false);
-  const lastLoadedMonthRef = useRef<string | null>(null);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -84,7 +82,6 @@ export default function StatsPage({
       const nextStats = await getPracticeStats(user?.id ?? null, limit);
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       setStats(nextStats);
-      lastLoadedMonthRef.current = getCurrentUtcMonthKey();
     } catch (error) {
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       const message =
@@ -96,11 +93,6 @@ export default function StatsPage({
       if (isMountedRef.current && requestId === requestIdRef.current) setStatsLoading(false);
     }
   }, [limit, user?.id]);
-
-  useMonthlyStatsRefresh({
-    lastLoadedMonthRef,
-    refreshStats: loadStats,
-  });
 
   useEffect(() => {
     void loadStats();

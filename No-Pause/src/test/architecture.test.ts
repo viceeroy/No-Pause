@@ -6,8 +6,6 @@ import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import {
   buildPracticeStats,
   buildRecentSessionSummaries,
-  getCurrentMonthRange,
-  getCurrentMonthSessions,
   getPracticeStatsFromRpc,
   type SessionRecord,
 } from '@/lib/core/queries';
@@ -464,39 +462,6 @@ describe('result message formatting architecture', () => {
 });
 
 describe('stats summary architecture', () => {
-  it('calculates current month boundaries in UTC', () => {
-    expect(getCurrentMonthRange(new Date('2026-05-31T23:30:00.000Z'))).toEqual({
-      start: '2026-05-01T00:00:00.000Z',
-      end: '2026-06-01T00:00:00.000Z',
-    });
-  });
-
-  it('filters current month sessions by UTC month boundaries', () => {
-    const baseSession = {
-      id: 'session',
-      mode: 'speaking',
-      duration: 60,
-      speaking_time: 55,
-      pauses: 1,
-      pause_count: 1,
-      filler_count: null,
-      words: 10,
-      flow_score: 90,
-      completed: true,
-      hesitation_log: [],
-      source: 'web',
-    } satisfies Omit<SessionRecord, 'created_at'>;
-
-    const sessions = [
-      { ...baseSession, id: 'previous-month', created_at: '2026-04-30T23:59:59.999Z' },
-      { ...baseSession, id: 'current-month', created_at: '2026-05-01T00:00:00.000Z' },
-      { ...baseSession, id: 'next-month', created_at: '2026-06-01T00:00:00.000Z' },
-    ];
-
-    expect(getCurrentMonthSessions(sessions, new Date('2026-05-15T12:00:00.000Z')).map((session) => session.id))
-      .toEqual(['current-month']);
-  });
-
   it('keeps session source on recent summaries', () => {
     const summaries = buildRecentSessionSummaries([
       {
@@ -529,7 +494,6 @@ describe('stats summary architecture', () => {
         totalPracticeTime: 120,
         avgFlowScore: 90,
         bestFlowScore: 100,
-        monthlyStats: { totalSessions: 1, totalSpeakingTime: 55, avgFlowScore: 90 },
         lastSessionDate: '2026-05-02T00:00:00.000Z',
         currentStreak: 3,
         bestStreak: 5,

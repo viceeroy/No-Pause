@@ -31,11 +31,6 @@ export type PracticeStats = {
   totalPracticeTime: number;
   avgFlowScore: number;
   bestFlowScore: number;
-  monthlyStats?: {
-    totalSessions: number;
-    totalSpeakingTime: number;
-    avgFlowScore: number;
-  };
   lastSessionDate: string | null;
   currentStreak: number;
   bestStreak: number;
@@ -61,11 +56,6 @@ export type PracticeStats = {
 export type ModeBreakdown = PracticeStats["modeBreakdown"][number];
 export type RecentSessionSummary = PracticeStats["recentSessions"][number];
 
-export type StatsSessionSets = {
-  allTimeSessions: SessionRecord[];
-  monthlySessions: SessionRecord[];
-};
-
 type SupabaseRpcLike = {
   rpc(
     fn: string,
@@ -83,78 +73,33 @@ async function getServerSupabase() {
   return supabaseServer;
 }
 
-export function getCurrentMonthRange(now = new Date()): { start: string; end: string } {
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return { start: start.toISOString(), end: end.toISOString() };
-}
-
-export async function getTelegramSessions(userId: string): Promise<StatsSessionSets> {
+export async function getTelegramSessions(userId: string): Promise<SessionRecord[]> {
   const supabase = await getServerSupabase();
-  const monthRange = getCurrentMonthRange();
-  const [
-    { data: allTimeData, error: allTimeError },
-    { data: monthlyData, error: monthlyError },
-  ] = await Promise.all([
-    supabase
-      .from("sessions")
-      .select(SESSION_COLUMNS)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("sessions")
-      .select(SESSION_COLUMNS)
-      .eq("user_id", userId)
-      .gte("created_at", monthRange.start)
-      .lt("created_at", monthRange.end)
-      .order("created_at", { ascending: false }),
-  ]);
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(SESSION_COLUMNS)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
 
-  if (allTimeError || monthlyError) {
-    if (isMissingSessionAnalysisColumnError(allTimeError) || isMissingSessionAnalysisColumnError(monthlyError)) {
-      const [
-        { data: legacyAllTimeData, error: legacyAllTimeError },
-        { data: legacyMonthlyData, error: legacyMonthlyError },
-      ] = await Promise.all([
-        supabase
-          .from("sessions")
-          .select(LEGACY_SESSION_COLUMNS)
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("sessions")
-          .select(LEGACY_SESSION_COLUMNS)
-          .eq("user_id", userId)
-          .gte("created_at", monthRange.start)
-          .lt("created_at", monthRange.end)
-          .order("created_at", { ascending: false }),
-      ]);
+  if (error) {
+    if (isMissingSessionAnalysisColumnError(error)) {
+      const { data: legacyData, error: legacyError } = await supabase
+        .from("sessions")
+        .select(LEGACY_SESSION_COLUMNS)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-      if (legacyAllTimeError) {
-        throw legacyAllTimeError;
-      }
-      if (legacyMonthlyError) {
-        throw legacyMonthlyError;
+      if (legacyError) {
+        throw legacyError;
       }
 
-      return {
-        allTimeSessions: (legacyAllTimeData ?? []) as SessionRecord[],
-        monthlySessions: (legacyMonthlyData ?? []) as SessionRecord[],
-      };
+      return (legacyData ?? []) as SessionRecord[];
     }
 
-    if (allTimeError) {
-      throw allTimeError;
-    }
-    if (monthlyError) {
-      throw monthlyError;
-    }
+    throw error;
   }
 
-  return {
-    allTimeSessions: (allTimeData ?? []) as SessionRecord[],
-    monthlySessions: (monthlyData ?? []) as SessionRecord[],
-  };
+  return (data ?? []) as SessionRecord[];
 }
 
 function isMissingPracticeStatsRpcError(error: unknown): boolean {
@@ -219,17 +164,11 @@ function parseRecentSessions(value: unknown): PracticeStats["recentSessions"] {
 export function parsePracticeStats(value: unknown): PracticeStats | null {
   const record = toRecord(value);
   if (!record) return null;
-  const monthly = toRecord(record.monthlyStats) ?? {};
   return {
     scoredSessions: toInteger(record.scoredSessions),
     totalPracticeTime: toInteger(record.totalPracticeTime),
     avgFlowScore: toInteger(record.avgFlowScore),
     bestFlowScore: toInteger(record.bestFlowScore),
-    monthlyStats: {
-      totalSessions: toInteger(monthly.totalSessions),
-      totalSpeakingTime: toInteger(monthly.totalSpeakingTime),
-      avgFlowScore: toInteger(monthly.avgFlowScore),
-    },
     lastSessionDate: record.lastSessionDate === null || record.lastSessionDate === undefined
       ? null
       : String(record.lastSessionDate),
@@ -271,7 +210,7 @@ export async function getTelegramPracticeStats(userId: string, limit = 15): Prom
     getStreak(userId),
     getTelegramSessions(userId),
   ]);
-  return buildPracticeStats(sessionSets.allTimeSessions, streak, sessionSets.monthlySessions);
+  return buildPracticeStats(sessionSets, streak);
 }
 
 export async function getStreak(userId: string): Promise<StreakRecord | null> {
@@ -385,21 +324,9 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
   }));
 }
 
-export function getCurrentMonthSessions(sessions: SessionRecord[], now = new Date()): SessionRecord[] {
-  const monthRange = getCurrentMonthRange(now);
-  const monthStart = new Date(monthRange.start).getTime();
-  const monthEnd = new Date(monthRange.end).getTime();
-
-  return sessions.filter((session) => {
-    const sessionTime = new Date(session.created_at).getTime();
-    return Number.isFinite(sessionTime) && sessionTime >= monthStart && sessionTime < monthEnd;
-  });
-}
-
 export function buildPracticeStats(
   sessions: SessionRecord[],
   streak: StreakRecord | null,
-  monthlySessionRecords = getCurrentMonthSessions(sessions),
 ): PracticeStats {
   const scored = sessions.filter(isScoredSession);
 
@@ -408,11 +335,6 @@ export function buildPracticeStats(
     totalPracticeTime: sessions.reduce((sum, session) => sum + getSessionDuration(session), 0),
     avgFlowScore: calculateWeightedAverageFlowScore(sessions),
     bestFlowScore: calculateBestFlowScore(sessions),
-    monthlyStats: {
-      totalSessions: monthlySessionRecords.length,
-      totalSpeakingTime: monthlySessionRecords.reduce((sum, session) => sum + getSessionSpeakingTime(session), 0),
-      avgFlowScore: calculateWeightedAverageFlowScore(monthlySessionRecords),
-    },
     lastSessionDate: getLastSessionDate(sessions),
     currentStreak: Number(streak?.current_streak ?? 0),
     bestStreak: Number(streak?.longest_streak ?? 0),

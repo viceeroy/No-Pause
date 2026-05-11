@@ -14,10 +14,7 @@ type SetupCountdownPanelProps = {
   setSelectedTimerSeconds: (seconds: number) => void;
   timerOptions: { label: string; seconds: number }[];
   promptText: string;
-  promptMenuOpen: boolean;
-  setPromptMenuOpen: (open: boolean) => void;
-  promptOptions: string[];
-  handleSelectPrompt: (prompt: string) => void;
+  handleOpenPrompts: () => void;
   handleRandomPrompt: () => void;
   handleStart: () => Promise<void>;
   countdown: number;
@@ -35,10 +32,7 @@ export function SetupCountdownPanel({
   setSelectedTimerSeconds,
   timerOptions,
   promptText,
-  promptMenuOpen,
-  setPromptMenuOpen,
-  promptOptions,
-  handleSelectPrompt,
+  handleOpenPrompts,
   handleRandomPrompt,
   handleStart,
   countdown,
@@ -133,31 +127,12 @@ export function SetupCountdownPanel({
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setPromptMenuOpen(!promptMenuOpen)}
+                      onClick={handleOpenPrompts}
                       className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-surface-card px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground transition-colors btn-press hover:bg-surface-elevated hover:text-foreground md:min-h-[46px] md:px-5 md:text-sm"
                     >
                       <ListChecks size={15} className="shrink-0 text-primary" />
                       Prompts
                     </button>
-                    {promptMenuOpen && (
-                      <div className="absolute bottom-full left-1/2 z-50 mb-2 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
-                        {promptOptions.map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => handleSelectPrompt(option)}
-                            className={cn(
-                              'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold leading-snug transition-colors',
-                              promptText === option
-                                ? 'bg-primary/15 text-foreground'
-                                : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
-                            )}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <button
                     type="button"

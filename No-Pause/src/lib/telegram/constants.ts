@@ -518,9 +518,6 @@ export function getTelegramStatsMessage(input: {
   avgFlowScore: number;
   scoredSessions: number;
   totalPracticeTime: number;
-  monthlySessions: number;
-  monthlySpeakingTime: number;
-  monthlyAvgFlowScore: number;
   speakingSessions: number;
   speakingAvgFlowScore: number | null;
   lastSessionText: string;
@@ -534,10 +531,6 @@ export function getTelegramStatsMessage(input: {
 ✅ <b>All-Time Sessions:</b> ${input.scoredSessions}
 
 ⏱ <b>All-Time Practice Time:</b> ${formatCompactDuration(input.totalPracticeTime)}
-
-📅 <b>This Month</b>
-<b>Sessions:</b> ${input.monthlySessions}  |  <b>Avg Score:</b> ${input.monthlyAvgFlowScore}
-<b>Speaking Time:</b> ${formatCompactDuration(input.monthlySpeakingTime)}
 
 🎤 <b>Speaking Mode</b>
 <b>Sessions:</b> ${input.speakingSessions}  |  <b>Avg Score:</b> ${formatAverageScore(input.speakingAvgFlowScore)}

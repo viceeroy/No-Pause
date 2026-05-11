@@ -1,7 +1,7 @@
 import { Square } from 'lucide-react';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
-import { formatTime } from './time';
+import { formatMMSS } from './time';
 
 type RecordingPanelProps = {
   timeLeft: number;
@@ -48,7 +48,7 @@ export function RecordingPanel({
               Recording
             </div>
             <div className="font-serif text-4xl font-medium leading-none text-primary md:text-6xl">
-              {formatTime(timerValue)}
+              {formatMMSS(timerValue)}
             </div>
           </div>
           <div className="relative z-10 overflow-hidden rounded-[22px] border border-border bg-surface-elevated px-2 py-5 shadow-[0_0_36px_hsl(var(--primary)/0.08)] md:px-4 md:py-8">

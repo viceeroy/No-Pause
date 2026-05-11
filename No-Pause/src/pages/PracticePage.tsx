@@ -8,7 +8,7 @@ import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { ResultSkeletonPanel } from '@/features/practice/pages/ResultSkeletonPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
-import { getRandomPrompt, opinionPrompts } from '@/lib/core/prompts';
+import { getRandomPrompt } from '@/lib/core/prompts';
 import { formatDuration } from '@/lib/core/time';
 
 const timerOptions = [
@@ -20,27 +20,11 @@ const timerOptions = [
   { label: formatDuration(300), seconds: 300 },
 ];
 
-const getRandomPromptOptions = (count = 6) => {
-  const prompts = [...opinionPrompts];
-
-  for (let index = prompts.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [prompts[index], prompts[randomIndex]] = [prompts[randomIndex], prompts[index]];
-  }
-
-  return prompts.slice(0, count);
-};
-
-const arePromptOptionsEqual = (left: string[], right: string[]) =>
-  left.length === right.length && left.every((prompt, index) => prompt === right[index]);
-
 export default function PracticePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedTimerSeconds, setSelectedTimerSeconds] = useState(0);
   const [timerMenuOpen, setTimerMenuOpen] = useState(false);
-  const [promptMenuOpen, setPromptMenuOpen] = useState(false);
-  const [promptOptions, setPromptOptions] = useState(() => getRandomPromptOptions());
   const state = usePracticeState();
   const recording = useRecordingController({
     navigate,
@@ -86,29 +70,12 @@ export default function PracticePage() {
     });
   };
 
-  const handleSelectPrompt = (topicTitle: string) => {
-    applyPrompt(topicTitle);
-    setPromptMenuOpen(false);
-  };
-
-  const handlePromptMenuOpenChange = (open: boolean) => {
-    if (open) {
-      setPromptOptions((currentOptions) => {
-        let nextOptions = getRandomPromptOptions();
-
-        for (let attempt = 0; attempt < 4 && arePromptOptionsEqual(nextOptions, currentOptions); attempt += 1) {
-          nextOptions = getRandomPromptOptions();
-        }
-
-        return nextOptions;
-      });
-    }
-    setPromptMenuOpen(open);
+  const handleOpenPrompts = () => {
+    navigate('/prompts');
   };
 
   const handleRandomPrompt = () => {
     applyPrompt(getRandomPrompt(promptText || undefined));
-    setPromptMenuOpen(false);
   };
 
   return (
@@ -147,10 +114,7 @@ export default function PracticePage() {
           setSelectedTimerSeconds={setSelectedTimerSeconds}
           timerOptions={timerOptions}
           promptText={promptText}
-          promptMenuOpen={promptMenuOpen}
-          setPromptMenuOpen={handlePromptMenuOpenChange}
-          promptOptions={promptOptions}
-          handleSelectPrompt={handleSelectPrompt}
+          handleOpenPrompts={handleOpenPrompts}
           handleRandomPrompt={handleRandomPrompt}
           handleStart={() => recording.handleStart()}
           countdown={state.countdown}

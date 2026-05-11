@@ -210,11 +210,6 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
       totalPracticeTime: 0,
       avgFlowScore: 0,
       bestFlowScore: 0,
-      monthlyStats: {
-        totalSessions: 0,
-        totalSpeakingTime: 0,
-        avgFlowScore: 0,
-      },
       lastSessionDate: null,
       currentStreak: 0,
       bestStreak: 0,
