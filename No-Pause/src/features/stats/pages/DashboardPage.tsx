@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Download, TrendingUp, Clock, Flame, type LucideIcon } from 'lucide-react';
+import { Mic, Download, TrendingUp, Clock, Flame, CircleHelp, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
@@ -197,17 +197,19 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => navigate('/help')}
-                className="inline-flex min-h-9 items-center justify-center rounded-full border border-border bg-surface-card px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-elevated md:text-sm"
-              >
-                Help
-              </button>
-              <button
-                type="button"
                 onClick={() => navigate('/prompts')}
                 className="inline-flex min-h-9 items-center justify-center rounded-full border border-border bg-surface-card px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-elevated md:text-sm"
               >
                 More
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/help')}
+                aria-label="Help"
+                title="Help"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-card text-muted-foreground shadow-card transition-colors btn-press hover:bg-surface-elevated hover:text-foreground"
+              >
+                <CircleHelp size={18} aria-hidden="true" />
               </button>
             </div>
           </div>

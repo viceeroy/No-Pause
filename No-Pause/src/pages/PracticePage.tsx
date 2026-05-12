@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, CircleHelp } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/shared/lib/utils';
 import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPanel';
@@ -88,12 +88,23 @@ export default function PracticePage() {
         : 'min-h-screen pb-32 pt-8'
     )}>
       {state.isFixedScreen && <div className="shrink-0 pt-6" />}
-	      <button onClick={recording.handleBack} className={cn(
-	        'min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0',
+      <div className={cn(
+        'flex w-full items-center justify-between shrink-0',
         state.isFixedScreen ? 'mb-3' : 'mb-8'
       )}>
-        <ChevronLeft size={16} /> Back
-      </button>
+        <button onClick={recording.handleBack} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0">
+          <ChevronLeft size={16} /> Back
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/help')}
+          aria-label="Help"
+          title="Help"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-card text-muted-foreground shadow-card transition-colors btn-press hover:bg-surface-elevated hover:text-foreground"
+        >
+          <CircleHelp size={18} aria-hidden="true" />
+        </button>
+      </div>
 
       {state.state !== 'recording' && (
         <>
