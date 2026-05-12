@@ -101,7 +101,6 @@ export default function DashboardPage() {
     value: string | number;
     icon: LucideIcon;
     valueClassName: string;
-    className?: string;
   }> = [
     {
       label: 'Flow score',
@@ -157,10 +156,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:grid-cols-3 md:gap-4">
-          {metricCards.map(({ label, value, icon: Icon, valueClassName, className }) => (
+          {metricCards.map(({ label, value, icon: Icon, valueClassName }) => (
             <article
               key={label}
-              className={`min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 shadow-card md:min-h-[124px] md:p-5 ${className ?? 'flex'}`}
+              className="flex min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 shadow-card md:min-h-[124px] md:p-5"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-sans font-bold leading-snug text-muted-foreground">{label}</p>
