@@ -14,6 +14,10 @@ export default defineConfig(() => ({
   plugins: [react()],
   build: {
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        help: path.resolve(__dirname, "help/index.html"),
+      },
       output: {
         manualChunks(id) {
           if (id.includes("/src/features/practice/")) {

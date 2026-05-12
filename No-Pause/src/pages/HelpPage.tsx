@@ -678,7 +678,7 @@ function CollapsibleArticleCard({
         className="w-full text-left"
         aria-expanded={isOpen}
       >
-        <div className="mb-3 flex items-start justify-between gap-4">
+        <div className={`${isOpen ? 'mb-3' : ''} flex items-start justify-between gap-4`}>
           <h2 className="text-lg font-serif font-medium leading-tight text-foreground md:text-xl">
             {article.title}
           </h2>
@@ -690,9 +690,11 @@ function CollapsibleArticleCard({
             />
           </span>
         </div>
-        <p className="truncate text-sm font-sans leading-relaxed text-muted-foreground">
-          {article.summary}
-        </p>
+        {isOpen && (
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+            {article.summary}
+          </p>
+        )}
       </button>
       {isOpen && (
         <div className="mt-4">

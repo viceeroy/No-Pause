@@ -6,6 +6,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 - Web UI exposes authenticated Speaking Mode at `/practice`; `PracticePage` currently uses mode `speaking`.
 - `/prompts` is an authenticated prompt picker. Selected prompt text is passed into Speaking Mode as display/practice context and is scored as `speaking`.
+- `/help` is a public, SEO-managed help page with collapsible cards for NoPause basics and speaking-improvement guidance. Cards start collapsed; collapsed cards show only the article title, and summaries/body content appear only after opening.
 - Telegram uses prompts and friend/group challenges. Do not remove `src/lib/core/prompts.ts` unless Telegram prompt/challenge behavior is replaced.
 
 ## Exposed Routes
@@ -15,6 +16,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `/prompts`: authenticated prompt picker.
 - `/stats`: stats/session history, `StatsPage`.
 - `/history`: redirects to `/stats`.
+- `/help`: public help page, `HelpPage`.
 - `/connect?tg=<telegram_id>`: Telegram account linking page.
 - `/sessions`: auth-gated stats page used from Telegram links.
 - `/auth/*`, `/login/*`, `/auth/sign-up/*`, `/auth/callback`: Supabase Google auth.
@@ -41,6 +43,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `api/transcription.ts`: serverless audio transcription boundary.
 - `api/feedback.ts`: serverless AI feedback boundary.
 - `src/pages/PracticePage.tsx`: current web practice screen; maps optional `prompt_text` into the session context.
+- `src/pages/HelpPage.tsx`: public help content and shared collapsible article-card UI for the NoPause and Improve Your Speaking sections.
 - `src/features/practice/pages/useRecordingController.ts`: coordinates recording, scoring, session persistence, transcription, and feedback hooks.
 - `src/features/practice/hooks/useRecording.ts`: web recording lifecycle and microphone/audio analyzer orchestration.
 - `src/features/practice/hooks/useScoring.ts`: builds web session result using core scoring.
