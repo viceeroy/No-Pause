@@ -10,6 +10,7 @@
   "routes": [
     { "src": "/api/telegram/webhook", "methods": ["POST"], "dest": "/api/telegram/webhook" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/help/?", "dest": "/help/index.html" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

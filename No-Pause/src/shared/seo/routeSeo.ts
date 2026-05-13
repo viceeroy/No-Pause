@@ -1,5 +1,5 @@
 const SITE_NAME = "No Pause";
-const SITE_URL = "https://nopause.org";
+const SITE_URL = "https://www.nopause.org";
 const DEFAULT_IMAGE = `${SITE_URL}/preview.png`;
 
 export interface RouteSeoConfig {
