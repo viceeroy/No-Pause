@@ -155,7 +155,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-3">
+        <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 xl:grid-cols-3">
           {metricCards.map(({ label, value, icon: Icon, valueClassName }) => (
             <article
               key={label}
