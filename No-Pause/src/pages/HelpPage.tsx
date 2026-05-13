@@ -34,21 +34,36 @@ const helpArticles: HelpArticle[] = [
   {
     title: 'What NoPause Helps You Do',
     summary: 'Build steadier speaking flow through recorded practice.',
-    subheader: 'Practice speaking without stopping every time a thought changes',
+    subheader: 'Speak, get feedback, and improve over time',
     body: (
       <div className="space-y-4">
         <p>
-          <strong>NoPause helps you practice continuous speaking</strong> by turning each recording into simple feedback you can review.
+          <strong>You speak, NoPause listens, and you get a simple score.</strong> That is the whole idea.
         </p>
         <p>
-          You can use it to notice <strong>long pauses, filler words, silence time, and the parts of your answer where your flow breaks.</strong>
-        </p>
-        <p>
-          The goal is not perfect speech. <strong>The goal is to keep going, review what happened, and make the next session smoother.</strong>
+          After each session, you can see whether your speaking felt smoother than before. <strong>Over time, the goal is to sound more steady and less stuck.</strong>
         </p>
       </div>
     ),
     visual: 'flow',
+  },
+  {
+    title: 'Who NoPause Helps',
+    summary: 'For anyone who wants to sound clearer and more confident.',
+    subheader: 'A simple practice tool for real speaking confidence',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>NoPause is helpful if you want to speak more confidently.</strong> It gives you a private place to practice out loud before the moment matters.
+        </p>
+        <p>
+          It can help if you want to <strong>reduce filler words, feel less hesitant, prepare for interviews or presentations, or practice English fluency.</strong>
+        </p>
+        <p>
+          It is also useful if you simply want to hear yourself more clearly. <strong>Sometimes the fastest way to improve is to listen back and try again.</strong>
+        </p>
+      </div>
+    ),
   },
   {
     title: 'How A Practice Session Works',
@@ -85,11 +100,11 @@ const helpArticles: HelpArticle[] = [
             <span>Weak session</span>
           </div>
           {[
-            ['Flow Score', '214', '47'],
-            ['Speaking time', '2m 28s', '54s'],
-            ['Silence time', '18s', '1m 34s'],
-            ['Pause count', '2', '11'],
-            ['Filler count', '3', '18'],
+            ['Flow Score', 'Strong', 'Needs work'],
+            ['Speaking time', 'More steady', 'Shorter'],
+            ['Silence time', 'Mostly brief', 'Often long'],
+            ['Pause count', 'Low', 'High'],
+            ['Filler count', 'Light', 'Heavy'],
           ].map(([metric, strong, weak]) => (
             <div key={metric} className="grid grid-cols-[1fr_1fr_1fr] border-t border-border px-4 py-3">
               <span className="text-muted-foreground">{metric}</span>
@@ -106,22 +121,6 @@ const helpArticles: HelpArticle[] = [
     visual: 'time',
   },
   {
-    title: 'What Flow Score Means',
-    summary: 'A higher score usually means steadier speech with fewer long stops.',
-    subheader: 'Use Flow Score as a progress signal, not a grade',
-    body: (
-      <div className="space-y-4">
-        <p>
-          <strong>Flow Score summarizes how well you kept speech moving.</strong> More active speaking and fewer long stops usually push the score higher.
-        </p>
-        <p>
-          A single score is only one snapshot. <strong>The useful pattern is whether your baseline improves across repeated sessions.</strong>
-        </p>
-      </div>
-    ),
-    visual: 'score',
-  },
-  {
     title: 'What Counts As A Pause',
     summary: 'NoPause separates natural gaps from longer breaks in your flow.',
     subheader: 'Not every quiet moment is a problem',
@@ -136,6 +135,22 @@ const helpArticles: HelpArticle[] = [
       </div>
     ),
     visual: 'pauses',
+  },
+  {
+    title: 'What Flow Score Means',
+    summary: 'A higher score usually means steadier speech with fewer long stops.',
+    subheader: 'Use Flow Score as a progress signal, not a grade',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Flow Score measures how continuously you speak.</strong> If you keep your thoughts moving with fewer long stops, the score usually improves.
+        </p>
+        <p>
+          Do not treat one score like a final judgment. <strong>The useful question is whether your speaking is getting smoother over time.</strong>
+        </p>
+      </div>
+    ),
+    visual: 'score',
   },
   {
     title: 'Prompts And Speaking Topics',
@@ -221,27 +236,27 @@ const helpArticles: HelpArticle[] = [
   },
   {
     title: 'Detailed Scoring FAQ',
-    summary: 'Exact scoring formula, pause thresholds, and technical scoring details.',
-    subheader: 'Use this section when you want the precise rules',
+    summary: 'Friendly answers about how scoring behaves.',
+    subheader: 'Use this section when you want a little more context',
     body: (
       <div className="space-y-4">
         <p>
-          <strong>Flow Score uses whole seconds of speaking time.</strong> The formula is speaking seconds plus 40 points for every completed speaking minute, minus 10 points for each pause unit.
+          <strong>Flow Score rewards steady speaking.</strong> The more you keep talking without getting stuck in long silences, the stronger the score usually feels.
         </p>
         <p>
-          <strong>The final score never goes below zero.</strong> If a session has fewer than 5 seconds of speech, it is marked incomplete and receives a score of 0.
+          <strong>Longer silences count more than short natural gaps.</strong> NoPause is not trying to punish normal breaths or tiny spaces between words.
         </p>
         <p>
-          <strong>Pause thresholds depend on difficulty.</strong> Beginner counts a pause after 1.8 seconds, intermediate after 1.2 seconds, and advanced after 0.8 seconds.
+          <strong>Difficulty changes how strict NoPause feels about silence.</strong> Easier practice gives you more room to think, while harder practice asks you to keep your flow tighter.
         </p>
         <p>
-          <strong>Very short gaps under 300 milliseconds are ignored.</strong> The first 2 seconds and final 1 second of a recording are filtered out of pause penalties so starting and stopping do not distort the result.
+          <strong>NoPause ignores tiny natural gaps between words.</strong> It focuses on the longer quiet moments where your answer feels like it stopped.
         </p>
         <p>
-          Longer gaps can create multiple pause units because NoPause divides the silence by the selected threshold and counts whole units. Filler words are tracked from transcripts for feedback, but <strong>they are not part of the Flow Score formula.</strong>
+          Filler words are shown so you can notice habits like saying “um” or “like” when you are thinking. <strong>They are feedback for awareness, not a reason to panic.</strong>
         </p>
         <p>
-          <strong>Telegram voice notes use transcript word timing</strong> to estimate speaking time and pause gaps. Voice notes are limited to 5 minutes, and Telegram challenge leaderboards rank attempts by best Flow Score.
+          <strong>Telegram practice follows the same simple idea:</strong> send a voice note, get feedback, and compare your attempts when you use challenges.
         </p>
       </div>
     ),
@@ -893,9 +908,10 @@ export default function HelpPage() {
 
         <header className="mb-8 text-left">
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Help</h1>
-          <p className="max-w-2xl text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-            Clear answers about practice, scoring, prompts, challenges, and Telegram.
-          </p>
+          <div className="max-w-2xl space-y-1 text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
+            <p>Improve speaking flow and reduce hesitation with real speaking practice.</p>
+            <p>Track pauses, speaking time, Flow Score, and progress over time.</p>
+          </div>
         </header>
 
         <PracticeFlowStrip />
