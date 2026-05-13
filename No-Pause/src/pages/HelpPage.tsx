@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,90 +26,225 @@ type HelpArticle = {
   title: string;
   summary: string;
   subheader: string;
-  body: string;
-  visual: VisualKey;
+  body: ReactNode;
+  visual?: VisualKey;
 };
 
 const helpArticles: HelpArticle[] = [
   {
-    title: 'What NoPause is',
-    summary: 'A speaking fluency trainer built around real recorded practice.',
-    subheader: 'Speak, analyze, and track your speaking flow over time',
-    body:
-      'NoPause listens while you speak and turns the session into concrete fluency signals: Flow Score, speaking time, silence time, pause units, filler words, transcript, and practice history. The web app records from your microphone, analyzes speech and silence in real time, then saves the session so your stats and streaks can build over time. You can speak freely or start from one of the opinion prompts when you need a topic quickly. The Telegram bot uses the same core scoring model for voice notes, so you can practice from Telegram and still add sessions to your NoPause history.',
+    title: 'What NoPause Helps You Do',
+    summary: 'Build steadier speaking flow through recorded practice.',
+    subheader: 'Practice speaking without stopping every time a thought changes',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>NoPause helps you practice continuous speaking</strong> by turning each recording into simple feedback you can review.
+        </p>
+        <p>
+          You can use it to notice <strong>long pauses, filler words, silence time, and the parts of your answer where your flow breaks.</strong>
+        </p>
+        <p>
+          The goal is not perfect speech. <strong>The goal is to keep going, review what happened, and make the next session smoother.</strong>
+        </p>
+      </div>
+    ),
     visual: 'flow',
   },
   {
-    title: 'How Flow Score is calculated',
-    summary: 'The score rewards continuous speech and subtracts pause penalties.',
-    subheader: '1 point per second plus 40 bonus per completed minute minus 10 per pause',
-    body:
-      'Flow Score is calculated from whole seconds of speaking time. You earn 1 point for every second you speak, plus a 40 point bonus for every completed speaking minute. Each pause unit subtracts 10 points, and the final score is never allowed to go below zero. If you speak for fewer than 5 seconds, the session is marked incomplete and receives a score of 0. In practice, the same 60 seconds of speaking can score very differently depending on how many pause units were counted.',
-    visual: 'score',
-  },
-  {
-    title: 'How pauses are detected',
-    summary: 'Pause units come from silence gaps above your difficulty threshold.',
-    subheader: 'Difficulty controls how long a silence can last before it counts',
-    body:
-      'NoPause calibrates to the room, watches microphone energy, and separates speaking time from silence time while you record. A silence gap becomes a pause only after it reaches the selected difficulty threshold: beginner is 1.8 seconds, intermediate is 1.2 seconds, and advanced is 0.8 seconds. Very short gaps under 300 milliseconds are ignored, and natural gaps under your threshold count as silence time but not as penalty pause units. Longer gaps can create multiple pause units because NoPause divides the silence by the threshold and counts the whole units. The first 2 seconds and final 1 second of a recording are filtered out of pause penalties so starting and stopping the session are less likely to distort the result.',
-    visual: 'pauses',
-  },
-  {
-    title: 'What filler words are',
-    summary: 'Words like um, uh, and like can signal hesitation.',
-    subheader: 'Tracked separately from the Flow Score formula',
-    body:
-      'Filler words are hesitation sounds and phrases that often appear while you are searching for the next thought. NoPause checks transcripts for um, uh, er, ah, like, you know, basically, literally, and actually. In the web app, supported browsers can update the transcript during recording, and the app can fall back to server transcription when needed. Filler words are counted in your results and highlighted in processed transcript text, but they are not part of the Flow Score formula.',
-    visual: 'fillers',
-  },
-  {
-    title: 'How streaks work',
-    summary: 'Streaks track consistent practice across days.',
-    subheader: 'One saved session can keep the day alive',
-    body:
-      'A streak is based on the local calendar date saved with your practice session. When a new session is saved for today, NoPause checks the last saved session date. If the last date was yesterday, your current streak increases by one; if it was earlier, the current streak restarts at one. If you already saved a session today, the streak is left unchanged so multiple sessions on the same day do not inflate it. Your best streak is preserved whenever the current streak resets.',
-    visual: 'streaks',
-  },
-  {
-    title: 'How challenges work',
-    summary: 'Challenges let people speak on the same prompt and compare scores.',
-    subheader: 'Same prompt, scored attempts, ranked by best Flow Score',
-    body:
-      'Challenges run through the Telegram bot and give participants the same prompt so results are easier to compare. A friend challenge creates a share link, tracks whether someone has already submitted, and stores the scored session as the challenge attempt. A group challenge is started with the group command, posts a prompt in the group, and sends each participant to a private voice-note flow before recording their attempt. Group challenges expire after 24 hours. Leaderboards rank participants by their best Flow Score for that challenge and show attempt counts, with up to 20 ranked entries.',
-    visual: 'challenges',
-  },
-  {
-    title: 'How the Telegram bot works',
-    summary: 'Send a voice note in Telegram and get a NoPause result.',
-    subheader: 'Practice from Telegram without opening the web app',
-    body:
-      'The Telegram bot connects a Telegram account to a NoPause user, then accepts fresh voice notes as practice sessions. Voice notes are limited to 5 minutes, forwarded voice notes are rejected, and duplicate processing is guarded by the Telegram chat and message id. The bot transcribes audio, uses word timestamps to estimate speaking time and pauses, applies the same Flow Score formula, saves the session, and updates your streak. In private chats, the bot supports start, about, register, speak, prompts, stats, and friend challenges.',
-    visual: 'telegram',
-  },
-  {
-    title: 'Tips for improving your Flow Score',
-    summary: 'Speak in complete thoughts and reduce long silent gaps.',
-    subheader: 'Improve the inputs that actually move the score',
-    body:
-      'The fastest way to improve is to increase speaking seconds while reducing pause units. Start with short sessions that you can finish with steady energy, then add time as your flow improves. If you get stuck, keep talking through the thought instead of stopping completely, because a pause unit costs 10 points while an imperfect sentence does not. Use beginner difficulty when you are building consistency, then move to intermediate or advanced when you want stricter silence thresholds.',
+    title: 'How A Practice Session Works',
+    summary: 'Choose a topic, speak, review the result, and repeat.',
+    subheader: 'The basic loop is simple on purpose',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Start by choosing a prompt or speaking freely.</strong> A prompt gives you a quick topic, but you can also practice any thought you want.
+        </p>
+        <p>
+          <strong>Record your answer, then review your Flow Score, speaking time, silence time, pause count, filler count, and transcript.</strong>
+        </p>
+        <p>
+          Repeat with one small focus for the next attempt. <strong>Short, regular reps matter more than one perfect recording.</strong>
+        </p>
+      </div>
+    ),
     visual: 'tips',
   },
   {
-    title: 'Speaking time vs silence',
-    summary: 'Speaking time is active speech; silence is time without speech.',
-    subheader: 'Silence is measured, but only threshold-level gaps become penalties',
-    body:
-      'Speaking time is the rounded number of seconds where NoPause detected active speech. Silence time is the rest of the analyzed recording, including ordinary gaps between words and longer pauses. Silence does not automatically reduce your Flow Score; it becomes a penalty only when a gap reaches the pause threshold and creates one or more pause units. Comparing speaking time against silence time over multiple sessions shows whether you are sustaining speech more consistently.',
+    title: 'Understanding Your Results',
+    summary: 'Learn what each result metric means after a session.',
+    subheader: 'Each metric explains a different part of your speaking flow',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Flow Score is the main signal</strong> for how continuously you spoke. Speaking time shows active speech, silence time shows quiet gaps, pause count shows longer breaks, filler count shows repeated hesitation words, and transcript lets you review the actual words.
+        </p>
+        <div className="overflow-hidden rounded-[18px] border border-border bg-surface-elevated text-sm font-sans">
+          <div className="grid grid-cols-[1fr_1fr_1fr] bg-surface-card px-4 py-3 text-xs font-bold text-muted-foreground">
+            <span>Example</span>
+            <span>Strong session</span>
+            <span>Weak session</span>
+          </div>
+          {[
+            ['Flow Score', '214', '47'],
+            ['Speaking time', '2m 28s', '54s'],
+            ['Silence time', '18s', '1m 34s'],
+            ['Pause count', '2', '11'],
+            ['Filler count', '3', '18'],
+          ].map(([metric, strong, weak]) => (
+            <div key={metric} className="grid grid-cols-[1fr_1fr_1fr] border-t border-border px-4 py-3">
+              <span className="text-muted-foreground">{metric}</span>
+              <span className="font-bold text-primary">{strong}</span>
+              <span className="text-foreground">{weak}</span>
+            </div>
+          ))}
+        </div>
+        <p>
+          <strong>The transcript gives the numbers context.</strong> Use it to see where you stopped, repeated yourself, or found a cleaner way to say the same idea.
+        </p>
+      </div>
+    ),
     visual: 'time',
   },
   {
-    title: 'How to use prompts',
-    summary: 'Pick a topic when you want a quick idea for practice.',
-    subheader: 'Prompts reduce setup friction, not the scoring rules',
-    body:
-      'Prompts are opinion questions stored in the app so you can start speaking without inventing a topic first. The home page shows a short list, the Prompts page shows the full set, and selecting one passes it into the practice screen as the session topic. During setup, you can choose from prompt options or request a random prompt, and the random picker avoids immediately repeating the prompt you already have when possible. Prompts do not change the scoring formula; they simply reduce hesitation before recording starts.',
+    title: 'What Flow Score Means',
+    summary: 'A higher score usually means steadier speech with fewer long stops.',
+    subheader: 'Use Flow Score as a progress signal, not a grade',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Flow Score summarizes how well you kept speech moving.</strong> More active speaking and fewer long stops usually push the score higher.
+        </p>
+        <p>
+          A single score is only one snapshot. <strong>The useful pattern is whether your baseline improves across repeated sessions.</strong>
+        </p>
+      </div>
+    ),
+    visual: 'score',
+  },
+  {
+    title: 'What Counts As A Pause',
+    summary: 'NoPause separates natural gaps from longer breaks in your flow.',
+    subheader: 'Not every quiet moment is a problem',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>A pause is a longer silence that interrupts the flow of your answer.</strong> Short gaps between words can be normal and do not need to feel wrong.
+        </p>
+        <p>
+          Pause count helps you find the moments where your thought stopped moving. <strong>Reducing those longer breaks is one of the clearest ways to improve flow.</strong>
+        </p>
+      </div>
+    ),
+    visual: 'pauses',
+  },
+  {
+    title: 'Prompts And Speaking Topics',
+    summary: 'Use prompts when you want a quick topic for practice.',
+    subheader: 'Prompts reduce the friction before recording',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Prompts give you something to answer right away.</strong> They are useful when you want to practice speaking instead of spending time choosing a topic.
+        </p>
+        <p>
+          You can also ignore prompts and speak freely. <strong>The topic helps you start, but your speaking flow is what NoPause measures.</strong>
+        </p>
+      </div>
+    ),
     visual: 'prompts',
+  },
+  {
+    title: 'Streaks And Progress',
+    summary: 'Streaks track consistent practice across days.',
+    subheader: 'Progress comes from repeated sessions',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>A streak helps you keep the habit visible.</strong> Saving a practice session for the day keeps your consistency moving.
+        </p>
+        <p>
+          Your history matters more than one result. <strong>Look for fewer long pauses, more speaking time, and steadier scores over time.</strong>
+        </p>
+      </div>
+    ),
+    visual: 'streaks',
+  },
+  {
+    title: 'Privacy And Data',
+    summary: 'Understand what happens to recordings, transcripts, and account links.',
+    subheader: 'Your practice history belongs with your account',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>NoPause asks for microphone permission so you can record a session.</strong> You stay in control of when a recording starts and ends.
+        </p>
+        <p>
+          <strong>Your transcript, score, and session stats can be saved to your account</strong> so you can review progress later.
+        </p>
+        <p>
+          If you connect Telegram, <strong>NoPause links your Telegram practice to the same account history.</strong> That lets voice-note sessions count alongside web sessions.
+        </p>
+      </div>
+    ),
+  },
+  {
+    title: 'Telegram Practice',
+    summary: 'Send a voice note in Telegram and get a NoPause result.',
+    subheader: 'Practice without opening the web app',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>The Telegram bot lets you practice by sending a voice note.</strong> After your account is connected, the bot can return a NoPause-style result.
+        </p>
+        <p>
+          Telegram practice is useful when you want a quick rep from a chat. <strong>Your saved Telegram sessions can still support your NoPause progress history.</strong>
+        </p>
+      </div>
+    ),
+    visual: 'telegram',
+  },
+  {
+    title: 'Challenges',
+    summary: 'Speak on the same prompt and compare attempts.',
+    subheader: 'Challenges make practice social',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Challenges give people the same prompt</strong> so results are easier to compare.
+        </p>
+        <p>
+          Friend and group challenges can show ranked attempts by Flow Score. <strong>Use them when you want accountability or a shared speaking rep.</strong>
+        </p>
+      </div>
+    ),
+    visual: 'challenges',
+  },
+  {
+    title: 'Detailed Scoring FAQ',
+    summary: 'Exact scoring formula, pause thresholds, and technical scoring details.',
+    subheader: 'Use this section when you want the precise rules',
+    body: (
+      <div className="space-y-4">
+        <p>
+          <strong>Flow Score uses whole seconds of speaking time.</strong> The formula is speaking seconds plus 40 points for every completed speaking minute, minus 10 points for each pause unit.
+        </p>
+        <p>
+          <strong>The final score never goes below zero.</strong> If a session has fewer than 5 seconds of speech, it is marked incomplete and receives a score of 0.
+        </p>
+        <p>
+          <strong>Pause thresholds depend on difficulty.</strong> Beginner counts a pause after 1.8 seconds, intermediate after 1.2 seconds, and advanced after 0.8 seconds.
+        </p>
+        <p>
+          <strong>Very short gaps under 300 milliseconds are ignored.</strong> The first 2 seconds and final 1 second of a recording are filtered out of pause penalties so starting and stopping do not distort the result.
+        </p>
+        <p>
+          Longer gaps can create multiple pause units because NoPause divides the silence by the selected threshold and counts whole units. Filler words are tracked from transcripts for feedback, but <strong>they are not part of the Flow Score formula.</strong>
+        </p>
+        <p>
+          <strong>Telegram voice notes use transcript word timing</strong> to estimate speaking time and pause gaps. Voice notes are limited to 5 minutes, and Telegram challenge leaderboards rank attempts by best Flow Score.
+        </p>
+      </div>
+    ),
   },
 ];
 
@@ -204,69 +339,81 @@ function FlowVisual() {
 }
 
 function ScoreVisual() {
-  const rows = [
-    ['30s speaking', '0 pauses', '30 points'],
-    ['60s speaking', '0 pauses', '100 points'],
-    ['60s speaking', '2 pauses', '80 points'],
+  const ranges = [
+    ['0-49', 'Needs Practice'],
+    ['50-99', 'Getting There'],
+    ['100-199', 'Good Flow'],
+    ['200-299', 'Great Flow'],
+    ['300+', 'Perfect Flow'],
   ];
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-border bg-surface-elevated">
-      <table className="w-full text-left text-sm font-sans">
-        <thead className="bg-surface-card text-muted-foreground">
-          <tr>
-            <th className="px-4 py-3 font-bold">Speaking</th>
-            <th className="px-4 py-3 font-bold">Pauses</th>
-            <th className="px-4 py-3 font-bold">Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(([speaking, pauses, score]) => (
-            <tr key={`${speaking}-${pauses}`} className="border-t border-border text-foreground">
-              <td className="px-4 py-3">{speaking}</td>
-              <td className="px-4 py-3">{pauses}</td>
-              <td className="px-4 py-3 font-bold text-primary">{score}</td>
-            </tr>
+    <div className="rounded-[18px] border border-border bg-surface-elevated p-4">
+      <div className="overflow-hidden rounded-full border border-border bg-surface-card">
+        <div className="grid grid-cols-5">
+          {ranges.map(([range, label], index) => (
+            <div
+              key={range}
+              className={`min-h-4 border-r border-surface-base last:border-r-0 ${
+                index < 2 ? 'bg-muted-foreground/30' : index < 4 ? 'bg-primary/50' : 'bg-primary'
+              }`}
+              aria-label={`${range} ${label}`}
+            />
           ))}
-        </tbody>
-      </table>
-      <p className="border-t border-border px-4 py-3 text-xs font-sans text-muted-foreground">
-        60s with no pauses is 60 points plus the 40 point completed-minute bonus.
-      </p>
+        </div>
+      </div>
+      <div className="mt-3 grid gap-2 text-xs font-sans text-muted-foreground sm:grid-cols-5">
+        {ranges.map(([range, label]) => (
+          <div key={range} className="rounded-xl border border-border bg-surface-card px-3 py-2">
+            <p className="font-bold text-foreground">{range}</p>
+            <p>{label}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 function PausesVisual() {
-  const rows = [
-    ['Beginner', '1.8s'],
-    ['Intermediate', '1.2s'],
-    ['Advanced', '0.8s'],
+  const segments = [
+    ['speech', 'w-[24%]', 'Opening'],
+    ['pause', 'w-[8%]', 'Pause'],
+    ['speech', 'w-[34%]', 'Main point'],
+    ['pause', 'w-[10%]', 'Long pause'],
+    ['speech', 'w-[24%]', 'Finish'],
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-[18px] border border-border bg-surface-elevated">
-        {rows.map(([level, threshold]) => (
-          <div key={level} className="flex items-center justify-between border-b border-border px-4 py-3 last:border-b-0">
-            <span className="text-sm font-sans font-bold text-foreground">{level}</span>
-            <span className="text-sm font-sans text-primary">{threshold}</span>
-          </div>
+    <div className="rounded-[18px] border border-border bg-surface-elevated p-4">
+      <div className="mb-3 flex items-center justify-between text-xs font-sans text-muted-foreground">
+        <span>Example speaking timeline</span>
+        <span>Speech and pause blocks</span>
+      </div>
+      <div className="flex h-5 overflow-hidden rounded-full bg-surface-card">
+        {segments.map(([kind, width, label], index) => (
+          <div
+            key={`${label}-${index}`}
+            className={`${width} ${kind === 'speech' ? 'bg-primary' : 'bg-muted-foreground/35'}`}
+            aria-label={label}
+          />
         ))}
       </div>
-      <div className="rounded-[18px] border border-border bg-surface-elevated p-4">
-        <div className="mb-3 flex items-center justify-between text-xs font-sans text-muted-foreground">
-          <span>10 second example</span>
-          <span>7s speaking, 3s silence</span>
-        </div>
-        <div className="flex h-4 overflow-hidden rounded-full bg-surface-card">
-          <div className="w-[70%] bg-primary" />
-          <div className="w-[30%] bg-muted-foreground/35" />
-        </div>
-        <div className="mt-2 flex justify-between text-xs font-sans text-muted-foreground">
+      <div className="mt-3 grid grid-cols-5 gap-2 text-[0.7rem] font-sans text-muted-foreground">
+        {segments.map(([kind, , label], index) => (
+          <span key={`${label}-label-${index}`} className={kind === 'speech' ? 'text-primary' : 'text-muted-foreground'}>
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="mt-4 flex gap-4 text-xs font-sans text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-primary" />
           <span>Speaking</span>
-          <span>Silence</span>
-        </div>
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/35" />
+          <span>Pause</span>
+        </span>
       </div>
     </div>
   );
@@ -628,7 +775,8 @@ function FluencyRatioVisual() {
   );
 }
 
-function ArticleVisual({ visual }: { visual: VisualKey }) {
+function ArticleVisual({ visual }: { visual?: VisualKey }) {
+  if (!visual) return null;
   if (visual === 'flow') return <FlowVisual />;
   if (visual === 'score') return <ScoreVisual />;
   if (visual === 'pauses') return <PausesVisual />;
@@ -654,9 +802,34 @@ function ArticleContent({ article }: { article: HelpArticle }) {
     <div className="space-y-4 border-t border-border pt-4">
       <div>
         <p className="mb-2 text-sm font-sans font-bold text-primary">{article.subheader}</p>
-        <p className="text-sm font-sans leading-relaxed text-foreground md:text-base">{article.body}</p>
+        {typeof article.body === 'string' ? (
+          <p className="text-sm font-sans leading-relaxed text-foreground md:text-base">{article.body}</p>
+        ) : (
+          <div className="text-sm font-sans leading-relaxed text-foreground md:text-base">{article.body}</div>
+        )}
       </div>
       <ArticleVisual visual={article.visual} />
+    </div>
+  );
+}
+
+function PracticeFlowStrip() {
+  const steps = ['Speak', 'Analyze', 'Score', 'Improve'];
+
+  return (
+    <div className="mb-6 rounded-[18px] border border-border bg-surface-card px-4 py-3">
+      <div className="flex flex-wrap items-center justify-center gap-3 text-sm font-sans font-bold text-foreground">
+        {steps.map((step, index) => (
+          <div key={step} className="flex items-center gap-3">
+            <span>{step}</span>
+            {index < steps.length - 1 && (
+              <span className="text-muted-foreground" aria-hidden="true">
+                &rarr;
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -724,6 +897,8 @@ export default function HelpPage() {
             Clear answers about practice, scoring, prompts, challenges, and Telegram.
           </p>
         </header>
+
+        <PracticeFlowStrip />
 
         <section className="flex flex-col gap-3">
           {helpArticles.map((article) => {

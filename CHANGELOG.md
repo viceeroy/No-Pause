@@ -1,5 +1,31 @@
 # Changelog
 
+## May 13, 2026
+
+Made the help page easier for crawlers to read. The app now prerenders the help page into a static HTML entry during the build, keeps the Vite fallback behavior working for the live SPA route, and points the sitemap and robots metadata at the canonical `/help` URL.
+
+## May 12, 2026
+
+Reworked the help page around NoPause as a speech-flow training product, then tightened the page back down after the heavier redesign pass. The final version keeps the product explanation deeper without exposing scoring internals, removes offline-first wording, and keeps the help route focused for search indexing.
+
+Cleaned up small web UI details around the dashboard and practice entrypoints while keeping the visible product centered on Free Speaking. The dashboard metric card layout was simplified, and the help-page SEO metadata and sitemap route were brought in line with the crawlable help page.
+
+## May 11, 2026
+
+Expanded the help experience with a dedicated speaking-improvement section and collapsed article cards by default. The dashboard help entry now routes into the fuller help page instead of carrying the old inline help section.
+
+Cleaned up the prompt and stats surfaces. Prompt loading and prompt-page behavior were simplified, old toast and monthly refresh code was removed, setup and recording UI copy was tightened, and the dashboard and stats pages were pared back around the current Free Speaking flow.
+
+## May 10, 2026
+
+Added the first full help page and route metadata, then started shaping it into a public product-support page. The page now has its own route, SEO title and description, and app navigation entry from the dashboard help area.
+
+Plumbed total silence time through saved sessions and results. The session schema, Supabase migration, shared session types, practice API, scoring hook, stats display, and architecture tests now use the analyzer's `totalSilenceTime` field instead of recalculating it in the UI.
+
+Improved the practice finish flow so ending a session can move immediately into a result-loading skeleton while transcription and scoring continue. Result transcript cleanup also hides raw marker formatting, and the countdown/finish states were adjusted to feel more responsive.
+
+Tightened Telegram behavior and copy around private commands, group handling, and voice feedback. The bot gained stronger guards for duplicate voice processing and friend-result sending, `/register` account-linking support, cleaner private command registration, and simpler status/action wording while keeping group-only interactions quiet where intended.
+
 ## May 9, 2026
 
 Tightened the Telegram group behavior so private reply-keyboard actions stay private. If someone types the private keyboard labels in a group, Speak, Challenge, My Stats, and About now silently do nothing instead of posting private-flow messages into the group.
