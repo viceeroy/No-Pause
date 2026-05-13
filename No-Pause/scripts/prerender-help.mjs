@@ -9,78 +9,99 @@ const siteUrl = "https://www.nopause.org";
 const canonicalUrl = `${siteUrl}/help`;
 const title = "Help | No Pause";
 const description =
-  "Learn how No Pause scoring, pauses, prompts, streaks, challenges, and Telegram practice work.";
+  "Improve speaking flow and reduce hesitation with real speaking practice. Track pauses, speaking time, Flow Score, and progress over time.";
 
 const helpArticles = [
   {
-    title: "What NoPause is",
-    summary: "A speaking fluency trainer built around real recorded practice.",
-    subheader: "Speak, analyze, and track your speaking flow over time",
+    title: "What NoPause Helps You Do",
+    summary: "Speak, get a score, and build confidence over time.",
+    subheader: "A simple loop for steadier speaking",
     body:
-      "NoPause listens while you speak and turns the session into concrete fluency signals: Flow Score, speaking time, silence time, pause units, filler words, transcript, and practice history. The web app records from your microphone, analyzes speech and silence in real time, then saves the session so your stats and streaks can build over time. You can speak freely or start from one of the opinion prompts when you need a topic quickly. The Telegram bot uses the same core scoring model for voice notes, so you can practice from Telegram and still add sessions to your NoPause history.",
+      "You speak, NoPause listens and scores you, and you improve over time. The goal is better speaking confidence, stronger fluency, and less hesitation. Each session gives you another chance to sound steadier than before.",
   },
   {
-    title: "How Flow Score is calculated",
-    summary: "The score rewards continuous speech and subtracts pause penalties.",
-    subheader: "1 point per second plus 40 bonus per completed minute minus 10 per pause",
+    title: "Who NoPause Helps",
+    summary: "For people who want to sound clearer and more confident.",
+    subheader: "A friendly place to practice out loud",
     body:
-      "Flow Score is calculated from whole seconds of speaking time. You earn 1 point for every second you speak, plus a 40 point bonus for every completed speaking minute. Each pause unit subtracts 10 points, and the final score is never allowed to go below zero. If you speak for fewer than 5 seconds, the session is marked incomplete and receives a score of 0. In practice, the same 60 seconds of speaking can score very differently depending on how many pause units were counted.",
+      "NoPause helps people preparing for interviews, presentations, and everyday moments where they want to speak clearly. It is useful for anyone building speaking confidence, reducing filler words, and lowering hesitation. It also fits English fluency practice and helps you hear yourself more clearly.",
   },
   {
-    title: "How pauses are detected",
-    summary: "Pause units come from silence gaps above your difficulty threshold.",
-    subheader: "Difficulty controls how long a silence can last before it counts",
+    title: "How A Practice Session Works",
+    summary: "Choose a topic, record, review, and repeat.",
+    subheader: "Practice is action-oriented by design",
     body:
-      "NoPause calibrates to the room, watches microphone energy, and separates speaking time from silence time while you record. A silence gap becomes a pause only after it reaches the selected difficulty threshold: beginner is 1.8 seconds, intermediate is 1.2 seconds, and advanced is 0.8 seconds. Very short gaps under 300 milliseconds are ignored, and natural gaps under your threshold count as silence time but not as penalty pause units. Longer gaps can create multiple pause units because NoPause divides the silence by the threshold and counts the whole units. The first 2 seconds and final 1 second of a recording are filtered out of pause penalties so starting and stopping the session are less likely to distort the result.",
+      "Start by choosing a prompt or speaking freely. Record your answer, review your results, then try again. The loop stays simple so you can focus on fluency, reduce pauses, and keep moving through imperfect sentences.",
   },
   {
-    title: "What filler words are",
-    summary: "Words like um, uh, and like can signal hesitation.",
-    subheader: "Tracked separately from the Flow Score formula",
+    title: "Understanding Your Results",
+    summary: "See what each result tells you after a session.",
+    subheader: "Each result explains a different part of your speaking",
     body:
-      "Filler words are hesitation sounds and phrases that often appear while you are searching for the next thought. NoPause checks transcripts for um, uh, er, ah, like, you know, basically, literally, and actually. In the web app, supported browsers can update the transcript during recording, and the app can fall back to server transcription when needed. Filler words are counted in your results and highlighted in processed transcript text, but they are not part of the Flow Score formula.",
+      "Flow Score shows how continuously you spoke. Speaking time is how long your voice was active, and silence time is the gaps between speech. Pause count shows how often you stopped too long, filler count shows hesitation words, and the transcript is what you said.",
   },
   {
-    title: "How streaks work",
-    summary: "Streaks track consistent practice across days.",
-    subheader: "One saved session can keep the day alive",
+    title: "What Flow Score Means",
+    summary: "Higher scores mean steadier speech with fewer long stops.",
+    subheader: "Use Flow Score as a progress signal",
     body:
-      "A streak is based on the local calendar date saved with your practice session. When a new session is saved for today, NoPause checks the last saved session date. If the last date was yesterday, your current streak increases by one; if it was earlier, the current streak restarts at one. If you already saved a session today, the streak is left unchanged so multiple sessions on the same day do not inflate it. Your best streak is preserved whenever the current streak resets.",
+      "Flow Score measures how continuously you speak with fewer long hesitations. Higher is better because it usually means your thoughts kept moving. Use it to track whether your speaking is getting smoother over time.",
   },
   {
-    title: "How challenges work",
-    summary: "Challenges let people speak on the same prompt and compare scores.",
-    subheader: "Same prompt, scored attempts, ranked by best Flow Score",
+    title: "What Counts As A Pause",
+    summary: "NoPause separates natural gaps from longer breaks in your flow.",
+    subheader: "Not every quiet moment is a problem",
     body:
-      "Challenges run through the Telegram bot and give participants the same prompt so results are easier to compare. A friend challenge creates a share link, tracks whether someone has already submitted, and stores the scored session as the challenge attempt. A group challenge is started with the group command, posts a prompt in the group, and sends each participant to a private voice-note flow before recording their attempt. Group challenges expire after 24 hours. Leaderboards rank participants by their best Flow Score for that challenge and show attempt counts, with up to 20 ranked entries.",
+      "NoPause ignores tiny natural gaps between words. Only longer silences count as pauses. Easier difficulty is more forgiving, while harder difficulty catches shorter gaps so you can practice tighter fluency.",
   },
   {
-    title: "How the Telegram bot works",
-    summary: "Send a voice note in Telegram and get a NoPause result.",
-    subheader: "Practice from Telegram without opening the web app",
+    title: "How To Improve Your Flow Score",
+    summary: "Keep speaking, use prompts, and practice consistently.",
+    subheader: "Small steady habits improve speaking flow",
     body:
-      "The Telegram bot connects a Telegram account to a NoPause user, then accepts fresh voice notes as practice sessions. Voice notes are limited to 5 minutes, forwarded voice notes are rejected, and duplicate processing is guarded by the Telegram chat and message id. The bot transcribes audio, uses word timestamps to estimate speaking time and pauses, applies the same Flow Score formula, saves the session, and updates your streak. In private chats, the bot supports start, about, register, speak, prompts, stats, and friend challenges.",
+      "Keep talking through imperfect sentences. Use prompts when overthinking slows you down. Practice short sessions consistently so fluency feels more automatic and you reduce pauses over time.",
   },
   {
-    title: "Tips for improving your Flow Score",
-    summary: "Speak in complete thoughts and reduce long silent gaps.",
-    subheader: "Improve the inputs that actually move the score",
+    title: "Prompts And Speaking Topics",
+    summary: "Pick a topic or speak freely when you are ready.",
+    subheader: "Prompts reduce startup friction",
     body:
-      "The fastest way to improve is to increase speaking seconds while reducing pause units. Start with short sessions that you can finish with steady energy, then add time as your flow improves. If you get stuck, keep talking through the thought instead of stopping completely, because a pause unit costs 10 points while an imperfect sentence does not. Use beginner difficulty when you are building consistency, then move to intermediate or advanced when you want stricter silence thresholds.",
+      "Prompts give you something to answer right away. You can speak freely or pick a topic from Argue, Inform, Describe, and Opinion. The topic is just the starting point; the real goal is to speak clearly and keep your thought moving.",
   },
   {
-    title: "Speaking time vs silence",
-    summary: "Speaking time is active speech; silence is time without speech.",
-    subheader: "Silence is measured, but only threshold-level gaps become penalties",
+    title: "Streaks And Progress",
+    summary: "Daily streaks make consistency visible.",
+    subheader: "Progress compounds through repeated practice",
     body:
-      "Speaking time is the rounded number of seconds where NoPause detected active speech. Silence time is the rest of the analyzed recording, including ordinary gaps between words and longer pauses. Silence does not automatically reduce your Flow Score; it becomes a penalty only when a gap reaches the pause threshold and creates one or more pause units. Comparing speaking time against silence time over multiple sessions shows whether you are sustaining speech more consistently.",
+      "A daily streak helps you keep the habit visible. It turns practice speaking into something you can return to regularly. Your history can show more fluency, fewer hesitation patterns, and steadier speaking confidence.",
   },
   {
-    title: "How to use prompts",
-    summary: "Pick a topic when you want a quick idea for practice.",
-    subheader: "Prompts reduce setup friction, not the scoring rules",
+    title: "Privacy And Data",
+    summary: "Plain-language details about recording and saved history.",
+    subheader: "Your practice history stays connected to your account",
     body:
-      "Prompts are opinion questions stored in the app so you can start speaking without inventing a topic first. The home page shows a short list, the Prompts page shows the full set, and selecting one passes it into the practice screen as the session topic. During setup, you can choose from prompt options or request a random prompt, and the random picker avoids immediately repeating the prompt you already have when possible. Prompts do not change the scoring formula; they simply reduce hesitation before recording starts.",
+      "Your microphone is used only during recording. Transcripts and scores are saved to your account so you can see your full history. Telegram linking connects your bot account to your NoPause account so voice-note practice appears with the rest of your history.",
+  },
+  {
+    title: "Telegram Practice",
+    summary: "Practice from Telegram without opening the app.",
+    subheader: "An optional extra channel for voice notes",
+    body:
+      "Telegram practice is an optional extra channel. Connect once, then send voice notes anytime without opening the web app. It is a quick way to practice speaking when you are already in Telegram.",
+  },
+  {
+    title: "Challenges",
+    summary: "Use the same prompt and compare results socially.",
+    subheader: "Social practice with shared prompts",
+    body:
+      "Challenges give everyone the same prompt. Each person speaks, gets scored, and appears on a leaderboard. Friend challenges and group challenges make practice social when comparison and accountability help you keep going.",
+  },
+  {
+    title: "Detailed Scoring FAQ",
+    summary: "Exact scoring details, examples, and implementation notes.",
+    subheader: "Technical details live here",
+    body:
+      "Flow Score is calculated from whole seconds of speaking time. You earn 1 point for every second you speak, plus a 40 point bonus for every completed speaking minute. Each pause unit subtracts 10 points, and the final score is never allowed to go below 0. If you speak for fewer than 5 seconds, the session receives a Flow Score of 0. Beginner counts pauses after 1.8 seconds, intermediate after 1.2 seconds, and advanced after 0.8 seconds. Tiny gaps under 300 milliseconds are ignored, and the first 2 seconds and final 1 second of a recording are filtered out of pause penalties. Long silences can create multiple pause units because NoPause divides the silence by the active threshold and counts the whole units. Example strong session: Flow Score 246, speaking time 2:06, silence time 0:18, pause count 2, filler count 1. Example weak session: Flow Score 42, speaking time 0:48, silence time 1:35, pause count 14, filler count 11.",
   },
 ];
 
@@ -170,7 +191,7 @@ const rootMarkup = `
       <main>
         <header>
           <h1>Help</h1>
-          <p>Clear answers about practice, scoring, prompts, challenges, and Telegram.</p>
+          <p>Improve speaking flow and reduce hesitation with real speaking practice. Track pauses, speaking time, Flow Score, and progress over time.</p>
         </header>
 ${renderSection("", helpArticles)}
 ${renderSection("Improve Your Speaking", improveSpeakingArticles)}
