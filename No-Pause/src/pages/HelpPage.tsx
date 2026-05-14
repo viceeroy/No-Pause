@@ -13,7 +13,7 @@ import {
   Trophy,
   type LucideIcon,
 } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type IconCard = {
@@ -56,6 +56,12 @@ type ImproveTip = {
 type FaqItem = {
   question: string;
   answer: string;
+};
+
+type MobileSection = {
+  title: string;
+  eyebrow?: string;
+  content: ReactNode;
 };
 
 const introCards: IconCard[] = [
@@ -533,7 +539,468 @@ function FaqList() {
   );
 }
 
-export default function HelpPage() {
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  });
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const handleChange = () => setIsMobile(query.matches);
+
+    handleChange();
+    query.addEventListener('change', handleChange);
+    return () => query.removeEventListener('change', handleChange);
+  }, []);
+
+  return isMobile;
+}
+
+function MobileScoreRanges() {
+  return (
+    <div className="space-y-2">
+      {scoreRanges.map(({ range, meaning, colorClassName }) => (
+        <div key={range} className="flex items-center gap-2 rounded-xl bg-surface-elevated px-3 py-2">
+          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${colorClassName}`} />
+          <span className="shrink-0 text-sm font-sans font-black text-foreground">{range}</span>
+          <span className="min-w-0 text-sm font-sans text-muted-foreground">{meaning}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileMetricRows() {
+  return (
+    <div className="space-y-2">
+      {metricRows.map(({ name, value, body }) => (
+        <div key={name} className="rounded-xl bg-surface-elevated p-3">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="text-sm font-sans font-black text-foreground">{name}</span>
+            <span className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-sans font-black text-primary">
+              {value}
+            </span>
+          </div>
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileProgressTimeline() {
+  return (
+    <div className="space-y-3">
+      {progressStages.map(({ title, body }, index) => (
+        <div key={title} className="flex gap-3 rounded-xl bg-surface-elevated p-3">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-sans font-black text-primary-foreground">
+            {index + 1}
+          </span>
+          <div>
+            <p className="text-sm font-sans font-black text-foreground">{title}</p>
+            <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileImproveTips() {
+  return (
+    <div className="space-y-3">
+      {improveTips.map(({ lead, before, after, body }) => (
+        <div key={lead} className="rounded-xl bg-surface-elevated p-3">
+          <p className="mb-2 text-sm font-sans font-black text-foreground">{lead}</p>
+          <div className="mb-2 space-y-1 border-l border-primary/35 pl-3 text-sm font-sans leading-relaxed">
+            <p className="text-muted-foreground">Before: {before}</p>
+            <p className="text-foreground">After: {after}</p>
+          </div>
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileFillerPills() {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {fillerWords.map((word) => (
+        <span
+          key={word}
+          className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-xs font-sans font-black text-primary"
+        >
+          {word}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function MobileDifficultyBoxes() {
+  return (
+    <div className="space-y-2">
+      {difficultyBoxes.map(({ label, body }) => (
+        <div key={label} className="rounded-xl bg-surface-elevated p-3">
+          <p className="text-sm font-sans font-black text-foreground">{label}</p>
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MobilePracticeModes() {
+  return (
+    <div className="space-y-2">
+      <div className="rounded-xl border border-primary/35 bg-primary/10 p-3">
+        <p className="text-sm font-sans font-black text-foreground">Free Speaking</p>
+        <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+          Primary mode for talking about anything and starting fast.
+        </p>
+      </div>
+      <div className="rounded-xl bg-surface-elevated p-3">
+        <p className="text-sm font-sans font-black text-foreground">Topic Prompts</p>
+        <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+          Optional mode for when a starting idea helps you speak sooner.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MobileStreakDots() {
+  return (
+    <div className="flex items-center gap-1.5">
+      {Array.from({ length: 7 }, (_, index) => {
+        const filled = index < 5;
+        return (
+          <span
+            key={index}
+            className={`h-4 w-4 rounded-full border ${
+              filled ? 'border-primary bg-primary' : 'border-border bg-surface-elevated'
+            }`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function MobileBulletList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <p className="mb-1 text-sm font-sans font-black text-foreground">{title}</p>
+      <ul className="space-y-1 pl-4 text-sm font-sans leading-relaxed text-muted-foreground">
+        {items.map((item) => (
+          <li key={item} className="list-disc">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MobileFaqRows() {
+  const [openFaq, setOpenFaq] = useState<Record<number, boolean>>({});
+
+  return (
+    <div className="divide-y divide-border overflow-hidden rounded-xl bg-surface-elevated">
+      {faqItems.map(({ question, answer }, index) => {
+        const isOpen = openFaq[index] ?? false;
+
+        return (
+          <div key={question}>
+            <button
+              type="button"
+              onClick={() => setOpenFaq((current) => ({ ...current, [index]: !isOpen }))}
+              className="flex w-full items-center justify-between gap-3 p-3 text-left"
+              aria-expanded={isOpen}
+            >
+              <span className="text-sm font-sans font-black text-foreground">{question}</span>
+              <ChevronLeft
+                size={15}
+                aria-hidden="true"
+                className={`shrink-0 text-primary transition-transform ${isOpen ? 'rotate-90' : '-rotate-90'}`}
+              />
+            </button>
+            {isOpen && <p className="px-3 pb-3 text-sm font-sans leading-relaxed text-muted-foreground">{answer}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MobileSectionRow({
+  section,
+  index,
+  isOpen,
+  onToggle,
+}: {
+  section: MobileSection;
+  index: number;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <article className="overflow-hidden rounded-[18px] border border-border bg-surface-card shadow-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        aria-expanded={isOpen}
+      >
+        <span className="min-w-0">
+          {section.eyebrow && (
+            <span className="mb-0.5 block text-xs font-sans font-black uppercase tracking-[0.14em] text-primary">
+              {section.eyebrow}
+            </span>
+          )}
+          <span className="block text-base font-sans font-black leading-tight text-foreground">
+            {index + 1}. {section.title}
+          </span>
+        </span>
+        <ChevronLeft
+          size={17}
+          aria-hidden="true"
+          className={`shrink-0 text-primary transition-transform ${isOpen ? 'rotate-90' : '-rotate-90'}`}
+        />
+      </button>
+      {isOpen && <div className="border-t border-border p-3">{section.content}</div>}
+    </article>
+  );
+}
+
+function HelpMobile() {
+  const navigate = useNavigate();
+  const [openSections, setOpenSections] = useState<Record<number, boolean>>({});
+  const mobileSections: MobileSection[] = [
+    {
+      title: 'What No Pause Is',
+      content: (
+        <div className="space-y-3 text-sm font-sans leading-relaxed text-muted-foreground">
+          <p>No Pause is a simple practice loop for speaking out loud.</p>
+          <p>You record a short session, get a Flow Score, and see where your speech felt smooth or interrupted.</p>
+          <p>It is not a grammar grade and it is not a judgment; it is a friendly way to build steadier speaking over time.</p>
+          <div className="grid gap-2">
+            {introCards.map(({ label }) => (
+              <div key={label} className="rounded-xl bg-surface-elevated px-3 py-2 text-sm font-sans font-black text-foreground">
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'How a Session Works',
+      content: (
+        <div className="space-y-3">
+          {sessionSteps.map(({ label, body }, index) => (
+            <div key={label} className="flex gap-3 rounded-xl bg-surface-elevated p-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-sans font-black text-primary-foreground">
+                {index + 1}
+              </span>
+              <div>
+                <p className="text-sm font-sans font-black text-foreground">{label}</p>
+                <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
+              </div>
+            </div>
+          ))}
+          <p className="rounded-xl bg-primary/10 px-3 py-2 text-sm font-sans font-black text-primary">
+            The whole loop takes 2-5 minutes.
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: 'Understanding Your Flow Score',
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+            Flow Score is a simple signal for how smoothly your session moved. Higher usually means you spent more of the session speaking and less of it stuck in long stops.
+          </p>
+          <MobileScoreRanges />
+          <p className="rounded-xl bg-primary/10 px-3 py-2 text-sm font-sans font-black text-primary">
+            Don't optimize the number. Optimize the habit.
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: 'What Your Results Mean',
+      content: (
+        <div className="space-y-3">
+          <MobileMetricRows />
+          <p className="text-sm font-sans italic leading-relaxed text-muted-foreground">
+            One session won't tell you much. Ten sessions will tell you a lot.
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: 'What Good Progress Looks Like',
+      content: (
+        <div className="space-y-3">
+          <MobileProgressTimeline />
+          <p className="rounded-xl bg-primary/10 px-3 py-2 text-sm font-sans font-black text-primary">
+            You don't need a high score. You need a rising trend.
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: 'How to Improve Your Flow Score',
+      content: <MobileImproveTips />,
+    },
+    {
+      title: 'Filler Words & Pauses Explained',
+      content: (
+        <div className="space-y-3">
+          <MobileFillerPills />
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+            Fillers are small words people use while searching for the next thought. A pause is a quiet break in your flow, and the difficulty setting changes how strict that feedback feels.
+          </p>
+          <MobileDifficultyBoxes />
+          <div className="border-l border-primary/35 pl-3 text-sm font-sans leading-relaxed">
+            <p className="text-muted-foreground">Instead of: um um um</p>
+            <p className="text-foreground">Try one silent breath.</p>
+          </div>
+          <p className="text-sm font-sans font-black text-primary">A quiet pause is better than a filler.</p>
+        </div>
+      ),
+    },
+    {
+      title: 'Practice Modes',
+      content: <MobilePracticeModes />,
+    },
+    {
+      title: 'Streaks & Habit Building',
+      content: (
+        <div className="space-y-3 text-sm font-sans leading-relaxed text-muted-foreground">
+          <MobileStreakDots />
+          <p>Consistency beats session length.</p>
+          <p className="font-black text-foreground">One session a day. That's the whole habit.</p>
+          <p className="font-black text-primary">3 min daily for 7 days &gt; 20 min once a week.</p>
+        </div>
+      ),
+    },
+    {
+      title: 'Privacy',
+      content: (
+        <div className="space-y-3">
+          <MobileBulletList title="What we collect" items={privacyCollect} />
+          <MobileBulletList title="What we don't" items={privacyDont} />
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+            You choose when recording starts and ends.
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: 'Telegram Practice',
+      eyebrow: 'Optional',
+      content: (
+        <div className="space-y-2 text-sm font-sans leading-relaxed text-muted-foreground">
+          <p><span className="font-black text-foreground">Link account.</span> Connect Telegram to No Pause once.</p>
+          <p><span className="font-black text-foreground">Send voice note.</span> Practice from Telegram when it is convenient.</p>
+          <p><span className="font-black text-foreground">Review history.</span> Results appear with your NoPause sessions.</p>
+        </div>
+      ),
+    },
+    {
+      title: 'Challenges',
+      eyebrow: 'Optional',
+      content: (
+        <div className="space-y-2 text-sm font-sans leading-relaxed text-muted-foreground">
+          <p>Friend challenges let two people answer the same prompt.</p>
+          <p>Group challenges add a shared prompt and leaderboard.</p>
+          <p>They help with accountability and make practice easier to repeat.</p>
+        </div>
+      ),
+    },
+    {
+      title: 'Common Questions',
+      content: <MobileFaqRows />,
+    },
+    {
+      title: 'Ready to practice?',
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+            Start with one short session and give yourself something real to improve tomorrow.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/practice')}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-primary px-4 text-sm font-sans font-black text-primary-foreground btn-press"
+          >
+            Start Speaking
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-surface-base px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-5">
+      <main className="mx-auto w-full max-w-xl">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="-ml-2 mb-5 inline-flex min-h-10 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
+        >
+          <ChevronLeft size={16} aria-hidden="true" /> Back
+        </button>
+
+        <header className="mb-5">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface-card px-3 py-1.5 text-xs font-sans font-black uppercase tracking-[0.14em] text-primary">
+            <CircleHelp size={14} aria-hidden="true" />
+            Help
+          </div>
+          <h1 className="text-3xl font-serif font-medium leading-tight text-foreground">
+            Build smoother speaking flow.
+          </h1>
+        </header>
+
+        <div className="space-y-3">
+          {mobileSections.map((section, index) => {
+            const isOpen = openSections[index] ?? false;
+
+            return (
+              <MobileSectionRow
+                key={section.title}
+                section={section}
+                index={index}
+                isOpen={isOpen}
+                onToggle={() => setOpenSections((current) => ({ ...current, [index]: !isOpen }))}
+              />
+            );
+          })}
+        </div>
+      </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface-base/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+        <p className="mb-2 text-center text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">
+          Ready to practice?
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/practice')}
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-sans font-black text-primary-foreground shadow-card btn-press"
+        >
+          Start Speaking
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HelpDesktop() {
   const navigate = useNavigate();
 
   return (
@@ -699,4 +1166,10 @@ export default function HelpPage() {
       </main>
     </div>
   );
+}
+
+export default function HelpPage() {
+  const isMobile = useIsMobile();
+
+  return isMobile ? <HelpMobile /> : <HelpDesktop />;
 }
