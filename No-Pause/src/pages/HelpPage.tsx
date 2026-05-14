@@ -903,9 +903,9 @@ function HelpMobile() {
     },
     {
       title: 'Telegram Practice',
-      eyebrow: 'Optional',
       content: (
         <div className="space-y-2 text-sm font-sans leading-relaxed text-muted-foreground">
+          <p className="text-xs font-sans font-black uppercase tracking-[0.14em] text-primary">Optional</p>
           <p><span className="font-black text-foreground">Link account.</span> Connect Telegram to No Pause once.</p>
           <p><span className="font-black text-foreground">Send voice note.</span> Practice from Telegram when it is convenient.</p>
           <p><span className="font-black text-foreground">Review history.</span> Results appear with your NoPause sessions.</p>
@@ -914,9 +914,9 @@ function HelpMobile() {
     },
     {
       title: 'Challenges',
-      eyebrow: 'Optional',
       content: (
         <div className="space-y-2 text-sm font-sans leading-relaxed text-muted-foreground">
+          <p className="text-xs font-sans font-black uppercase tracking-[0.14em] text-primary">Optional</p>
           <p>Friend challenges let two people answer the same prompt.</p>
           <p>Group challenges add a shared prompt and leaderboard.</p>
           <p>They help with accountability and make practice easier to repeat.</p>
@@ -983,19 +983,6 @@ function HelpMobile() {
           })}
         </div>
       </main>
-
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface-base/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-        <p className="mb-2 text-center text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">
-          Ready to practice?
-        </p>
-        <button
-          type="button"
-          onClick={() => navigate('/practice')}
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-sans font-black text-primary-foreground shadow-card btn-press"
-        >
-          Start Speaking
-        </button>
-      </div>
     </div>
   );
 }
