@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'lucide-react';
-import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
+import { getPracticeStats, getWeeklyActivityDays, type PracticeStats, type WeeklyActivityDay } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration, formatPracticeTotalDuration } from '@/lib/core/time';
 import { useAuth, type DifficultyLevel } from '@/providers/AuthContext';
@@ -35,6 +35,52 @@ function shouldShowRecentFlowScore(score: number | null | undefined): score is n
   return Number(score) > 10;
 }
 
+function createEmptyWeeklyActivity(): WeeklyActivityDay[] {
+  return ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((label) => ({
+    label: label as WeeklyActivityDay['label'],
+    dateKey: '',
+    completed: false,
+  }));
+}
+
+function WeeklyActivityRow({
+  days,
+  loading,
+}: {
+  days: WeeklyActivityDay[];
+  loading: boolean;
+}) {
+  return (
+    <article className="col-span-2 rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-sans font-semibold text-muted-foreground">Weekly activity</p>
+          <p className="mt-1 text-sm font-sans text-muted-foreground">Completed sessions this week</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-2">
+        {days.map((day, index) => {
+          const completed = !loading && day.completed;
+          return (
+            <div key={`${day.label}-${index}`} className="flex flex-col items-center gap-2">
+              <span
+                className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs font-sans font-black transition-colors md:h-10 md:w-10 ${
+                  completed
+                    ? 'border-primary bg-primary text-primary-foreground shadow-soft'
+                    : 'border-border bg-surface-elevated text-muted-foreground'
+                } ${loading ? 'animate-pulse' : ''}`}
+                aria-label={`${day.label}: ${completed ? 'completed' : 'not completed'}`}
+              >
+                {day.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
 type StatsPageProps = {
   emptyStateTitle?: string;
   emptyStateMessage?: string;
@@ -61,6 +107,7 @@ export default function StatsPage({
     modeBreakdown: [],
     recentSessions: [],
   });
+  const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityDay[]>(() => createEmptyWeeklyActivity());
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const isMountedRef = useRef(false);
@@ -79,9 +126,13 @@ export default function StatsPage({
     setStatsLoading(true);
     setStatsError(null);
     try {
-      const nextStats = await getPracticeStats(user?.id ?? null, limit);
+      const [nextStats, nextWeeklyActivity] = await Promise.all([
+        getPracticeStats(user?.id ?? null, limit),
+        getWeeklyActivityDays(user?.id ?? null),
+      ]);
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       setStats(nextStats);
+      setWeeklyActivity(nextWeeklyActivity);
     } catch (error) {
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       const message =
@@ -197,6 +248,7 @@ export default function StatsPage({
               {statsLoading ? '...' : formatPracticeTotalDuration(stats.totalPracticeTime)}
             </p>
           </article>
+          <WeeklyActivityRow days={weeklyActivity} loading={statsLoading} />
         </section>
 
         <section className="mb-6 rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">

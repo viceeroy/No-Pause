@@ -95,15 +95,17 @@ export default function PracticePage() {
         <button onClick={recording.handleBack} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0">
           <ChevronLeft size={16} /> Back
         </button>
-        <button
-          type="button"
-          onClick={() => navigate('/help')}
-          aria-label="Help"
-          title="Help"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-card text-muted-foreground shadow-card transition-colors btn-press hover:bg-surface-elevated hover:text-foreground"
-        >
-          <CircleHelp size={18} aria-hidden="true" />
-        </button>
+        {state.state === 'setup' && (
+          <button
+            type="button"
+            onClick={() => navigate('/help')}
+            aria-label="Help"
+            title="Help"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-card text-muted-foreground shadow-card transition-colors btn-press hover:bg-surface-elevated hover:text-foreground"
+          >
+            <CircleHelp size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {state.state !== 'recording' && (

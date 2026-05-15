@@ -6,6 +6,7 @@ import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import {
   buildPracticeStats,
   buildRecentSessionSummaries,
+  buildWeeklyActivityDays,
   getPracticeStatsFromRpc,
   type SessionRecord,
 } from '@/lib/core/queries';
@@ -462,6 +463,17 @@ describe('result message formatting architecture', () => {
 });
 
 describe('stats summary architecture', () => {
+  it('builds Monday through Sunday weekly activity from completed session dates', () => {
+    const days = buildWeeklyActivityDays([
+      { created_at: '2026-05-11T13:00:00.000Z' },
+      { created_at: '2026-05-13T13:00:00.000Z' },
+      { created_at: '2026-05-10T13:00:00.000Z' },
+    ], new Date('2026-05-14T12:00:00.000Z'));
+
+    expect(days.map((day) => day.label)).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']);
+    expect(days.map((day) => day.completed)).toEqual([true, false, true, false, false, false, false]);
+  });
+
   it('keeps session source on recent summaries', () => {
     const summaries = buildRecentSessionSummaries([
       {

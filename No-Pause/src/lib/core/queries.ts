@@ -56,6 +56,12 @@ export type PracticeStats = {
 export type ModeBreakdown = PracticeStats["modeBreakdown"][number];
 export type RecentSessionSummary = PracticeStats["recentSessions"][number];
 
+export type WeeklyActivityDay = {
+  label: "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su";
+  dateKey: string;
+  completed: boolean;
+};
+
 type SupabaseRpcLike = {
   rpc(
     fn: string,
@@ -322,6 +328,47 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
     mode: getNormalizedSessionMode(session),
     source: session.source ?? null,
   }));
+}
+
+function getLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function getStartOfCurrentWeek(now = new Date()): Date {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay();
+  const daysSinceMonday = day === 0 ? 6 : day - 1;
+  start.setDate(start.getDate() - daysSinceMonday);
+  return start;
+}
+
+export function buildWeeklyActivityDays(
+  sessions: Array<Pick<SessionRecord, "created_at">>,
+  now = new Date(),
+): WeeklyActivityDay[] {
+  const labels: WeeklyActivityDay["label"][] = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  const startOfWeek = getStartOfCurrentWeek(now);
+  const todayKey = getLocalDateKey(now);
+  const completedDateKeys = new Set(
+    sessions
+      .map((session) => getLocalDateKey(new Date(session.created_at)))
+      .filter((dateKey) => dateKey >= getLocalDateKey(startOfWeek) && dateKey <= todayKey),
+  );
+
+  return labels.map((label, index) => {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + index);
+    const dateKey = getLocalDateKey(date);
+    return {
+      label,
+      dateKey,
+      completed: completedDateKeys.has(dateKey),
+    };
+  });
 }
 
 export function buildPracticeStats(

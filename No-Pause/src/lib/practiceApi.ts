@@ -6,15 +6,18 @@ import {
 } from "./core/session";
 import {
   buildRecentSessionSummaries,
+  buildWeeklyActivityDays,
   buildPracticeStats,
+  getStartOfCurrentWeek,
   getPracticeStatsFromRpc,
   type PracticeStats,
   type SessionRecord,
   type StreakRecord,
+  type WeeklyActivityDay,
 } from "./core/queries";
 import { supabase as browserSupabase } from "@/services/supabase";
 
-export type { PracticeStats, SessionRecord } from "./core/queries";
+export type { PracticeStats, SessionRecord, WeeklyActivityDay } from "./core/queries";
 
 const sessionSupabase: SupabaseLike = browserSupabase as unknown as SupabaseLike;
 const SESSION_SUMMARY_COLUMNS =
@@ -287,4 +290,28 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
     ...stats,
     recentSessions: buildRecentSessionSummaries((recentSessions ?? []) as SessionRecord[]),
   };
+}
+
+export async function getWeeklyActivityDays(userId: string | null): Promise<WeeklyActivityDay[]> {
+  const now = new Date();
+  if (!userId) {
+    return buildWeeklyActivityDays([], now);
+  }
+
+  const startOfWeek = getStartOfCurrentWeek(now);
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const queryStart = startOfWeek > sevenDaysAgo ? startOfWeek : sevenDaysAgo;
+
+  const { data, error } = await browserSupabase
+    .from("sessions")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("completed", true)
+    .gte("created_at", queryStart.toISOString())
+    .lte("created_at", now.toISOString());
+
+  if (error) throw error;
+
+  return buildWeeklyActivityDays((data ?? []) as Array<Pick<SessionRecord, "created_at">>, now);
 }
