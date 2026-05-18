@@ -27,6 +27,10 @@ export type GroqTranscription = {
 type GroqTranscriptionResponse = {
   text?: unknown;
   words?: unknown;
+  segments?: unknown;
+  x_groq?: {
+    id?: unknown;
+  };
 };
 
 function getGroqApiKey(): string {
@@ -77,6 +81,30 @@ function getAudioFilename(mimeType: string): string {
   return "audio.ogg";
 }
 
+function getObjectKeys(value: unknown): string[] {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? Object.keys(value)
+    : [];
+}
+
+function logGroqTranscriptionShape(data: GroqTranscriptionResponse, parsedWords: GroqTranscribedWord[]) {
+  const rawWords = Array.isArray(data.words) ? data.words : [];
+  const rawSegments = Array.isArray(data.segments) ? data.segments : [];
+
+  console.info("Groq transcription response shape", {
+    requestId: typeof data.x_groq?.id === "string" ? data.x_groq.id : undefined,
+    responseKeys: getObjectKeys(data),
+    textLength: typeof data.text === "string" ? data.text.length : 0,
+    rawWordsIsArray: Array.isArray(data.words),
+    rawWordCount: rawWords.length,
+    parsedWordCount: parsedWords.length,
+    firstRawWordKeys: getObjectKeys(rawWords[0]),
+    segmentsIsArray: Array.isArray(data.segments),
+    segmentCount: rawSegments.length,
+    firstSegmentKeys: getObjectKeys(rawSegments[0]),
+  });
+}
+
 export async function transcribeAudioWithGroq(
   audioBuffer: ArrayBuffer,
   mimeType = "audio/ogg",
@@ -116,9 +144,12 @@ export async function transcribeAudioWithGroq(
 
   const data = await response.json() as GroqTranscriptionResponse;
 
+  const words = parseGroqWords(data?.words);
+  logGroqTranscriptionShape(data, words);
+
   return {
     text: String(data?.text ?? "").trim(),
-    words: parseGroqWords(data?.words),
+    words,
   };
 }
 
