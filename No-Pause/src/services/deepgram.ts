@@ -1,5 +1,6 @@
 const DEEPGRAM_TRANSCRIPTION_URL = "https://api.deepgram.com/v1/listen";
 const DEEPGRAM_TIMEOUT_MS = 20_000;
+const SPOKEN_FILLER_WORDS = new Set(["uh", "um", "hmm", "uh-huh", "mhm", "hm", "uhh", "umm"]);
 
 export type DeepgramTranscribedWord = {
   word: string;
@@ -48,8 +49,12 @@ function parseDeepgramWords(words: unknown): DeepgramTranscribedWord[] {
 }
 
 function countFillerWords(words: DeepgramTranscribedWord[]): number {
+  const normalizeWord = (word: string) => word
+    .toLowerCase()
+    .replace(/^[^a-z]+|[^a-z]+$/g, "");
+
   return words.reduce((count, word) => (
-    word.type?.toLowerCase() === "filler" ? count + 1 : count
+    SPOKEN_FILLER_WORDS.has(normalizeWord(word.word)) ? count + 1 : count
   ), 0);
 }
 
