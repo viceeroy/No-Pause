@@ -522,6 +522,12 @@ export async function handleChallengeDeepLink(
       return true;
     }
 
+    const userId = await resolveTelegramUser(telegramId);
+    if (!userId) {
+      await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
+      return true;
+    }
+
     let creatorUsername: string | undefined;
     try {
       const creatorChat = (await ctx.telegram.getChat(Number(challenge.creator_telegram_id))) as { username?: string };
@@ -679,12 +685,21 @@ export async function retryGroupChallenge(
       return;
     }
 
-    const pendingChallenge = await getPendingChallenge(telegramId);
-    const groupId = Number(pendingChallenge?.group_id ?? challenge.creator_telegram_id);
+    const groupId = Number(challenge.creator_telegram_id);
     if (isGroupChallengeExpired(challenge)) {
       await ctx.telegram.sendMessage(groupId, getGroupChallengeEndedMessage({ topic: challenge.topic }), {
         parse_mode: "HTML",
       });
+      return;
+    }
+
+    const userId = await resolveTelegramUser(telegramId);
+    if (!userId) {
+      await ctx.telegram.sendMessage(
+        groupId,
+        getGroupChallengeConnectMessage({ username: participantUsername }),
+        { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" },
+      );
       return;
     }
 

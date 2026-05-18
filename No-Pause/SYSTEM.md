@@ -43,6 +43,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `api/transcription.ts`: serverless audio transcription boundary.
 - `api/feedback.ts`: serverless AI feedback boundary.
 - `src/pages/PracticePage.tsx`: current web practice screen; maps optional `prompt_text` into the session context.
+- `src/pages/ConnectTelegram.tsx`: Telegram account-linking UI; links the currently signed-in web account to the Telegram ID from the connect URL.
 - `src/pages/HelpPage.tsx`: public help content and shared collapsible article-card UI for the NoPause and Improve Your Speaking sections.
 - `src/features/practice/pages/useRecordingController.ts`: coordinates recording, scoring, session persistence, transcription, and feedback hooks.
 - `src/features/practice/hooks/useRecording.ts`: web recording lifecycle and microphone/audio analyzer orchestration.
@@ -101,20 +102,23 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 1. Telegram posts updates to `/api/telegram/webhook`.
 2. `createTelegramBot` resolves the Telegram user through `telegram_connections`; unconnected users get `/connect?tg=...`.
-3. `voiceHandler` downloads Telegram voice files from Telegram.
-4. `voiceHandler` transcribes Telegram voice audio with the shared Deepgram nova-3 service and receives transcript plus word timestamps.
-5. Telegram rejects unusable transcripts under 3 words.
-6. Pause units are calculated from inter-word timestamp gaps; spoken filler count is LLM-counted with Groq and may be included for display/storage when available.
-7. `calculateFlowScore` scores pause units as mode `speaking`.
-8. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
-9. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback. AI feedback button responses use Groq with an application-level timeout and a friendly retry message on generation failure.
-10. The private reply keyboard uses `Challenge`, `My Stats`, `Speak`, and `About`; these text handlers silently do nothing in groups. `Speak` explains that any voice note can be scored and offers an inline `Get Prompt` button for users who want a random topic first.
-11. `/nopause` in a group creates a group challenge card with Speak, Change Prompt, and Leaderboard actions. `/start` and `/about` are ignored in groups.
-12. Group Speak opens a private deep link, stores pending challenge context, processes the voice note in DM, records an attempt in `telegram_challenge_attempts`, and offers Send to Group / Try Again result buttons.
-13. Group challenge leaderboards read attempts plus saved session scores, show each player’s best Flow Score and attempt count, and become final after the 24-hour challenge window.
-14. Group challenge records keep the group chat ID in `challenges.creator_telegram_id`; the human who ran `/nopause` is encoded in the group challenge `status` as `group_pending:<telegram_id>` for Change Prompt ownership.
-15. Friend challenge accept deep links check existing pending state and submitted attempts before writing `telegram_challenge_state`, so repeat taps reply with the already-accepted message instead of creating duplicate pending state.
-16. Friend/group challenge state uses `challenges`, `telegram_challenge_state`, and `telegram_challenge_attempts`; prompt text comes from `src/lib/core/prompts.ts`.
+3. Voice handling preflights user lookup, pending challenge lookup, challenge existence, expiry, user pause threshold, and duplicate Telegram message state before sending the analyzing acknowledgement.
+4. If pending challenge state points to a missing challenge or expired group challenge, `voiceHandler` deletes the pending state and replies without downloading audio, consuming quota, saving a session, or recording an attempt.
+5. `voiceHandler` downloads Telegram voice files from Telegram.
+6. `voiceHandler` transcribes Telegram voice audio with the shared Deepgram nova-3 service and receives transcript plus word timestamps.
+7. Telegram rejects unusable transcripts under 3 words.
+8. Pause units are calculated from inter-word timestamp gaps; spoken filler count is LLM-counted with Groq and may be included for display/storage when available.
+9. `calculateFlowScore` scores pause units as mode `speaking`.
+10. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
+11. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback. AI feedback button responses use Groq with an application-level timeout and a friendly retry message on generation failure.
+12. The private reply keyboard uses `Challenge`, `My Stats`, `Speak`, and `About`; these text handlers silently do nothing in groups. `Speak` explains that any voice note can be scored and offers an inline `Get Prompt` button for users who want a random topic first.
+13. `/nopause` in a group creates a group challenge card with Speak, Change Prompt, and Leaderboard actions. `/start` and `/about` are ignored in groups.
+14. Group Speak opens a private deep link, stores pending challenge context, processes the voice note in DM, records an attempt in `telegram_challenge_attempts`, and offers Send to Group / Try Again result buttons.
+15. Group challenge retries and challenge deep links require a connected Supabase user before creating or refreshing pending challenge state.
+16. Group challenge leaderboards read attempts plus saved session scores, show each player’s best Flow Score and attempt count, and become final after the 24-hour challenge window.
+17. Group challenge records keep the group chat ID in `challenges.creator_telegram_id`; the human who ran `/nopause` is encoded in the group challenge `status` as `group_pending:<telegram_id>` for Change Prompt ownership.
+18. Friend challenge accept deep links check existing pending state and submitted attempts before writing `telegram_challenge_state`, so repeat taps reply with the already-accepted message instead of creating duplicate pending state.
+19. Friend/group challenge state uses `challenges`, `telegram_challenge_state`, and `telegram_challenge_attempts`; prompt text comes from `src/lib/core/prompts.ts`.
 
 ## External Service Boundaries
 
@@ -173,6 +177,8 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not be represented accurately.
 - Telegram prompt/challenge behavior is active and shares prompt data with the web prompt picker.
 - Telegram group challenge ownership currently depends on the encoded `challenges.status` value for newly created challenges; older `group_pending` rows have no human owner and will not allow Change Prompt.
+- Pending Telegram challenge state is treated as disposable when the target challenge is missing or the group challenge expired; the user must start from a fresh challenge link/card.
+- Telegram connect links bind the currently authenticated web account to the Telegram ID. To switch accounts, the user must sign out of the web app first and then reopen the connect link.
 - AI feedback generation depends on stored or generated transcripts; no separate durable transcript cache exists beyond `sessions.transcript`.
 - `APP_URL`, `SITE_URL`, and Google redirect URLs are hardcoded in code and may require code changes for non-production domains.
 - Microphone capture requires secure context except localhost and depends on browser MediaRecorder/Web Audio support.

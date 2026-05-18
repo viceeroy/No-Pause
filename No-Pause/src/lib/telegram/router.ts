@@ -105,7 +105,15 @@ async function replyWithPrompt(ctx: Context) {
 }
 
 async function replyWithStatus(ctx: Context, telegramId: number) {
-  const userId = await resolveTelegramUser(telegramId);
+  let userId: string | null;
+  try {
+    userId = await resolveTelegramUser(telegramId);
+  } catch (error) {
+    console.error("Telegram stats connection lookup failed", error);
+    await ctx.reply(MESSAGES.lookupError, { ...replyKeyboard, parse_mode: "HTML" });
+    return;
+  }
+
   if (!userId) {
     await replyWithConnectPrompt(ctx, telegramId);
     return;

@@ -541,6 +541,8 @@ export function getTelegramStatsMessage(input: {
 export const MESSAGES = {
   connectPrompt:
     "👋 Connect your NoPause account first.\n\nThen send a voice note to get your Flow Score.",
+  lookupError:
+    "⚠️ Something went wrong reaching NoPause right now.\n\nPlease try again in a moment.",
   statsError:
     "⚠️ I could not load your stats right now.\n\nPlease try again in a moment.",
   noSessions:
@@ -551,12 +553,16 @@ export const MESSAGES = {
     "⚠️ I could not create a group challenge right now.\n\nPlease try again in a moment.",
   challengeNotFound:
     "⚠️ I could not find that challenge.\n\nAsk your friend to send a fresh challenge link.",
+  challengeNoLongerExists:
+    "⚠️ That challenge no longer exists.\n\nI cleared the old challenge state. Ask for a fresh challenge link, then send a new voice note.",
   challengeLoadError:
     "⚠️ I could not load that challenge right now.\n\nPlease try again in a moment.",
   challengeRestartError:
     "⚠️ I could not restart that challenge right now.\n\nPlease try again in a moment.",
   groupChallengeGone:
     "⚠️ I could not find that group challenge anymore.\n\nAsk the group to start a new Challenge.",
+  groupChallengeExpired:
+    "⏰ That group challenge has expired.\n\nI cleared the old challenge state. Ask the group to start a new challenge, then send a new voice note.",
   voiceReceived:
     "🎧 Voice note received.\n\nAnalyzing it now.",
   unusableTranscript: "Couldn't hear anything clearly. Please speak louder and try again 🎤",

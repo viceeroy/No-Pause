@@ -29,6 +29,7 @@ import {
   getFriendChallenge,
   getGroupChallengeAttemptCount,
   getPendingChallenge,
+  isGroupChallengeExpired,
   isMissingChallengesTableError,
   recordFriendChallengeSubmission,
   recordGroupChallengeAttempt,
@@ -501,9 +502,17 @@ export async function handleVoiceMessage(
   },
   telegramId: number,
 ) {
-  const userId = await resolveTelegramUser(telegramId);
   const groupChat = isGroupChat(ctx);
   const username = getTelegramUsername(ctx);
+  let userId: string | null;
+  try {
+    userId = await resolveTelegramUser(telegramId);
+  } catch (error) {
+    console.error("Telegram voice connection lookup failed", error);
+    await ctx.reply(MESSAGES.lookupError, { parse_mode: "HTML" });
+    return;
+  }
+
   if (!userId) {
     await replyWithConnectPrompt(ctx, telegramId);
     return;
@@ -522,8 +531,38 @@ export async function handleVoiceMessage(
     return;
   }
 
-  const pauseThresholdMs = await getUserPauseThresholdMs(userId);
-  const processedSessionId = await getProcessedTelegramSessionId({ userId, telegramChatId, telegramMessageId });
+  let pendingChallenge: Awaited<ReturnType<typeof getPendingChallenge>> = null;
+  let challenge: Awaited<ReturnType<typeof getFriendChallenge>> = null;
+  try {
+    pendingChallenge = groupChat ? null : await getPendingChallenge(telegramId);
+    challenge = pendingChallenge ? await getFriendChallenge(pendingChallenge.challenge_id) : null;
+    if (pendingChallenge && !challenge) {
+      await deletePendingChallenge(telegramId);
+      await ctx.reply(MESSAGES.challengeNoLongerExists, { parse_mode: "HTML" });
+      return;
+    }
+    if (pendingChallenge?.challenge_type === "group" && challenge && isGroupChallengeExpired(challenge)) {
+      await deletePendingChallenge(telegramId);
+      await ctx.reply(MESSAGES.groupChallengeExpired, { parse_mode: "HTML" });
+      return;
+    }
+  } catch (error) {
+    console.error("Telegram pending challenge lookup failed", error);
+    await ctx.reply(MESSAGES.lookupError, { parse_mode: "HTML" });
+    return;
+  }
+
+  let pauseThresholdMs: number;
+  let processedSessionId: string | null;
+  try {
+    pauseThresholdMs = await getUserPauseThresholdMs(userId);
+    processedSessionId = await getProcessedTelegramSessionId({ userId, telegramChatId, telegramMessageId });
+  } catch (error) {
+    console.error("Telegram voice preflight lookup failed", error);
+    await ctx.reply(MESSAGES.lookupError, { parse_mode: "HTML" });
+    return;
+  }
+
   if (processedSessionId) {
     console.log("Telegram voice message already processed", {
       telegramId,
@@ -533,14 +572,9 @@ export async function handleVoiceMessage(
     return;
   }
 
-  await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
-
   try {
-    const pendingChallenge = groupChat ? null : await getPendingChallenge(telegramId);
-    const challenge = pendingChallenge ? await getFriendChallenge(pendingChallenge.challenge_id) : null;
-    if (pendingChallenge && !challenge) {
-      await deletePendingChallenge(telegramId);
-    }
+    await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
+
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
     await consumeApiQuota({
       userId,

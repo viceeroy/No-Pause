@@ -156,6 +156,10 @@ const ConnectTelegram = () => {
         ) : (
           <p className="font-sans text-sm leading-relaxed text-muted-foreground">{content.body}</p>
         )}
+        <p className="mt-6 border-t border-border pt-4 font-sans text-xs leading-relaxed text-muted-foreground">
+          The browser automatically connects whichever account is currently signed in. To connect a different
+          account, go to the web version, log out there, then use the Telegram connect link again.
+        </p>
       </section>
     </main>
   );

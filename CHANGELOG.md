@@ -1,5 +1,11 @@
 # Changelog
 
+## May 18, 2026
+
+Hardened Telegram voice and challenge preflight handling. The bot now catches account lookup failures with a friendly retry message, checks pending challenge state before acknowledging a voice note, clears stale or expired challenge state without transcribing or saving a session, and asks unconnected users to link their account before challenge retries continue.
+
+Clarified Telegram account linking on the web connect page. The page now explains that the browser links whichever NoPause account is already signed in, so switching accounts should happen in the web app before opening the Telegram connect link again.
+
 ## May 13, 2026
 
 Made the help page easier for crawlers to read. The app now prerenders the help page into a static HTML entry during the build, keeps the Vite fallback behavior working for the live SPA route, and points the sitemap and robots metadata at the canonical `/help` URL.
