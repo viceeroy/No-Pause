@@ -83,7 +83,7 @@ const sessionSteps: StepCard[] = [
   },
   {
     label: 'See your results',
-    body: 'Review your Flow Score, speaking time, pauses, fillers, and transcript. The results show what happened in plain language.',
+    body: 'Review your Flow Score, speaking time, pauses, and transcript. The results show what happened in plain language.',
     icon: BarChart3,
   },
   {
@@ -141,11 +141,6 @@ const metricRows: MetricRow[] = [
     value: '3',
     body: 'How often the session had longer breaks. Use this to spot where your thought process is getting stuck.',
   },
-  {
-    name: 'Filler count',
-    value: '2',
-    body: 'How many common hesitation words appeared. The goal is not perfection, but awareness and gradual reduction.',
-  },
 ];
 
 const progressStages: TimelineStage[] = [
@@ -169,7 +164,7 @@ const progressStages: TimelineStage[] = [
 const improveTips: ImproveTip[] = [
   {
     lead: 'Start with the simplest true sentence.',
-    before: '...um... so I think maybe...',
+    before: 'I think maybe I should start by explaining everything...',
     after: 'I think the best answer is to start small.',
     body: 'A clear first sentence gives your brain momentum. You can add nuance after the sentence is already moving.',
   },
@@ -180,20 +175,12 @@ const improveTips: ImproveTip[] = [
     body: 'Examples reduce pressure because they make the idea concrete. They also keep you speaking instead of searching for an abstract answer.',
   },
   {
-    lead: 'Replace filler sounds with one quiet breath.',
-    before: 'I would, um, uh, probably choose the second option.',
-    after: 'I would choose the second option.',
-    body: 'A quiet breath gives you the same thinking space without adding noise. It also makes the sentence sound more intentional.',
-  },
-  {
     lead: 'Finish the thought before judging it.',
     before: 'This is not coming out right... let me restart.',
     after: 'This is not the perfect wording, but the main point is clear.',
     body: 'Stopping too early can create more hesitation than the imperfect sentence itself. Practice recovering while speaking.',
   },
 ];
-
-const fillerWords = ['um', 'uh', 'like', 'you know', 'basically', 'so'];
 
 const difficultyBoxes = [
   {
@@ -227,12 +214,12 @@ const faqItems: FaqItem[] = [
   {
     question: 'Does No Pause grade my grammar or pronunciation?',
     answer:
-      'No Pause is focused on speaking flow, pauses, fillers, and consistency. It is not trying to be a grammar judge or pronunciation exam. The goal is to help you speak more steadily, not make you feel corrected after every sentence.',
+      'No Pause is focused on speaking flow, pauses, and consistency. It is not trying to be a grammar judge or pronunciation exam. The goal is to help you speak more steadily, not make you feel corrected after every sentence.',
   },
   {
     question: 'Is No Pause useful for non-native English speakers?',
     answer:
-      'Yes, especially if you want more practice forming thoughts out loud in English. It can help you notice where you pause, restart, or lean on fillers. You do not need perfect English to benefit from building a steadier speaking habit.',
+      'Yes, especially if you want more practice forming thoughts out loud in English. It can help you notice where you pause, restart, or lose momentum. You do not need perfect English to benefit from building a steadier speaking habit.',
   },
   {
     question: 'How long should my sessions be?',
@@ -243,11 +230,6 @@ const faqItems: FaqItem[] = [
     question: 'Can I use No Pause offline?',
     answer:
       'No Pause needs a connection to process a session and save your results. You can still treat it like a quick practice app when you are online. If you want reliable history and streak tracking, finish sessions while connected.',
-  },
-  {
-    question: 'What does filler count actually track?',
-    answer:
-      'Filler count tracks common hesitation words that can make speech sound less direct. Words like um, uh, like, you know, basically, and so can appear when your brain is buying time. The count is a cue for practice, not a moral score.',
   },
   {
     question: "Why isn't my streak updating?",
@@ -403,21 +385,6 @@ function ImproveTips() {
           <QuoteExample before={before} after={after} />
           <p className="mt-3 text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
         </article>
-      ))}
-    </div>
-  );
-}
-
-function FillerPills() {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {fillerWords.map((word) => (
-        <span
-          key={word}
-          className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-sm font-sans font-black text-primary"
-        >
-          {word}
-        </span>
       ))}
     </div>
   );
@@ -619,21 +586,6 @@ function MobileImproveTips() {
           </div>
           <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
         </div>
-      ))}
-    </div>
-  );
-}
-
-function MobileFillerPills() {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {fillerWords.map((word) => (
-        <span
-          key={word}
-          className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-xs font-sans font-black text-primary"
-        >
-          {word}
-        </span>
       ))}
     </div>
   );
@@ -858,19 +810,14 @@ function HelpMobile() {
       content: <MobileImproveTips />,
     },
     {
-      title: 'Filler Words & Pauses Explained',
+      title: 'Pauses Explained',
       content: (
         <div className="space-y-3">
-          <MobileFillerPills />
           <p className="text-sm font-sans leading-relaxed text-muted-foreground">
-            Fillers are small words people use while searching for the next thought. A pause is a quiet break in your flow, and the difficulty setting changes how strict that feedback feels.
+            A pause is a quiet break in your flow, and the difficulty setting changes how strict that feedback feels.
           </p>
           <MobileDifficultyBoxes />
-          <div className="border-l border-primary/35 pl-3 text-sm font-sans leading-relaxed">
-            <p className="text-muted-foreground">Instead of: um um um</p>
-            <p className="text-foreground">Try one silent breath.</p>
-          </div>
-          <p className="text-sm font-sans font-black text-primary">A quiet pause is better than a filler.</p>
+          <p className="text-sm font-sans font-black text-primary">Use shorter pauses to keep your thoughts moving.</p>
         </div>
       ),
     },
@@ -1058,20 +1005,16 @@ function HelpDesktop() {
             <ImproveTips />
           </Section>
 
-          <Section title="Filler Words & Pauses Explained">
+          <Section title="Pauses Explained">
             <div className="mb-5 space-y-4">
-              <FillerPills />
               <p className="max-w-3xl text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-                Fillers are small words people use while searching for the next thought. They are common, but noticing them helps you replace noisy hesitation with calmer silence.
+                Pauses are quiet breaks in your flow. They are normal, but long pauses can interrupt momentum and make ideas harder to follow.
               </p>
             </div>
             <DifficultyBoxes />
             <div className="mt-4 rounded-[18px] border border-border bg-surface-elevated p-4">
-              <p className="mb-2 text-sm font-sans leading-relaxed text-muted-foreground">
-                Instead of: <span className="font-black text-foreground">um um um</span> - try one silent breath.
-              </p>
               <p className="text-base font-sans font-black text-primary">
-                A quiet pause is better than a filler.
+                Use shorter pauses to keep your thoughts moving.
               </p>
             </div>
           </Section>

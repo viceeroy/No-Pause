@@ -37,13 +37,6 @@ export async function generateAiFeedback(transcript: string): Promise<string> {
   return generateTextFromTranscript(transcript);
 }
 
-export async function generateFillerCount(transcript: string): Promise<string> {
-  return generateTextFromTranscript(
-    transcript,
-    'You count only spoken filler hesitations in transcript text. Count words/sounds like "um", "uh", "er", and "ah". Do not infer silent pauses. Return ONLY valid JSON: { "hesitation_count": <number> }',
-  );
-}
-
 const buildPracticeFeedbackPrompt = (input: {
   transcript: string;
   flowScore: number;
@@ -51,7 +44,7 @@ const buildPracticeFeedbackPrompt = (input: {
   speakingTime: number;
   wordCount: number;
 }) =>
-  `Analyze this speaking practice session. Evaluate fluency, filler words, pacing, clarity, confidence, and specific areas for improvement. Flow Score is open-ended and grows with sustained speaking time, so do not describe it as a percentage or fixed 100-point score.
+  `Analyze this speaking practice session. Evaluate fluency, pacing, clarity, confidence, and specific areas for improvement. Flow Score is open-ended and grows with sustained speaking time, so do not describe it as a percentage or fixed 100-point score.
 - Flow Score: ${input.flowScore}
 - Pauses: ${input.hesitationCount}
 - Speaking Time: ${input.speakingTime} seconds

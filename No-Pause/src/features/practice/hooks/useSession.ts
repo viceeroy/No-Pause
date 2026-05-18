@@ -57,7 +57,6 @@ export function useSession({
           silenceTime: sessionResult.totalSilenceTime,
           pauses: sessionResult.hesitationCount,
           pauseCount: sessionResult.pauseCount ?? sessionResult.hesitationCount,
-          fillerCount: sessionResult.fillerCount ?? null,
           words,
           mode: normalizedMode,
           flowScore: sessionResult.flowScore,
@@ -163,7 +162,6 @@ export function useSession({
         userId,
         transcript,
         words,
-        fillerCount: transcription.fillerCount,
       });
       setLastResults((prev) => {
         if (!prev) return prev;
@@ -171,7 +169,6 @@ export function useSession({
           ...prev,
           transcript,
           wordCount: words,
-          fillerCount: transcription.fillerCount,
           transcriptionLoading: false,
           transcriptionError: undefined,
           analysisFeedback: undefined,

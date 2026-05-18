@@ -1,6 +1,5 @@
 const DEEPGRAM_TRANSCRIPTION_URL = "https://api.deepgram.com/v1/listen";
 const DEEPGRAM_TIMEOUT_MS = 20_000;
-const SPOKEN_FILLER_WORDS = new Set(["uh", "um", "hmm", "uh-huh", "mhm", "hm", "uhh", "umm"]);
 
 export type DeepgramTranscribedWord = {
   word: string;
@@ -12,7 +11,6 @@ export type DeepgramTranscribedWord = {
 export type DeepgramTranscription = {
   text: string;
   words: DeepgramTranscribedWord[];
-  fillerCount: number;
 };
 
 function getDeepgramApiKey(): string {
@@ -48,16 +46,6 @@ function parseDeepgramWords(words: unknown): DeepgramTranscribedWord[] {
   });
 }
 
-function countFillerWords(words: DeepgramTranscribedWord[]): number {
-  const normalizeWord = (word: string) => word
-    .toLowerCase()
-    .replace(/^[^a-z]+|[^a-z]+$/g, "");
-
-  return words.reduce((count, word) => (
-    SPOKEN_FILLER_WORDS.has(normalizeWord(word.word)) ? count + 1 : count
-  ), 0);
-}
-
 function getDeepgramAlternative(data: unknown) {
   const maybeData = data as {
     results?: {
@@ -86,7 +74,6 @@ export async function transcribeAudioWithDeepgram(
   url.searchParams.set("smart_format", "true");
   url.searchParams.set("punctuate", "true");
   url.searchParams.set("words", "true");
-  url.searchParams.set("filler_words", "true");
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEEPGRAM_TIMEOUT_MS);
@@ -118,6 +105,5 @@ export async function transcribeAudioWithDeepgram(
   return {
     text: String(alternative?.transcript ?? "").trim(),
     words,
-    fillerCount: countFillerWords(words),
   };
 }

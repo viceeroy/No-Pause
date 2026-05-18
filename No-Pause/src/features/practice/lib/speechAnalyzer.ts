@@ -1,7 +1,6 @@
 import { AudioCapture } from './audioCapture';
 import { SpeechSession } from './speechSession';
 import {
-  processTranscriptForFillerWords,
   TranscriptionController,
   type TranscribeAudio,
 } from './transcription';
@@ -103,7 +102,6 @@ export class AudioAnalyzer {
 
     return {
       ...stats,
-      fillerWordCount: this.transcription.currentFillerWordCount,
       audioBlob: captureResult.audioBlob,
       audioMimeType: captureResult.audioMimeType,
       transcript,
@@ -126,11 +124,7 @@ export class AudioAnalyzer {
     return this.capture.hasAudioSignal();
   }
 
-  _processTranscriptForFillerWords(rawTranscript: string): { processedTranscript: string; count: number } {
-    return processTranscriptForFillerWords(rawTranscript);
-  }
-
-  private emptyStats(): Omit<AnalyzerResults, 'fillerWordCount' | 'audioBlob' | 'audioMimeType' | 'transcript'> {
+  private emptyStats(): Omit<AnalyzerResults, 'audioBlob' | 'audioMimeType' | 'transcript'> {
     return { totalSpeakingTime: 0, totalSilenceTime: 0, hesitationSilenceTime: 0, hesitationCount: 0, hesitationLog: [], longestFlowStreak: 0, frameCount: 0, noiseFloor: 0, totalTime: 0, avgVolume: 0 };
   }
 }

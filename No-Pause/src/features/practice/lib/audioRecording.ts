@@ -4,7 +4,7 @@ type CreateAudioAnalyzerOptions = {
   enableTranscription: boolean;
   hesitationMinDurationMs?: number;
   transcribeAudio?: (payload: { audioBase64: string; mimeType: string; durationSec?: number }) => Promise<
-    string | { transcript?: unknown; text?: unknown; fillerCount?: unknown }
+    string | { transcript?: unknown; text?: unknown }
   >;
   onData?: (data: AudioDataPayload) => void;
   onHesitation?: () => void;

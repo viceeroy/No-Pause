@@ -181,7 +181,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     sendJson(res, 200, {
       transcript: transcription.text,
       words: transcription.words,
-      fillerCount: transcription.fillerCount,
     });
   } catch (error) {
     if (error instanceof PayloadTooLargeError) {

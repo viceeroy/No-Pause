@@ -56,7 +56,6 @@ create table if not exists public.telegram_challenge_attempts (
 export type FlowAnalysis = {
   flowScore: number;
   pauseCount: number;
-  hesitationCount: number;
   speakingTimeSec: number;
   totalSessionTimeSec: number;
   isCompleted: boolean;
@@ -254,7 +253,6 @@ function formatResultFields(input: {
     `⏱ ${label("Speaking time:")} ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}`,
     `🕒 ${label("Session length:")} ${formatTelegramResultDuration(input.analysis.totalSessionTimeSec)}`,
     `🔇 ${label("Pauses:")} ${input.analysis.pauseCount} (silent gaps)`,
-    `💬 ${label("Fillers:")} ${input.analysis.hesitationCount} (um, uh, er, ah)`,
   ].join("\n");
 
   if (!transcript) {
@@ -310,8 +308,7 @@ export function getGroupShareResultMessage(input: {
 📊 <b>Flow Score:</b> ${input.analysis.flowScore}
 🔁 <b>Attempt:</b> ${attemptText}
 ⏱ <b>Speaking time:</b> ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}
-🔇 <b>Pauses:</b> ${input.analysis.pauseCount}
-💬 <b>Fillers:</b> ${input.analysis.hesitationCount}`;
+🔇 <b>Pauses:</b> ${input.analysis.pauseCount}`;
 }
 
 export function getGroupChallengeResultActions(input: {

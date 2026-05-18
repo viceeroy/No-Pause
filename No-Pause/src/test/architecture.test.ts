@@ -194,7 +194,6 @@ describe('speaking mode scoring architecture', () => {
         totalSilenceTime: 2,
         hesitationSilenceTime: 0,
         hesitationCount: 0,
-        fillerWordCount: 0,
         hesitationLog: [],
         longestFlowStreak: 0,
         frameCount: 1,
@@ -244,7 +243,6 @@ describe('stats architecture', () => {
         total_silence_time: 10,
         pauses: 99,
         pause_count: 3,
-        filler_count: 2,
         words: 20,
         flow_score: 120,
         completed: true,
@@ -392,7 +390,6 @@ describe('result message formatting architecture', () => {
     const analysis = {
       flowScore: 88,
       pauseCount: 2,
-      hesitationCount: 1,
       speakingTimeSec: 50,
       totalSessionTimeSec: 60,
       isCompleted: true,
@@ -413,7 +410,6 @@ describe('result message formatting architecture', () => {
     expect(result).toContain('Attempt:</b> #3');
     expect(result).toContain('Speaking time:</b> 50s speaking · 10s gaps');
     expect(result).toContain('Pauses:</b> 2');
-    expect(result).toContain('Fillers:</b> 1');
     expect(result).not.toContain('Transcript');
     expect(result).not.toContain('Session length');
     expect(result).not.toContain('Bonus');
@@ -485,7 +481,6 @@ describe('stats summary architecture', () => {
         total_silence_time: 5,
         pauses: 1,
         pause_count: 1,
-        filler_count: null,
         words: 10,
         flow_score: 90,
         completed: true,
@@ -652,7 +647,6 @@ describe('module export architecture', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       analyzePracticeSpeech: vi.fn(async () => 'Feedback'),
       generateAiFeedback: vi.fn(async () => 'Feedback'),
-      generateFillerCount: vi.fn(async () => '{"hesitation_count":0}'),
       isUsableTranscript: vi.fn(() => true),
     }));
     vi.doMock('@/services/supabaseServer', () => ({
@@ -683,7 +677,6 @@ describe('module export architecture', () => {
     expect(audioCapture.AudioCapture).toEqual(expect.any(Function));
     expect(speechSession.SpeechSession).toEqual(expect.any(Function));
     expect(transcription.TranscriptionController).toEqual(expect.any(Function));
-    expect(transcription.processTranscriptForFillerWords).toEqual(expect.any(Function));
     expect(micStateMachine.applyMicStateFrame).toEqual(expect.any(Function));
     expect(micStateMachine.finalizeMicState).toEqual(expect.any(Function));
   });
@@ -1335,11 +1328,10 @@ describe('HTTP header ASCII normalization', () => {
         transcript: 'hello world again',
         words: [
           { word: 'hello', start: 0, end: 1 },
-          { word: 'um', start: 1.1, end: 1.2 },
+          { word: 'there', start: 1.1, end: 1.2 },
           { word: 'world', start: 2, end: 3 },
           { word: 'again', start: 5, end: 6 },
         ],
-        fillerCount: 1,
       };
     });
     vi.doMock('@/services/deepgram', () => ({
@@ -1461,9 +1453,8 @@ describe('HTTP header ASCII normalization', () => {
       mode: 'speaking',
       source: 'telegram',
       transcript: 'hello world again',
-      filler_count: 1,
     });
-    expect(replies.some(([message]) => message.includes('Speaking Result') && message.includes('Fillers'))).toBe(true);
+    expect(replies.some(([message]) => message.includes('Speaking Result') && message.includes('Pauses'))).toBe(true);
     expect(replies.some(([message]) => message.includes('AI Feedback'))).toBe(false);
     expect(generateAiFeedback).not.toHaveBeenCalled();
     expect(upsertedStreaks).toHaveLength(1);
@@ -1484,7 +1475,6 @@ describe('HTTP header ASCII normalization', () => {
         { word: 'group', start: 1.2, end: 2 },
         { word: 'challenge', start: 2.2, end: 3 },
       ],
-      fillerCount: 0,
     }));
     vi.doMock('@/services/deepgram', () => ({
       transcribeAudioWithDeepgram: deepgramMock,
@@ -1632,7 +1622,6 @@ describe('HTTP header ASCII normalization', () => {
     const deepgramMock = vi.fn(async () => ({
       transcript: 'should not transcribe',
       words: [],
-      fillerCount: 0,
     }));
     vi.doMock('@/services/deepgram', () => ({
       transcribeAudioWithDeepgram: deepgramMock,
@@ -1750,7 +1739,6 @@ describe('HTTP header ASCII normalization', () => {
     const deepgramMock = vi.fn(async () => ({
       transcript: 'should not transcribe',
       words: [],
-      fillerCount: 0,
     }));
     vi.doMock('@/services/deepgram', () => ({
       transcribeAudioWithDeepgram: deepgramMock,
@@ -1881,7 +1869,6 @@ describe('HTTP header ASCII normalization', () => {
     const deepgramMock = vi.fn(async () => ({
       transcript: 'should not transcribe',
       words: [],
-      fillerCount: 0,
     }));
     vi.doMock('@/services/deepgram', () => ({
       transcribeAudioWithDeepgram: deepgramMock,
@@ -2015,7 +2002,6 @@ describe('HTTP header ASCII normalization', () => {
                     flow_score: 72,
                     pauses: 1,
                     pause_count: 1,
-                    filler_count: 0,
                     speaking_time: 30,
                     duration: 35,
                     completed: true,
@@ -2060,7 +2046,6 @@ describe('HTTP header ASCII normalization', () => {
 
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
-      generateFillerCount: vi.fn(async () => '{"hesitation_count":0}'),
       isUsableTranscript: vi.fn(() => true),
     }));
 

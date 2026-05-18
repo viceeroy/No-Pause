@@ -19,7 +19,6 @@ export interface SessionResult {
   totalSessionTime: number;
   hesitationCount: number;
   pauseCount?: number | null;
-  fillerCount?: number | null;
   hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[];
   mode: string;
   audioBlob: Blob | null;

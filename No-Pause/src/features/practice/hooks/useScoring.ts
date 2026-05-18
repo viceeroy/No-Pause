@@ -102,7 +102,6 @@ export function buildSessionResult({
       isCompleted: scoreResult.isCompleted,
       hesitationCount,
       pauseCount: hesitationCount,
-      fillerCount: results.fillerWordCount,
       hesitationLog: results.hesitationLog,
       mode: practiceMode,
       audioBlob: results.audioBlob,

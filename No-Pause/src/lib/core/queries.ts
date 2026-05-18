@@ -10,7 +10,6 @@ export type SessionRecord = {
   total_silence_time?: number | null;
   pauses: number | null;
   pause_count?: number | null;
-  filler_count?: number | null;
   words: number | null;
   flow_score: number | null;
   completed: boolean | null;
@@ -70,7 +69,7 @@ type SupabaseRpcLike = {
 };
 
 const SESSION_COLUMNS =
-  "id, created_at, mode, duration, speaking_time, total_silence_time, pauses, pause_count, filler_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
+  "id, created_at, mode, duration, speaking_time, total_silence_time, pauses, pause_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 const LEGACY_SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 

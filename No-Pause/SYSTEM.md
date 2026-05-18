@@ -39,7 +39,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients when present in the worktree.
 - `src/services/deepgram.ts`: server-only Deepgram nova-3 transcription client. Used by both `/api/transcription` and Telegram voice transcription, and returns normalized `{ text, words: [{ word, start, end }] }`.
 - `src/services/groq.ts`: server-only Groq chat completions client for text generation.
-- `src/services/aiFeedback.ts`: server-only AI feedback/filler helper built on Groq text generation.
+- `src/services/aiFeedback.ts`: server-only AI feedback helper built on Groq text generation.
 - `api/transcription.ts`: serverless audio transcription boundary.
 - `api/feedback.ts`: serverless AI feedback boundary.
 - `src/pages/PracticePage.tsx`: current web practice screen; maps optional `prompt_text` into the session context.
@@ -56,7 +56,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/features/practice/lib/speechTypes.ts`: shared practice analyzer types.
 - `src/lib/practiceApi.ts`: browser-facing API facade for sessions, streaks, stats, transcription, and feedback. AI provider work is routed through `/api/transcription` and `/api/feedback`.
 - `src/lib/telegram/router.ts`: Telegraf command/action routing, connection checks, stats, and prompt messages.
-- `src/lib/telegram/voiceHandler.ts`: Telegram voice download, transcription endpoint call, pause/filler analysis, persistence, and reply formatting.
+- `src/lib/telegram/voiceHandler.ts`: Telegram voice download, transcription endpoint call, pause analysis, persistence, and reply formatting.
 - `src/lib/telegram/challenges.ts`: friend/group challenge creation, state, leaderboard, expiry, callbacks, and result updates.
 - `src/lib/telegram/constants.ts`: Telegram bot constants.
 - `src/lib/telegramAuth.ts`: Telegram connection upsert.
@@ -81,7 +81,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `createTelegramBot()`: registers Telegram commands, actions, and voice handling.
 - `handleVoiceMessage()`: Telegram voice analysis pipeline.
 - `transcribeAudioWithDeepgram()`: server-side Deepgram nova-3 transcription with word timestamps.
-- `generateAiFeedback()` / `generateFillerCount()` / `analyzePracticeSpeech()`: server-side Groq feedback and filler analysis via `src/services/aiFeedback.ts` and `src/services/groq.ts`.
+- `generateAiFeedback()` / `analyzePracticeSpeech()`: server-side Groq feedback via `src/services/aiFeedback.ts` and `src/services/groq.ts`.
 
 ## Active Data Flow
 
@@ -107,10 +107,10 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 5. `voiceHandler` downloads Telegram voice files from Telegram.
 6. `voiceHandler` transcribes Telegram voice audio with the shared Deepgram nova-3 service and receives transcript plus word timestamps.
 7. Telegram rejects unusable transcripts under 3 words.
-8. Pause units are calculated from inter-word timestamp gaps; spoken filler count is LLM-counted with Groq and may be included for display/storage when available.
+8. Pause units are calculated from inter-word timestamp gaps.
 9. `calculateFlowScore` scores pause units as mode `speaking`.
 10. `insertSession` writes source `telegram`; `updateStreak` updates streaks.
-11. Bot replies with Flow Score, pauses, filler hesitations, speaking time, transcript, and optional AI feedback. AI feedback button responses use Groq with an application-level timeout and a friendly retry message on generation failure.
+11. Bot replies with Flow Score, pauses, speaking time, transcript, and optional AI feedback. AI feedback button responses use Groq with an application-level timeout and a friendly retry message on generation failure.
 12. The private reply keyboard uses `Challenge`, `My Stats`, `Speak`, and `About`; these text handlers silently do nothing in groups. `Speak` explains that any voice note can be scored and offers an inline `Get Prompt` button for users who want a random topic first.
 13. `/nopause` in a group creates a group challenge card with Speak, Change Prompt, and Leaderboard actions. `/start` and `/about` are ignored in groups.
 14. Group Speak opens a private deep link, stores pending challenge context, processes the voice note in DM, records an attempt in `telegram_challenge_attempts`, and offers Send to Group / Try Again result buttons.
@@ -124,9 +124,9 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 - Browser code may call Supabase with the anon key and local serverless endpoints under `/api/*`.
 - Browser code must not call Deepgram or Groq URLs directly and must not import `src/services/deepgram.ts`, `src/services/groq.ts`, or `src/services/aiFeedback.ts`.
-- `api/transcription.ts` and server-side Telegram transcription are the Deepgram boundary. `api/feedback.ts` and server-side Telegram feedback/filler analysis are the Groq boundary.
+- `api/transcription.ts` and server-side Telegram transcription are the Deepgram boundary. `api/feedback.ts` and server-side Telegram feedback are the Groq boundary.
 - STT provider map: Deepgram nova-3 is used for web `/api/transcription` and Telegram voice transcription.
-- AI text provider map: Groq is used for web `/api/feedback`, Telegram filler counting, and Telegram AI feedback.
+- AI text provider map: Groq is used for web `/api/feedback` and Telegram AI feedback.
 - Supabase service-role access is server-only. Browser data writes use authenticated Supabase client calls or serverless endpoints that validate the user.
 
 ## Scoring Source Of Truth
@@ -139,13 +139,12 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - Pause thresholds by difficulty: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`; Telegram uses the default beginner threshold.
 - Web `hesitationCount` is audio-derived pause units and affects score.
 - Telegram `pauseCount` is word-gap pause units and affects score.
-- Telegram `hesitationCount`/`filler_count` is LLM-counted spoken fillers for display/storage only.
 - `sessions.pauses` is legacy naming; current writes also use `pause_count` when available.
 
 ## Database Tables Used
 
 - `auth.users`: Supabase Auth users; code reads `id`, `email`, name/avatar metadata, and difficulty metadata.
-- `public.sessions`: practice records. Used fields include `id`, `user_id`, `created_at`, `mode`, `duration`, `speaking_time`, `pauses`, `pause_count`, `filler_count`, `hesitations_per_minute`, `words`, `flow_score`, `completed`, `hesitation_log`, `transcript`, `analysis_feedback`, `scoring_version`, `source`.
+- `public.sessions`: practice records. Used fields include `id`, `user_id`, `created_at`, `mode`, `duration`, `speaking_time`, `pauses`, `pause_count`, `hesitations_per_minute`, `words`, `flow_score`, `completed`, `hesitation_log`, `transcript`, `analysis_feedback`, `scoring_version`, `source`.
 - `public.streaks`: streak counters. Used fields: `user_id`, `current_streak`, `longest_streak`, `last_session_date`.
 - `public.telegram_connections`: Telegram account links. Used fields: `telegram_id`, `user_id`, `connected_at`.
 - `public.challenges`: Telegram friend/group challenge records. Used fields: `id`, `topic`, `creator_telegram_id`, `creator_score`, `status`, `created_at`. For group challenges, `creator_telegram_id` is the group chat ID and `status` may be `group_pending:<telegram_id>` to identify the person allowed to change the prompt.
@@ -173,7 +172,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - Deepgram and Groq must remain behind serverless/server code. Browser transcription and feedback must use `/api/transcription` and `/api/feedback`.
 - `/api/transcription` accepts either a Supabase bearer token or the internal token used by Telegram. `/api/feedback` currently requires a Supabase bearer token.
 - Base `sessions` and `streaks` schema/RLS policies are incomplete in repo migrations; verify production Supabase before changing access patterns.
-- `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count`, `filler_count`, or `hesitations_per_minute`.
+- `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count` or `hesitations_per_minute`.
 - Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not be represented accurately.
 - Telegram prompt/challenge behavior is active and shares prompt data with the web prompt picker.
 - Telegram group challenge ownership currently depends on the encoded `challenges.status` value for newly created challenges; older `group_pending` rows have no human owner and will not allow Change Prompt.

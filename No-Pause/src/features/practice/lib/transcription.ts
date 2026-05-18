@@ -6,7 +6,6 @@ const debugError = (...args: unknown[]) => { if (IS_DEV) console.error(...args);
 
 const MAX_TRANSCRIBE_BYTES = 15 * 1024 * 1024;
 const EMPTY_TRANSCRIPT = 'No speech detected.';
-const FILLER_WORDS = ['um', 'uh', 'er', 'ah', 'like', 'you know', 'basically', 'literally', 'actually'];
 
 type SpeechRecognitionAlternativeLike = { transcript: string };
 type SpeechRecognitionResultLike = { isFinal: boolean; 0: SpeechRecognitionAlternativeLike };
@@ -33,30 +32,7 @@ export type TranscribeAudio = (payload: {
   audioBase64: string;
   mimeType: string;
   durationSec?: number;
-}) => Promise<string | { transcript?: unknown; text?: unknown; fillerCount?: unknown }>;
-
-export const processTranscriptForFillerWords = (
-  rawTranscript: string,
-): { processedTranscript: string; count: number } => {
-  let count = 0;
-  let processedTranscript = rawTranscript;
-
-  for (const filler of FILLER_WORDS) {
-    const escapedFiller = filler.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
-    const regex = new RegExp(`\\b(${escapedFiller})\\b`, 'gi');
-    let match;
-    while ((match = regex.exec(processedTranscript)) !== null) {
-      count++;
-      const originalWord = match[1];
-      processedTranscript = processedTranscript.substring(0, match.index) +
-        `**${originalWord}**` +
-        processedTranscript.substring(match.index + originalWord.length);
-      regex.lastIndex += 4;
-    }
-  }
-
-  return { processedTranscript, count };
-};
+}) => Promise<string | { transcript?: unknown; text?: unknown }>;
 
 const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
@@ -76,7 +52,6 @@ export class TranscriptionController {
   private isListening = false;
   private transcript = '';
   private finalTranscript = '';
-  private fillerWordCount = 0;
 
   private static readonly MAX_RECOGNITION_RESTARTS = 20;
   private static readonly RECOGNITION_RESTART_DELAY_MS = 1000;
@@ -90,14 +65,9 @@ export class TranscriptionController {
     return this.transcript;
   }
 
-  get currentFillerWordCount() {
-    return this.fillerWordCount;
-  }
-
   reset() {
     this.transcript = '';
     this.finalTranscript = '';
-    this.fillerWordCount = 0;
     this.recognitionRestartCount = 0;
   }
 
@@ -133,9 +103,7 @@ export class TranscriptionController {
       }
       if (newFinal) this.finalTranscript += newFinal;
       const currentRawTranscript = (this.finalTranscript + interim).trim();
-      const { processedTranscript, count } = processTranscriptForFillerWords(currentRawTranscript);
-      this.transcript = processedTranscript;
-      this.fillerWordCount = count;
+      this.transcript = currentRawTranscript;
       debugLog('[Transcript] onresult:', this.transcript.slice(-80));
     };
 
@@ -219,17 +187,9 @@ export class TranscriptionController {
       const deepgramTranscript = typeof deepgramResult === 'string'
         ? deepgramResult
         : String(deepgramResult.transcript ?? deepgramResult.text ?? '');
-      const deepgramFillerCount = typeof deepgramResult === 'string'
-        ? NaN
-        : Number(deepgramResult.fillerCount);
       if (deepgramTranscript && deepgramTranscript.trim().length > 0) {
         finalTranscript = deepgramTranscript.trim();
         this.transcript = finalTranscript;
-      }
-      if (Number.isFinite(deepgramFillerCount)) {
-        this.fillerWordCount = Math.max(0, Math.round(deepgramFillerCount));
-      } else {
-        this.fillerWordCount = processTranscriptForFillerWords(finalTranscript).count;
       }
     } catch (error) {
       debugError('[Transcript] Deepgram transcription failed:', error);

@@ -20,7 +20,7 @@ Static index for files under `src/` and `api/`. Importers are internal project f
 | `src/features/practice/lib/speechAnalyzer.test.ts` | None | None |
 | `src/features/practice/lib/speechSession.ts` | `SpeechSessionOptions`, `SpeechSessionFinalStats`, `SpeechSession` | `src/features/practice/lib/speechAnalyzer.ts` |
 | `src/features/practice/lib/speechTypes.ts` | `AudioDataPayload`, `AnalyzerResults` | `src/features/practice/lib/speechAnalyzer.ts`, `src/features/practice/lib/speechSession.ts` |
-| `src/features/practice/lib/transcription.ts` | `TranscribeAudio`, `processTranscriptForFillerWords`, `TranscriptionController` | `src/features/practice/lib/speechAnalyzer.ts` |
+| `src/features/practice/lib/transcription.ts` | `TranscribeAudio`, `TranscriptionController` | `src/features/practice/lib/speechAnalyzer.ts` |
 | `src/features/practice/pages/time.ts` | `toMMSS`, `formatTime`, `formatMMSS` | `src/features/practice/hooks/useScoring.ts`, `src/features/practice/pages/RecordingPanel.tsx`, `src/features/practice/pages/ResultPanel.tsx` |
 | `src/features/practice/pages/types.ts` | `PracticeState`, `TopicPrompt`, `SessionResult`, `PracticeStateStore` | `src/features/practice/hooks/useRecording.ts`, `src/features/practice/hooks/useScoring.ts`, `src/features/practice/hooks/useSession.ts`, `src/features/practice/pages/ResultPanel.tsx`, `src/features/practice/pages/SetupCountdownPanel.tsx`, `src/features/practice/pages/usePracticeState.ts`, `src/features/practice/pages/useRecordingController.test.ts`, `src/features/practice/pages/useRecordingController.ts` |
 | `src/features/practice/pages/usePracticeState.ts` | `usePracticeState` | `src/features/practice/pages/usePracticeState.test.ts`, `src/pages/PracticePage.tsx` |

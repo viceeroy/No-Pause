@@ -19,7 +19,6 @@ export interface AnalyzerResults {
   totalSilenceTime: number;
   hesitationSilenceTime: number;
   hesitationCount: number;
-  fillerWordCount: number;
   hesitationLog: { timestamp: number; duration: number; units: number; trailing?: boolean }[];
   longestFlowStreak: number;
   frameCount: number;

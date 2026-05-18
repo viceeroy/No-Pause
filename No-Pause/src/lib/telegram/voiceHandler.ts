@@ -66,7 +66,6 @@ export type TelegramSessionRecord = {
   flow_score: number | null;
   pauses: number | null;
   pause_count?: number | null;
-  filler_count?: number | null;
   speaking_time: number | null;
   duration: number | null;
   completed: boolean | null;
@@ -77,7 +76,6 @@ type VerboseTranscriptionResponse = {
   transcript?: unknown;
   text?: unknown;
   words?: unknown;
-  fillerCount?: unknown;
 };
 
 type TelegramGetFileResponse = {
@@ -257,17 +255,14 @@ async function transcribeAudio(audioBuffer: ArrayBuffer) {
   const data = await transcribeAudioWithDeepgram(audioBuffer) as VerboseTranscriptionResponse;
   const transcript = String(data.transcript ?? data.text ?? "").trim();
   const words = parseTranscribedWords(data.words);
-  const rawFillerCount = Number(data.fillerCount);
-  const fillerCount = Number.isFinite(rawFillerCount) ? Math.max(0, Math.round(rawFillerCount)) : 0;
   console.log("transcript words:", words.length);
 
-  return { text: transcript, words, fillerCount };
+  return { text: transcript, words };
 }
 
 async function analyzeTranscript(
   transcript: string,
   words: DeepgramTranscribedWord[],
-  fillerCount: number,
   totalSessionTimeSec: number,
   pauseThresholdMs: number,
 ): Promise<FlowAnalysis> {
@@ -282,7 +277,6 @@ async function analyzeTranscript(
   return {
     flowScore: Number.isFinite(scoreResult.score) ? scoreResult.score : 0,
     pauseCount,
-    hesitationCount: fillerCount,
     speakingTimeSec,
     totalSessionTimeSec,
     isCompleted: scoreResult.isCompleted,
@@ -377,7 +371,6 @@ async function insertTelegramSession(input: {
     speakingTime: input.analysis.speakingTimeSec,
     pauses: input.analysis.pauseCount,
     pauseCount: input.analysis.pauseCount,
-    fillerCount: input.analysis.hesitationCount,
     hesitationsPerMinute:
       input.analysis.speakingTimeSec > 0
         ? input.analysis.pauseCount / (input.analysis.speakingTimeSec / 60)
@@ -438,8 +431,7 @@ function isMissingSessionAnalysisColumnError(error: unknown): boolean {
   return (
     maybeError?.code === "PGRST204" ||
     maybeError?.code === "42703" ||
-    maybeError?.message?.includes("pause_count") === true ||
-    maybeError?.message?.includes("filler_count") === true
+    maybeError?.message?.includes("pause_count") === true
   );
 }
 
@@ -449,7 +441,7 @@ export async function getTelegramSession(input: {
 }): Promise<TelegramSessionRecord | null> {
   const { data, error } = await supabaseServer
     .from("sessions")
-    .select("id, transcript, flow_score, pauses, pause_count, filler_count, speaking_time, duration, completed, hesitation_log")
+    .select("id, transcript, flow_score, pauses, pause_count, speaking_time, duration, completed, hesitation_log")
     .eq("id", input.sessionId)
     .eq("user_id", input.userId)
     .maybeSingle();
@@ -483,7 +475,6 @@ export function getSessionAnalysis(session: TelegramSessionRecord): FlowAnalysis
   return {
     flowScore: Math.round(Number(session.flow_score ?? 0)),
     pauseCount: Math.round(Number(session.pause_count ?? session.pauses ?? 0)),
-    hesitationCount: Math.round(Number(session.filler_count ?? 0)),
     speakingTimeSec,
     totalSessionTimeSec,
     isCompleted: Boolean(session.completed),
@@ -593,7 +584,6 @@ export async function handleVoiceMessage(
     const analysis = await analyzeTranscript(
       transcript,
       transcription.words,
-      transcription.fillerCount,
       totalSessionTimeSec,
       pauseThresholdMs,
     );

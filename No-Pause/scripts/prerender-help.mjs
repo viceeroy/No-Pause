@@ -24,7 +24,7 @@ const helpArticles = [
     summary: "For people who want to sound clearer and more confident.",
     subheader: "A friendly place to practice out loud",
     body:
-      "NoPause helps people preparing for interviews, presentations, and everyday moments where they want to speak clearly. It is useful for anyone building speaking confidence, reducing filler words, and lowering hesitation. It also fits English fluency practice and helps you hear yourself more clearly.",
+      "NoPause helps people preparing for interviews, presentations, and everyday moments where they want to speak clearly. It is useful for anyone building speaking confidence and lowering hesitation. It also fits English fluency practice and helps you hear yourself more clearly.",
   },
   {
     title: "How A Practice Session Works",
@@ -38,7 +38,7 @@ const helpArticles = [
     summary: "See what each result tells you after a session.",
     subheader: "Each result explains a different part of your speaking",
     body:
-      "Flow Score shows how continuously you spoke. Speaking time is how long your voice was active, and silence time is the gaps between speech. Pause count shows how often you stopped too long, filler count shows hesitation words, and the transcript is what you said.",
+      "Flow Score shows how continuously you spoke. Speaking time is how long your voice was active, silence time is the gaps between speech, pause count shows how often you stopped too long, and the transcript is what you said.",
   },
   {
     title: "What Flow Score Means",
@@ -101,17 +101,17 @@ const helpArticles = [
     summary: "Exact scoring details, examples, and implementation notes.",
     subheader: "Technical details live here",
     body:
-      "Flow Score is calculated from whole seconds of speaking time. You earn 1 point for every second you speak, plus a 40 point bonus for every completed speaking minute. Each pause unit subtracts 10 points, and the final score is never allowed to go below 0. If you speak for fewer than 5 seconds, the session receives a Flow Score of 0. Beginner counts pauses after 1.8 seconds, intermediate after 1.2 seconds, and advanced after 0.8 seconds. Tiny gaps under 300 milliseconds are ignored, and the first 2 seconds and final 1 second of a recording are filtered out of pause penalties. Long silences can create multiple pause units because NoPause divides the silence by the active threshold and counts the whole units. Example strong session: Flow Score 246, speaking time 2:06, silence time 0:18, pause count 2, filler count 1. Example weak session: Flow Score 42, speaking time 0:48, silence time 1:35, pause count 14, filler count 11.",
+      "Flow Score is calculated from whole seconds of speaking time. You earn 1 point for every second you speak, plus a 40 point bonus for every completed speaking minute. Each pause unit subtracts 10 points, and the final score is never allowed to go below 0. If you speak for fewer than 5 seconds, the session receives a Flow Score of 0. Beginner counts pauses after 1.8 seconds, intermediate after 1.2 seconds, and advanced after 0.8 seconds. Tiny gaps under 300 milliseconds are ignored, and the first 2 seconds and final 1 second of a recording are filtered out of pause penalties. Long silences can create multiple pause units because NoPause divides the silence by the active threshold and counts the whole units. Example strong session: Flow Score 246, speaking time 2:06, silence time 0:18, pause count 2. Example weak session: Flow Score 42, speaking time 0:48, silence time 1:35, pause count 14.",
   },
 ];
 
 const improveSpeakingArticles = [
   {
-    title: "How to stop saying um and uh",
-    summary: "Replace hesitation sounds with intentional pauses.",
-    subheader: "Replace hesitation sounds with intentional pauses",
+    title: "How to speak with steadier pauses",
+    summary: "Turn long gaps into shorter, intentional breaks.",
+    subheader: "Turn long gaps into shorter, intentional breaks",
     body:
-      "Fillers often appear when your brain is buying time between thought formation and sentence production. The sound comes out before the next idea is ready, which makes the hesitation audible to the listener. A quiet pause does the same neurological job without weakening the sentence. It gives your brain time to select the next word while making you sound deliberate instead of uncertain. To catch yourself, record short sessions, review the exact spots where fillers appear, and practice replacing the first filler sound with one silent breath before continuing.",
+      "Long pauses often appear when your brain is buying time between thought formation and sentence production. The break happens before the next idea is ready, which can interrupt the listener. A short quiet pause gives your brain time to select the next word while keeping the sentence intentional. To improve, record short sessions, review the exact spots where long pauses appear, and practice continuing after one quiet breath.",
   },
   {
     title: "How to reduce hesitation when speaking",
@@ -135,11 +135,11 @@ const improveSpeakingArticles = [
       "Most people can think faster than they speak, but pressure changes the timing. In a live moment, you may wait for a complete thought before starting, which creates silence and hesitation. Prompts train the opposite skill: begin with a reasonable first sentence, then let the next thought form while you are already speaking. This builds real-time thinking because your brain learns to organize ideas at speaking speed instead of waiting for a finished script.",
   },
   {
-    title: "How to eliminate filler words",
-    summary: "Spot the habit loop, then replace the cue with silence.",
-    subheader: "Awareness is the first step to elimination",
+    title: "How to reduce long pauses",
+    summary: "Spot the habit loop, then keep the next sentence moving.",
+    subheader: "Awareness is the first step to smoother flow",
     body:
-      "Fillers are a habit loop: uncertainty is the cue, the filler is the routine, and the reward is a tiny bit of extra thinking time. You reduce the habit by seeing where it happens and replacing the routine. NoPause transcript highlights make patterns visible, such as fillers at the start of answers or after long clauses. For daily practice, choose one filler, speak for two minutes, and restart the sentence silently whenever that filler appears. The goal is not instant perfection; it is faster awareness.",
+      "Long pauses are often a habit loop: uncertainty is the cue, silence is the routine, and the reward is extra thinking time. You reduce the habit by seeing where it happens and replacing the routine. For daily practice, speak for two minutes and continue with the simplest next sentence whenever a long pause appears. The goal is not instant perfection; it is faster recovery.",
   },
   {
     title: "Why do I pause so much when talking",

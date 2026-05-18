@@ -34,7 +34,6 @@ export type InsertSessionInput = {
   duration: number;
   pauses: number;
   pauseCount?: number | null;
-  fillerCount?: number | null;
   hesitationsPerMinute?: number | null;
   mode?: string;
   speakingTime?: number | null;
@@ -93,7 +92,6 @@ export function isMissingSessionAnalysisColumnError(error: unknown): boolean {
     maybeError?.code === "PGRST204" ||
     maybeError?.code === "42703" ||
     maybeError?.message?.includes("pause_count") === true ||
-    maybeError?.message?.includes("filler_count") === true ||
     maybeError?.message?.includes("hesitations_per_minute") === true ||
     maybeError?.message?.includes("total_silence_time") === true ||
     maybeError?.message?.includes("telegram_chat_id") === true ||
@@ -109,7 +107,6 @@ export function buildSessionInsertValues(input: InsertSessionInput) {
     flow_score: input.flowScore,
     pauses: input.pauses,
     pause_count: input.pauseCount ?? input.pauses,
-    filler_count: input.fillerCount ?? null,
     hesitations_per_minute: input.hesitationsPerMinute ?? null,
     words: input.words,
     mode: normalizeSessionMode(input.mode ?? "speaking"),
@@ -130,7 +127,6 @@ export function buildLegacySessionInsertValues(input: InsertSessionInput) {
     ...buildSessionInsertValues(input),
   };
   delete legacyValues.pause_count;
-  delete legacyValues.filler_count;
   delete legacyValues.hesitations_per_minute;
   delete legacyValues.total_silence_time;
   delete legacyValues.telegram_chat_id;

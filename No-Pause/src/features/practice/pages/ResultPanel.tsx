@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, Check, Copy, FileText, MessageSquare, Mic, Pause, Quote, Share2, Timer, TrendingUp } from 'lucide-react';
+import { Activity, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, Timer, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -18,39 +18,6 @@ type ResultPanelProps = {
 
 interface CustomWindow extends Window {
   __nopauseExportLogs?: () => void;
-}
-
-function stripFillerMarkers(text: string): string {
-  return text.replace(/\*\*([^*]+)\*\*/g, '$1');
-}
-
-function renderTranscriptWithFillerHighlights(text: string) {
-  const parts: Array<string | JSX.Element> = [];
-  const markerPattern = /\*\*([^*]+)\*\*/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = markerPattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-
-    parts.push(
-      <span
-        key={`${match.index}-${match[1]}`}
-        className="rounded-md bg-primary/15 px-1 font-semibold text-primary"
-      >
-        {match[1]}
-      </span>,
-    );
-    lastIndex = markerPattern.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : text;
 }
 
 export function ResultPanel({
@@ -97,7 +64,7 @@ export function ResultPanel({
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
   const scoreWidth = Math.max(0, Math.min(100, (lastResults.flowScore / 500) * 100));
   const transcript = (lastResults.transcript || '').trim();
-  const transcriptForCopy = stripFillerMarkers(transcript);
+  const transcriptForCopy = transcript;
   const transcriptReady =
     transcript.length > 0 &&
     transcript !== 'No speech detected.' &&
@@ -108,7 +75,6 @@ export function ResultPanel({
   const silenceTime = Math.max(0, lastResults.totalSilenceTime || 0);
   const sessionLength = Math.max(0, lastResults.totalSessionTime || 0);
   const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
-  const fillerCount = Math.max(0, Math.round(Number(lastResults.fillerCount ?? 0)));
   const coachingNote = getCoachingNote();
   const statusNote = speakingTime < 5
     ? 'Session was too short to score. Speak for at least 5 seconds.'
@@ -164,9 +130,11 @@ export function ResultPanel({
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{pauseCount}</p>
           </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <Quote size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Fillers</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{fillerCount}</p>
+            <Mic size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Speaking time</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+              {renderDurationText(speakingTime)}
+            </p>
           </article>
         </section>
 
@@ -231,7 +199,7 @@ export function ResultPanel({
             ) : null}
           </div>
           {transcriptReady ? (
-            <p className="font-sans text-sm leading-relaxed text-foreground">{renderTranscriptWithFillerHighlights(transcript)}</p>
+            <p className="font-sans text-sm leading-relaxed text-foreground">{transcript}</p>
           ) : (
             <>
               <p className="mb-4 font-sans text-sm leading-relaxed text-muted-foreground">
@@ -277,7 +245,7 @@ export function ResultPanel({
           <button
             onClick={async () => {
               const shareTranscript = transcriptForCopy;
-              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPause units: ${pauseCount}\nFillers: ${fillerCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPause units: ${pauseCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {

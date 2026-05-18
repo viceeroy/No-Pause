@@ -1,6 +1,6 @@
 # No Pause
 
-No Pause is a real-time speaking analytics web application designed to help you improve your speaking fluency, reduce hesitations, and eliminate filler words. It uses the Web Audio API to track your speech patterns locally and provides a comprehensive "Flow Score" to measure your progress over time.
+No Pause is a real-time speaking analytics web application designed to help you improve your speaking fluency and reduce hesitations. It uses the Web Audio API to track your speech patterns locally and provides a comprehensive "Flow Score" to measure your progress over time.
 
 ## 🎯 Features
 
