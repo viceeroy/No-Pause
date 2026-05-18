@@ -2,6 +2,8 @@
 
 ## May 18, 2026
 
+Removed filler-word counting from the practice and Telegram analysis path. Transcription now returns transcript text and word timestamps only, saved sessions no longer write `filler_count`, Telegram voice scoring uses pause units instead of filler counts, and the results screen focuses on speaking time and pauses.
+
 Hardened Telegram voice and challenge preflight handling. The bot now catches account lookup failures with a friendly retry message, checks pending challenge state before acknowledging a voice note, clears stale or expired challenge state without transcribing or saving a session, and asks unconnected users to link their account before challenge retries continue.
 
 Clarified Telegram account linking on the web connect page. The page now explains that the browser links whichever NoPause account is already signed in, so switching accounts should happen in the web app before opening the Telegram connect link again.

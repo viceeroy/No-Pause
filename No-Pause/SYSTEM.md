@@ -139,6 +139,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - Pause thresholds by difficulty: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`; Telegram uses the default beginner threshold.
 - Web `hesitationCount` is audio-derived pause units and affects score.
 - Telegram `pauseCount` is word-gap pause units and affects score.
+- Spoken filler-word counting is not part of the current scoring, result display, transcription response, or session persistence path.
 - `sessions.pauses` is legacy naming; current writes also use `pause_count` when available.
 
 ## Database Tables Used
