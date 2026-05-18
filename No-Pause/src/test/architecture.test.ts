@@ -633,14 +633,13 @@ describe('module export architecture', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
-    vi.doUnmock('../../src/services/deepgram.js');
-    vi.doUnmock('@/services/deepgram');
+    vi.doUnmock('../../src/services/groq.js');
+    vi.doUnmock('@/services/groq');
     process.env = { ...originalEnv };
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
     process.env.TELEGRAM_BOT_TOKEN = 'telegram-token';
     process.env.GROQ_API_KEY = 'groq-key';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
   });
 
   it('router, voiceHandler, and challenges exports resolve with their server dependencies mocked', async () => {
@@ -1080,7 +1079,7 @@ describe('HTTP header ASCII normalization', () => {
     process.env = { ...originalEnv };
     process.env.SUPABASE_URL = 'https://example.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
   });
 
   it('api/transcription accepts an internally normalized token containing non-header characters', async () => {
@@ -1100,7 +1099,7 @@ describe('HTTP header ASCII normalization', () => {
   });
 
   it('api/transcription returns 429 when regular session transcription quota is exhausted', async () => {
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
     vi.doMock('../../src/services/supabaseServer.js', () => ({
       supabaseServer: {
         auth: {
@@ -1116,8 +1115,8 @@ describe('HTTP header ASCII normalization', () => {
       getQuotaExceededMessage: vi.fn(() => 'Daily transcription limit reached. Try again tomorrow.'),
       isApiQuotaExceededError: vi.fn((error) => (error as { kind?: string })?.kind === 'transcription'),
     }));
-    vi.doMock('../../src/services/deepgram.js', () => ({
-      transcribeAudioWithDeepgram: vi.fn(async () => {
+    vi.doMock('../../src/services/groq.js', () => ({
+      transcribeAudioWithGroq: vi.fn(async () => {
         throw new Error('should not call provider');
       }),
     }));
@@ -1142,7 +1141,7 @@ describe('HTTP header ASCII normalization', () => {
   });
 
   it('api/transcription rejects oversized bodies while reading the request', async () => {
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
     vi.doMock('../../src/services/supabaseServer.js', () => ({
       supabaseServer: {
         auth: {
@@ -1312,18 +1311,18 @@ describe('HTTP header ASCII normalization', () => {
     );
   });
 
-  it('voiceHandler transcribes Telegram audio with Deepgram word timestamps', async () => {
+  it('voiceHandler transcribes Telegram audio with Groq word timestamps', async () => {
     const order: string[] = [];
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
 
     const generateAiFeedback = vi.fn(async () => 'Feedback');
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback,
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
     }));
-    const deepgramMock = vi.fn(async () => {
-      order.push('deepgram');
+    const groqTranscriptionMock = vi.fn(async () => {
+      order.push('groq');
       return {
         transcript: 'hello world again',
         words: [
@@ -1334,11 +1333,11 @@ describe('HTTP header ASCII normalization', () => {
         ],
       };
     });
-    vi.doMock('@/services/deepgram', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('@/services/groq', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
-    vi.doMock('../../src/services/deepgram.js', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('../../src/services/groq.js', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
     vi.doMock('@/services/apiQuota', () => ({
       DAILY_FEEDBACK_LIMIT: 20,
@@ -1445,7 +1444,7 @@ describe('HTTP header ASCII normalization', () => {
       'telegram:getFile',
       'telegram:download',
       'quota:transcription',
-      'deepgram',
+      'groq',
       'insert:sessions',
       'upsert:streaks',
     ]);
@@ -1462,13 +1461,13 @@ describe('HTTP header ASCII normalization', () => {
 
   it('voiceHandler automatically records group challenge attempts when scoring finishes', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
 
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
     }));
-    const deepgramMock = vi.fn(async () => ({
+    const groqTranscriptionMock = vi.fn(async () => ({
       transcript: 'hello group challenge',
       words: [
         { word: 'hello', start: 0, end: 1 },
@@ -1476,11 +1475,11 @@ describe('HTTP header ASCII normalization', () => {
         { word: 'challenge', start: 2.2, end: 3 },
       ],
     }));
-    vi.doMock('@/services/deepgram', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('@/services/groq', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
-    vi.doMock('../../src/services/deepgram.js', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('../../src/services/groq.js', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
     const consumeApiQuota = vi.fn();
     vi.doMock('@/services/apiQuota', () => ({
@@ -1613,21 +1612,21 @@ describe('HTTP header ASCII normalization', () => {
 
   it('voiceHandler clears expired pending group challenges without saving a session', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
 
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
     }));
-    const deepgramMock = vi.fn(async () => ({
+    const groqTranscriptionMock = vi.fn(async () => ({
       transcript: 'should not transcribe',
       words: [],
     }));
-    vi.doMock('@/services/deepgram', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('@/services/groq', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
-    vi.doMock('../../src/services/deepgram.js', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('../../src/services/groq.js', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
     const consumeApiQuota = vi.fn();
     vi.doMock('@/services/apiQuota', () => ({
@@ -1723,28 +1722,28 @@ describe('HTTP header ASCII normalization', () => {
     expect(recordGroupChallengeAttempt).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(consumeApiQuota).not.toHaveBeenCalled();
-    expect(deepgramMock).not.toHaveBeenCalled();
+    expect(groqTranscriptionMock).not.toHaveBeenCalled();
     expect(getUserById).not.toHaveBeenCalled();
     expect(fromMock).not.toHaveBeenCalled();
   });
 
-  it('voiceHandler enforces transcription quota before Deepgram for friend challenge submissions', async () => {
+  it('voiceHandler enforces transcription quota before Groq for friend challenge submissions', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
 
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
     }));
-    const deepgramMock = vi.fn(async () => ({
+    const groqTranscriptionMock = vi.fn(async () => ({
       transcript: 'should not transcribe',
       words: [],
     }));
-    vi.doMock('@/services/deepgram', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('@/services/groq', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
-    vi.doMock('../../src/services/deepgram.js', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('../../src/services/groq.js', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
     const quotaError = { kind: 'transcription' };
     const consumeApiQuota = vi.fn(async () => {
@@ -1854,27 +1853,27 @@ describe('HTTP header ASCII normalization', () => {
       kind: 'transcription',
       limit: 20,
     });
-    expect(deepgramMock).not.toHaveBeenCalled();
+    expect(groqTranscriptionMock).not.toHaveBeenCalled();
     expect(replies).toContainEqual(['quota exceeded: transcription', undefined]);
   });
 
   it('voiceHandler clears stale pending challenge state without processing the voice note', async () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
-    process.env.DEEPGRAM_API_KEY = 'deepgram-key';
+    process.env.GROQ_API_KEY = 'groq-key';
 
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
     }));
-    const deepgramMock = vi.fn(async () => ({
+    const groqTranscriptionMock = vi.fn(async () => ({
       transcript: 'should not transcribe',
       words: [],
     }));
-    vi.doMock('@/services/deepgram', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('@/services/groq', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
-    vi.doMock('../../src/services/deepgram.js', () => ({
-      transcribeAudioWithDeepgram: deepgramMock,
+    vi.doMock('../../src/services/groq.js', () => ({
+      transcribeAudioWithGroq: groqTranscriptionMock,
     }));
     const consumeApiQuota = vi.fn();
     vi.doMock('@/services/apiQuota', () => ({
@@ -1948,7 +1947,7 @@ describe('HTTP header ASCII normalization', () => {
     expect(replies).not.toContainEqual([MESSAGES.voiceReceived, { parse_mode: 'HTML' }]);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(consumeApiQuota).not.toHaveBeenCalled();
-    expect(deepgramMock).not.toHaveBeenCalled();
+    expect(groqTranscriptionMock).not.toHaveBeenCalled();
     expect(getUserById).not.toHaveBeenCalled();
     expect(fromMock).not.toHaveBeenCalled();
   });
@@ -1958,8 +1957,8 @@ describe('HTTP header ASCII normalization', () => {
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
     }));
-    vi.doMock('@/services/deepgram', () => ({
-      transcribeAudioWithDeepgram: vi.fn(),
+    vi.doMock('@/services/groq', () => ({
+      transcribeAudioWithGroq: vi.fn(),
     }));
     vi.doMock('@/lib/core/user', () => ({
       resolveTelegramUser: vi.fn(async () => 'user-1'),

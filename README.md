@@ -7,7 +7,7 @@ The deployable app lives in [`No-Pause/`](./No-Pause).
 ## What It Does
 
 - Records short Speaking Mode sessions in the browser.
-- Measures speaking time, silence time, pause units, filler count, and Flow Score.
+- Measures speaking time, silence time, pause units, and Flow Score.
 - Saves sessions, transcripts, streaks, and stats with Supabase.
 - Provides optional AI feedback after a transcript is available.
 - Supports Telegram voice-note practice, account linking, stats, and friend or group challenges.
@@ -27,12 +27,11 @@ The deployable app lives in [`No-Pause/`](./No-Pause).
 
 - Frontend: React, Vite, TypeScript, Tailwind CSS.
 - Auth and database: Supabase.
-- Speech-to-text: Deepgram nova-3 behind server routes.
-- AI feedback: Groq behind server routes.
+- Speech-to-text and AI feedback: Groq behind server routes.
 - Telegram bot: Telegraf via Vercel serverless webhook.
 - Deployment: Vercel, with project configuration rooted at this repository folder.
 
-Browser code never calls Deepgram or Groq directly. Provider keys stay server-side, and browser transcription or feedback requests go through `/api/transcription` and `/api/feedback`.
+Browser code never calls Groq directly. Provider keys stay server-side, and browser transcription or feedback requests go through `/api/transcription` and `/api/feedback`.
 
 ## Core Data Flow
 
@@ -40,7 +39,7 @@ Browser code never calls Deepgram or Groq directly. Provider keys stay server-si
 2. Web Audio and MediaRecorder capture audio and speech/silence frames.
 3. Local analyzer calculates speaking time, silence, and pause units.
 4. Browser SpeechRecognition may create an initial transcript.
-5. If needed, audio is sent to `/api/transcription`, which calls Deepgram.
+5. If needed, audio is sent to `/api/transcription`, which calls Groq Whisper.
 6. `calculateFlowScore` scores the session from speaking time and pause units.
 7. Session data is saved to Supabase `sessions`; streak data updates in `streaks`.
 8. Optional AI feedback is requested through `/api/feedback` and stored on the session.
@@ -65,7 +64,6 @@ Server-side production features also require:
 ```bash
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-DEEPGRAM_API_KEY=
 GROQ_API_KEY=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_WEBHOOK_SECRET=

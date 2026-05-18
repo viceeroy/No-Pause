@@ -179,20 +179,20 @@ export class TranscriptionController {
 
       const audioBase64 = arrayBufferToBase64(await input.audioBlob.arrayBuffer());
       const durationSec = Math.round(input.totalRecordingTimeMs / 1000);
-      const deepgramResult = await this.transcribeWithRetry({
+      const transcriptionResult = await this.transcribeWithRetry({
         audioBase64,
         mimeType: input.normalizedMimeType,
         durationSec,
       });
-      const deepgramTranscript = typeof deepgramResult === 'string'
-        ? deepgramResult
-        : String(deepgramResult.transcript ?? deepgramResult.text ?? '');
-      if (deepgramTranscript && deepgramTranscript.trim().length > 0) {
-        finalTranscript = deepgramTranscript.trim();
+      const serverTranscript = typeof transcriptionResult === 'string'
+        ? transcriptionResult
+        : String(transcriptionResult.transcript ?? transcriptionResult.text ?? '');
+      if (serverTranscript && serverTranscript.trim().length > 0) {
+        finalTranscript = serverTranscript.trim();
         this.transcript = finalTranscript;
       }
     } catch (error) {
-      debugError('[Transcript] Deepgram transcription failed:', error);
+      debugError('[Transcript] Server transcription failed:', error);
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String((error as { message?: unknown }).message)

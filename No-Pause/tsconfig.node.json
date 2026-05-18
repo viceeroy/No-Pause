@@ -31,7 +31,6 @@
     "api/**/*.ts",
     "src/services/apiQuota.ts",
     "src/services/aiFeedback.ts",
-    "src/services/deepgram.ts",
     "src/services/groq.ts",
     "src/services/supabaseServer.ts",
     "src/lib/core/**/*.ts",

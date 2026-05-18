@@ -2,6 +2,8 @@
 
 ## May 18, 2026
 
+Moved all speech-to-text transcription onto Groq Whisper. The web transcription endpoint and Telegram voice-note flow now use the same Groq provider as AI feedback, while preserving word-level timestamps for pause detection and removing the old transcription provider configuration.
+
 Removed filler-word counting from the practice and Telegram analysis path. Transcription now returns transcript text and word timestamps only, saved sessions no longer write `filler_count`, Telegram voice scoring uses pause units instead of filler counts, and the results screen focuses on speaking time and pauses.
 
 Hardened Telegram voice and challenge preflight handling. The bot now catches account lookup failures with a friendly retry message, checks pending challenge state before acknowledging a voice note, clears stale or expired challenge state without transcribing or saving a session, and asks unconnected users to link their account before challenge retries continue.
@@ -66,7 +68,7 @@ Improved the Telegram bot connection and challenge flow. The bot now handles wel
 
 ## May 3, 2026
 
-Made a broad launch-readiness pass across scoring, transcription, Telegram voice notes, and AI feedback. Session scoring and speech timing were recalibrated, stats and result screens were adjusted, and Telegram voice notes gained automatic AI feedback with clearer timeout and error handling. The AI provider setup was moved toward Deepgram for transcription and Gemini for fast feedback, with docs and tests updated around those decisions. Several Telegram launch blockers were fixed in routing, challenge handling, stats queries, and the practice page.
+Made a broad launch-readiness pass across scoring, transcription, Telegram voice notes, and AI feedback. Session scoring and speech timing were recalibrated, stats and result screens were adjusted, and Telegram voice notes gained automatic AI feedback with clearer timeout and error handling. The AI provider setup was revised for server-side transcription and fast feedback, with docs and tests updated around those decisions. Several Telegram launch blockers were fixed in routing, challenge handling, stats queries, and the practice page.
 
 ## May 2, 2026
 

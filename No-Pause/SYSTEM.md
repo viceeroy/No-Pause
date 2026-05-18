@@ -24,7 +24,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 ## API Endpoints
 
-- `POST /api/transcription`: `api/transcription.ts`; accepts `multipart/form-data` audio upload in `audio` or `file`, requires either a Supabase bearer token or an internal token, calls Deepgram nova-3 with the server-side `DEEPGRAM_API_KEY`, and returns transcript text plus word timestamps.
+- `POST /api/transcription`: `api/transcription.ts`; accepts `multipart/form-data` audio upload in `audio` or `file`, requires either a Supabase bearer token or an internal token, calls Groq Whisper with the server-side `GROQ_API_KEY`, and returns transcript text plus word timestamps.
 - `POST /api/feedback`: `api/feedback.ts`; accepts transcript text and scoring data as JSON, requires a Supabase bearer token, calls Groq with the server-side `GROQ_API_KEY`, and returns coaching feedback.
 - `POST /api/telegram/webhook`: `api/telegram/webhook.ts`; receives Telegram updates and delegates to Telegraf. Vercel `maxDuration` is configured to 30 seconds for this function.
 - `POST /api/telegram/connect`: `api/telegram/connect.ts`; requires Supabase bearer token, validates the user, upserts `telegram_connections`, and sends a Telegram welcome message.
@@ -37,8 +37,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/services/supabase.ts`: browser Supabase anon client.
 - `src/services/supabaseServer.ts`: server Supabase service-role client.
 - `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients when present in the worktree.
-- `src/services/deepgram.ts`: server-only Deepgram nova-3 transcription client. Used by both `/api/transcription` and Telegram voice transcription, and returns normalized `{ text, words: [{ word, start, end }] }`.
-- `src/services/groq.ts`: server-only Groq chat completions client for text generation.
+- `src/services/groq.ts`: server-only Groq client for chat completions and Whisper transcription. Used by `/api/feedback`, `/api/transcription`, and Telegram voice transcription; transcription returns normalized `{ text, words: [{ word, start, end }] }`.
 - `src/services/aiFeedback.ts`: server-only AI feedback helper built on Groq text generation.
 - `api/transcription.ts`: serverless audio transcription boundary.
 - `api/feedback.ts`: serverless AI feedback boundary.
@@ -80,7 +79,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `TranscriptionController`: browser SpeechRecognition and server transcription fallback helper.
 - `createTelegramBot()`: registers Telegram commands, actions, and voice handling.
 - `handleVoiceMessage()`: Telegram voice analysis pipeline.
-- `transcribeAudioWithDeepgram()`: server-side Deepgram nova-3 transcription with word timestamps.
+- `transcribeAudioWithGroq()`: server-side Groq Whisper transcription with word timestamps.
 - `generateAiFeedback()` / `analyzePracticeSpeech()`: server-side Groq feedback via `src/services/aiFeedback.ts` and `src/services/groq.ts`.
 
 ## Active Data Flow
@@ -93,7 +92,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 4. `AudioCapture` samples Web Audio RMS, records chunks, and reports capture diagnostics.
 5. `SpeechSession` tracks speech/silence, emits pause units, and uses `calculateFlowScore` for preview/final scoring.
 6. Browser SpeechRecognition may produce an initial transcript. Android fallback or manual transcription sends the audio blob through `practiceApi.transcribeAudio()` to `/api/transcription`.
-7. `/api/transcription` validates the Supabase bearer token, calls Deepgram nova-3 server-side, and returns transcript text and optional word timestamps.
+7. `/api/transcription` validates the Supabase bearer token, calls Groq Whisper server-side, and returns transcript text and optional word timestamps.
 8. `saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
 9. Optional coaching feedback sends transcript and scoring data through `practiceApi.analyzeSpeech()` to `/api/feedback`; the endpoint calls Groq server-side and stores/returns feedback through the session flow.
 10. Stats pages read `sessions` and `streaks` through `getPracticeStats` / `buildPracticeStats`.
@@ -105,7 +104,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 3. Voice handling preflights user lookup, pending challenge lookup, challenge existence, expiry, user pause threshold, and duplicate Telegram message state before sending the analyzing acknowledgement.
 4. If pending challenge state points to a missing challenge or expired group challenge, `voiceHandler` deletes the pending state and replies without downloading audio, consuming quota, saving a session, or recording an attempt.
 5. `voiceHandler` downloads Telegram voice files from Telegram.
-6. `voiceHandler` transcribes Telegram voice audio with the shared Deepgram nova-3 service and receives transcript plus word timestamps.
+6. `voiceHandler` transcribes raw Telegram OGG/Opus voice audio with the shared Groq Whisper service and receives transcript plus word timestamps.
 7. Telegram rejects unusable transcripts under 3 words.
 8. Pause units are calculated from inter-word timestamp gaps.
 9. `calculateFlowScore` scores pause units as mode `speaking`.
@@ -123,9 +122,9 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## External Service Boundaries
 
 - Browser code may call Supabase with the anon key and local serverless endpoints under `/api/*`.
-- Browser code must not call Deepgram or Groq URLs directly and must not import `src/services/deepgram.ts`, `src/services/groq.ts`, or `src/services/aiFeedback.ts`.
-- `api/transcription.ts` and server-side Telegram transcription are the Deepgram boundary. `api/feedback.ts` and server-side Telegram feedback are the Groq boundary.
-- STT provider map: Deepgram nova-3 is used for web `/api/transcription` and Telegram voice transcription.
+- Browser code must not call Groq URLs directly and must not import `src/services/groq.ts` or `src/services/aiFeedback.ts`.
+- `api/transcription.ts`, server-side Telegram transcription, `api/feedback.ts`, and server-side Telegram feedback are the Groq boundaries.
+- STT provider map: Groq Whisper `whisper-large-v3-turbo` is used for web `/api/transcription` and Telegram voice transcription.
 - AI text provider map: Groq is used for web `/api/feedback` and Telegram AI feedback.
 - Supabase service-role access is server-only. Browser data writes use authenticated Supabase client calls or serverless endpoints that validate the user.
 
@@ -155,12 +154,11 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## Environment Variables
 
 - Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
-- Server/API Deepgram transcription: `DEEPGRAM_API_KEY`.
-- Server/API Groq text generation: `GROQ_API_KEY`.
+- Server/API Groq transcription and text generation: `GROQ_API_KEY`.
 - Server/Vercel/Supabase: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`.
 - Internal Telegram-to-API auth/routing: `NOPAUSE_INTERNAL_API_TOKEN`, `NOPAUSE_API_URL`, `NOPAUSE_INTERNAL_API_URL`, `VERCEL_URL`.
 - Runtime flags used by code: `import.meta.env.DEV`, `import.meta.env.VITEST`, `import.meta.env.MODE`.
-- Do not add `VITE_DEEPGRAM_API_KEY` or `VITE_GROQ_API_KEY`; provider keys are server-only.
+- Do not add `VITE_GROQ_API_KEY`; provider keys are server-only.
 
 ## Local Tooling Notes
 
@@ -169,8 +167,8 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 ## Architecture Risks / Constraints
 
-- Never expose `SUPABASE_SERVICE_ROLE_KEY`, `DEEPGRAM_API_KEY`, `GROQ_API_KEY`, Telegram tokens, or internal API tokens to browser code; `VITE_*` values are bundled client-side.
-- Deepgram and Groq must remain behind serverless/server code. Browser transcription and feedback must use `/api/transcription` and `/api/feedback`.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`, Telegram tokens, or internal API tokens to browser code; `VITE_*` values are bundled client-side.
+- Groq must remain behind serverless/server code. Browser transcription and feedback must use `/api/transcription` and `/api/feedback`.
 - `/api/transcription` accepts either a Supabase bearer token or the internal token used by Telegram. `/api/feedback` currently requires a Supabase bearer token.
 - Base `sessions` and `streaks` schema/RLS policies are incomplete in repo migrations; verify production Supabase before changing access patterns.
 - `insertSession` and query helpers include fallbacks for deployments missing newer columns like `pause_count` or `hesitations_per_minute`.

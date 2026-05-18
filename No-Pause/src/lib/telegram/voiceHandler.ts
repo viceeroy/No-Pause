@@ -20,7 +20,7 @@ import {
   getQuotaExceededMessage,
   isApiQuotaExceededError,
 } from "../../services/apiQuota.js";
-import { transcribeAudioWithDeepgram, type DeepgramTranscribedWord } from "../../services/deepgram.js";
+import { transcribeAudioWithGroq, type GroqTranscribedWord } from "../../services/groq.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
@@ -157,7 +157,7 @@ export async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
   await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
 }
 
-function parseTranscribedWords(words: unknown): DeepgramTranscribedWord[] {
+function parseTranscribedWords(words: unknown): GroqTranscribedWord[] {
   if (!Array.isArray(words)) {
     return [];
   }
@@ -206,7 +206,7 @@ function countWords(transcript: string): number {
   return transcript.split(/\s+/).filter(Boolean).length;
 }
 
-function getSpeakingTimeSec(words: DeepgramTranscribedWord[], fallbackDurationSec: number): number {
+function getSpeakingTimeSec(words: GroqTranscribedWord[], fallbackDurationSec: number): number {
   const speakingSeconds = words.reduce((sum, word) => {
     const duration = Math.max(0, word.end - word.start);
     return sum + duration;
@@ -219,7 +219,7 @@ function getSpeakingTimeSec(words: DeepgramTranscribedWord[], fallbackDurationSe
   return fallbackDurationSec;
 }
 
-function detectPausesFromWordTimestamps(words: DeepgramTranscribedWord[], pauseThresholdMs: number) {
+function detectPausesFromWordTimestamps(words: GroqTranscribedWord[], pauseThresholdMs: number) {
   const orderedWords = [...words]
     .filter((word) => Number.isFinite(word.start) && Number.isFinite(word.end) && word.end >= word.start)
     .sort((a, b) => a.start - b.start);
@@ -252,7 +252,7 @@ function detectPausesFromWordTimestamps(words: DeepgramTranscribedWord[], pauseT
 }
 
 async function transcribeAudio(audioBuffer: ArrayBuffer) {
-  const data = await transcribeAudioWithDeepgram(audioBuffer) as VerboseTranscriptionResponse;
+  const data = await transcribeAudioWithGroq(audioBuffer) as VerboseTranscriptionResponse;
   const transcript = String(data.transcript ?? data.text ?? "").trim();
   const words = parseTranscribedWords(data.words);
   console.log("transcript words:", words.length);
@@ -262,7 +262,7 @@ async function transcribeAudio(audioBuffer: ArrayBuffer) {
 
 async function analyzeTranscript(
   transcript: string,
-  words: DeepgramTranscribedWord[],
+  words: GroqTranscribedWord[],
   totalSessionTimeSec: number,
   pauseThresholdMs: number,
 ): Promise<FlowAnalysis> {

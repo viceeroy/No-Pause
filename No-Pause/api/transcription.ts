@@ -6,7 +6,7 @@ import {
   getQuotaExceededMessage,
   isApiQuotaExceededError,
 } from "../src/services/apiQuota.js";
-import { transcribeAudioWithDeepgram } from "../src/services/deepgram.js";
+import { transcribeAudioWithGroq } from "../src/services/groq.js";
 
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
 
@@ -132,8 +132,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    if (!process.env.DEEPGRAM_API_KEY) {
-      sendJson(res, 500, { error: "DEEPGRAM_API_KEY is not set" });
+    if (!process.env.GROQ_API_KEY) {
+      sendJson(res, 500, { error: "GROQ_API_KEY is not set" });
       return;
     }
 
@@ -176,7 +176,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     const audioBuffer = new ArrayBuffer(audio.data.byteLength);
     new Uint8Array(audioBuffer).set(audio.data);
-    const transcription = await transcribeAudioWithDeepgram(audioBuffer, audio.mimeType);
+    const transcription = await transcribeAudioWithGroq(audioBuffer, audio.mimeType);
 
     sendJson(res, 200, {
       transcript: transcription.text,

@@ -1,5 +1,7 @@
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const CHAT_MODEL = "llama-3.3-70b-versatile";
+const TRANSCRIPTION_MODEL = "whisper-large-v3-turbo";
 const GROQ_TIMEOUT_MS = 20_000;
 
 type GroqChatCompletionResponse = {
@@ -8,6 +10,23 @@ type GroqChatCompletionResponse = {
       content?: unknown;
     };
   }>;
+};
+
+export type GroqTranscribedWord = {
+  word: string;
+  start: number;
+  end: number;
+  type?: string;
+};
+
+export type GroqTranscription = {
+  text: string;
+  words: GroqTranscribedWord[];
+};
+
+type GroqTranscriptionResponse = {
+  text?: unknown;
+  words?: unknown;
 };
 
 function getGroqApiKey(): string {
@@ -22,6 +41,85 @@ function getGroqApiKey(): string {
   }
 
   return apiKey;
+}
+
+function parseGroqWords(words: unknown): GroqTranscribedWord[] {
+  if (!Array.isArray(words)) {
+    return [];
+  }
+
+  return words.flatMap((word) => {
+    const maybeWord = word as { word?: unknown; start?: unknown; end?: unknown; type?: unknown };
+    const start = Number(maybeWord.start);
+    const end = Number(maybeWord.end);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+      return [];
+    }
+
+    const tokenType = typeof maybeWord.type === "string" ? maybeWord.type.trim() : "";
+
+    return [{
+      word: String(maybeWord.word ?? "").trim(),
+      start,
+      end,
+      ...(tokenType ? { type: tokenType } : {}),
+    }];
+  });
+}
+
+function getAudioFilename(mimeType: string): string {
+  if (mimeType.includes("webm")) return "audio.webm";
+  if (mimeType.includes("wav")) return "audio.wav";
+  if (mimeType.includes("mpeg") || mimeType.includes("mp3")) return "audio.mp3";
+  if (mimeType.includes("mp4")) return "audio.mp4";
+  if (mimeType.includes("m4a")) return "audio.m4a";
+  if (mimeType.includes("flac")) return "audio.flac";
+  return "audio.ogg";
+}
+
+export async function transcribeAudioWithGroq(
+  audioBuffer: ArrayBuffer,
+  mimeType = "audio/ogg",
+): Promise<GroqTranscription> {
+  if (audioBuffer.byteLength === 0) {
+    throw new Error("Audio payload is empty");
+  }
+
+  const formData = new FormData();
+  formData.append("file", new Blob([audioBuffer], { type: mimeType }), getAudioFilename(mimeType));
+  formData.append("model", TRANSCRIPTION_MODEL);
+  formData.append("response_format", "verbose_json");
+  formData.append("timestamp_granularities[]", "word");
+  formData.append("temperature", "0");
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+  let response: Response;
+
+  try {
+    response = await fetch(GROQ_TRANSCRIPTION_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getGroqApiKey()}`,
+      },
+      body: formData,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Groq transcription failed: ${response.status} ${errorText.slice(0, 200)}`);
+  }
+
+  const data = await response.json() as GroqTranscriptionResponse;
+
+  return {
+    text: String(data?.text ?? "").trim(),
+    words: parseGroqWords(data?.words),
+  };
 }
 
 export async function getAIFeedback(transcript: string, systemPrompt?: string): Promise<string> {
