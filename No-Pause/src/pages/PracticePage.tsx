@@ -44,7 +44,6 @@ export default function PracticePage() {
       id: 'speaking-practice-topic',
       topicTitle: promptTextParam,
       category: 'EXPERIENCE',
-      difficulty: 'medium',
       cueCard: [],
     } : null);
   }, [promptTextParam, state.setTimeLeft, state.setTopicPrompt]);
@@ -65,7 +64,6 @@ export default function PracticePage() {
       id: `speaking-practice-${topicTitle}`,
       topicTitle,
       category: 'SPEAKING_PRACTICE',
-      difficulty: 'medium',
       cueCard: [],
     });
   };

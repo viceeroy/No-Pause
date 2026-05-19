@@ -1,5 +1,11 @@
 # Changelog
 
+## May 19, 2026
+
+Simplified the Results screen around Flow Score, pauses, and speaking time. The old standalone silence and session-length cards were removed, session duration now appears inside the Flow Score card in clock format, and the short-session message was tightened.
+
+Standardized pause detection on one fixed 1.2-second threshold. The web app no longer exposes difficulty controls for pause strictness, Auth no longer stores difficulty metadata, and Telegram voice analysis uses the same fixed threshold.
+
 ## May 18, 2026
 
 Moved all speech-to-text transcription onto Groq Whisper. The web transcription endpoint and Telegram voice-note flow now use the same Groq provider as AI feedback, while preserving word-level timestamps for pause detection and removing the old transcription provider configuration.

@@ -8,8 +8,9 @@ import {
 } from '@/features/practice/lib/speechAnalyzer';
 import { transcribeAudio } from '@/lib/practiceApi';
 import {
-  PAUSE_THRESHOLD_BY_LEVEL,
-} from '@/lib/core/constants';
+  DEFAULT_PAUSE_THRESHOLD,
+  DEFAULT_PAUSE_THRESHOLD_MS,
+} from '@/lib/core/scoring';
 import type { PracticeStateStore } from '@/features/practice/pages/types';
 import type { BuildSessionResultOutput } from './useScoring';
 
@@ -25,7 +26,6 @@ type UseRecordingOptions = {
     results: Awaited<ReturnType<AudioAnalyzer['stop']>>;
     startTime: number;
   }) => BuildSessionResultOutput;
-  difficultyLevel: keyof typeof PAUSE_THRESHOLD_BY_LEVEL;
   navigate: NavigateFunction;
   saveFinishedSession: (input: BuildSessionResultOutput) => Promise<void>;
   selectedTimerSeconds?: number;
@@ -37,7 +37,7 @@ interface CustomWindow extends Window {
 }
 
 const DIAGNOSTICS_SPEECH_RMS_THRESHOLD = 0.01;
-const DIAGNOSTICS_PAUSE_THRESHOLD_SEC = 1.8;
+const DIAGNOSTICS_PAUSE_THRESHOLD_SEC = DEFAULT_PAUSE_THRESHOLD;
 const DIAGNOSTICS_GOOD_DROP_RATE = 0.1;
 const DIAGNOSTICS_WARNING_DROP_RATE = 0.2;
 const DIAGNOSTICS_WARNING_AVG_RMS = 0.008;
@@ -131,7 +131,6 @@ function buildDiagnosticsSummary(snapshot: AnalyzerDiagnosticsSnapshot) {
 
 export function useRecording({
   buildSessionResult,
-  difficultyLevel,
   navigate,
   saveFinishedSession,
   selectedTimerSeconds = 0,
@@ -319,11 +318,9 @@ export function useRecording({
 
       await micService.ensureAudioContextRunning();
 
-      const hesitationMinDurationMs = Math.round(PAUSE_THRESHOLD_BY_LEVEL[difficultyLevel] * 1000);
-
       const analyzer = createAudioAnalyzer({
         enableTranscription: true,
-        hesitationMinDurationMs,
+        hesitationMinDurationMs: DEFAULT_PAUSE_THRESHOLD_MS,
         transcribeAudio,
         onData: (data) => {
           setAudioData(data);
@@ -353,7 +350,7 @@ export function useRecording({
     } finally {
       micInitializingRef.current = false;
     }
-  }, [difficultyLevel, setLastResults, setTranscriptError, setShowMicRetry, setAudioData, setState, runStartCountdown, startRecording]);
+  }, [setLastResults, setTranscriptError, setShowMicRetry, setAudioData, setState, runStartCountdown, startRecording]);
 
   const handleRetryMicrophone = useCallback(() => {
     void handleStart(true);

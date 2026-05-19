@@ -28,7 +28,7 @@ export function useRecordingController({
   state,
   selectedTimerSeconds = 0,
 }: UseRecordingControllerOptions): RecordingControllerResult {
-  const { user, difficultyLevel } = useAuth();
+  const { user } = useAuth();
   const userId = user?.id ?? null;
   const userEmail = user?.email;
 
@@ -59,7 +59,6 @@ export function useRecordingController({
     stopRecording,
   } = useRecording({
     buildSessionResult,
-    difficultyLevel,
     navigate,
     saveFinishedSession,
     selectedTimerSeconds,

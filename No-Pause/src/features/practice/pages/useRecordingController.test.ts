@@ -5,7 +5,7 @@ import { useRecordingController } from './useRecordingController';
 import type { PracticeStateStore } from './types';
 
 vi.mock('@/providers/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user_test', email: 'test@example.com' }, difficultyLevel: 'beginner' }),
+  useAuth: () => ({ user: { id: 'user_test', email: 'test@example.com' } }),
 }));
 
 vi.mock('@/lib/practiceApi', () => ({

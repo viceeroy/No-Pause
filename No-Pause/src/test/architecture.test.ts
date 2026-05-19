@@ -408,7 +408,7 @@ describe('result message formatting architecture', () => {
     expect(result).toContain('Talk about focus');
     expect(result).toContain('Flow Score:</b> 88');
     expect(result).toContain('Attempt:</b> #3');
-    expect(result).toContain('Speaking time:</b> 50s speaking · 10s gaps');
+    expect(result).toContain('Speaking time:</b> 50s');
     expect(result).toContain('Pauses:</b> 2');
     expect(result).not.toContain('Transcript');
     expect(result).not.toContain('Session length');
@@ -1374,7 +1374,7 @@ describe('HTTP header ASCII normalization', () => {
         auth: {
           admin: {
             getUserById: vi.fn(async () => ({
-              data: { user: { user_metadata: { difficulty: 'beginner' } } },
+              data: { user: { user_metadata: {} } },
               error: null,
             })),
           },
@@ -1531,7 +1531,7 @@ describe('HTTP header ASCII normalization', () => {
         auth: {
           admin: {
             getUserById: vi.fn(async () => ({
-              data: { user: { user_metadata: { difficulty: 'beginner' } } },
+              data: { user: { user_metadata: {} } },
               error: null,
             })),
           },
@@ -1674,7 +1674,7 @@ describe('HTTP header ASCII normalization', () => {
     }));
 
     const getUserById = vi.fn(async () => ({
-      data: { user: { user_metadata: { difficulty: 'beginner' } } },
+      data: { user: { user_metadata: {} } },
       error: null,
     }));
     const fromMock = vi.fn(() => ({
@@ -1790,7 +1790,7 @@ describe('HTTP header ASCII normalization', () => {
       upsertPendingChallenge: vi.fn(),
     }));
     const getUserById = vi.fn(async () => ({
-      data: { user: { user_metadata: { difficulty: 'beginner' } } },
+      data: { user: { user_metadata: {} } },
       error: null,
     }));
     const fromMock = vi.fn(() => ({
@@ -1912,7 +1912,7 @@ describe('HTTP header ASCII normalization', () => {
       upsertPendingChallenge: vi.fn(),
     }));
     const getUserById = vi.fn(async () => ({
-      data: { user: { user_metadata: { difficulty: 'beginner' } } },
+      data: { user: { user_metadata: {} } },
       error: null,
     }));
     const fromMock = vi.fn();

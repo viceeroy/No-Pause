@@ -182,18 +182,18 @@ const improveTips: ImproveTip[] = [
   },
 ];
 
-const difficultyBoxes = [
+const pauseExplanationCards = [
   {
-    label: 'Beginner',
-    body: 'More forgiving for people who are still getting comfortable speaking out loud.',
+    label: 'Quiet gaps',
+    body: 'NoPause watches for longer quiet breaks between words, not every tiny breath or normal comma-length pause.',
   },
   {
-    label: 'Intermediate',
-    body: 'The standard setting for everyday practice and steady fluency tracking.',
+    label: 'Momentum',
+    body: 'Long pauses can break your rhythm and make the next sentence harder to start.',
   },
   {
-    label: 'Advanced',
-    body: 'Stricter feedback when you want to tighten your delivery.',
+    label: 'Progress',
+    body: 'Aim for fewer long stops over several sessions instead of trying to force a perfect single score.',
   },
 ];
 
@@ -202,9 +202,9 @@ const privacyDont = ['Raw audio after transcription', 'Anything outside recordin
 
 const faqItems: FaqItem[] = [
   {
-    question: "What's a good Flow Score for a beginner?",
+    question: "What's a good Flow Score when I am starting out?",
     answer:
-      'A good beginner score is one you can repeat and improve from. Many people start lower than they expect because recorded speaking feels different from casual conversation. Look for a rising trend across sessions instead of treating one number as your identity.',
+      'A good starting score is one you can repeat and improve from. Many people start lower than they expect because recorded speaking feels different from casual conversation. Look for a rising trend across sessions instead of treating one number as your identity.',
   },
   {
     question: 'Why did my score drop even though I felt like I spoke better?',
@@ -390,10 +390,10 @@ function ImproveTips() {
   );
 }
 
-function DifficultyBoxes() {
+function PauseExplanationCards() {
   return (
     <div className="grid gap-3 md:grid-cols-3">
-      {difficultyBoxes.map(({ label, body }) => (
+      {pauseExplanationCards.map(({ label, body }) => (
         <article key={label} className="rounded-[18px] border border-border bg-surface-elevated p-4">
           <h3 className="mb-2 text-base font-sans font-black text-foreground">{label}</h3>
           <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
@@ -591,10 +591,10 @@ function MobileImproveTips() {
   );
 }
 
-function MobileDifficultyBoxes() {
+function MobilePauseExplanationCards() {
   return (
     <div className="space-y-2">
-      {difficultyBoxes.map(({ label, body }) => (
+      {pauseExplanationCards.map(({ label, body }) => (
         <div key={label} className="rounded-xl bg-surface-elevated p-3">
           <p className="text-sm font-sans font-black text-foreground">{label}</p>
           <p className="text-sm font-sans leading-relaxed text-muted-foreground">{body}</p>
@@ -814,9 +814,9 @@ function HelpMobile() {
       content: (
         <div className="space-y-3">
           <p className="text-sm font-sans leading-relaxed text-muted-foreground">
-            A pause is a quiet break in your flow, and the difficulty setting changes how strict that feedback feels.
+            A pause is a quiet break in your flow. Longer quiet gaps can interrupt momentum and make ideas harder to follow.
           </p>
-          <MobileDifficultyBoxes />
+          <MobilePauseExplanationCards />
           <p className="text-sm font-sans font-black text-primary">Use shorter pauses to keep your thoughts moving.</p>
         </div>
       ),
@@ -1011,7 +1011,7 @@ function HelpDesktop() {
                 Pauses are quiet breaks in your flow. They are normal, but long pauses can interrupt momentum and make ideas harder to follow.
               </p>
             </div>
-            <DifficultyBoxes />
+            <PauseExplanationCards />
             <div className="mt-4 rounded-[18px] border border-border bg-surface-elevated p-4">
               <p className="text-base font-sans font-black text-primary">
                 Use shorter pauses to keep your thoughts moving.

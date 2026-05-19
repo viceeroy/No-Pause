@@ -1,12 +1,9 @@
 import type { Context } from "telegraf";
 import {
-  DEFAULT_PAUSE_THRESHOLD_LEVEL,
-  PAUSE_THRESHOLD_BY_LEVEL,
   SCORING_VERSION,
   TELEGRAM_MIN_DURATION,
-  type PauseThresholdLevel,
 } from "../core/constants.js";
-import { calculateFlowScore } from "../core/scoring.js";
+import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import {
@@ -58,6 +55,7 @@ const TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS = 30_000;
 const TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE =
   "AI feedback is temporarily unavailable. Please try again in a moment.";
 const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR = "Telegram AI feedback Supabase call timed out";
+const TELEGRAM_PAUSE_THRESHOLD_MS = Math.round(DEFAULT_PAUSE_THRESHOLD * 1000);
 const aiFeedbackSessionDebounce = new Map<string, number>();
 
 export type TelegramSessionRecord = {
@@ -84,33 +82,6 @@ type TelegramGetFileResponse = {
     file_path?: unknown;
   };
 };
-
-function isPauseThresholdLevel(value: unknown): value is PauseThresholdLevel {
-  return value === "beginner" || value === "intermediate" || value === "advanced";
-}
-
-function getPauseThresholdLevelFromMetadata(metadata: Record<string, unknown> | null | undefined): PauseThresholdLevel {
-  if (isPauseThresholdLevel(metadata?.difficulty)) return metadata.difficulty;
-  if (isPauseThresholdLevel(metadata?.difficultyLevel)) return metadata.difficultyLevel;
-  return DEFAULT_PAUSE_THRESHOLD_LEVEL;
-}
-
-async function getUserPauseThresholdMs(userId: string): Promise<number> {
-  try {
-    const { data, error } = await supabaseServer.auth.admin.getUserById(userId);
-    if (error) {
-      console.error("Telegram difficulty metadata lookup failed", error);
-      return Math.round(PAUSE_THRESHOLD_BY_LEVEL[DEFAULT_PAUSE_THRESHOLD_LEVEL] * 1000);
-    }
-
-    const metadata = data.user?.user_metadata as Record<string, unknown> | undefined;
-    const level = getPauseThresholdLevelFromMetadata(metadata);
-    return Math.round(PAUSE_THRESHOLD_BY_LEVEL[level] * 1000);
-  } catch (error) {
-    console.error("Telegram difficulty metadata lookup failed", error);
-    return Math.round(PAUSE_THRESHOLD_BY_LEVEL[DEFAULT_PAUSE_THRESHOLD_LEVEL] * 1000);
-  }
-}
 
 function requireEnv(value: string | undefined, name: string): string {
   if (!value) {
@@ -543,10 +514,8 @@ export async function handleVoiceMessage(
     return;
   }
 
-  let pauseThresholdMs: number;
   let processedSessionId: string | null;
   try {
-    pauseThresholdMs = await getUserPauseThresholdMs(userId);
     processedSessionId = await getProcessedTelegramSessionId({ userId, telegramChatId, telegramMessageId });
   } catch (error) {
     console.error("Telegram voice preflight lookup failed", error);
@@ -585,7 +554,7 @@ export async function handleVoiceMessage(
       transcript,
       transcription.words,
       totalSessionTimeSec,
-      pauseThresholdMs,
+      TELEGRAM_PAUSE_THRESHOLD_MS,
     );
     let sessionId: string;
     try {

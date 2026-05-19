@@ -7,7 +7,6 @@ export type TopicPrompt = {
   id: string;
   topicTitle: string;
   category: string;
-  difficulty: string;
   cueCard: string[];
 };
 

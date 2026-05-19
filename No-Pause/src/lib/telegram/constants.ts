@@ -209,19 +209,8 @@ function formatTelegramResultDuration(seconds: number): string {
 
 function formatTelegramSpeakingTimeBreakdown(speakingSeconds: number, totalSeconds: number): string {
   const safeSpeakingSeconds = Math.max(0, Math.floor(speakingSeconds || 0));
-  const safeTotalSeconds = Math.max(0, Math.floor(totalSeconds || 0));
-  const microSilenceSeconds = Math.max(0, safeTotalSeconds - safeSpeakingSeconds);
-  const speakingText = `${formatTelegramResultDuration(safeSpeakingSeconds)} speaking`;
-
-  if (microSilenceSeconds === 0) {
-    return speakingText;
-  }
-
-  return `${speakingText} · ${formatTelegramResultDuration(microSilenceSeconds)} gaps`;
-}
-
-function formatCompletedMinutesLabel(minutes: number): string {
-  return `${minutes} completed ${minutes === 1 ? "minute" : "minutes"}`;
+  void totalSeconds;
+  return formatTelegramResultDuration(safeSpeakingSeconds);
 }
 
 function truncateTextForLimit(text: string, maxLength: number): string {
@@ -248,11 +237,11 @@ function formatResultFields(input: {
   const label = (text: string) => (input.html ? `<b>${text}</b>` : text);
   const fields = [
     `📊 ${label("Flow Score:")} ${input.analysis.flowScore}`,
-    `🥇 ${label("Bonus:")} +${bonus} (${formatCompletedMinutesLabel(completedMinutes)})`,
+    `🥇 ${label("Bonus:")} +${bonus}`,
     "",
     `⏱ ${label("Speaking time:")} ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}`,
     `🕒 ${label("Session length:")} ${formatTelegramResultDuration(input.analysis.totalSessionTimeSec)}`,
-    `🔇 ${label("Pauses:")} ${input.analysis.pauseCount} (silent gaps)`,
+    `🔇 ${label("Pauses:")} ${input.analysis.pauseCount}`,
   ].join("\n");
 
   if (!transcript) {

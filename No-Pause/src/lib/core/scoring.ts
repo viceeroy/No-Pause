@@ -1,11 +1,6 @@
 export {
-  DEFAULT_PAUSE_THRESHOLD_LEVEL,
+  DEFAULT_PAUSE_THRESHOLD,
   DEFAULT_PAUSE_THRESHOLD_MS,
-  PAUSE_THRESHOLD_BY_LEVEL,
-  THRESHOLD_ADVANCED,
-  THRESHOLD_BEGINNER,
-  THRESHOLD_INTERMEDIATE,
-  type PauseThresholdLevel,
 } from "./constants.js";
 
 export interface FlowScoreOptions {

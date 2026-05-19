@@ -5,6 +5,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 ## Product Surface
 
 - Web UI exposes authenticated Speaking Mode at `/practice`; `PracticePage` currently uses mode `speaking`.
+- The Speaking Mode Results screen centers on Flow Score, pauses, and speaking time. The Flow Score card also shows session duration in `MM:SS` format; silence and session length are not separate result stat cards.
 - `/prompts` is an authenticated prompt picker. Selected prompt text is passed into Speaking Mode as display/practice context and is scored as `speaking`.
 - `/help` is a public, SEO-managed help page with collapsible cards for NoPause basics and speaking-improvement guidance. Cards start collapsed; collapsed cards show only the article title, and summaries/body content appear only after opening.
 - Telegram uses prompts and friend/group challenges. Do not remove `src/lib/core/prompts.ts` unless Telegram prompt/challenge behavior is replaced.
@@ -33,7 +34,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 - `src/main.tsx`: React entry and providers.
 - `src/App.tsx`: routing, auth gating, SEO updates, Vercel analytics/speed insights.
-- `src/providers/AuthContext.tsx`: Supabase session state, Google sign-in, difficulty metadata.
+- `src/providers/AuthContext.tsx`: Supabase session state and Google sign-in.
 - `src/services/supabase.ts`: browser Supabase anon client.
 - `src/services/supabaseServer.ts`: server Supabase service-role client.
 - `src/lib/supabase.ts` and `src/lib/supabaseServer.ts`: compatibility re-exports for Supabase clients when present in the worktree.
@@ -45,6 +46,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - `src/pages/ConnectTelegram.tsx`: Telegram account-linking UI; links the currently signed-in web account to the Telegram ID from the connect URL.
 - `src/pages/HelpPage.tsx`: public help content and shared collapsible article-card UI for the NoPause and Improve Your Speaking sections.
 - `src/features/practice/pages/useRecordingController.ts`: coordinates recording, scoring, session persistence, transcription, and feedback hooks.
+- `src/features/practice/pages/ResultPanel.tsx`: web Results screen UI for Flow Score, session duration, pauses, speaking time, transcript, feedback, and sharing.
 - `src/features/practice/hooks/useRecording.ts`: web recording lifecycle and microphone/audio analyzer orchestration.
 - `src/features/practice/hooks/useScoring.ts`: builds web session result using core scoring.
 - `src/features/practice/hooks/useSession.ts`: web session persistence, transcription, and feedback requests.
@@ -101,7 +103,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 1. Telegram posts updates to `/api/telegram/webhook`.
 2. `createTelegramBot` resolves the Telegram user through `telegram_connections`; unconnected users get `/connect?tg=...`.
-3. Voice handling preflights user lookup, pending challenge lookup, challenge existence, expiry, user pause threshold, and duplicate Telegram message state before sending the analyzing acknowledgement.
+3. Voice handling preflights user lookup, pending challenge lookup, challenge existence, expiry, and duplicate Telegram message state before sending the analyzing acknowledgement.
 4. If pending challenge state points to a missing challenge or expired group challenge, `voiceHandler` deletes the pending state and replies without downloading audio, consuming quota, saving a session, or recording an attempt.
 5. `voiceHandler` downloads Telegram voice files from Telegram.
 6. `voiceHandler` transcribes raw Telegram OGG/Opus voice audio with the shared Groq Whisper service and receives transcript plus word timestamps.
@@ -135,7 +137,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 - Current scoring formula: `speaking seconds + 40 * completed speaking minutes - 10 * hesitation units`, with a minimum score of `0`.
 - There is no minimum session duration gate and no speaking-ratio completion gate.
 - `getScoreLabel` uses the current open-ended scale: `<50` Needs Practice, `50-99` Getting There, `100-199` Good Flow, `200-299` Great Flow, `300+` Perfect Flow.
-- Pause thresholds by difficulty: beginner `1.8s`, intermediate `1.2s`, advanced `0.8s`; Telegram uses the default beginner threshold.
+- Web and Telegram pause detection use one fixed `DEFAULT_PAUSE_THRESHOLD` of `1.2s`; there is no user-adjustable difficulty or threshold setting.
 - Web `hesitationCount` is audio-derived pause units and affects score.
 - Telegram `pauseCount` is word-gap pause units and affects score.
 - Spoken filler-word counting is not part of the current scoring, result display, transcription response, or session persistence path.
@@ -143,7 +145,7 @@ Compact current-state notes for AI agents. Update only when architecture, data f
 
 ## Database Tables Used
 
-- `auth.users`: Supabase Auth users; code reads `id`, `email`, name/avatar metadata, and difficulty metadata.
+- `auth.users`: Supabase Auth users; code reads `id`, `email`, and name/avatar metadata.
 - `public.sessions`: practice records. Used fields include `id`, `user_id`, `created_at`, `mode`, `duration`, `speaking_time`, `pauses`, `pause_count`, `hesitations_per_minute`, `words`, `flow_score`, `completed`, `hesitation_log`, `transcript`, `analysis_feedback`, `scoring_version`, `source`.
 - `public.streaks`: streak counters. Used fields: `user_id`, `current_streak`, `longest_streak`, `last_session_date`.
 - `public.telegram_connections`: Telegram account links. Used fields: `telegram_id`, `user_id`, `connected_at`.

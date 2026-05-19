@@ -4,13 +4,7 @@ import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'luci
 import { getPracticeStats, getWeeklyActivityDays, type PracticeStats, type WeeklyActivityDay } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration, formatPracticeTotalDuration } from '@/lib/core/time';
-import { useAuth, type DifficultyLevel } from '@/providers/AuthContext';
-
-const difficultyOptions: Array<{ level: DifficultyLevel; label: string }> = [
-  { level: 'beginner', label: 'Beginner' },
-  { level: 'intermediate', label: 'Intermediate' },
-  { level: 'advanced', label: 'Advanced' },
-];
+import { useAuth } from '@/providers/AuthContext';
 
 function formatDate(isoString?: string): string {
   if (!isoString) return 'Unknown date';
@@ -93,9 +87,8 @@ export default function StatsPage({
   showEmptyStateAction = true,
 }: StatsPageProps) {
   const navigate = useNavigate();
-  const { user, signOut, difficultyLevel, updateDifficultyLevel } = useAuth();
+  const { user, signOut } = useAuth();
   const [limit, setLimit] = useState(50);
-  const [difficultyError, setDifficultyError] = useState<string | null>(null);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
     totalPracticeTime: 0,
@@ -155,8 +148,6 @@ export default function StatsPage({
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const email = user?.email || '';
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-  const currentDifficultyLabel =
-    difficultyOptions.find((option) => option.level === difficultyLevel)?.label ?? 'Beginner';
   const initials =
     displayName
       .split(/\s+/)
@@ -249,55 +240,6 @@ export default function StatsPage({
             </p>
           </article>
           <WeeklyActivityRow days={weeklyActivity} loading={statsLoading} />
-        </section>
-
-        <section className="mb-6 rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card md:p-6">
-          <div className="mb-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-serif font-medium text-foreground">Difficulty</h2>
-              <span
-                className="inline-flex min-h-8 items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-sans font-bold text-primary"
-                aria-label={`Current difficulty: ${currentDifficultyLabel}`}
-              >
-                {currentDifficultyLabel}
-              </span>
-            </div>
-            <p className="mt-1 text-sm font-sans text-muted-foreground">
-              Higher difficulty catches shorter pauses.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {difficultyOptions.map((option) => {
-              const selected = option.level === difficultyLevel;
-              return (
-                <button
-                  key={option.level}
-                  type="button"
-                  onClick={() => {
-                    setDifficultyError(null);
-                    void updateDifficultyLevel(option.level).catch((error) => {
-                      const message =
-                        error && typeof error === 'object' && 'message' in error
-                          ? String((error as { message?: unknown }).message)
-                          : 'Could not update difficulty.';
-                      setDifficultyError(message);
-                    });
-                  }}
-                  className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-sans font-bold transition-colors btn-press ${
-                    selected
-                      ? 'border-primary bg-primary text-primary-foreground shadow-soft'
-                      : 'border-border bg-surface-elevated text-foreground hover:border-primary/40'
-                  }`}
-                  aria-pressed={selected}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-          {difficultyError && (
-            <p className="mt-3 text-sm font-sans text-destructive">{difficultyError}</p>
-          )}
         </section>
 
         <a
