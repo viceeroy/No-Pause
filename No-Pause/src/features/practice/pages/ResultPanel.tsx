@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, Timer, TrendingUp } from 'lucide-react';
+import { Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -49,6 +49,12 @@ export function ResultPanel({
     setTimeout(() => onCopied(false), 2000);
   };
   const renderDurationText = (seconds: number) => formatMMSS(seconds);
+  const renderClockDuration = (seconds: number) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainingSeconds = safeSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
 
   const getCoachingNote = () => {
     if (lastResults.flowScore === 0) return '';
@@ -72,12 +78,11 @@ export function ResultPanel({
   const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
   const feedbackAvailable = !!lastResults.analysisFeedback || lastResults.analysisFeedbackLoading;
   const speakingTime = Math.max(0, lastResults.totalSpeakingTime || 0);
-  const silenceTime = Math.max(0, lastResults.totalSilenceTime || 0);
   const sessionLength = Math.max(0, lastResults.totalSessionTime || 0);
   const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
   const coachingNote = getCoachingNote();
   const statusNote = speakingTime < 5
-    ? 'Session was too short to score. Speak for at least 5 seconds.'
+    ? 'Session too short to score.'
     : lastResults.statusNote;
 
   return (
@@ -97,9 +102,14 @@ export function ResultPanel({
               <p className="mb-2 text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">Flow Score</p>
               <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">{lastResults.flowScore}</p>
             </div>
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
-              <TrendingUp size={22} />
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="font-sans text-base font-semibold tabular-nums text-muted-foreground md:text-lg">
+                {renderClockDuration(sessionLength)}
+              </span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
+                <TrendingUp size={22} />
+              </span>
+            </div>
           </div>
           <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
             <div className="h-full rounded-full bg-primary" style={{ width: `${scoreWidth}%` }} />
@@ -110,20 +120,6 @@ export function ResultPanel({
         </section>
 
         <section className="grid grid-cols-2 gap-3 md:gap-4">
-          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <Timer size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Silence</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {renderDurationText(silenceTime)}
-            </p>
-          </article>
-          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <Activity size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Session length</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {renderDurationText(sessionLength)}
-            </p>
-          </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Pause size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Pauses</p>
