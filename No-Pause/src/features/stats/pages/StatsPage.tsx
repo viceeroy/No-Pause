@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'lucide-react';
-import { getPracticeStats, getWeeklyActivityDays, type PracticeStats, type WeeklyActivityDay } from '@/lib/practiceApi';
+import {
+  getPracticeStats,
+  getWeeklyActivityDays,
+  getWeeklyStatsComparison,
+  type PracticeStats,
+  type WeeklyActivityDay,
+  type WeeklyStatsComparison,
+} from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
-import { formatDuration, formatPracticeTotalDuration } from '@/lib/core/time';
+import { formatDuration } from '@/lib/core/time';
 import { useAuth } from '@/providers/AuthContext';
 
 function formatDate(isoString?: string): string {
@@ -35,6 +42,36 @@ function createEmptyWeeklyActivity(): WeeklyActivityDay[] {
     dateKey: '',
     completed: false,
   }));
+}
+
+function createEmptyWeeklyStats(): WeeklyStatsComparison {
+  return {
+    currentWeek: {
+      bestFlowScore: 0,
+      avgFlowScore: 0,
+      sessionCount: 0,
+      totalPracticeTime: 0,
+      hasScoredSession: false,
+    },
+    lastWeek: {
+      bestFlowScore: 0,
+      avgFlowScore: 0,
+      sessionCount: 0,
+      totalPracticeTime: 0,
+      hasScoredSession: false,
+    },
+  };
+}
+
+function formatStatsPracticeTime(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  return `${Math.floor(minutes / 60)}h`;
 }
 
 function WeeklyActivityRow({
@@ -101,6 +138,7 @@ export default function StatsPage({
     recentSessions: [],
   });
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityDay[]>(() => createEmptyWeeklyActivity());
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStatsComparison>(() => createEmptyWeeklyStats());
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const isMountedRef = useRef(false);
@@ -119,13 +157,15 @@ export default function StatsPage({
     setStatsLoading(true);
     setStatsError(null);
     try {
-      const [nextStats, nextWeeklyActivity] = await Promise.all([
+      const [nextStats, nextWeeklyActivity, nextWeeklyStats] = await Promise.all([
         getPracticeStats(user?.id ?? null, limit),
         getWeeklyActivityDays(user?.id ?? null),
+        getWeeklyStatsComparison(user?.id ?? null),
       ]);
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       setStats(nextStats);
       setWeeklyActivity(nextWeeklyActivity);
+      setWeeklyStats(nextWeeklyStats);
     } catch (error) {
       if (!isMountedRef.current || requestId !== requestIdRef.current) return;
       const message =
@@ -144,7 +184,11 @@ export default function StatsPage({
 
   const recentSessions = stats.recentSessions;
   const hasAnySession = recentSessions.length > 0;
-  const flowProgress = Math.min(100, Math.max(0, stats.avgFlowScore || 0));
+  const weeklyBestScore = weeklyStats.currentWeek.bestFlowScore;
+  const weeklyScoreTrend = weeklyStats.lastWeek.hasScoredSession
+    ? weeklyBestScore - weeklyStats.lastWeek.bestFlowScore
+    : null;
+  const flowProgress = Math.min(100, Math.max(0, weeklyBestScore || 0));
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const email = user?.email || '';
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
@@ -207,9 +251,9 @@ export default function StatsPage({
         <section className="mb-6 rounded-[28px] border border-border bg-surface-card p-6 shadow-card md:p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <p className="mb-2 text-sm font-sans font-bold text-muted-foreground">Overall Flow Score</p>
+              <p className="mb-2 text-sm font-sans font-bold text-muted-foreground">Weekly best score</p>
               <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">
-                {statsLoading ? '...' : stats.avgFlowScore}
+                {statsLoading ? '...' : weeklyBestScore}
               </p>
             </div>
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
@@ -217,8 +261,13 @@ export default function StatsPage({
             </span>
           </div>
           <p className="mb-4 text-sm font-sans text-muted-foreground">
-            {statsLoading ? 'Loading scored sessions...' : `${stats.scoredSessions} scored sessions`}
+            {statsLoading ? 'Loading scored sessions...' : `${weeklyStats.currentWeek.sessionCount} sessions this week`}
           </p>
+          {!statsLoading && weeklyScoreTrend !== null && (
+            <p className="mb-4 text-sm font-sans font-bold text-muted-foreground">
+              {weeklyScoreTrend >= 0 ? '↑' : '↓'} {Math.abs(weeklyScoreTrend)} from last week
+            </p>
+          )}
           <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
             <div className="h-full rounded-full bg-primary" style={{ width: `${flowProgress}%` }} />
           </div>
@@ -236,7 +285,7 @@ export default function StatsPage({
             <Clock size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Total practice</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {statsLoading ? '...' : formatPracticeTotalDuration(stats.totalPracticeTime)}
+              {statsLoading ? '...' : formatStatsPracticeTime(stats.totalPracticeTime)}
             </p>
           </article>
           <WeeklyActivityRow days={weeklyActivity} loading={statsLoading} />

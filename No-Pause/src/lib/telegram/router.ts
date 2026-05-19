@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
-import { getTelegramPracticeStats } from "../core/queries.js";
+import { getTelegramPracticeStats, getTelegramWeeklyStatsComparison } from "../core/queries.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import {
@@ -70,31 +70,6 @@ function wasNoPauseAddedToGroup(ctx: Context): boolean {
   );
 }
 
-function formatRelativeDate(dateText: string | null): string {
-  if (!dateText) {
-    return "N/A";
-  }
-
-  const date = new Date(dateText);
-  if (Number.isNaN(date.getTime())) {
-    return "N/A";
-  }
-
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-  const daysAgo = Math.max(0, Math.floor((todayStart - dateStart) / 86_400_000));
-
-  if (daysAgo === 0) {
-    return "today";
-  }
-  if (daysAgo === 1) {
-    return "yesterday";
-  }
-
-  return `${daysAgo} days ago`;
-}
-
 async function replyWithPrompt(ctx: Context) {
   const prompt = getRandomPrompt();
 
@@ -121,8 +96,12 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   console.log("resolved user_id:", userId);
 
   let stats;
+  let weeklyStats;
   try {
-    stats = await getTelegramPracticeStats(userId);
+    [stats, weeklyStats] = await Promise.all([
+      getTelegramPracticeStats(userId),
+      getTelegramWeeklyStatsComparison(userId),
+    ]);
   } catch (error) {
     console.error("Telegram stats lookup failed", error);
     await ctx.reply(MESSAGES.statsError, { ...replyKeyboard, parse_mode: "HTML" });
@@ -134,21 +113,18 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     return;
   }
 
-  const modeStats = {
-    speaking: stats.modeBreakdown.find((item) => item.mode === "speaking"),
-  };
+  const totalSessions = stats.modeBreakdown.reduce(
+    (sum, item) => sum + item.totalSessions,
+    0,
+  ) || stats.scoredSessions;
 
   await ctx.reply(
     getTelegramStatsMessage({
-      currentStreak: stats.currentStreak,
-      bestStreak: stats.bestStreak,
-      bestFlowScore: stats.bestFlowScore,
-      avgFlowScore: stats.avgFlowScore,
-      scoredSessions: stats.scoredSessions,
+      weeklyBestFlowScore: weeklyStats.currentWeek.bestFlowScore,
+      weeklyAvgFlowScore: weeklyStats.currentWeek.avgFlowScore,
+      weeklySessionCount: weeklyStats.currentWeek.sessionCount,
+      totalSessions,
       totalPracticeTime: stats.totalPracticeTime,
-      speakingSessions: modeStats.speaking?.totalSessions ?? 0,
-      speakingAvgFlowScore: modeStats.speaking?.avgFlowScore ?? null,
-      lastSessionText: formatRelativeDate(stats.lastSessionDate),
     }),
     { ...replyKeyboard, parse_mode: "HTML" },
   );

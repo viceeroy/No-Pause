@@ -7,6 +7,7 @@ import {
   buildPracticeStats,
   buildRecentSessionSummaries,
   buildWeeklyActivityDays,
+  buildWeeklyStatsComparison,
   getPracticeStatsFromRpc,
   type SessionRecord,
 } from '@/lib/core/queries';
@@ -30,6 +31,7 @@ import {
   GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   getNoPauseGroupChallengeKeyboard,
   getSpeakingResultMessage,
+  getTelegramStatsMessage,
   isGroupChallengeRecord,
   MESSAGES,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
@@ -459,6 +461,81 @@ describe('result message formatting architecture', () => {
 });
 
 describe('stats summary architecture', () => {
+  it('builds current and previous weekly stats summaries', () => {
+    const comparison = buildWeeklyStatsComparison([
+      {
+        id: 'current-a',
+        created_at: '2026-05-18T13:00:00.000Z',
+        mode: 'speaking',
+        duration: 120,
+        speaking_time: 90,
+        pauses: 1,
+        pause_count: 1,
+        words: 10,
+        flow_score: 90,
+        completed: true,
+        hesitation_log: [],
+      },
+      {
+        id: 'current-b',
+        created_at: '2026-05-19T11:00:00.000Z',
+        mode: 'speaking',
+        duration: 60,
+        speaking_time: 45,
+        pauses: 1,
+        pause_count: 1,
+        words: 10,
+        flow_score: 120,
+        completed: true,
+        hesitation_log: [],
+      },
+      {
+        id: 'last-week',
+        created_at: '2026-05-12T13:00:00.000Z',
+        mode: 'speaking',
+        duration: 90,
+        speaking_time: 80,
+        pauses: 1,
+        pause_count: 1,
+        words: 10,
+        flow_score: 70,
+        completed: true,
+        hesitation_log: [],
+      },
+    ] as SessionRecord[], new Date('2026-05-19T12:00:00.000Z'));
+
+    expect(comparison.currentWeek).toMatchObject({
+      bestFlowScore: 120,
+      sessionCount: 2,
+      totalPracticeTime: 180,
+      hasScoredSession: true,
+    });
+    expect(comparison.lastWeek).toMatchObject({
+      bestFlowScore: 70,
+      sessionCount: 1,
+      hasScoredSession: true,
+    });
+  });
+
+  it('formats Telegram stats as weekly and all-time blocks without mode breakdown', () => {
+    const message = getTelegramStatsMessage({
+      weeklyBestFlowScore: 120,
+      weeklyAvgFlowScore: 95,
+      weeklySessionCount: 3,
+      totalSessions: 12_345,
+      totalPracticeTime: 7_260,
+    });
+
+    expect(message).toContain('<b>Weekly</b>');
+    expect(message).toContain('Best Score:</b> 120');
+    expect(message).toContain('Average Score:</b> 95');
+    expect(message).toContain('Sessions:</b> 3');
+    expect(message).toContain('<b>All-Time</b>');
+    expect(message).toContain('Total Sessions:</b> 12k');
+    expect(message).toContain('Total Practice Time:</b> 2h');
+    expect(message).not.toContain('Speaking Mode');
+  });
+
   it('builds Monday through Sunday weekly activity from completed session dates', () => {
     const days = buildWeeklyActivityDays([
       { created_at: '2026-05-11T13:00:00.000Z' },

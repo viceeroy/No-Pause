@@ -7,6 +7,7 @@ import {
 import {
   buildRecentSessionSummaries,
   buildWeeklyActivityDays,
+  buildWeeklyStatsComparison,
   buildPracticeStats,
   getStartOfCurrentWeek,
   getPracticeStatsFromRpc,
@@ -14,10 +15,11 @@ import {
   type SessionRecord,
   type StreakRecord,
   type WeeklyActivityDay,
+  type WeeklyStatsComparison,
 } from "./core/queries";
 import { supabase as browserSupabase } from "@/services/supabase";
 
-export type { PracticeStats, SessionRecord, WeeklyActivityDay } from "./core/queries";
+export type { PracticeStats, SessionRecord, WeeklyActivityDay, WeeklyStatsComparison } from "./core/queries";
 
 const sessionSupabase: SupabaseLike = browserSupabase as unknown as SupabaseLike;
 const SESSION_SUMMARY_COLUMNS =
@@ -295,4 +297,40 @@ export async function getWeeklyActivityDays(userId: string | null): Promise<Week
   if (error) throw error;
 
   return buildWeeklyActivityDays((data ?? []) as Array<Pick<SessionRecord, "created_at">>, now);
+}
+
+export async function getWeeklyStatsComparison(userId: string | null): Promise<WeeklyStatsComparison> {
+  const now = new Date();
+  if (!userId) {
+    return buildWeeklyStatsComparison([], now);
+  }
+
+  const currentWeekStart = getStartOfCurrentWeek(now);
+  const lastWeekStart = new Date(currentWeekStart);
+  lastWeekStart.setDate(currentWeekStart.getDate() - 7);
+
+  const { data, error } = await browserSupabase
+    .from("sessions")
+    .select(SESSION_SUMMARY_COLUMNS)
+    .eq("user_id", userId)
+    .gte("created_at", lastWeekStart.toISOString())
+    .lte("created_at", now.toISOString());
+
+  if (error) {
+    if (isMissingSessionAnalysisColumnError(error)) {
+      const { data: legacyData, error: legacyError } = await browserSupabase
+        .from("sessions")
+        .select(LEGACY_SESSION_SUMMARY_COLUMNS)
+        .eq("user_id", userId)
+        .gte("created_at", lastWeekStart.toISOString())
+        .lte("created_at", now.toISOString());
+
+      if (legacyError) throw legacyError;
+      return buildWeeklyStatsComparison((legacyData ?? []) as SessionRecord[], now);
+    }
+
+    throw error;
+  }
+
+  return buildWeeklyStatsComparison((data ?? []) as SessionRecord[], now);
 }

@@ -477,51 +477,46 @@ export function getConnectAccountKeyboard(telegramId: number) {
   ]);
 }
 
-function formatCompactDuration(seconds: number): string {
-  const safeSeconds = Math.max(0, Math.round(seconds || 0));
+function formatStatsPracticeTime(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
   const minutes = Math.floor(safeSeconds / 60);
-  const remainingSeconds = safeSeconds % 60;
 
-  if (minutes === 0) {
-    return `${remainingSeconds}s`;
-  }
-
-  if (remainingSeconds === 0) {
+  if (minutes < 60) {
     return `${minutes}m`;
   }
 
-  return `${minutes}m ${remainingSeconds}s`;
+  return `${Math.floor(minutes / 60)}h`;
 }
 
-function formatAverageScore(score: number | null): string {
-  return score === null ? "N/A" : String(score);
+function formatStatsCount(count: number): string {
+  const safeCount = Math.max(0, Math.floor(count || 0));
+  if (safeCount < 1_000) {
+    return String(safeCount);
+  }
+  if (safeCount < 1_000_000) {
+    return `${Math.floor(safeCount / 1_000)}k`;
+  }
+
+  return `${Math.floor(safeCount / 1_000_000)}m`;
 }
 
 export function getTelegramStatsMessage(input: {
-  currentStreak: number;
-  bestStreak: number;
-  bestFlowScore: number;
-  avgFlowScore: number;
-  scoredSessions: number;
+  weeklyBestFlowScore: number;
+  weeklyAvgFlowScore: number;
+  weeklySessionCount: number;
+  totalSessions: number;
   totalPracticeTime: number;
-  speakingSessions: number;
-  speakingAvgFlowScore: number | null;
-  lastSessionText: string;
 }): string {
   return `📊 <b>Your NoPause Stats</b>
 
-🔥 <b>Streak:</b> ${input.currentStreak} days  |  <b>Best:</b> ${input.bestStreak} days
+📅 <b>Weekly</b>
+🏆 <b>Best Score:</b> ${input.weeklyBestFlowScore}
+📈 <b>Average Score:</b> ${input.weeklyAvgFlowScore}
+✅ <b>Sessions:</b> ${input.weeklySessionCount}
 
-🏆 <b>Best Score:</b> ${input.bestFlowScore}
-📈 <b>Average Score:</b> ${input.avgFlowScore}
-✅ <b>All-Time Sessions:</b> ${input.scoredSessions}
-
-⏱ <b>All-Time Practice Time:</b> ${formatCompactDuration(input.totalPracticeTime)}
-
-🎤 <b>Speaking Mode</b>
-<b>Sessions:</b> ${input.speakingSessions}  |  <b>Avg Score:</b> ${formatAverageScore(input.speakingAvgFlowScore)}
-
-📅 <b>Last session:</b> ${input.lastSessionText}`;
+🌐 <b>All-Time</b>
+✅ <b>Total Sessions:</b> ${formatStatsCount(input.totalSessions)}
+⏱ <b>Total Practice Time:</b> ${formatStatsPracticeTime(input.totalPracticeTime)}`;
 }
 
 export const MESSAGES = {

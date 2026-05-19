@@ -55,6 +55,19 @@ export type PracticeStats = {
 export type ModeBreakdown = PracticeStats["modeBreakdown"][number];
 export type RecentSessionSummary = PracticeStats["recentSessions"][number];
 
+export type StatsSummary = {
+  bestFlowScore: number;
+  avgFlowScore: number;
+  sessionCount: number;
+  totalPracticeTime: number;
+  hasScoredSession: boolean;
+};
+
+export type WeeklyStatsComparison = {
+  currentWeek: StatsSummary;
+  lastWeek: StatsSummary;
+};
+
 export type WeeklyActivityDay = {
   label: "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su";
   dateKey: string;
@@ -218,6 +231,10 @@ export async function getTelegramPracticeStats(userId: string, limit = 15): Prom
   return buildPracticeStats(sessionSets, streak);
 }
 
+export async function getTelegramWeeklyStatsComparison(userId: string): Promise<WeeklyStatsComparison> {
+  return buildWeeklyStatsComparison(await getTelegramSessions(userId));
+}
+
 export async function getStreak(userId: string): Promise<StreakRecord | null> {
   const supabase = await getServerSupabase();
   const { data, error } = await supabase
@@ -288,6 +305,17 @@ export function calculateBestFlowScore(sessions: SessionRecord[]): number {
     .reduce((best, score) => Math.max(best, score), 0);
 }
 
+export function buildStatsSummary(sessions: SessionRecord[]): StatsSummary {
+  const scored = sessions.filter(isScoredSession);
+  return {
+    bestFlowScore: calculateBestFlowScore(sessions),
+    avgFlowScore: calculateWeightedAverageFlowScore(sessions),
+    sessionCount: sessions.length,
+    totalPracticeTime: sessions.reduce((sum, session) => sum + getSessionDuration(session), 0),
+    hasScoredSession: scored.length > 0,
+  };
+}
+
 export function getLastSessionDate(sessions: SessionRecord[]): string | null {
   return (
     sessions
@@ -343,6 +371,30 @@ export function getStartOfCurrentWeek(now = new Date()): Date {
   const daysSinceMonday = day === 0 ? 6 : day - 1;
   start.setDate(start.getDate() - daysSinceMonday);
   return start;
+}
+
+export function buildWeeklyStatsComparison(
+  sessions: SessionRecord[],
+  now = new Date(),
+): WeeklyStatsComparison {
+  const currentWeekStart = getStartOfCurrentWeek(now);
+  const lastWeekStart = new Date(currentWeekStart);
+  lastWeekStart.setDate(currentWeekStart.getDate() - 7);
+  const currentWeekEnd = new Date(now);
+
+  const currentWeekSessions = sessions.filter((session) => {
+    const createdAt = new Date(session.created_at);
+    return createdAt >= currentWeekStart && createdAt <= currentWeekEnd;
+  });
+  const lastWeekSessions = sessions.filter((session) => {
+    const createdAt = new Date(session.created_at);
+    return createdAt >= lastWeekStart && createdAt < currentWeekStart;
+  });
+
+  return {
+    currentWeek: buildStatsSummary(currentWeekSessions),
+    lastWeek: buildStatsSummary(lastWeekSessions),
+  };
 }
 
 export function buildWeeklyActivityDays(
