@@ -27,6 +27,7 @@ export type StreakRecord = {
 
 export type PracticeStats = {
   scoredSessions: number;
+  totalSessions: number;
   totalPracticeTime: number;
   avgFlowScore: number;
   bestFlowScore: number;
@@ -49,6 +50,7 @@ export type PracticeStats = {
     flowScore: number | null;
     mode: string;
     source: string | null;
+    isAllTimeBest?: boolean;
   }>;
 };
 
@@ -159,6 +161,15 @@ function parseModeBreakdown(value: unknown): PracticeStats["modeBreakdown"] {
   });
 }
 
+function getParsedTotalSessions(record: Record<string, unknown>, modeBreakdown: PracticeStats["modeBreakdown"]): number {
+  if (record.totalSessions !== null && record.totalSessions !== undefined) {
+    return toInteger(record.totalSessions);
+  }
+
+  const modeSessionCount = modeBreakdown.reduce((sum, item) => sum + item.totalSessions, 0);
+  return modeSessionCount || toInteger(record.scoredSessions);
+}
+
 function parseRecentSessions(value: unknown): PracticeStats["recentSessions"] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
@@ -175,6 +186,7 @@ function parseRecentSessions(value: unknown): PracticeStats["recentSessions"] {
       flowScore: flowScore === null || flowScore === undefined ? null : toInteger(flowScore),
       mode: String(record.mode ?? "speaking"),
       source: record.source === null || record.source === undefined ? null : String(record.source),
+      isAllTimeBest: record.isAllTimeBest === true,
     }];
   });
 }
@@ -182,8 +194,10 @@ function parseRecentSessions(value: unknown): PracticeStats["recentSessions"] {
 export function parsePracticeStats(value: unknown): PracticeStats | null {
   const record = toRecord(value);
   if (!record) return null;
+  const modeBreakdown = parseModeBreakdown(record.modeBreakdown);
   return {
     scoredSessions: toInteger(record.scoredSessions),
+    totalSessions: getParsedTotalSessions(record, modeBreakdown),
     totalPracticeTime: toInteger(record.totalPracticeTime),
     avgFlowScore: toInteger(record.avgFlowScore),
     bestFlowScore: toInteger(record.bestFlowScore),
@@ -192,7 +206,7 @@ export function parsePracticeStats(value: unknown): PracticeStats | null {
       : String(record.lastSessionDate),
     currentStreak: toInteger(record.currentStreak),
     bestStreak: toInteger(record.bestStreak),
-    modeBreakdown: parseModeBreakdown(record.modeBreakdown),
+    modeBreakdown,
     recentSessions: parseRecentSessions(record.recentSessions),
   };
 }
@@ -357,6 +371,40 @@ export function buildRecentSessionSummaries(sessions: SessionRecord[]): RecentSe
   }));
 }
 
+export function getBestScoringSession(sessions: SessionRecord[]): SessionRecord | null {
+  return sessions
+    .filter((session) => {
+      const score = getSessionFlowScore(session);
+      return score !== null && Number.isFinite(score);
+    })
+    .sort((a, b) => {
+      const scoreDelta = Number(b.flow_score) - Number(a.flow_score);
+      if (scoreDelta !== 0) return scoreDelta;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    })[0] ?? null;
+}
+
+export function buildPinnedRecentSessionSummaries(
+  recentSessions: SessionRecord[],
+  allTimeBestSession: SessionRecord | null,
+  limit = recentSessions.length,
+): RecentSessionSummary[] {
+  const bestSessionId = allTimeBestSession?.id ?? null;
+  const remainingSessions = bestSessionId
+    ? recentSessions.filter((session) => session.id !== bestSessionId)
+    : recentSessions;
+  const pinnedSessions = allTimeBestSession
+    ? [allTimeBestSession, ...remainingSessions]
+    : remainingSessions;
+
+  return buildRecentSessionSummaries(pinnedSessions)
+    .slice(0, limit)
+    .map((session) => ({
+      ...session,
+      isAllTimeBest: bestSessionId !== null && session.id === bestSessionId,
+    }));
+}
+
 function getLocalDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -430,6 +478,7 @@ export function buildPracticeStats(
 
   return {
     scoredSessions: scored.length,
+    totalSessions: sessions.length,
     totalPracticeTime: sessions.reduce((sum, session) => sum + getSessionDuration(session), 0),
     avgFlowScore: calculateWeightedAverageFlowScore(sessions),
     bestFlowScore: calculateBestFlowScore(sessions),
@@ -437,6 +486,6 @@ export function buildPracticeStats(
     currentStreak: Number(streak?.current_streak ?? 0),
     bestStreak: Number(streak?.longest_streak ?? 0),
     modeBreakdown: buildModeBreakdown(sessions),
-    recentSessions: buildRecentSessionSummaries(sessions),
+    recentSessions: buildPinnedRecentSessionSummaries(sessions, getBestScoringSession(sessions), sessions.length),
   };
 }

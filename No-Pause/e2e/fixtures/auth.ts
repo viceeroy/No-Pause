@@ -43,6 +43,7 @@ const buildFakeSession = () => {
 
 const emptyPracticeStats = {
   scoredSessions: 0,
+  totalSessions: 0,
   totalPracticeTime: 0,
   avgFlowScore: 0,
   bestFlowScore: 0,

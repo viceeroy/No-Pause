@@ -500,12 +500,23 @@ function formatStatsCount(count: number): string {
   return `${Math.floor(safeCount / 1_000_000)}m`;
 }
 
+function formatStatsDate(isoString: string | null): string {
+  if (!isoString) return "None yet";
+  return new Date(isoString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function getTelegramStatsMessage(input: {
   weeklyBestFlowScore: number;
   weeklyAvgFlowScore: number;
   weeklySessionCount: number;
   totalSessions: number;
   totalPracticeTime: number;
+  currentStreak: number;
+  bestStreak: number;
+  lastSessionDate: string | null;
 }): string {
   return `📊 <b>Your NoPause Stats</b>
 
@@ -513,6 +524,8 @@ export function getTelegramStatsMessage(input: {
 🏆 <b>Best Score:</b> ${input.weeklyBestFlowScore}
 📈 <b>Average Score:</b> ${input.weeklyAvgFlowScore}
 ✅ <b>Sessions:</b> ${input.weeklySessionCount}
+🔥 <b>Streak:</b> ${input.currentStreak} current / ${input.bestStreak} best
+🕒 <b>Last Session:</b> ${formatStatsDate(input.lastSessionDate)}
 
 🌐 <b>All-Time</b>
 ✅ <b>Total Sessions:</b> ${formatStatsCount(input.totalSessions)}

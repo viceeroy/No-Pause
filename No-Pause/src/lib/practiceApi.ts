@@ -5,10 +5,11 @@ import {
   type SupabaseLike,
 } from "./core/session";
 import {
-  buildRecentSessionSummaries,
+  buildPinnedRecentSessionSummaries,
   buildWeeklyActivityDays,
   buildWeeklyStatsComparison,
   buildPracticeStats,
+  getBestScoringSession,
   getStartOfCurrentWeek,
   getPracticeStatsFromRpc,
   type PracticeStats,
@@ -26,6 +27,39 @@ const SESSION_SUMMARY_COLUMNS =
   "id, created_at, mode, duration, speaking_time, total_silence_time, pauses, pause_count, words, flow_score, completed, hesitation_log, source";
 const LEGACY_SESSION_SUMMARY_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, words, flow_score, completed, hesitation_log, source";
+
+async function getBestSessionSummary(userId: string): Promise<SessionRecord | null> {
+  const { data, error } = await browserSupabase
+    .from("sessions")
+    .select(SESSION_SUMMARY_COLUMNS)
+    .eq("user_id", userId)
+    .not("flow_score", "is", null)
+    .order("flow_score", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingSessionAnalysisColumnError(error)) {
+      const { data: legacyData, error: legacyError } = await browserSupabase
+        .from("sessions")
+        .select(LEGACY_SESSION_SUMMARY_COLUMNS)
+        .eq("user_id", userId)
+        .not("flow_score", "is", null)
+        .order("flow_score", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (legacyError) throw legacyError;
+      return legacyData as SessionRecord | null;
+    }
+
+    throw error;
+  }
+
+  return data as SessionRecord | null;
+}
 
 export type Base64TranscriptionInput = {
   audioBase64: string;
@@ -193,6 +227,7 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   if (!userId) {
     return {
       scoredSessions: 0,
+      totalSessions: 0,
       totalPracticeTime: 0,
       avgFlowScore: 0,
       bestFlowScore: 0,
@@ -206,7 +241,29 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
 
   const rpcStats = await getPracticeStatsFromRpc(browserSupabase, userId, limit);
   if (rpcStats) {
-    return rpcStats;
+    const bestSession = await getBestSessionSummary(userId);
+    return {
+      ...rpcStats,
+      recentSessions: buildPinnedRecentSessionSummaries(
+        rpcStats.recentSessions.map((session) => ({
+          id: session.id,
+          created_at: session.created_at,
+          mode: session.mode,
+          duration: session.duration,
+          speaking_time: session.speakingTime,
+          total_silence_time: session.totalSilenceTime,
+          pauses: session.hesitationCount,
+          pause_count: session.hesitationCount,
+          words: null,
+          flow_score: session.flowScore,
+          completed: null,
+          hesitation_log: null,
+          source: session.source,
+        })),
+        bestSession,
+        limit,
+      ),
+    };
   }
 
   const [
@@ -271,7 +328,11 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
   );
   return {
     ...stats,
-    recentSessions: buildRecentSessionSummaries((recentSessions ?? []) as SessionRecord[]),
+    recentSessions: buildPinnedRecentSessionSummaries(
+      (recentSessions ?? []) as SessionRecord[],
+      getBestScoringSession((allTimeSessions ?? []) as SessionRecord[]),
+      limit,
+    ),
   };
 }
 

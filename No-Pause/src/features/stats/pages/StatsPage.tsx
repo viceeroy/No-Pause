@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, ChevronLeft, Clock, LogOut, Send, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
 import {
   getPracticeStats,
   getWeeklyActivityDays,
@@ -34,6 +34,10 @@ function getSessionModeLabel(mode: string): string {
 
 function shouldShowRecentFlowScore(score: number | null | undefined): score is number {
   return Number(score) > 10;
+}
+
+function hasRecentFlowScore(score: number | null | undefined): score is number {
+  return score !== null && score !== undefined && Number.isFinite(Number(score));
 }
 
 function createEmptyWeeklyActivity(): WeeklyActivityDay[] {
@@ -72,6 +76,13 @@ function formatStatsPracticeTime(seconds: number): string {
   }
 
   return `${Math.floor(minutes / 60)}h`;
+}
+
+function formatCompactCount(count: number): string {
+  const safeCount = Math.max(0, Math.floor(count || 0));
+  if (safeCount < 1_000) return String(safeCount);
+  if (safeCount < 1_000_000) return `${Math.floor(safeCount / 1_000)}k`;
+  return `${Math.floor(safeCount / 1_000_000)}m`;
 }
 
 function WeeklyActivityRow({
@@ -128,6 +139,7 @@ export default function StatsPage({
   const [limit, setLimit] = useState(50);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
+    totalSessions: 0,
     totalPracticeTime: 0,
     avgFlowScore: 0,
     bestFlowScore: 0,
@@ -188,7 +200,6 @@ export default function StatsPage({
   const weeklyScoreTrend = weeklyStats.lastWeek.hasScoredSession
     ? weeklyBestScore - weeklyStats.lastWeek.bestFlowScore
     : null;
-  const flowProgress = Math.min(100, Math.max(0, weeklyBestScore || 0));
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const email = user?.email || '';
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
@@ -264,26 +275,37 @@ export default function StatsPage({
             {statsLoading ? 'Loading scored sessions...' : `${weeklyStats.currentWeek.sessionCount} sessions this week`}
           </p>
           {!statsLoading && weeklyScoreTrend !== null && (
-            <p className="mb-4 text-sm font-sans font-bold text-muted-foreground">
+            <p className={`text-sm font-sans font-bold ${weeklyScoreTrend >= 0 ? 'text-green-600' : 'text-destructive'}`}>
               {weeklyScoreTrend >= 0 ? '↑' : '↓'} {Math.abs(weeklyScoreTrend)} from last week
             </p>
           )}
-          <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${flowProgress}%` }} />
-          </div>
         </section>
 
         <section className="mb-6 grid grid-cols-2 gap-3 md:gap-4">
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <TrendingUp size={20} className="mb-5 text-primary" />
+            <BarChart3 size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Weekly avg score</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+              {statsLoading ? '...' : weeklyStats.currentWeek.avgFlowScore}
+            </p>
+          </article>
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <Flame size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Current streak</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
               {statsLoading ? '...' : `${stats.currentStreak} days`}
             </p>
           </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <TrendingUp size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">All-time sessions</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+              {statsLoading ? '...' : formatCompactCount(stats.totalSessions)}
+            </p>
+          </article>
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Clock size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Total practice</p>
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">All-time practice</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
               {statsLoading ? '...' : formatStatsPracticeTime(stats.totalPracticeTime)}
             </p>
@@ -346,6 +368,16 @@ export default function StatsPage({
                         <p className="text-sm font-sans font-semibold text-foreground">
                           {getSessionModeLabel(session.mode)}
                         </p>
+                        {session.isAllTimeBest && (
+                          <span
+                            className="inline-flex h-7 items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 text-[10px] font-sans font-black uppercase text-primary"
+                            aria-label="Best all-time session"
+                            title="Best all-time session"
+                          >
+                            <Trophy size={12} aria-hidden="true" />
+                            Best
+                          </span>
+                        )}
                         {isTelegramSession && (
                           <span
                             className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-surface-elevated text-muted-foreground"
@@ -360,7 +392,7 @@ export default function StatsPage({
                         {formatDate(session.created_at)} | Silence {formatDuration(session.totalSilenceTime || 0)} - {session.hesitationCount || 0} pauses
                       </p>
                     </div>
-                    {shouldShowRecentFlowScore(session.flowScore) ? (
+                    {shouldShowRecentFlowScore(session.flowScore) || (session.isAllTimeBest && hasRecentFlowScore(session.flowScore)) ? (
                       <div className="shrink-0 text-right">
                         <p className="text-2xl font-serif font-medium leading-none text-primary">{session.flowScore}</p>
                         <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>

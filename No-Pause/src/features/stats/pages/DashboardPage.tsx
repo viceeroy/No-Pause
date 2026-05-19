@@ -19,6 +19,7 @@ const dashboardPrompts = opinionPrompts.slice(0, 10);
 
 const emptyStats: PracticeStats = {
   scoredSessions: 0,
+  totalSessions: 0,
   totalPracticeTime: 0,
   avgFlowScore: 0,
   bestFlowScore: 0,

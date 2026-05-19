@@ -4,10 +4,12 @@ import { readFileSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import {
+  buildPinnedRecentSessionSummaries,
   buildPracticeStats,
   buildRecentSessionSummaries,
   buildWeeklyActivityDays,
   buildWeeklyStatsComparison,
+  getBestScoringSession,
   getPracticeStatsFromRpc,
   type SessionRecord,
 } from '@/lib/core/queries';
@@ -234,6 +236,98 @@ describe('speaking mode scoring architecture', () => {
 });
 
 describe('stats architecture', () => {
+  it('pins the all-time best session above recent sessions without reordering the rest', () => {
+    const recentSessions: SessionRecord[] = [
+      {
+        id: 'newest-session',
+        created_at: '2026-05-03T01:00:00.000Z',
+        mode: 'speaking',
+        duration: 60,
+        speaking_time: 58,
+        total_silence_time: 2,
+        pauses: 0,
+        pause_count: 0,
+        words: 40,
+        flow_score: 90,
+        completed: true,
+        source: 'web',
+        hesitation_log: null,
+      },
+      {
+        id: 'older-session',
+        created_at: '2026-05-02T01:00:00.000Z',
+        mode: 'speaking',
+        duration: 80,
+        speaking_time: 75,
+        total_silence_time: 5,
+        pauses: 1,
+        pause_count: 1,
+        words: 50,
+        flow_score: 120,
+        completed: true,
+        source: 'telegram',
+        hesitation_log: null,
+      },
+    ];
+    const bestSession: SessionRecord = {
+      id: 'all-time-best',
+      created_at: '2026-04-25T01:00:00.000Z',
+      mode: 'speaking',
+      duration: 180,
+      speaking_time: 178,
+      total_silence_time: 2,
+      pauses: 0,
+      pause_count: 0,
+      words: 150,
+      flow_score: 220,
+      completed: true,
+      source: 'web',
+      hesitation_log: null,
+    };
+
+    expect(buildPinnedRecentSessionSummaries(recentSessions, bestSession, 3).map((session) => ({
+      id: session.id,
+      isAllTimeBest: session.isAllTimeBest,
+    }))).toEqual([
+      { id: 'all-time-best', isAllTimeBest: true },
+      { id: 'newest-session', isAllTimeBest: false },
+      { id: 'older-session', isAllTimeBest: false },
+    ]);
+  });
+
+  it('selects the highest scoring session and breaks ties by recency', () => {
+    const sessions: SessionRecord[] = [
+      {
+        id: 'older-best',
+        created_at: '2026-05-02T01:00:00.000Z',
+        mode: 'speaking',
+        duration: 60,
+        speaking_time: 58,
+        pauses: 0,
+        words: 40,
+        flow_score: 100,
+        completed: true,
+        source: 'web',
+        hesitation_log: null,
+      },
+      {
+        id: 'newer-best',
+        created_at: '2026-05-03T01:00:00.000Z',
+        mode: 'speaking',
+        duration: 60,
+        speaking_time: 58,
+        pauses: 0,
+        words: 40,
+        flow_score: 100,
+        completed: true,
+        source: 'web',
+        hesitation_log: null,
+      },
+    ];
+
+    expect(getBestScoringSession(sessions)?.id).toBe('newer-best');
+  });
+
   it('builds recent session stats from pause_count and source metadata', () => {
     const sessions: SessionRecord[] = [
       {
@@ -524,12 +618,17 @@ describe('stats summary architecture', () => {
       weeklySessionCount: 3,
       totalSessions: 12_345,
       totalPracticeTime: 7_260,
+      currentStreak: 4,
+      bestStreak: 9,
+      lastSessionDate: '2026-05-19T10:00:00.000Z',
     });
 
     expect(message).toContain('<b>Weekly</b>');
     expect(message).toContain('Best Score:</b> 120');
     expect(message).toContain('Average Score:</b> 95');
     expect(message).toContain('Sessions:</b> 3');
+    expect(message).toContain('Streak:</b> 4 current / 9 best');
+    expect(message).toContain('Last Session:</b> May 19');
     expect(message).toContain('<b>All-Time</b>');
     expect(message).toContain('Total Sessions:</b> 12k');
     expect(message).toContain('Total Practice Time:</b> 2h');
@@ -575,6 +674,7 @@ describe('stats summary architecture', () => {
     const rpc = vi.fn(async () => ({
       data: {
         scoredSessions: 2,
+        totalSessions: 2,
         totalPracticeTime: 120,
         avgFlowScore: 90,
         bestFlowScore: 100,
@@ -599,6 +699,7 @@ describe('stats summary architecture', () => {
 
     await expect(getPracticeStatsFromRpc({ rpc }, 'user-1', 25)).resolves.toMatchObject({
       scoredSessions: 2,
+      totalSessions: 2,
       recentSessions: [{ id: 'session-1', totalSilenceTime: 5, hesitationCount: 1 }],
     });
     expect(rpc).toHaveBeenCalledWith('get_practice_stats', {

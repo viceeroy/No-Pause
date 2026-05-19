@@ -113,18 +113,16 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     return;
   }
 
-  const totalSessions = stats.modeBreakdown.reduce(
-    (sum, item) => sum + item.totalSessions,
-    0,
-  ) || stats.scoredSessions;
-
   await ctx.reply(
     getTelegramStatsMessage({
       weeklyBestFlowScore: weeklyStats.currentWeek.bestFlowScore,
       weeklyAvgFlowScore: weeklyStats.currentWeek.avgFlowScore,
       weeklySessionCount: weeklyStats.currentWeek.sessionCount,
-      totalSessions,
+      totalSessions: stats.totalSessions,
       totalPracticeTime: stats.totalPracticeTime,
+      currentStreak: stats.currentStreak,
+      bestStreak: stats.bestStreak,
+      lastSessionDate: stats.lastSessionDate,
     }),
     { ...replyKeyboard, parse_mode: "HTML" },
   );
