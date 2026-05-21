@@ -6,14 +6,14 @@ export function formatDuration(seconds: number): string {
   const remainingSeconds = safeSeconds % SECONDS_PER_MINUTE;
 
   if (minutes === 0) {
-    return `${remainingSeconds} s`;
+    return `${remainingSeconds}s`;
   }
 
   if (remainingSeconds === 0) {
-    return `${minutes} m`;
+    return `${minutes}m`;
   }
 
-  return `${minutes} m ${remainingSeconds} s`;
+  return `${minutes}m ${remainingSeconds}s`;
 }
 
 export function formatPracticeTotalDuration(seconds: number): string {
@@ -21,8 +21,8 @@ export function formatPracticeTotalDuration(seconds: number): string {
   const minutes = Math.floor(safeSeconds / SECONDS_PER_MINUTE);
 
   if (minutes === 0) {
-    return `${safeSeconds} s`;
+    return `${safeSeconds}s`;
   }
 
-  return `${minutes} m`;
+  return `${minutes}m`;
 }

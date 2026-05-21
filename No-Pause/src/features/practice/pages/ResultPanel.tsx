@@ -89,6 +89,7 @@ export function ResultPanel({
     <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       {lastResults.flowScore >= 200 && <Confetti />}
       <div className="mb-8 text-left">
+        <p className="mb-2 text-[10px] font-sans font-black uppercase tracking-widest text-muted-foreground">Speaking Mode</p>
         <h2 className="mb-2 text-3xl font-serif font-medium text-foreground md:text-5xl">Results</h2>
         {coachingNote && (
           <p className="text-sm font-sans text-muted-foreground md:text-base">{coachingNote}</p>

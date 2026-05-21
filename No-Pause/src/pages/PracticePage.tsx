@@ -111,10 +111,8 @@ export default function PracticePage() {
         )}
       </div>
 
-      {state.state !== 'recording' && (
-        <>
-          <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-3 md:mb-6' : 'text-4xl md:text-5xl mb-12')}>Speaking Mode</h1>
-        </>
+      {state.state !== 'recording' && state.state !== 'done' && (
+        <h1 className={cn('font-serif font-medium text-foreground shrink-0', state.isFixedScreen ? 'text-2xl md:text-5xl mb-3 md:mb-6' : 'text-4xl md:text-5xl mb-12')}>Speaking Mode</h1>
       )}
 
       {(state.state === 'setup' || state.state === 'countdown') && (
