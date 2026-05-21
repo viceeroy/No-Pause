@@ -33,6 +33,11 @@ export default function PracticePage() {
   });
   const promptTextParam = searchParams.get('prompt_text');
   const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';
+  const promptSource: 'prompts' | 'random' | null = promptTextParam
+    ? 'prompts'
+    : state.topicPrompt?.category === 'SPEAKING_PRACTICE'
+      ? 'random'
+      : null;
   const timerLabel = useMemo(
     () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
     [selectedTimerSeconds],
@@ -125,6 +130,7 @@ export default function PracticePage() {
           setSelectedTimerSeconds={setSelectedTimerSeconds}
           timerOptions={timerOptions}
           promptText={promptText}
+          promptSource={promptSource}
           handleOpenPrompts={handleOpenPrompts}
           handleRandomPrompt={handleRandomPrompt}
           handleStart={() => recording.handleStart()}

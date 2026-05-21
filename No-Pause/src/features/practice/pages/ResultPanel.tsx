@@ -117,6 +117,9 @@ export function ResultPanel({
           {statusNote && (
             <p className="mt-3 text-sm font-sans text-muted-foreground">{statusNote}</p>
           )}
+          {speakingTime < 5 && (
+            <p className="mt-1 text-xs font-sans text-muted-foreground/60">Speak for at least 5 seconds to receive a Flow Score.</p>
+          )}
         </section>
 
         <section className="grid grid-cols-2 gap-3 md:gap-4">
@@ -167,7 +170,7 @@ export function ResultPanel({
                 type="button"
                 onClick={() => requestFeedback()}
                 disabled={lastResults.analysisFeedbackLoading}
-                className="rounded-full border border-border bg-surface-elevated px-5 py-2.5 text-sm font-sans font-bold text-foreground btn-press hover:bg-surface-interactive disabled:opacity-60"
+                className="rounded-full bg-primary px-5 py-2.5 text-sm font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:opacity-60"
               >
                 Get AI Feedback
               </button>

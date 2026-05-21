@@ -11,6 +11,7 @@ import {
 } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration } from '@/lib/core/time';
+import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/providers/AuthContext';
 
 function formatDate(isoString?: string): string {
@@ -32,13 +33,6 @@ function getSessionModeLabel(mode: string): string {
   return MODE_LABELS[normalizeMode(normalizedMode)];
 }
 
-function shouldShowRecentFlowScore(score: number | null | undefined): score is number {
-  return Number(score) > 10;
-}
-
-function hasRecentFlowScore(score: number | null | undefined): score is number {
-  return score !== null && score !== undefined && Number.isFinite(Number(score));
-}
 
 function createEmptyWeeklyActivity(): WeeklyActivityDay[] {
   return ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((label) => ({
@@ -392,14 +386,12 @@ export default function StatsPage({
                         {formatDate(session.created_at)} | Silence {formatDuration(session.totalSilenceTime || 0)} - {session.hesitationCount || 0} pauses
                       </p>
                     </div>
-                    {shouldShowRecentFlowScore(session.flowScore) || (session.isAllTimeBest && hasRecentFlowScore(session.flowScore)) ? (
-                      <div className="shrink-0 text-right">
-                        <p className="text-2xl font-serif font-medium leading-none text-primary">{session.flowScore}</p>
-                        <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
-                      </div>
-                    ) : (
-                      <div className="w-12 shrink-0" aria-hidden="true" />
-                    )}
+                    <div className="shrink-0 text-right">
+                      <p className={cn('text-2xl font-serif font-medium leading-none', session.flowScore ? 'text-primary' : 'text-muted-foreground')}>
+                        {session.flowScore || '—'}
+                      </p>
+                      <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
+                    </div>
                   </article>
                 );
               })}

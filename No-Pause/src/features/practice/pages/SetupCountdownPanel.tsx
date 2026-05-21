@@ -14,6 +14,7 @@ type SetupCountdownPanelProps = {
   setSelectedTimerSeconds: (seconds: number) => void;
   timerOptions: { label: string; seconds: number }[];
   promptText: string;
+  promptSource: 'prompts' | 'random' | null;
   handleOpenPrompts: () => void;
   handleRandomPrompt: () => void;
   handleStart: () => Promise<void>;
@@ -32,6 +33,7 @@ export function SetupCountdownPanel({
   setSelectedTimerSeconds,
   timerOptions,
   promptText,
+  promptSource,
   handleOpenPrompts,
   handleRandomPrompt,
   handleStart,
@@ -60,7 +62,7 @@ export function SetupCountdownPanel({
       )}
 
       <div className={cn('transition-all duration-500 flex-1 flex flex-col justify-start min-h-0', state === 'countdown' && 'opacity-30 scale-95 blur-[2px]')}>
-        <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-[calc(100dvh-260px)] md:py-8">
+        <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
           <div className={cn(
             'flex w-full flex-col items-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:px-10 md:py-12',
             promptText && 'justify-center md:min-h-[300px]'
@@ -74,21 +76,8 @@ export function SetupCountdownPanel({
             )}>
               {promptText || 'Speak freely'}
             </p>
-            {!promptText && (
-              <div className="mx-auto mt-8 flex max-w-sm flex-col gap-2 text-left">
-                {['Set a timer', 'Add a prompt', 'Get a random prompt'].map((tip) => (
-                  <div
-                    key={tip}
-                    className="flex items-center justify-center gap-2 text-xs font-sans font-semibold text-muted-foreground md:text-sm"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span>{tip}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-          <div className="flex w-full flex-col items-center gap-4 pb-2 pt-6 md:pb-6">
+          <div className="flex w-full flex-col items-center gap-4 pb-2 pt-6 md:pt-0 md:pb-0">
             {state === 'setup' && (
               <>
                 <div className="flex flex-wrap items-center justify-center gap-2 md:flex-nowrap md:gap-3">
@@ -96,7 +85,12 @@ export function SetupCountdownPanel({
                     <button
                       type="button"
                       onClick={() => setTimerMenuOpen(!timerMenuOpen)}
-                      className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-surface-card px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground transition-colors btn-press hover:bg-surface-elevated hover:text-foreground md:min-h-[46px] md:px-5 md:text-sm"
+                      className={cn(
+                        'inline-flex min-h-[42px] items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-sans font-semibold transition-colors btn-press md:min-h-[46px] md:px-5 md:text-sm',
+                        selectedTimerSeconds > 0
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border bg-surface-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+                      )}
                     >
                       <Clock size={15} className="text-primary shrink-0" />
                       {timerLabel}
@@ -128,7 +122,12 @@ export function SetupCountdownPanel({
                     <button
                       type="button"
                       onClick={handleOpenPrompts}
-                      className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-surface-card px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground transition-colors btn-press hover:bg-surface-elevated hover:text-foreground md:min-h-[46px] md:px-5 md:text-sm"
+                      className={cn(
+                        'inline-flex min-h-[42px] items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-sans font-semibold transition-colors btn-press md:min-h-[46px] md:px-5 md:text-sm',
+                        promptSource === 'prompts'
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border bg-surface-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+                      )}
                     >
                       <ListChecks size={15} className="shrink-0 text-primary" />
                       Prompts
@@ -137,7 +136,12 @@ export function SetupCountdownPanel({
                   <button
                     type="button"
                     onClick={handleRandomPrompt}
-                    className="inline-flex min-h-[42px] items-center gap-2 rounded-full border border-border bg-surface-card px-3.5 py-2 text-xs font-sans font-semibold text-muted-foreground transition-colors btn-press hover:bg-surface-elevated hover:text-foreground md:min-h-[46px] md:px-5 md:text-sm"
+                    className={cn(
+                      'inline-flex min-h-[42px] items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-sans font-semibold transition-colors btn-press md:min-h-[46px] md:px-5 md:text-sm',
+                      promptSource === 'random'
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border bg-surface-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+                    )}
                   >
                     <Shuffle size={15} className="shrink-0 text-primary" />
                     Random

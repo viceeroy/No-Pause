@@ -61,7 +61,7 @@ export function RecordingPanel({
               />
             </div>
           </div>
-          <p className="relative z-10 mt-5 text-xs font-sans font-bold uppercase tracking-widest text-muted-foreground">
+          <p className="relative z-10 mt-5 text-center text-sm font-sans font-black uppercase tracking-widest text-foreground md:text-base">
             Speak now
           </p>
         </div>

@@ -216,24 +216,27 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
-          <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden md:mx-0 md:px-0">
-            <div className="flex w-max gap-3">
-              {dashboardPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`)}
-                  className="min-h-[118px] w-[218px] shrink-0 rounded-[18px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:w-[240px]"
-                >
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-elevated text-primary">
-                    <Mic size={18} aria-hidden="true" />
-                  </div>
-                  <p className="text-sm md:text-base font-serif font-medium leading-tight text-foreground">
-                    {prompt}
-                  </p>
-                </button>
-              ))}
+          <div className="relative">
+            <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden md:mx-0 md:px-0">
+              <div className="flex w-max gap-3">
+                {dashboardPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`)}
+                    className="min-h-[118px] w-[218px] shrink-0 rounded-[18px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:w-[240px]"
+                  >
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-elevated text-primary">
+                      <Mic size={18} aria-hidden="true" />
+                    </div>
+                    <p className="line-clamp-3 text-sm font-serif font-medium leading-tight text-foreground md:text-base">
+                      {prompt}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-[var(--background-base)] md:w-20" />
           </div>
         </section>
 
