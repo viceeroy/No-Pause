@@ -11,25 +11,25 @@ Before writing any code, orient yourself to this architecture:
 
 ```
 Frontend (React + TypeScript + Vite)
-  └── Feature-based architecture under /src/features/
+  └── Feature-based architecture under /src/features/ (auth, practice, stats)
+  └── Cross-feature logic in /src/lib/core/, /src/lib/telegram/, /src/services/
   └── PWA, mobile-first UI
-  └── Clerk — auth (webhooks → backend)
+  └── Supabase Auth — PKCE flow (no Clerk)
 
 Backend / Data
-  └── Supabase — primary DB, auth sync, real-time
-  └── Groq — transcription + LLM-based coaching
-  └── Loops.so — email onboarding (triggered via Clerk webhooks)
+  └── Supabase — primary DB, auth, real-time
+  └── Groq — transcription (api/transcription.ts) + LLM-based coaching (src/services/aiFeedback.ts)
 
 Extensions
-  └── Telegram bot — speech session extension
+  └── Telegram bot — speech session extension (src/lib/telegram/, api/telegram/webhook.ts)
 ```
 
 **High-centrality files to locate before touching anything:**
-- Audio pipeline entry point (recording → transcription flow)
-- Flow score computation logic (`flow score` = continuous speech with fewer hesitations — this is the core metric, never rename or redefine it)
-- Supabase client initialization and RLS policies
-- Clerk webhook handler
-- Groq API integration layer
+- Audio pipeline: `src/features/practice/lib/audioCapture.ts`, `audioRecording.ts`, `transcription.ts`
+- Flow score computation: `src/features/practice/hooks/useScoring.ts`, `src/lib/core/scoring.ts`, `src/features/practice/lib/speechSession.ts`
+- Supabase client: `src/services/supabase.ts` (client), `src/services/supabaseServer.ts` (server-side)
+- Groq integration: `src/services/groq.ts`, `api/transcription.ts`
+- Telegram webhook: `api/telegram/webhook.ts`
 
 ---
 
@@ -64,7 +64,7 @@ After any code output, check:
 - [ ] Did I trace both sides of every boundary I touched?
 - [ ] Does this introduce any duplicate logic?
 - [ ] Are there race conditions at async seams (audio, Groq callbacks, Supabase real-time)?
-- [ ] Does this respect Supabase RLS and Clerk auth flow?
+- [ ] Does this respect Supabase RLS and Supabase Auth (PKCE) flow?
 - [ ] Is the flow score metric untouched or explicitly approved for change?
 
 If any box is uncertain — flag it before finishing. Don't silently paper over gaps.
