@@ -13,6 +13,7 @@ import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/providers/AuthContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
 
 function formatDate(isoString?: string): string {
   if (!isoString) return 'Unknown date';
@@ -79,6 +80,16 @@ function formatCompactCount(count: number): string {
   return `${Math.floor(safeCount / 1_000_000)}m`;
 }
 
+function getFlowScoreTone(score: number | null | undefined): string {
+  if (typeof score !== 'number' || !Number.isFinite(score)) {
+    return 'bg-muted-foreground/30';
+  }
+
+  if (score >= 80) return 'bg-green-500';
+  if (score >= 60) return 'bg-amber-500';
+  return 'bg-muted-foreground/50';
+}
+
 function WeeklyActivityRow({
   days,
   loading,
@@ -94,13 +105,13 @@ function WeeklyActivityRow({
           <p className="mt-1 text-sm font-sans text-muted-foreground">Completed sessions this week</p>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1.5 md:gap-2">
         {days.map((day, index) => {
           const completed = !loading && day.completed;
           return (
             <div key={`${day.label}-${index}`} className="flex flex-col items-center gap-2">
               <span
-                className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs font-sans font-black transition-colors md:h-10 md:w-10 ${
+                className={`flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-sans font-black transition-colors min-[481px]:h-9 min-[481px]:w-9 min-[481px]:text-xs md:h-10 md:w-10 ${
                   completed
                     ? 'border-primary bg-primary text-primary-foreground shadow-soft'
                     : 'border-border bg-surface-elevated text-muted-foreground'
@@ -221,8 +232,8 @@ export default function StatsPage({
           <p className="text-base font-sans text-muted-foreground">Speaking progress</p>
         </header>
 
-        <section className="mb-6 flex items-center justify-between gap-4 rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:p-6">
-          <div className="flex min-w-0 items-center gap-4">
+        <section className="mb-6 flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:gap-4 md:p-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-primary shadow-card md:h-16 md:w-16">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -230,7 +241,7 @@ export default function StatsPage({
                 <span>{initials}</span>
               )}
             </div>
-            <div className="min-w-0 text-left">
+            <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-lg font-serif font-medium leading-tight text-foreground md:text-xl">
                 {displayName}
               </p>
@@ -240,24 +251,28 @@ export default function StatsPage({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              void signOut();
-            }}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground transition-colors btn-press hover:bg-surface-card"
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            <LogOut size={16} className="text-primary" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => {
+                  void signOut();
+                }}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground transition-colors btn-press hover:bg-surface-card"
+                aria-label="Sign out"
+              >
+                <LogOut size={16} className="text-primary" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Sign out</TooltipContent>
+          </Tooltip>
         </section>
 
         <section className="mb-6 rounded-[28px] border border-border bg-surface-card p-6 shadow-card md:p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <p className="mb-2 text-sm font-sans font-bold text-muted-foreground">Weekly best score</p>
-              <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">
+              <p className="font-serif text-6xl font-medium leading-none text-primary md:text-7xl">
                 {statsLoading ? '...' : weeklyBestScore}
               </p>
             </div>
@@ -276,31 +291,31 @@ export default function StatsPage({
         </section>
 
         <section className="mb-6 grid grid-cols-2 gap-3 md:gap-4">
-          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <BarChart3 size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Weekly avg score</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+          <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
+            <BarChart3 size={20} className="mb-6 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Avg score</p>
+            <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
               {statsLoading ? '...' : weeklyStats.currentWeek.avgFlowScore}
             </p>
           </article>
-          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <Flame size={20} className="mb-5 text-primary" />
+          <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
+            <Flame size={20} className="mb-6 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Current streak</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+            <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
               {statsLoading ? '...' : `${stats.currentStreak} days`}
             </p>
           </article>
-          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <TrendingUp size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">All-time sessions</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+          <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
+            <TrendingUp size={20} className="mb-6 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Sessions</p>
+            <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
               {statsLoading ? '...' : formatCompactCount(stats.totalSessions)}
             </p>
           </article>
-          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <Clock size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">All-time practice</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+          <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
+            <Clock size={20} className="mb-6 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Practice time</p>
+            <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
               {statsLoading ? '...' : formatStatsPracticeTime(stats.totalPracticeTime)}
             </p>
           </article>
@@ -311,18 +326,18 @@ export default function StatsPage({
           href="https://t.me/NoPauseAI_bot"
           target="_blank"
           rel="noopener noreferrer"
-          className="mb-8 flex min-h-[88px] cursor-pointer items-center gap-4 rounded-[20px] border border-border bg-surface-card p-5 shadow-card transition-colors btn-press hover:border-primary/40 hover:bg-surface-elevated"
+          className="mb-8 flex min-h-[88px] cursor-pointer items-center gap-3 rounded-[20px] border border-border bg-surface-card p-4 shadow-card transition-colors btn-press hover:border-primary/40 hover:bg-surface-elevated md:gap-4 md:p-5"
         >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
             <Send size={22} />
           </span>
-          <div className="min-w-0 text-left">
+          <div className="min-w-0 flex-1 pr-1 text-left">
             <h2 className="mb-1 text-base font-serif font-medium text-foreground">Telegram integration</h2>
             <p className="text-sm font-sans leading-relaxed text-muted-foreground">
               Optional voice note practice outside the web app.
             </p>
           </div>
-          <span className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-primary">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-primary">
             <ArrowUpRight size={16} />
           </span>
         </a>
@@ -351,6 +366,7 @@ export default function StatsPage({
             <div className="space-y-3">
               {recentSessions.map((session) => {
                 const isTelegramSession = session.source === 'telegram';
+                const hasFlowScore = typeof session.flowScore === 'number' && Number.isFinite(session.flowScore);
 
                 return (
                   <article
@@ -386,11 +402,23 @@ export default function StatsPage({
                         {formatDate(session.created_at)} | Silence {formatDuration(session.totalSilenceTime || 0)} - {session.hesitationCount || 0} pauses
                       </p>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <p className={cn('text-2xl font-serif font-medium leading-none', session.flowScore ? 'text-primary' : 'text-muted-foreground')}>
-                        {session.flowScore || '—'}
-                      </p>
-                      <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
+                    <div className="flex shrink-0 items-center gap-2 text-right">
+                      <span
+                        className={cn('h-8 w-1.5 rounded-full', getFlowScoreTone(session.flowScore))}
+                        aria-hidden="true"
+                      />
+                      <div>
+                        {hasFlowScore ? (
+                          <p className="text-2xl font-serif font-medium leading-none text-primary">
+                            {session.flowScore}
+                          </p>
+                        ) : (
+                          <p className="text-xs font-sans font-bold leading-none text-muted-foreground">
+                            No score
+                          </p>
+                        )}
+                        <p className="mt-1 text-[10px] font-sans font-bold uppercase tracking-[0.14em] text-muted-foreground">Flow</p>
+                      </div>
                     </div>
                   </article>
                 );

@@ -1619,9 +1619,9 @@ describe('HTTP header ASCII normalization', () => {
     await handleVoiceMessage(ctx as never, 123);
 
     expect(order).toEqual([
+      'quota:transcription',
       'telegram:getFile',
       'telegram:download',
-      'quota:transcription',
       'groq',
       'insert:sessions',
       'upsert:streaks',

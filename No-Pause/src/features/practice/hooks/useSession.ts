@@ -1,6 +1,8 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
 import type { SessionResult } from '@/features/practice/pages/types';
+import { arrayBufferToBase64 } from '@/shared/lib/utils';
+import { getWordCount } from '@/lib/core/utils';
 
 type UseSessionOptions = {
   lastResults: SessionResult | null;
@@ -15,17 +17,6 @@ type SaveFinishedSessionInput = {
   normalizedMode: string;
   sessionResult: SessionResult;
   words: number | null;
-};
-
-const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-  return btoa(binary);
 };
 
 function getErrorMessage(error: unknown): string {
@@ -70,11 +61,14 @@ export function useSession({
           localDate: new Date().toLocaleDateString('en-CA'),
         }),
       ]);
-      sessionResult.sessionId = sessionId;
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return { ...prev, sessionId };
+      });
     } catch (error) {
       console.error('Failed to sync session to Supabase:', error);
     }
-  }, [userEmail, userId]);
+  }, [userEmail, userId, setLastResults]);
 
   const requestFeedback = useCallback(async () => {
     if (!lastResults) return;
@@ -155,7 +149,7 @@ export function useSession({
       });
       const transcript = transcription.transcript;
       const words = transcript.trim().length > 0
-        ? transcript.trim().split(/\s+/).filter(Boolean).length
+        ? getWordCount(transcript)
         : null;
       await updateSession({
         sessionId: lastResults.sessionId,

@@ -1,5 +1,11 @@
 # Changelog
 
+## May 21, 2026
+
+Consolidated project documentation into a single `memory/MEMORY.md` reference and removed the old `No-Pause/SYSTEM.md` architecture file. The README now points to the new location. The memory doc covers the full stack, source layout, data flow, scoring formula, state machine, database tables, environment variables, and a record of recent refactoring work.
+
+Cleaned up duplicated helpers and dead environment config. Removed leftover Convex credentials from `.env.local`, consolidated `arrayBufferToBase64` into `src/shared/lib/utils.ts` so both `useSession.ts` and `transcription.ts` import from one place, unified `getWordCount` into `src/lib/core/utils.ts` so all callers share the same implementation, and tidied `useScoring.ts` to use the shared word-count helper with a properly typed `number | null` output.
+
 ## May 19, 2026
 
 Simplified the Results screen around Flow Score, pauses, and speaking time. The old standalone silence and session-length cards were removed, session duration now appears inside the Flow Score card in clock format, and the short-session message was tightened.

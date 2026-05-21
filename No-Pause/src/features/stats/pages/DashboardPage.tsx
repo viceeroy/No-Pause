@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/shared/components/ui/dialog';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/components/ui/tooltip';
 
 const dashboardPrompts = opinionPrompts.slice(0, 10);
 
@@ -128,11 +129,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-dvh bg-surface-base px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 md:px-12 md:pb-16 md:pt-8 lg:px-20">
       <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-6xl flex-col">
-        <div className="mb-4 flex items-center justify-between gap-4 md:mb-6">
+        <div className="mb-4 flex items-center justify-between gap-4 max-[480px]:flex-col max-[480px]:items-start max-[480px]:gap-3 md:mb-6">
           <div className="min-w-0 text-left">
-            <h1 className="text-4xl font-serif font-medium tracking-tight text-foreground md:text-6xl">No Pause</h1>
+            <h1 className="whitespace-nowrap text-4xl font-serif font-medium leading-none tracking-tight text-foreground max-[480px]:text-3xl md:text-6xl">No Pause</h1>
           </div>
-          <div className="flex shrink-0 items-center justify-center gap-2">
+          <div className="flex shrink-0 items-center justify-center gap-2 max-[480px]:w-full max-[480px]:justify-end max-[480px]:gap-3">
             {showInstallButton && (
               <button
                 type="button"
@@ -205,30 +206,33 @@ export default function DashboardPage() {
               >
                 More
               </button>
-              <button
-                type="button"
-                onClick={() => navigate('/help')}
-                aria-label="Help"
-                title="Help"
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-card text-muted-foreground shadow-card transition-colors btn-press hover:bg-surface-elevated hover:text-foreground"
-              >
-                <CircleHelp size={18} aria-hidden="true" />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/help')}
+                    aria-label="Help"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface-card text-muted-foreground shadow-card transition-colors btn-press hover:bg-surface-elevated hover:text-foreground"
+                  >
+                    <CircleHelp size={18} aria-hidden="true" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  How Flow Score works
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           <div className="relative">
-            <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden md:mx-0 md:px-0">
+            <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden min-[769px]:mx-0 min-[769px]:px-0">
               <div className="flex w-max gap-3">
                 {dashboardPrompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`)}
-                    className="min-h-[118px] w-[218px] shrink-0 rounded-[18px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:w-[240px]"
+                    className="flex min-h-[118px] w-[calc((100vw-2.5rem)*0.8)] shrink-0 items-center rounded-[18px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated min-[640px]:max-[768px]:w-[calc((100vw-2.5rem-0.75rem)/2)] min-[769px]:w-[240px]"
                   >
-                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-elevated text-primary">
-                      <Mic size={18} aria-hidden="true" />
-                    </div>
                     <p className="line-clamp-3 text-sm font-serif font-medium leading-tight text-foreground md:text-base">
                       {prompt}
                     </p>
@@ -236,7 +240,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-[var(--background-base)] md:w-20" />
+            <div className="pointer-events-none absolute inset-y-0 -right-5 w-16 bg-gradient-to-r from-transparent to-[var(--background-base)] min-[769px]:right-0 min-[769px]:w-20" />
           </div>
         </section>
 

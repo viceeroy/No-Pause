@@ -88,6 +88,6 @@ npx vercel deploy --prod --yes
 
 ## Reference Docs
 
-- [`No-Pause/SYSTEM.md`](./No-Pause/SYSTEM.md) - compact architecture notes.
+- [`memory/MEMORY.md`](./memory/MEMORY.md) - architecture notes, data flow, scoring formula, and refactoring history.
 - [`No-Pause/INDEX.md`](./No-Pause/INDEX.md) - file/module index.
 - [`CHANGELOG.md`](./CHANGELOG.md) - project history.

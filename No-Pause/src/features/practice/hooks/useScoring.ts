@@ -2,6 +2,7 @@ import { calculateFlowScore } from '@/lib/core/scoring';
 import type { AnalyzerResults } from '@/features/practice/lib/speechAnalyzer';
 import type { SessionResult } from '@/features/practice/pages/types';
 import { formatMMSS } from '@/features/practice/pages/time';
+import { getWordCount } from '@/lib/core/utils';
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -31,12 +32,11 @@ export function buildSessionResult({
   results,
   startTime,
 }: BuildSessionResultInput): BuildSessionResultOutput {
-  const duration = Math.floor((Date.now() - startTime) / 1000);
-  const normalizedMode = 'speaking';
-  const practiceMode = 'speaking';
-  const recordedSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const now = Date.now();
+  const duration = Math.floor((now - startTime) / 1000);
+  const mode = 'speaking';
   const analyzerSeconds = Math.round(normalizeNonNegativeNumber(results.totalTime) / 1000);
-  const totalSessionTimeSec = Math.max(analyzerSeconds, recordedSeconds);
+  const totalSessionTimeSec = Math.max(analyzerSeconds, duration);
   const speakingTimeSec = normalizeNonNegativeNumber(results.totalSpeakingTime);
   const silenceTimeSec = normalizeNonNegativeNumber(results.totalSilenceTime);
   const hesitationCount = Math.round(normalizeNonNegativeNumber(results.hesitationCount));
@@ -49,7 +49,7 @@ export function buildSessionResult({
   const hasSpeechEvidence =
     transcriptHasSpeech || hesitationCount > 0 || speakingTimeSec > 0;
   const words = results.transcript && results.transcript.trim().length > 0
-    ? results.transcript.trim().split(/\s+/).filter(Boolean).length
+    ? getWordCount(results.transcript)
     : null;
 
   const scoreInput = {
@@ -67,7 +67,7 @@ export function buildSessionResult({
         transcript: results.transcript,
       },
       scoreInput,
-      recordedSeconds,
+      duration,
       analyzerSeconds,
     });
   }
@@ -91,7 +91,7 @@ export function buildSessionResult({
   return {
     completed,
     duration,
-    normalizedMode,
+    normalizedMode: mode,
     words,
     sessionResult: {
       sessionId: null,
@@ -103,7 +103,7 @@ export function buildSessionResult({
       hesitationCount,
       pauseCount: hesitationCount,
       hesitationLog: results.hesitationLog,
-      mode: practiceMode,
+      mode,
       audioBlob: results.audioBlob,
       audioMimeType: results.audioMimeType,
       transcript: results.transcript,

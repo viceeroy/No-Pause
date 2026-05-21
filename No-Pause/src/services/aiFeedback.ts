@@ -1,4 +1,5 @@
 import { getAIFeedback } from "./groq.js";
+import { getWordCount } from "../lib/core/utils.js";
 
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
@@ -7,10 +8,6 @@ export type AnalyzePracticeSpeechInput = {
   speakingTime?: number;
   wordCount?: number;
 };
-
-function getWordCount(transcript: string): number {
-  return transcript.trim().split(/\s+/).filter(Boolean).length;
-}
 
 export function isUsableTranscript(transcript: string): boolean {
   return getWordCount(transcript) >= 3;

@@ -1,3 +1,5 @@
+import { arrayBufferToBase64 } from '@/shared/lib/utils';
+
 const IS_ANDROID = /android/i.test(navigator.userAgent);
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: unknown[]) => { if (IS_DEV) console.log(...args); };
@@ -33,17 +35,6 @@ export type TranscribeAudio = (payload: {
   mimeType: string;
   durationSec?: number;
 }) => Promise<string | { transcript?: unknown; text?: unknown }>;
-
-const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-  return btoa(binary);
-};
 
 export class TranscriptionController {
   private recognition: SpeechRecognitionLike | null = null;

@@ -5,7 +5,7 @@ import {
 } from "../core/constants.js";
 import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
-import { escapeTelegramHtml } from "../core/utils.js";
+import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
 import {
   generateAiFeedback,
   isUsableTranscript,
@@ -171,10 +171,6 @@ function isMissingTelegramMessageIdColumnError(error: unknown): boolean {
 
 function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === "23505";
-}
-
-function countWords(transcript: string): number {
-  return transcript.split(/\s+/).filter(Boolean).length;
 }
 
 function getSpeakingTimeSec(words: GroqTranscribedWord[], fallbackDurationSec: number): number {
@@ -347,7 +343,7 @@ async function insertTelegramSession(input: {
         ? input.analysis.pauseCount / (input.analysis.speakingTimeSec / 60)
         : null,
     hesitationLog: input.analysis.pauseLog,
-    words: countWords(input.transcript),
+    words: getWordCount(input.transcript),
     telegramChatId: input.telegramChatId,
     telegramMessageId: input.telegramMessageId,
   });
@@ -357,7 +353,11 @@ async function insertTelegramSession(input: {
     localDate: formatLocalDate(new Date()),
   });
 
-  return String(sessionId);
+  if (!sessionId) {
+    console.error("insertTelegramSession: session insert returned no ID", { userId: input.userId });
+    throw new Error("Session insert returned no ID");
+  }
+  return sessionId;
 }
 
 async function getProcessedTelegramSessionId(input: {
@@ -533,14 +533,15 @@ export async function handleVoiceMessage(
   }
 
   try {
-    await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
-
-    const audioBuffer = await downloadTelegramVoice(voice.file_id);
     await consumeApiQuota({
       userId,
       kind: "transcription",
       limit: DAILY_TRANSCRIPTION_LIMIT,
     });
+
+    await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
+
+    const audioBuffer = await downloadTelegramVoice(voice.file_id);
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;
 
