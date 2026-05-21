@@ -1,5 +1,11 @@
 # Changelog
 
+## May 22, 2026
+
+Polished the mobile dashboard and stats experience. The homepage header now keeps the No Pause logo, install button, and avatar from crowding each other on small screens, while the prompt cards keep a clear horizontal-scroll peek on phones and tablets.
+
+Improved the stats page hierarchy and small-screen readability. Weekly and all-time stat cards are more balanced, recent sessions now show score quality with a small color indicator, unscored sessions say `No score`, mobile stat labels are shorter, weekly activity circles fit better, and the profile and Telegram cards no longer collapse or overlap on narrow screens.
+
 ## May 21, 2026
 
 Consolidated project documentation into a single `memory/MEMORY.md` reference and removed the old `No-Pause/SYSTEM.md` architecture file. The README now points to the new location. The memory doc covers the full stack, source layout, data flow, scoring formula, state machine, database tables, environment variables, and a record of recent refactoring work.
