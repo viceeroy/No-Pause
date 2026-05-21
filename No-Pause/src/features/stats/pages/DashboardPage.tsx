@@ -129,11 +129,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-dvh bg-surface-base px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 md:px-12 md:pb-16 md:pt-8 lg:px-20">
       <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-6xl flex-col">
-        <div className="mb-4 flex items-center justify-between gap-4 max-[480px]:flex-col max-[480px]:items-start max-[480px]:gap-3 md:mb-6">
+        <div className="mb-4 flex items-center justify-between gap-4 md:mb-6">
           <div className="min-w-0 text-left">
-            <h1 className="whitespace-nowrap text-4xl font-serif font-medium leading-none tracking-tight text-foreground max-[480px]:text-3xl md:text-6xl">No Pause</h1>
+            <h1 className="text-4xl font-serif font-medium tracking-tight text-foreground md:text-6xl">No Pause</h1>
           </div>
-          <div className="flex shrink-0 items-center justify-center gap-2 max-[480px]:w-full max-[480px]:justify-end max-[480px]:gap-3">
+          <div className="flex shrink-0 items-center justify-center gap-2">
             {showInstallButton && (
               <button
                 type="button"
