@@ -63,8 +63,8 @@ export type FlowAnalysis = {
 };
 
 export const replyKeyboard = Markup.keyboard([
-  [CHALLENGE_LABEL, MY_STATS_LABEL, SPEAK_LABEL],
-  [ABOUT_LABEL],
+  [SPEAK_LABEL, MY_STATS_LABEL],
+  [CHALLENGE_LABEL, ABOUT_LABEL],
 ]).resize();
 
 export const speakPromptKeyboard = Markup.inlineKeyboard([
@@ -76,7 +76,7 @@ export const changePromptKeyboard = Markup.inlineKeyboard([
 ]);
 
 export const groupTryAgainKeyboard = Markup.inlineKeyboard([
-  Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION),
+  Markup.button.callback("🔁 Try Again", TRY_AGAIN_ACTION),
 ]);
 
 export function getGroupChallengeDeepLink(challengeId: string): string {
@@ -228,6 +228,7 @@ function truncateTextForLimit(text: string, maxLength: number): string {
 function formatResultFields(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
+  aiScoreFeedback?: string | null;
   html?: boolean;
   maxLength?: number;
 }): string {
@@ -237,32 +238,39 @@ function formatResultFields(input: {
   const label = (text: string) => (input.html ? `<b>${text}</b>` : text);
   const fields = [
     `📊 ${label("Flow Score:")} ${input.analysis.flowScore}`,
-    `🥇 ${label("Bonus:")} +${bonus}`,
+    ...(bonus > 0 ? [`🥇 ${label("Bonus:")} +${bonus}`] : []),
     "",
     `⏱ ${label("Speaking time:")} ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}`,
     `🕒 ${label("Session length:")} ${formatTelegramResultDuration(input.analysis.totalSessionTimeSec)}`,
     `🔇 ${label("Pauses:")} ${input.analysis.pauseCount}`,
   ].join("\n");
 
+  const aiFeedbackSection = input.aiScoreFeedback
+    ? `\n\n💬 ${label("Speech Quality:")}\n${input.html ? escapeTelegramHtml(input.aiScoreFeedback) : input.aiScoreFeedback}`
+    : "";
+
+  const fieldsWithFeedback = `${fields}${aiFeedbackSection}`;
+
   if (!transcript) {
-    return fields;
+    return fieldsWithFeedback;
   }
 
   const transcriptPrefix = `\n\n📝 ${label("Transcript:")}\n\n`;
   const availableTranscriptLength =
-    (input.maxLength ?? TELEGRAM_SAFE_MESSAGE_LENGTH) - fields.length - transcriptPrefix.length;
+    (input.maxLength ?? TELEGRAM_SAFE_MESSAGE_LENGTH) - fieldsWithFeedback.length - transcriptPrefix.length;
 
   if (availableTranscriptLength <= 0) {
-    return fields;
+    return fieldsWithFeedback;
   }
 
   const renderedTranscript = input.html ? escapeTelegramHtml(transcript) : transcript;
-  return `${fields}${transcriptPrefix}${truncateTextForLimit(renderedTranscript, availableTranscriptLength)}`;
+  return `${fieldsWithFeedback}${transcriptPrefix}${truncateTextForLimit(renderedTranscript, availableTranscriptLength)}`;
 }
 
 export function getSpeakingResultMessage(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
+  aiScoreFeedback?: string | null;
   speaker?: string;
 }): string {
   const speakerText = input.speaker
@@ -273,6 +281,7 @@ export function getSpeakingResultMessage(input: {
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
+    aiScoreFeedback: input.aiScoreFeedback,
     html: true,
     maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
@@ -312,7 +321,8 @@ export function getGroupChallengeResultActions(input: {
     [
       Markup.button.callback("📤 Send to Group", `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`),
     ],
-    [Markup.button.callback("🔄 Try Again", `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}${input.challengeId}`)],
+    [Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${input.sessionId}`)],
+    [Markup.button.callback("🔁 Try Again", `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}${input.challengeId}`)],
   ]);
 }
 
@@ -323,10 +333,10 @@ export function getChallengeShareActions(challengeId: string, createdByViewer = 
     [
       createdByViewer
         ? Markup.button.url(
-            "⚔️ Accept Challenge",
+            "📤 Share Challenge",
             challengeDeepLink,
           )
-        : Markup.button.url("Accept Challenge 🎤", challengeDeepLink),
+        : Markup.button.url("🎤 Accept Challenge", challengeDeepLink),
     ],
   ]);
 }
@@ -352,6 +362,7 @@ export function getChallengeResultMessage(input: {
   topic: string;
   analysis: FlowAnalysis;
   transcript?: string | null;
+  aiScoreFeedback?: string | null;
   title?: string;
   attemptCount?: number;
 }): string {
@@ -360,6 +371,7 @@ export function getChallengeResultMessage(input: {
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
+    aiScoreFeedback: input.aiScoreFeedback,
     html: true,
     maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
@@ -375,7 +387,7 @@ export function getChallengeCreatorNotification(input: {
   const friend = escapeTelegramHtml(input.friendUsername);
   const topic = escapeTelegramHtml(input.topic);
   if (input.creatorScore === null || input.creatorScore === undefined) {
-    const prefix = `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n`;
+    const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>Friend:</b>\n@${friend}\n\n💬 <b>Topic:</b>\n${topic}\n\n`;
     const suffix = "\n\n🎤 Send a voice note when you are ready.";
     return `${prefix}${formatResultFields({
       analysis: input.analysis,
@@ -385,7 +397,7 @@ export function getChallengeCreatorNotification(input: {
     })}${suffix}`;
   }
 
-  const prefix = `⚔️ <b>Challenge Result</b>\n\n<b>Friend:</b>\n@${friend}\n\n<b>Topic:</b>\n${topic}\n\n`;
+  const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>Friend:</b>\n@${friend}\n\n💬 <b>Topic:</b>\n${topic}\n\n`;
   const suffix = `\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
@@ -395,8 +407,15 @@ export function getChallengeCreatorNotification(input: {
   })}${suffix}`;
 }
 
-export function getConnectUrl(telegramId: number): string {
-  return `${SITE_URL}/connect?tg=${encodeURIComponent(String(telegramId))}`;
+export function getConnectUrl(telegramId: number, options?: { challengeId?: string; challengeType?: "friend" | "group" }): string {
+  const params = new URLSearchParams({ tg: String(telegramId) });
+  if (options?.challengeId) {
+    params.set("challenge_id", options.challengeId);
+  }
+  if (options?.challengeType) {
+    params.set("challenge_type", options.challengeType);
+  }
+  return `${SITE_URL}/connect?${params.toString()}`;
 }
 
 export function getGroupChallengeConnectMessage(input: { username: string }): string {
@@ -466,14 +485,14 @@ ${rows.join("\n\n")}`;
 export function getSessionActions(sessionId: string) {
   return Markup.inlineKeyboard([
     [Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${sessionId}`)],
-    [Markup.button.callback("🔄 Try Again", TRY_AGAIN_ACTION)],
+    [Markup.button.callback("🔁 Try Again", TRY_AGAIN_ACTION)],
     [Markup.button.url("📊 View on NoPause", SITE_URL)],
   ]);
 }
 
-export function getConnectAccountKeyboard(telegramId: number) {
+export function getConnectAccountKeyboard(telegramId: number, options?: { challengeId?: string; challengeType?: "friend" | "group" }) {
   return Markup.inlineKeyboard([
-    [Markup.button.url("🔑 Connect Account", getConnectUrl(telegramId))],
+    [Markup.button.url("🔑 Connect Account", getConnectUrl(telegramId, options))],
   ]);
 }
 
@@ -523,12 +542,12 @@ export function getTelegramStatsMessage(input: {
 📅 <b>Weekly</b>
 🏆 <b>Best Score:</b> ${input.weeklyBestFlowScore}
 📈 <b>Average Score:</b> ${input.weeklyAvgFlowScore}
-✅ <b>Sessions:</b> ${input.weeklySessionCount}
+🎯 <b>Sessions:</b> ${input.weeklySessionCount}
 🔥 <b>Streak:</b> ${input.currentStreak} current / ${input.bestStreak} best
 🕒 <b>Last Session:</b> ${formatStatsDate(input.lastSessionDate)}
 
 🌐 <b>All-Time</b>
-✅ <b>Total Sessions:</b> ${formatStatsCount(input.totalSessions)}
+🎯 <b>Total Sessions:</b> ${formatStatsCount(input.totalSessions)}
 ⏱ <b>Total Practice Time:</b> ${formatStatsPracticeTime(input.totalPracticeTime)}`;
 }
 
@@ -559,7 +578,7 @@ export const MESSAGES = {
     "⏰ That group challenge has expired.\n\nI cleared the old challenge state. Ask the group to start a new challenge, then send a new voice note.",
   voiceReceived:
     "🎧 Voice note received.\n\nAnalyzing it now.",
-  unusableTranscript: "Couldn't hear anything clearly. Please speak louder and try again 🎤",
+  unusableTranscript: "⚠️ Couldn't hear anything clearly.\n\nPlease speak louder and try again.",
   analysisError:
     "⚠️ I hit an issue analyzing that voice note.\n\nPlease try again in a moment.",
   feedbackIdentifyError:
@@ -568,6 +587,12 @@ export const MESSAGES = {
     "⚠️ I could not find the transcript for that session.\n\nSend a new voice note and try again.",
   feedbackError:
     "⚠️ I could not generate feedback right now.\n\nPlease try again in a moment.",
+  forwardedVoice:
+    "🎤 Please record a fresh voice note directly in this chat, not forwarded from somewhere else.",
+  voiceTooLong:
+    "🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.",
+  challengeForwardHint:
+    "👆 Forward the message above to your friends so they can accept your challenge!",
   statsPrivate:
     "📊 Open @NoPauseAI_bot directly to view your stats.",
   speakPrivate:

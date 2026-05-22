@@ -47,6 +47,7 @@ import {
   replyWithConnectPrompt,
   sendFriendChallengeResult,
   postGroupChallengeResultToGroup,
+  TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE,
 } from "./voiceHandler.js";
 
 const VOICE_ONLY_MESSAGE = "🎤 NoPause only accepts voice notes. Please send a voice note to get your Flow Score.";
@@ -296,7 +297,7 @@ export function createTelegramBot() {
     await ctx.answerCbQuery();
     if (isGroupChat(ctx)) {
       await ctx.reply(
-        `🎤 <b>Ready when you are</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Action:</b>\nJust send a voice note and let's see what you've got 🎤`,
+        `🎤 <b>Ready when you are</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\nJust send a voice note and let's see what you've got.`,
         { parse_mode: "HTML" },
       );
       return;
@@ -358,7 +359,7 @@ export function createTelegramBot() {
         sessionId: ctx.match?.[1],
         fromId: ctx.from?.id,
       });
-      await ctx.reply("AI feedback is taking too long. Try again in a moment.");
+      await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
     }
   });
 
@@ -373,8 +374,9 @@ export function createTelegramBot() {
     await handleVoiceMessage(ctx, telegramId);
   });
 
-  bot.catch((error) => {
+  bot.catch((error, ctx) => {
     console.error("Telegram bot error", error);
+    ctx.reply(MESSAGES.analysisError, { parse_mode: "HTML" }).catch(() => undefined);
   });
 
   return bot;

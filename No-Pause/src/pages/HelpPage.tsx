@@ -219,12 +219,17 @@ const faqItems: FaqItem[] = [
   {
     question: 'Is No Pause useful for non-native English speakers?',
     answer:
-      'Yes, especially if you want more practice forming thoughts out loud in English. It can help you notice where you pause, restart, or lose momentum. You do not need perfect English to benefit from building a steadier speaking habit.',
+      'Over 1.5 billion people speak English as a second language. Research shows speaking anxiety directly reduces fluency, and immediate AI feedback improves spoken fluency more effectively than traditional practice. NoPause is built for exactly this.',
   },
   {
     question: 'How long should my sessions be?',
     answer:
-      'Short sessions are enough when you do them consistently. A few focused minutes gives you a transcript, a score, and one thing to improve next time. Longer sessions are useful later, but daily repetition matters more than one big recording.',
+      '10 to 20 minute daily sessions outperform longer infrequent ones — research on non-native speaker habits confirms this pattern. A few focused minutes gives you a transcript, a score, and one thing to improve next time. Daily repetition matters more than one big recording.',
+  },
+  {
+    question: 'Does AI feedback actually work?',
+    answer:
+      'Research including randomized controlled studies shows AI coaching produces outcomes comparable to human coaches. Immediate corrective feedback is the single strongest factor in fluency improvement — which is what every NoPause session delivers.',
   },
   {
     question: 'Can I use No Pause offline?',
@@ -738,6 +743,7 @@ function HelpMobile() {
           <p>No Pause is a simple practice loop for speaking out loud.</p>
           <p>You record a short session, get a Flow Score, and see where your speech felt smooth or interrupted.</p>
           <p>It is not a grammar grade and it is not a judgment; it is a friendly way to build steadier speaking over time.</p>
+          <p>Hesitations happen when planning load exceeds real-time execution, not because you are a bad speaker. NoPause trains your brain to close that gap.</p>
           <div className="grid gap-2">
             {introCards.map(({ label }) => (
               <div key={label} className="rounded-xl bg-surface-elevated px-3 py-2 text-sm font-sans font-black text-foreground">
@@ -775,6 +781,9 @@ function HelpMobile() {
         <div className="space-y-3">
           <p className="text-sm font-sans leading-relaxed text-muted-foreground">
             Flow Score is a simple signal for how smoothly your session moved. Higher usually means you spent more of the session speaking and less of it stuck in long stops.
+          </p>
+          <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+            Deliberate practice with immediate feedback is the most research-supported method for reducing speech disfluency.
           </p>
           <MobileScoreRanges />
           <p className="rounded-xl bg-primary/10 px-3 py-2 text-sm font-sans font-black text-primary">
@@ -818,6 +827,16 @@ function HelpMobile() {
           </p>
           <MobilePauseExplanationCards />
           <p className="text-sm font-sans font-black text-primary">Use shorter pauses to keep your thoughts moving.</p>
+        </div>
+      ),
+    },
+    {
+      title: 'Why Flow Score, Not Filler Count',
+      content: (
+        <div className="space-y-2 text-sm font-sans leading-relaxed text-muted-foreground">
+          <p>Most tools count your ums. NoPause measures flow — continuous speech momentum.</p>
+          <p>Obsessing over individual filler words increases self-monitoring, which research shows makes hesitations worse.</p>
+          <p>Flow state, where you focus on the message not the words, is when speech becomes most natural. Your Flow Score is designed to get you there.</p>
         </div>
       ),
     },
@@ -964,6 +983,7 @@ function HelpDesktop() {
               <p>No Pause is a simple practice loop for speaking out loud.</p>
               <p>You record a short session, get a Flow Score, and see where your speech felt smooth or interrupted.</p>
               <p>It is not a grammar grade and it is not a judgment; it is a friendly way to build steadier speaking over time.</p>
+              <p>Hesitations happen when planning load exceeds real-time execution, not because you are a bad speaker. NoPause trains your brain to close that gap.</p>
             </div>
             <IconLabelCards cards={introCards} />
           </Section>
@@ -976,6 +996,7 @@ function HelpDesktop() {
             <div className="mb-5 max-w-3xl space-y-3 text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
               <p>Flow Score is a simple signal for how smoothly your session moved.</p>
               <p>Higher usually means you spent more of the session speaking and less of it stuck in long stops.</p>
+              <p>Deliberate practice with immediate feedback is the most research-supported method for reducing speech disfluency.</p>
             </div>
             <ScoreTable />
             <div className="mt-4 rounded-[18px] border border-primary/25 bg-primary/10 p-4">
@@ -1016,6 +1037,14 @@ function HelpDesktop() {
               <p className="text-base font-sans font-black text-primary">
                 Use shorter pauses to keep your thoughts moving.
               </p>
+            </div>
+          </Section>
+
+          <Section title="Why Flow Score, Not Filler Count">
+            <div className="max-w-3xl space-y-3 text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
+              <p>Most tools count your ums. NoPause measures flow — continuous speech momentum.</p>
+              <p>Obsessing over individual filler words increases self-monitoring, which research shows makes hesitations worse.</p>
+              <p>Flow state, where you focus on the message not the words, is when speech becomes most natural. Your Flow Score is designed to get you there.</p>
             </div>
           </Section>
 

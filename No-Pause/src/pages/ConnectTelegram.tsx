@@ -15,10 +15,22 @@ const ConnectTelegram = () => {
   const sessionAccessToken = session?.access_token;
   const userId = user?.id;
 
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
   const telegramId = useMemo(() => {
-    const value = new URLSearchParams(location.search).get("tg");
+    const value = searchParams.get("tg");
     return value && /^\d+$/.test(value) ? value : null;
-  }, [location.search]);
+  }, [searchParams]);
+
+  const challengeId = useMemo(() => {
+    const value = searchParams.get("challenge_id");
+    return value && /^[a-zA-Z0-9]+$/.test(value) ? value : null;
+  }, [searchParams]);
+
+  const challengeType = useMemo(() => {
+    const value = searchParams.get("challenge_type");
+    return value === "friend" || value === "group" ? value : null;
+  }, [searchParams]);
 
   useEffect(() => {
     if (!telegramId) {
@@ -32,8 +44,11 @@ const ConnectTelegram = () => {
 
     if (!sessionAccessToken || !userId) {
       setState("signing-in");
+      const connectParams = new URLSearchParams({ tg: telegramId });
+      if (challengeId) connectParams.set("challenge_id", challengeId);
+      if (challengeType) connectParams.set("challenge_type", challengeType);
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-        `/connect?tg=${telegramId}`,
+        `/connect?${connectParams.toString()}`,
       )}`;
 
       void supabase.auth.signInWithOAuth({
@@ -66,6 +81,8 @@ const ConnectTelegram = () => {
       body: JSON.stringify({
         telegram_id: Number(telegramId),
         user_id: userId,
+        ...(challengeId ? { challenge_id: challengeId } : {}),
+        ...(challengeType ? { challenge_type: challengeType } : {}),
       }),
     })
       .then(async (response) => {

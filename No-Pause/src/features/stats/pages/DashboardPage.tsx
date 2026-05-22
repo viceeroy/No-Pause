@@ -98,18 +98,33 @@ export default function DashboardPage() {
       .slice(0, 2)
       .map((part) => part[0]?.toUpperCase() ?? '')
       .join('') || 'NP';
+  const flowScore = statsLoading ? 0 : stats.avgFlowScore;
+  const flowContextLabel = !statsLoading && stats.scoredSessions > 0
+    ? flowScore < 40 ? 'Keep going'
+    : flowScore < 60 ? 'Building up'
+    : flowScore < 75 ? 'Good'
+    : flowScore < 90 ? 'Great'
+    : 'Excellent'
+    : undefined;
+
   const metricCards: Array<{
     label: string;
     value: string | number;
     icon: LucideIcon;
     valueClassName: string;
     className?: string;
+    progressPct?: number;
+    subLabel?: string;
+    contextLabel?: string;
   }> = [
     {
       label: 'Flow score',
       value: statsLoading ? '...' : stats.avgFlowScore,
       icon: TrendingUp,
       valueClassName: 'text-primary',
+      progressPct: statsLoading ? undefined : Math.min(100, Math.max(0, stats.avgFlowScore)),
+      subLabel: 'out of 500',
+      contextLabel: flowContextLabel,
     },
     {
       label: 'Practice time',
@@ -122,7 +137,7 @@ export default function DashboardPage() {
       value: statsLoading ? '...' : `${stats.currentStreak}d`,
       icon: Flame,
       valueClassName: 'text-foreground',
-      className: 'hidden 2xl:flex',
+      className: undefined,
     },
   ];
 
@@ -159,8 +174,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 2xl:grid-cols-3">
-          {metricCards.map(({ label, value, icon: Icon, valueClassName, className }) => (
+        <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-3">
+          {metricCards.map(({ label, value, icon: Icon, valueClassName, className, progressPct, subLabel, contextLabel }) => (
             <article
               key={label}
               className={`min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 shadow-card md:min-h-[124px] md:p-5 ${className ?? 'flex'}`}
@@ -169,9 +184,27 @@ export default function DashboardPage() {
                 <p className="text-xs font-sans font-bold leading-snug text-muted-foreground">{label}</p>
                 <Icon size={18} className="shrink-0 text-primary" />
               </div>
-              <p className={`text-3xl font-serif font-medium leading-none md:text-4xl ${valueClassName}`}>
-                {value}
-              </p>
+              <div className="flex flex-col gap-1.5">
+                <p className={`text-3xl font-serif font-medium leading-none md:text-4xl ${valueClassName}`}>
+                  {value}
+                </p>
+                {progressPct !== undefined && (
+                  <>
+                    <div className="h-1 w-full overflow-hidden rounded-full bg-primary/15">
+                      <div
+                        className="h-full rounded-full bg-primary transition-[width] duration-700"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-sans leading-none text-muted-foreground/60">{subLabel}</span>
+                      {contextLabel && (
+                        <span className="text-[10px] font-sans font-bold leading-none text-primary">{contextLabel}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </article>
           ))}
         </div>
@@ -183,13 +216,17 @@ export default function DashboardPage() {
             className="group flex min-h-[332px] flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card p-7 text-center shadow-card transition-all btn-press hover:bg-surface-elevated md:min-h-[420px] md:p-12"
           >
             <div className="relative mb-8 flex h-44 w-44 items-center justify-center md:h-56 md:w-56">
-              <div className="dashboard-mic-glow absolute inset-0 rounded-full border border-primary/30" />
+              <div className="dashboard-mic-ping absolute inset-0 rounded-full border-2 border-primary/55" />
+              <div className="dashboard-mic-glow absolute inset-0 rounded-full border border-primary/50" />
               <Mic size={64} className="relative z-10 text-primary drop-shadow-[0_0_14px_hsl(var(--primary)/0.22)] md:size-20" />
             </div>
             <h3 className="mb-3 text-3xl font-serif font-medium text-foreground md:text-4xl">Start with your voice</h3>
             <p className="max-w-md text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-              Record a short session, then review Flow Score and pauses.
+              Speak freely — we'll track your flow and pinpoint every pause.
             </p>
+            <div className="mt-7 hidden items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-sans font-bold text-primary-foreground shadow-soft md:inline-flex">
+              <Mic size={16} aria-hidden="true" /> Start Speaking
+            </div>
           </button>
         </div>
 

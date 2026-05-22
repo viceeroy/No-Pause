@@ -1,5 +1,6 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
+import { blendWithAiScore } from '@/lib/core/scoring';
 import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
 import { getWordCount } from '@/lib/core/utils';
@@ -92,7 +93,7 @@ export function useSession({
     });
 
     try {
-      const feedback = await analyzeSpeech({
+      const result = await analyzeSpeech({
         transcript,
         flowScore: lastResults.flowScore,
         hesitationCount: lastResults.hesitationCount,
@@ -102,14 +103,22 @@ export function useSession({
       await updateSession({
         sessionId: lastResults.sessionId,
         userId,
-        analysisFeedback: feedback,
+        analysisFeedback: result.feedback,
       });
       setLastResults((prev) => {
         if (!prev) return prev;
+        const baseScore = prev.baseFlowScore ?? prev.flowScore;
+        const blendedScore = result.aiScore != null
+          ? blendWithAiScore(baseScore, result.aiScore)
+          : prev.flowScore;
         return {
           ...prev,
-          analysisFeedback: feedback,
+          analysisFeedback: result.feedback,
           analysisFeedbackLoading: false,
+          baseFlowScore: baseScore,
+          aiScore: result.aiScore,
+          aiScoreFeedback: result.aiScoreFeedback,
+          flowScore: blendedScore,
         };
       });
     } catch (error) {

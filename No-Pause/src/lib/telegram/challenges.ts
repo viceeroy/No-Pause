@@ -484,7 +484,7 @@ export async function replyWithNewFriendChallenge(ctx: Context, telegramId: numb
         parse_mode: "HTML",
       },
     );
-    await ctx.reply("👆 Forward the message above to your friends so they can accept your challenge!");
+    await ctx.reply(MESSAGES.challengeForwardHint);
   } catch (error) {
     console.error("Telegram challenge creation failed", error);
     if (isMissingChallengesTableError(error)) {
@@ -508,6 +508,14 @@ export async function handleChallengeDeepLink(
       return true;
     }
 
+    if (Number(challenge.creator_telegram_id) === telegramId) {
+      await ctx.reply(
+        "⚔️ <b>Waiting for your friend</b>\n\nForward the challenge message above to a friend so they can accept it.",
+        { ...replyKeyboard, parse_mode: "HTML" },
+      );
+      return true;
+    }
+
     const pendingChallenge = await getPendingChallenge(telegramId);
     if (
       pendingChallenge?.challenge_type === "friend" &&
@@ -524,7 +532,10 @@ export async function handleChallengeDeepLink(
 
     const userId = await resolveTelegramUser(telegramId);
     if (!userId) {
-      await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
+      await ctx.reply(MESSAGES.connectPrompt, {
+        ...getConnectAccountKeyboard(telegramId, { challengeId: challenge.id, challengeType: "friend" }),
+        parse_mode: "HTML",
+      });
       return true;
     }
 
@@ -578,6 +589,7 @@ export async function handleGroupChallengeDeepLink(
       await ctx.telegram.sendMessage(groupId, getGroupChallengeEndedMessage({ topic: challenge.topic }), {
         parse_mode: "HTML",
       });
+      await ctx.reply(MESSAGES.groupChallengeExpired, { parse_mode: "HTML" });
       return true;
     }
 
@@ -586,8 +598,12 @@ export async function handleGroupChallengeDeepLink(
       await ctx.telegram.sendMessage(
         groupId,
         getGroupChallengeConnectMessage({ username: participantUsername }),
-        { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" },
+        { parse_mode: "HTML" },
       );
+      await ctx.reply(MESSAGES.connectPrompt, {
+        ...getConnectAccountKeyboard(telegramId, { challengeId: challenge.id, challengeType: "group" }),
+        parse_mode: "HTML",
+      });
       return true;
     }
 
@@ -695,10 +711,12 @@ export async function retryGroupChallenge(
 
     const userId = await resolveTelegramUser(telegramId);
     if (!userId) {
-      await ctx.telegram.sendMessage(
-        groupId,
+      await ctx.reply(
         getGroupChallengeConnectMessage({ username: participantUsername }),
-        { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" },
+        {
+          ...getConnectAccountKeyboard(telegramId, { challengeId: challenge.id, challengeType: "group" }),
+          parse_mode: "HTML",
+        },
       );
       return;
     }

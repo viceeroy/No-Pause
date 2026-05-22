@@ -31,6 +31,9 @@ export interface SessionResult {
   wordCount: number | null;
   isCompleted: boolean;
   statusNote?: string;
+  baseFlowScore?: number;
+  aiScore?: number | null;
+  aiScoreFeedback?: string | null;
 }
 
 export interface PracticeStateStore {

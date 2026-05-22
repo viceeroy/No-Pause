@@ -80,7 +80,7 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   if (pathname === "/help") {
     const title = "Help | No Pause";
     const description =
-      "Learn how No Pause scoring, pauses, prompts, streaks, challenges, and Telegram practice work.";
+      "Get help with NoPause — clear answers about practice, scoring, prompts, challenges, and Telegram.";
     return {
       title,
       description,

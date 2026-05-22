@@ -5,6 +5,12 @@ import { escapeTelegramHtml } from "../../src/lib/core/utils.js";
 
 const SITE_URL = "https://www.nopause.org";
 const SITE_DISPLAY_URL = "www.nopause.org";
+const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
+
+function getChallengeDeepLinkFromConnect(challengeId: string, challengeType: string): string {
+  const prefix = challengeType === "group" ? "group_" : "challenge_";
+  return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${prefix}${encodeURIComponent(challengeId)}`;
+}
 
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
@@ -40,7 +46,12 @@ function getDebugStackSnippet() {
   return new Error().stack?.split("\n").slice(1, 6).join("\n");
 }
 
-async function sendTelegramWelcomeMessage(input: { telegramId: number; firstName: string }) {
+async function sendTelegramWelcomeMessage(input: {
+  telegramId: number;
+  firstName: string;
+  challengeId?: string;
+  challengeType?: string;
+}) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
     throw new Error("TELEGRAM_BOT_TOKEN is not set");
@@ -51,6 +62,10 @@ async function sendTelegramWelcomeMessage(input: { telegramId: number; firstName
     telegramId: input.telegramId,
     stack: getDebugStackSnippet(),
   });
+
+  const challengeLine = input.challengeId && input.challengeType
+    ? `\n\n⚔️ Ready to accept your challenge? <a href="${getChallengeDeepLinkFromConnect(input.challengeId, input.challengeType)}">Tap here to join</a>`
+    : "";
 
   const messageResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
@@ -74,7 +89,7 @@ Here's what you can do with <b>@NoPauseAI_bot</b>:
 📈 <b>My Stats</b> — check your streak, Flow Score, and practice time anytime.
 
 Your full history and detailed results are always at:
-<a href="${SITE_URL}">${SITE_DISPLAY_URL}</a>`,
+<a href="${SITE_URL}">${SITE_DISPLAY_URL}</a>${challengeLine}`,
     }),
   });
 
@@ -134,6 +149,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const body = await readJsonBody(req);
     const telegramId = Number(body.telegram_id);
     const userId = String(body.user_id ?? "");
+    const challengeId = typeof body.challenge_id === "string" && /^[a-zA-Z0-9]+$/.test(body.challenge_id)
+      ? body.challenge_id
+      : undefined;
+    const challengeType = body.challenge_type === "friend" || body.challenge_type === "group"
+      ? body.challenge_type
+      : undefined;
     const authHeader = req.headers.authorization;
     const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
 
@@ -159,6 +180,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       await sendTelegramWelcomeMessage({
         telegramId,
         firstName,
+        challengeId,
+        challengeType,
       });
     } else {
       await sendTelegramAlreadyConnectedMessage({

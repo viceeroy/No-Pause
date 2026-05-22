@@ -141,7 +141,13 @@ export async function transcribeAudio(input: Base64TranscriptionInput): Promise<
   };
 }
 
-export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
+export type FeedbackResult = {
+  feedback: string;
+  aiScore: number | null;
+  aiScoreFeedback: string | null;
+};
+
+export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<FeedbackResult> {
   const response = await fetch("/api/feedback", {
     method: "POST",
     headers: {
@@ -150,8 +156,12 @@ export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<
     },
     body: JSON.stringify(input),
   });
-  const body = await readEndpointJson<{ feedback?: unknown }>(response);
-  return String(body.feedback ?? "");
+  const body = await readEndpointJson<{ feedback?: unknown; aiScore?: unknown; aiScoreFeedback?: unknown }>(response);
+  return {
+    feedback: String(body.feedback ?? ""),
+    aiScore: typeof body.aiScore === "number" ? body.aiScore : null,
+    aiScoreFeedback: typeof body.aiScoreFeedback === "string" ? body.aiScoreFeedback : null,
+  };
 }
 
 type SaveSessionInput = {

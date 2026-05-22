@@ -3,12 +3,13 @@ import {
   SCORING_VERSION,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
-import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
+import { blendWithAiScore, calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
 import {
   generateAiFeedback,
   isUsableTranscript,
+  scoreSpeechQuality,
 } from "../../services/aiFeedback.js";
 import {
   DAILY_FEEDBACK_LIMIT,
@@ -52,7 +53,7 @@ const sessionSupabase = supabaseServer as unknown as SupabaseLike;
 const MAX_TELEGRAM_VOICE_DURATION_SECONDS = 300;
 const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS = 10_000;
 const TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS = 30_000;
-const TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE =
+export const TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE =
   "AI feedback is temporarily unavailable. Please try again in a moment.";
 const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR = "Telegram AI feedback Supabase call timed out";
 const TELEGRAM_PAUSE_THRESHOLD_MS = Math.round(DEFAULT_PAUSE_THRESHOLD * 1000);
@@ -484,12 +485,12 @@ export async function handleVoiceMessage(
   const telegramChatId = Number.isFinite(ctx.chat?.id) ? ctx.chat?.id ?? null : null;
   const telegramMessageId = Number.isFinite(ctx.message.message_id) ? ctx.message.message_id : null;
   if (ctx.message.forward_origin || ctx.message.forward_date) {
-    await ctx.reply("🎤 Please record a fresh voice note directly in this chat, not forwarded from somewhere else.");
+    await ctx.reply(MESSAGES.forwardedVoice);
     return;
   }
 
   if (voice.duration && voice.duration > MAX_TELEGRAM_VOICE_DURATION_SECONDS) {
-    await ctx.reply("🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.");
+    await ctx.reply(MESSAGES.voiceTooLong);
     return;
   }
 
@@ -551,12 +552,22 @@ export async function handleVoiceMessage(
     }
 
     const totalSessionTimeSec = estimateDurationSec(voice.duration);
-    const analysis = await analyzeTranscript(
-      transcript,
-      transcription.words,
-      totalSessionTimeSec,
-      TELEGRAM_PAUSE_THRESHOLD_MS,
-    );
+    const [analysis, aiScoreResult] = await Promise.all([
+      analyzeTranscript(
+        transcript,
+        transcription.words,
+        totalSessionTimeSec,
+        TELEGRAM_PAUSE_THRESHOLD_MS,
+      ),
+      scoreSpeechQuality(transcript).catch((err) => {
+        console.error("Telegram AI scoring failed (non-fatal):", err);
+        return null;
+      }),
+    ]);
+    if (aiScoreResult) {
+      analysis.flowScore = blendWithAiScore(analysis.flowScore, aiScoreResult.score);
+    }
+    const aiScoreFeedback = aiScoreResult?.feedback ?? null;
     let sessionId: string;
     try {
       sessionId = await insertTelegramSession({
@@ -584,7 +595,7 @@ export async function handleVoiceMessage(
 
     if (groupChat) {
       await ctx.reply(
-        getSpeakingResultMessage({ speaker: username, analysis, transcript }),
+        getSpeakingResultMessage({ speaker: username, analysis, transcript, aiScoreFeedback }),
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
@@ -614,7 +625,7 @@ export async function handleVoiceMessage(
           }
         }
 
-        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
+        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript, aiScoreFeedback }), {
           parse_mode: "HTML",
         });
         return;
@@ -622,7 +633,7 @@ export async function handleVoiceMessage(
 
       const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
 
-      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
+      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript, aiScoreFeedback }), {
         ...getFriendChallengeResultActions({
           creatorUsername,
           challengeId: challenge.id,
@@ -648,6 +659,7 @@ export async function handleVoiceMessage(
           topic: challenge.topic,
           analysis,
           transcript,
+          aiScoreFeedback,
           attemptCount,
         }),
         {
@@ -664,7 +676,7 @@ export async function handleVoiceMessage(
     }
 
     await ctx.reply(
-      getSpeakingResultMessage({ analysis, transcript }),
+      getSpeakingResultMessage({ analysis, transcript, aiScoreFeedback }),
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {
@@ -734,6 +746,7 @@ export async function sendFriendChallengeResult(
     }
 
     await ctx.answerCbQuery("Sent to the challenger.");
+    await ctx.reply("✅ Your result was sent to the challenger. Good luck!");
   } catch (error) {
     console.error("Telegram challenge result send failed", error);
     await ctx.answerCbQuery("I could not send that result right now.", { show_alert: true });
@@ -788,6 +801,7 @@ export async function replyWithAiFeedback(
 ) {
   const sessionId = ctx.match[1];
   if (!claimAiFeedbackSession(sessionId)) {
+    await ctx.reply("🤖 Feedback is already being generated — it will arrive shortly.");
     return;
   }
 
@@ -813,7 +827,7 @@ export async function replyWithAiFeedback(
       TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
     );
     if (!transcript) {
-      await ctx.reply("Session not found or expired.");
+      await ctx.reply(MESSAGES.feedbackTranscriptMissing, { parse_mode: "HTML" });
       return;
     }
     console.log("Telegram AI feedback session loaded", {
@@ -824,7 +838,7 @@ export async function replyWithAiFeedback(
     });
 
     try {
-      await ctx.reply("🤖 AI feedback is being generated...");
+      const pendingMsg = await ctx.reply("🤖 AI feedback is being generated...");
       await withTimeout(
         consumeApiQuota({
           userId,
@@ -845,7 +859,13 @@ export async function replyWithAiFeedback(
         sessionId,
         feedbackLength: feedback.length,
       });
-      await ctx.reply(`🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`, { parse_mode: "HTML" });
+      await ctx.telegram.editMessageText(
+        pendingMsg.chat.id,
+        pendingMsg.message_id,
+        undefined,
+        `🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`,
+        { parse_mode: "HTML" },
+      );
     } catch (error) {
       if (isApiQuotaExceededError(error)) {
         await ctx.reply(getQuotaExceededMessage(error.kind));
@@ -860,7 +880,7 @@ export async function replyWithAiFeedback(
         telegramId,
         sessionId,
       });
-      await ctx.reply("AI feedback is taking too long. Try again in a moment.");
+      await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
     }
   } catch (error) {
     if (isTelegramAiFeedbackSupabaseTimeout(error)) {

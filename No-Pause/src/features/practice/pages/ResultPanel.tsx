@@ -121,6 +121,14 @@ export function ResultPanel({
           {speakingTime < 5 && (
             <p className="mt-1 text-xs font-sans text-muted-foreground/60">Speak for at least 5 seconds to receive a Flow Score.</p>
           )}
+          {lastResults.aiScore != null && lastResults.baseFlowScore != null && (
+            <p className="mt-2 text-xs font-sans text-muted-foreground">
+              Fluency {lastResults.baseFlowScore} + Speech Quality {lastResults.aiScore}
+            </p>
+          )}
+          {lastResults.aiScoreFeedback && (
+            <p className="mt-2 text-sm font-sans leading-relaxed text-foreground">{lastResults.aiScoreFeedback}</p>
+          )}
         </section>
 
         <section className="grid grid-cols-2 gap-3 md:gap-4">
