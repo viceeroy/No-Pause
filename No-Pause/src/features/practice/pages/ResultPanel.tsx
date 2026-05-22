@@ -68,7 +68,6 @@ export function ResultPanel({
     const raw = (lastResults.totalSpeakingTime / lastResults.totalSessionTime) * 100;
     return Math.max(0, Math.min(100, raw));
   }, [lastResults.totalSessionTime, lastResults.totalSpeakingTime]);
-  const scoreWidth = Math.max(0, Math.min(100, (lastResults.flowScore / 500) * 100));
   const transcript = (lastResults.transcript || '').trim();
   const transcriptForCopy = transcript;
   const transcriptReady =
@@ -111,9 +110,6 @@ export function ResultPanel({
                 <TrendingUp size={22} />
               </span>
             </div>
-          </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-surface-elevated">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${scoreWidth}%` }} />
           </div>
           {statusNote && (
             <p className="mt-3 text-sm font-sans text-muted-foreground">{statusNote}</p>
