@@ -1,13 +1,12 @@
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
+import { parseTranscribedWords, type TranscribedWord } from '@/lib/core/utils';
 
-const IS_ANDROID = /android/i.test(navigator.userAgent);
 const IS_DEV = import.meta.env.DEV;
 const debugLog = (...args: unknown[]) => { if (IS_DEV) console.log(...args); };
 const debugWarn = (...args: unknown[]) => { if (IS_DEV) console.warn(...args); };
 const debugError = (...args: unknown[]) => { if (IS_DEV) console.error(...args); };
 
 const MAX_TRANSCRIBE_BYTES = 15 * 1024 * 1024;
-const EMPTY_TRANSCRIPT = 'No speech detected.';
 
 type SpeechRecognitionAlternativeLike = { transcript: string };
 type SpeechRecognitionResultLike = { isFinal: boolean; 0: SpeechRecognitionAlternativeLike };
@@ -30,11 +29,28 @@ type WindowWithSpeechRecognition = Window & typeof globalThis & {
   webkitSpeechRecognition?: SpeechRecognitionConstructor;
 };
 
+export type FinalizedTranscript = {
+  transcript: string;
+  words: TranscribedWord[];
+};
+
+type StringBackedFinalizedTranscript = string & FinalizedTranscript;
+
 export type TranscribeAudio = (payload: {
   audioBase64: string;
   mimeType: string;
   durationSec?: number;
-}) => Promise<string | { transcript?: unknown; text?: unknown }>;
+}) => Promise<string | { transcript?: unknown; text?: unknown; words?: unknown }>;
+
+function createFinalizedTranscript(
+  transcript: string,
+  words: TranscribedWord[],
+): StringBackedFinalizedTranscript {
+  const value = new String(transcript) as StringBackedFinalizedTranscript;
+  value.transcript = transcript;
+  value.words = words;
+  return value;
+}
 
 export class TranscriptionController {
   private recognition: SpeechRecognitionLike | null = null;
@@ -64,11 +80,9 @@ export class TranscriptionController {
 
   startBrowserRecognition(isRunning: () => boolean) {
     if (!this.enableTranscription) return;
-    if (IS_ANDROID) {
-      debugLog('[Transcript] Skipping SpeechRecognition on Android to avoid permission re-prompt');
-      return;
-    }
+    debugLog('[Transcript] Browser SpeechRecognition disabled; using server transcription as primary');
 
+    /*
     const SpeechRecognition =
       (window as WindowWithSpeechRecognition).SpeechRecognition ||
       (window as WindowWithSpeechRecognition).webkitSpeechRecognition;
@@ -130,6 +144,7 @@ export class TranscriptionController {
     } catch (err) {
       debugError('[Transcript] Failed to start:', err);
     }
+    */
   }
 
   stopBrowserRecognition() {
@@ -151,20 +166,16 @@ export class TranscriptionController {
     audioBlob: Blob | null;
     normalizedMimeType: string;
     totalRecordingTimeMs: number;
-  }): Promise<string> {
-    let finalTranscript = this.transcript.trim() || EMPTY_TRANSCRIPT;
-    const needsServerFallback = !finalTranscript.trim() || finalTranscript === EMPTY_TRANSCRIPT;
-    if (!needsServerFallback || !this.enableTranscription || !this.transcribeAudio || !input.audioBlob) {
-      return finalTranscript;
+  }): Promise<StringBackedFinalizedTranscript> {
+    if (!this.enableTranscription || !this.transcribeAudio || !input.audioBlob) {
+      return createFinalizedTranscript('', []);
     }
 
     try {
       if (input.audioBlob.size === 0) {
-        finalTranscript = 'Transcription failed: empty audio.';
         throw new Error('Audio blob is empty');
       }
       if (input.audioBlob.size > MAX_TRANSCRIBE_BYTES) {
-        finalTranscript = 'Transcription skipped: audio too large.';
         throw new Error(`Audio blob too large: ${input.audioBlob.size} bytes`);
       }
 
@@ -178,22 +189,17 @@ export class TranscriptionController {
       const serverTranscript = typeof transcriptionResult === 'string'
         ? transcriptionResult
         : String(transcriptionResult.transcript ?? transcriptionResult.text ?? '');
+      const serverWords = typeof transcriptionResult === 'string'
+        ? []
+        : parseTranscribedWords(transcriptionResult.words);
       if (serverTranscript && serverTranscript.trim().length > 0) {
-        finalTranscript = serverTranscript.trim();
-        this.transcript = finalTranscript;
+        this.transcript = serverTranscript.trim();
       }
+      return createFinalizedTranscript(this.transcript, serverWords);
     } catch (error) {
       debugError('[Transcript] Server transcription failed:', error);
-      const message =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message?: unknown }).message)
-          : 'Unknown error';
-      if (finalTranscript === EMPTY_TRANSCRIPT || finalTranscript === this.transcript.trim()) {
-        finalTranscript = `Transcription failed: ${message}`;
-      }
+      return createFinalizedTranscript('', []);
     }
-
-    return finalTranscript;
   }
 
   destroy() {

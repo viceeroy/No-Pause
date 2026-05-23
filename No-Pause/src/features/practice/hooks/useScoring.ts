@@ -2,13 +2,14 @@ import { calculateFlowScore } from '@/lib/core/scoring';
 import type { AnalyzerResults } from '@/features/practice/lib/speechAnalyzer';
 import type { SessionResult } from '@/features/practice/pages/types';
 import { formatMMSS } from '@/features/practice/pages/time';
-import { getWordCount } from '@/lib/core/utils';
+import { getWordCount, parseTranscribedWords, type TranscribedWord } from '@/lib/core/utils';
 
 const IS_DEV = import.meta.env.DEV;
 
 export type BuildSessionResultInput = {
   results: AnalyzerResults;
   startTime: number;
+  words?: TranscribedWord[];
 };
 
 export type BuildSessionResultOutput = {
@@ -28,9 +29,43 @@ function normalizeNonNegativeNumber(value: unknown): number {
   return Number.isFinite(numeric) ? Math.max(0, numeric) : 0;
 }
 
+function computeHesitationsFromWords(
+  words: { word: string; start: number; end: number }[],
+  pauseThresholdSec: number = 1.2
+): number {
+  let count = 0;
+  for (let i = 1; i < words.length; i++) {
+    const gap = words[i].start - words[i - 1].end;
+    if (gap >= pauseThresholdSec) count++;
+  }
+  return count;
+}
+
+function getTranscriptText(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value && typeof value === 'object' && 'transcript' in value) {
+    return String((value as { transcript?: unknown }).transcript ?? '');
+  }
+  return '';
+}
+
+function getResultWords(results: AnalyzerResults, words?: TranscribedWord[]): TranscribedWord[] {
+  if (words && words.length > 0) {
+    return words;
+  }
+  const transcriptValue = results.transcript as unknown;
+  if (transcriptValue && typeof transcriptValue === 'object' && 'words' in transcriptValue) {
+    return parseTranscribedWords((transcriptValue as { words?: unknown }).words);
+  }
+  return [];
+}
+
 export function buildSessionResult({
   results,
   startTime,
+  words: inputWords,
 }: BuildSessionResultInput): BuildSessionResultOutput {
   const now = Date.now();
   const duration = Math.floor((now - startTime) / 1000);
@@ -39,17 +74,21 @@ export function buildSessionResult({
   const totalSessionTimeSec = Math.max(analyzerSeconds, duration);
   const speakingTimeSec = normalizeNonNegativeNumber(results.totalSpeakingTime);
   const silenceTimeSec = normalizeNonNegativeNumber(results.totalSilenceTime);
-  const hesitationCount = Math.round(normalizeNonNegativeNumber(results.hesitationCount));
+  const transcript = getTranscriptText(results.transcript);
+  const timestampWords = getResultWords(results, inputWords);
+  const hesitationCount = timestampWords.length > 1
+    ? computeHesitationsFromWords(timestampWords)
+    : Math.round(normalizeNonNegativeNumber(results.hesitationCount));
 
   const transcriptHasSpeech = Boolean(
-    results.transcript &&
-      results.transcript !== 'No speech detected.' &&
-      results.transcript.trim().length > 0,
+    transcript &&
+      transcript !== 'No speech detected.' &&
+      transcript.trim().length > 0,
   );
   const hasSpeechEvidence =
     transcriptHasSpeech || hesitationCount > 0 || speakingTimeSec > 0;
-  const words = results.transcript && results.transcript.trim().length > 0
-    ? getWordCount(results.transcript)
+  const words = transcript && transcript.trim().length > 0
+    ? getWordCount(transcript)
     : null;
 
   const scoreInput = {
@@ -64,7 +103,7 @@ export function buildSessionResult({
         totalSpeakingTime: results.totalSpeakingTime,
         hesitationCount: results.hesitationCount,
         totalTime: results.totalTime,
-        transcript: results.transcript,
+        transcript,
       },
       scoreInput,
       duration,
@@ -106,7 +145,7 @@ export function buildSessionResult({
       mode,
       audioBlob: results.audioBlob,
       audioMimeType: results.audioMimeType,
-      transcript: results.transcript,
+      transcript,
       analysisFeedback: undefined,
       analysisFeedbackLoading: false,
       analysisFeedbackError: undefined,

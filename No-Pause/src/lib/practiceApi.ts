@@ -19,6 +19,7 @@ import {
   type WeeklyStatsComparison,
 } from "./core/queries";
 import { supabase as browserSupabase } from "@/services/supabase";
+import { parseTranscribedWords, type TranscribedWord } from "@/lib/core/utils";
 
 export type { PracticeStats, SessionRecord, WeeklyActivityDay, WeeklyStatsComparison } from "./core/queries";
 
@@ -70,6 +71,7 @@ export type Base64TranscriptionInput = {
 
 export type TranscriptionResult = {
   transcript: string;
+  words: TranscribedWord[];
 };
 
 export type AnalyzePracticeSpeechInput = {
@@ -135,9 +137,10 @@ export async function transcribeAudio(input: Base64TranscriptionInput): Promise<
     headers: await getAuthHeaders(),
     body: formData,
   });
-  const body = await readEndpointJson<{ transcript?: unknown; words?: unknown }>(response);
+  const body = await readEndpointJson<{ transcript?: unknown; text?: unknown; words?: unknown }>(response);
   return {
-    transcript: String(body.transcript ?? ""),
+    transcript: String(body.transcript ?? body.text ?? ""),
+    words: parseTranscribedWords(body.words),
   };
 }
 

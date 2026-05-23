@@ -157,9 +157,12 @@ export function useSession({
         durationSec: lastResults.totalSessionTime,
       });
       const transcript = transcription.transcript;
-      const words = transcript.trim().length > 0
-        ? getWordCount(transcript)
-        : null;
+      const transcribedWords = transcription.words;
+      const words = transcribedWords.length > 0
+        ? transcribedWords.length
+        : transcript.trim().length > 0
+          ? getWordCount(transcript)
+          : null;
       await updateSession({
         sessionId: lastResults.sessionId,
         userId,

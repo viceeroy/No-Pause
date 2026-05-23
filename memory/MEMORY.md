@@ -153,11 +153,12 @@ shared/
 2. `useRecordingController` initializes microphone services and `SpeechAnalyzer`.
 3. `AudioCapture` samples Web Audio RMS, records chunks, and reports diagnostics.
 4. `SpeechSession` tracks speech/silence via `micStateMachine`, emits pause units, runs preview scoring.
-5. Browser SpeechRecognition may produce an initial transcript. Android or manual fallback sends the audio blob through `practiceApi.transcribeAudio()` → `/api/transcription` → Groq Whisper.
+5. Browser SpeechRecognition may produce an initial transcript. `/api/transcription` is a fallback only, not called on every session; it fires when browser SpeechRecognition returns blank or `"No speech detected."` Android skips browser SpeechRecognition entirely and goes straight to Groq fallback via `practiceApi.transcribeAudio()` → `/api/transcription` → Groq Whisper.
 6. `useScoring.buildSessionResult` runs `calculateFlowScore` and assembles `SessionResult`.
 7. `useSession.saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
-8. Optional AI feedback: `practiceApi.analyzeSpeech()` → `/api/feedback` → Groq → stored on session.
-9. Stats pages read via `getPracticeStats` / `buildPracticeStats`.
+8. If the transcript is missing post-session and `audioBlob` exists, `ResultPanel` can show a manual Transcribe button that triggers `useSession.requestTranscription()` → `practiceApi.transcribeAudio()` → `/api/transcription`.
+9. Optional AI feedback: `practiceApi.analyzeSpeech()` → `/api/feedback` → Groq → stored on session.
+10. Stats pages read via `getPracticeStats` / `buildPracticeStats`.
 
 ### Telegram Voice / Challenge
 
@@ -200,7 +201,7 @@ otherwise:
 
 **States:** `setup → countdown → recording → finishing → done`
 
-The `finishing` state is set immediately when the user taps Finish, showing `ResultSkeletonPanel` until the async stop/transcription/scoring/save pipeline completes.
+The `finishing` state is set immediately when the user taps Finish, showing `ResultSkeletonPanel` until the async stop/transcription/scoring/save pipeline completes. Result display already has async latency: results appear only after `saveFinishedSession` completes the session save and streak update. There is no instant post-stop result today.
 
 ### Audio Analysis Internals
 
@@ -214,6 +215,7 @@ The `finishing` state is set immediately when the user taps Finish, showing `Res
 
 - `SpeechSession` drives the per-frame RMS analysis via `micStateMachine.applyMicStateFrame`.
 - `TranscriptionController` uses browser Web Speech API first; Android skips this to avoid re-prompting for mic permission and goes straight to Groq fallback.
+- `RecordingPanel` does not show live pause count or preview score during recording. The RMS pipeline computes `hesitationCount` live via `SpeechSession`, but `onHesitation` is wired as an empty callback in `useRecording.ts`, so those events are computed but never surfaced in UI.
 - `AudioCapture.stop()` flips `isRunning` false immediately; repeated taps during the pending stop phase silently no-op.
 
 ---
@@ -276,6 +278,8 @@ Notes:
 - **`normalizeMode()` always returns `"speaking"`** — `src/lib/core/modes.ts`. Only one mode exists; the structure is a placeholder for potential future modes.
 - **`window.__nopauseExportLogs`** — debug hook in `ResultPanel.tsx`; visible only when `localStorage.getItem('debugLogs') === 'true'`.
 - **Android transcription bypass** — Android skips browser `SpeechRecognition` to avoid triggering a second mic-permission prompt.
+- **Web transcription fallback** — Web `/api/transcription` is fallback-only during stop flow: it runs when browser SpeechRecognition returns blank or `"No speech detected."` A manual ResultPanel Transcribe button can also call it after the session if the transcript is missing and `audioBlob` exists.
+- **Groq word timestamps unused on web** — Groq Whisper already returns word-level timestamps (`{ word, start, end }`) on every `/api/transcription` call. The endpoint sends the transcript plus `words` to the client, but `practiceApi.transcribeAudio` currently discards `words` and returns only `transcript`. Web scoring uses RMS-derived `hesitationCount` from the browser audio pipeline, not word timestamps.
 - **Legacy column fallback** — `practiceApi.ts` and `insertSession` retry with a smaller column set if `total_silence_time` or `analysis_feedback` columns are missing (schema migration safety net).
 - **Vercel root** — The Vercel project root is the repo root, not `No-Pause/`. Running `vercel deploy` from `No-Pause/` causes a doubled `No-Pause/No-Pause` path error.
 - **`APP_URL`, `SITE_URL`, and Google redirect URLs** are hardcoded and require code changes for non-production domains.
