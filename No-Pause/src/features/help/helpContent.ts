@@ -30,7 +30,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'A session is short and simple. You start by choosing a prompt from the topic list, or you can speak freely about anything on your mind. There is no setup beyond that — pick what feels easiest to get going.',
+          'A session is short and simple. You start by choosing a prompt from the topic list — categories like Argue, Opinion, or Story — or you can speak freely about anything on your mind. There is no setup beyond that.',
       },
       {
         type: 'text',
@@ -38,14 +38,38 @@ export const HELP_ARTICLES: HelpArticle[] = [
           'Tap the record button and start talking. Speak naturally, the way you would in a real conversation. You do not need to plan every sentence — the goal is to keep moving, not to be perfect.',
       },
       {
-        type: 'text',
-        content:
-          'When you are done, tap finish. NoPause processes your audio and shows you a results screen with everything that happened during the session.',
+        type: 'pause-visual',
+        content: {
+          caption:
+            'Your voice as a timeline — green bars are speaking, gaps are silence. NoPause tracks this the whole time you record.',
+        },
       },
       {
         type: 'text',
         content:
-          'Your results page has four numbers worth understanding. Flow Score tells you how continuously you spoke — a higher number means fewer long stops broke your momentum. Speaking time is how long your voice was actually active during the session. Silence time is the total of the gaps between words. Pause count is how many times you stopped for longer than a natural breath.',
+          'When you are done, tap finish. NoPause sends your audio through transcription, scores it, and shows you a results screen in a few seconds.',
+      },
+      {
+        type: 'text',
+        content:
+          'Your results page has four numbers worth understanding. Flow Score captures how continuously you spoke — higher means fewer long stops broke your momentum. Speaking time is how long your voice was actually active. Pause count is how many times you stopped for longer than a natural breath. Silence time is the total of those gaps added together.',
+      },
+      {
+        type: 'score-example',
+        content: [
+          {
+            label: 'A typical first session',
+            flowScore: 65,
+            speakingTime: '1:15',
+            pauseCount: 5,
+          },
+          {
+            label: 'After a week of practice',
+            flowScore: 130,
+            speakingTime: '1:50',
+            pauseCount: 2,
+          },
+        ],
       },
       {
         type: 'tip',
@@ -66,9 +90,18 @@ export const HELP_ARTICLES: HelpArticle[] = [
           'Flow Score is a single number that captures how smoothly your session moved. The more time you spend actually speaking, the higher it climbs. The more long stops you have, the lower it ends up.',
       },
       {
+        type: 'callout',
+        content: [
+          { label: 'Each second of speaking', value: '+1 point' },
+          { label: 'Each full minute spoken', value: '+40 bonus' },
+          { label: 'Each long pause', value: '−10 points' },
+          { label: 'Minimum score', value: '0' },
+        ],
+      },
+      {
         type: 'text',
         content:
-          'You can think of it this way — every second you spend speaking adds to your score, and every long pause subtracts from it. Short, natural breaths between words do not count against you. Only the longer stops do.',
+          'You can think of it this way — every second you spend speaking adds to your score, and the bonus for each full minute rewards you for keeping momentum going. Every long pause subtracts. Short, natural breaths between words do not count against you — only the longer unplanned stops do.',
       },
       {
         type: 'score-example',
@@ -90,7 +123,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'Notice how the confident session has a much higher Flow Score even though the speaking time is only a little longer. The difference is in the pause count — fewer interruptions means more momentum.',
+          'Notice how the confident session has a much higher Flow Score even though the speaking time is only a little longer. The difference is in the pause count — fewer interruptions means more momentum, and the full-minute bonus kicks in twice instead of once.',
       },
       {
         type: 'tip',
@@ -111,15 +144,24 @@ export const HELP_ARTICLES: HelpArticle[] = [
           'NoPause is designed to ignore the tiny gaps that happen in normal speech. The little breath between words, the half-beat before a new sentence — none of those count against you.',
       },
       {
+        type: 'callout',
+        content: [
+          { label: 'Natural breath between words', value: 'Not counted' },
+          { label: 'Filled pause (um, uh)', value: 'Not counted' },
+          { label: 'Long unplanned stop', value: 'Counted' },
+          { label: 'Pause threshold', value: '1.2 seconds' },
+        ],
+      },
+      {
         type: 'text',
         content:
-          'Only longer stops register as pauses. These are the moments when you lose your train of thought, get stuck searching for a word, or trail off without finishing the sentence. Those are the ones that affect your score.',
+          'Only stops longer than 1.2 seconds register as pauses. These are the moments when you lose your train of thought, get stuck searching for a word, or trail off without finishing the sentence. Those are the ones that affect your score.',
       },
       {
         type: 'pause-visual',
         content: {
           caption:
-            'A typical session — short gaps are normal, long stops are the ones that count.',
+            'The green bars are speaking. The white gaps between them are silence — short ones are normal, long ones are counted pauses.',
         },
       },
       {
@@ -143,12 +185,29 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'The biggest gains come from one habit — keep talking through imperfect sentences instead of stopping to self-correct. Self-correction feels productive in the moment, but it is the main thing that breaks your flow.',
+          'The biggest gains come from one habit — keep talking through imperfect sentences instead of stopping to self-correct. Self-correction feels productive in the moment, but it is the main thing that breaks your flow. Finish the thought, then move on.',
+      },
+      {
+        type: 'score-example',
+        content: [
+          {
+            label: 'A hesitant first session',
+            flowScore: 20,
+            speakingTime: '1:00',
+            pauseCount: 8,
+          },
+          {
+            label: 'Two weeks later',
+            flowScore: 115,
+            speakingTime: '1:45',
+            pauseCount: 3,
+          },
+        ],
       },
       {
         type: 'text',
         content:
-          'When you are not sure what to say, use a prompt. Prompts give your brain a starting point so you do not waste the first ten seconds searching for an opening idea.',
+          'When you are not sure what to say, use a prompt. Prompts give your brain a starting point so you do not waste the first ten seconds searching for an opening idea. The Argue and Opinion categories are especially good for this — they force you to take a position immediately.',
       },
       {
         type: 'text',
@@ -158,7 +217,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'After each session, review your pause count and silence time alongside the score. Those two numbers tell you where the friction was, while the score alone only tells you the final result.',
+          'After each session, look at your pause count alongside the score. The score tells you the final result — the pause count tells you where the friction was. If your score dropped but your speaking time held steady, you had more stops, not less content.',
       },
       {
         type: 'tip',
@@ -176,12 +235,21 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'Your streak counts the days in a row you practiced. Complete at least one session a day to keep it alive. Miss a day and the streak resets — that is the point, since it keeps the habit visible.',
+          'Your streak counts the days in a row you practiced. Complete at least one session a day to keep it alive. Miss a day and the streak resets — that is the point, since it keeps the habit visible and makes skipping feel costly.',
+      },
+      {
+        type: 'callout',
+        content: [
+          { label: 'Sessions needed per day', value: '1' },
+          { label: 'Streak resets when', value: 'You miss a day' },
+          { label: 'What to watch', value: 'Trend, not peaks' },
+          { label: 'Minimum session length', value: '60 seconds' },
+        ],
       },
       {
         type: 'text',
         content:
-          'The dashboard shows your recent session history so you can see the pattern over time. Over a few weeks, look for a trend toward higher Flow Scores and lower pause counts rather than judging any individual session.',
+          'The dashboard shows your recent session history so you can see the pattern over time. Over a few weeks, look for a trend toward higher Flow Scores and lower pause counts rather than judging any individual session. One bad day surrounded by good ones is noise — a week of declining scores is a signal.',
       },
       {
         type: 'text',
@@ -204,7 +272,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'You can practice from Telegram by connecting your account once from the settings page. After that, the NoPause bot is ready whenever you want a quick session.',
+          'You can practice from Telegram by connecting your account once from the settings page. After that, the NoPause bot (@NoPauseAI_bot) is ready whenever you want a quick session — no need to open the app.',
+      },
+      {
+        type: 'callout',
+        content: [
+          { label: 'Start a session', value: 'Send a voice note' },
+          { label: 'Get your score', value: 'Automatic reply' },
+          { label: 'Join a challenge', value: 'Accept a link from a friend' },
+          { label: 'Disconnect', value: 'Settings page' },
+        ],
       },
       {
         type: 'text',
@@ -214,12 +291,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'Your Telegram sessions show up in your history alongside your web sessions. There is no separate tab or feed — everything lands in the same place.',
+          'Your Telegram sessions show up in your history alongside your web sessions. There is no separate tab or feed — everything lands in the same place, and your streak counts Telegram sessions the same as web sessions.',
       },
       {
         type: 'text',
         content:
-          'You can also run challenges through Telegram. You and a friend get the same prompt, speak separately, and then see each other\'s scores. It is a low-pressure way to practice with someone else.',
+          'You can also run challenges through Telegram. A friend sends you a deep link with a shared prompt — you both speak separately, then see each other\'s scores. It is a low-pressure way to practice with someone else.',
       },
       {
         type: 'tip',
@@ -240,19 +317,147 @@ export const HELP_ARTICLES: HelpArticle[] = [
           'Your microphone is used only while a session is in progress. NoPause does not listen in the background, does not run between sessions, and does not access the mic outside of recording.',
       },
       {
-        type: 'text',
-        content:
-          'Your transcripts and scores are saved to your account so you can review your history any time. That way you can look back at past sessions, compare results, and see how you are improving.',
+        type: 'callout',
+        content: [
+          { label: 'Mic access', value: 'Recording only' },
+          { label: 'Background listening', value: 'Never' },
+          { label: 'Session data saved', value: 'Your account' },
+          { label: 'Telegram link', value: 'Optional, removable' },
+        ],
       },
       {
         type: 'text',
         content:
-          'If you connect Telegram, your bot account is linked to your NoPause account so those sessions appear together. The link is one-time and you can disconnect it from settings whenever you want.',
+          'Your transcripts and scores are saved to your account so you can review your history any time. That way you can look back at past sessions, compare results, and see how you are improving. Nothing is shared or visible to other users.',
+      },
+      {
+        type: 'text',
+        content:
+          'If you connect Telegram, your bot account is linked to your NoPause account so those sessions appear together. The link is one-time and you can disconnect it from settings whenever you want — after disconnecting, the bot will not accept voice notes from your account.',
       },
       {
         type: 'tip',
         content:
           'You can review your full session history any time from the Stats page.',
+      },
+    ],
+  },
+  {
+    slug: 'why-speaking-feels-hard',
+    icon: '🧠',
+    title: 'Why Speaking Feels Hard (And What to Do About It)',
+    summary: 'Most people feel nervous speaking out loud — here\'s why, and why practice actually fixes it.',
+    sections: [
+      {
+        type: 'text',
+        content:
+          'Roughly 3 in 4 people feel some anxiety about speaking in front of others. This is not a personal weakness — it is one of the most common fears in the world, more common than fear of heights or flying. The point is not to feel less alone. It is to understand that this is a solvable problem.',
+      },
+      {
+        type: 'text',
+        content:
+          'When you speak to someone who matters — a manager, an interviewer, a room full of people — your brain treats it as a social threat. It triggers the same stress response as a physical danger. Your heart rate rises, your thoughts speed up, and your ability to retrieve words smoothly drops. This is why nervousness is the single biggest cause of long pauses and hesitations — not lack of intelligence or knowledge.',
+      },
+      {
+        type: 'callout',
+        content: [
+          { label: 'People with some speaking fear', value: '3 in 4' },
+          { label: 'Career impact', value: 'Real' },
+          { label: 'Who seek help', value: 'Very few' },
+          { label: 'Fixable with practice', value: 'Yes' },
+        ],
+      },
+      {
+        type: 'text',
+        content:
+          'The good news is that anxiety in speaking responds directly to practice. The more familiar the act of speaking feels, the less your brain flags it as a threat. You do not need to eliminate nervousness — you need to lower the threshold at which it kicks in. That is exactly what repeated short sessions do.',
+      },
+      {
+        type: 'tip',
+        content:
+          'The goal is not to feel fearless. It is to keep speaking even when you feel nervous. That is what NoPause sessions train.',
+      },
+    ],
+  },
+  {
+    slug: 'why-practice-works',
+    icon: '🔁',
+    title: 'Why Repeating Yourself Actually Works',
+    summary: 'The science behind why short, consistent sessions beat occasional long ones.',
+    sections: [
+      {
+        type: 'text',
+        content:
+          'Most people think fluency comes from knowing more words or preparing longer. Research says otherwise — what actually improves speech fluency is repeating the act of speaking with fast feedback. Focused practice with immediate feedback, even brief, is what lets your brain stop repeating the same patterns and start building new ones.',
+      },
+      {
+        type: 'text',
+        content:
+          'There is a difference between practicing and just doing something repeatedly. Deliberate practice means you speak, get specific feedback on what happened — how long you spoke, how many times you stopped — and adjust next session. Without that feedback loop, you can practice for years and ingrain the same habits. NoPause closes that loop automatically. Every session gives you numbers to react to.',
+      },
+      {
+        type: 'callout',
+        content: [
+          { label: 'Recall improvement with spaced practice vs cramming', value: '~50% more' },
+          { label: 'Anxiety reduced by', value: 'Preparation' },
+          { label: 'Best session length', value: 'Short + often' },
+          { label: 'Feedback needed', value: 'Every session' },
+        ],
+      },
+      {
+        type: 'text',
+        content:
+          'On spacing: practicing the same topic immediately again improves your speed, while spacing sessions out by days reduces filled pauses and hesitations more. Both matter. That is why NoPause tracks streaks — daily sessions give you the repetition rate where real reduction in hesitation happens, not just speed.',
+      },
+      {
+        type: 'tip',
+        content:
+          'Five minutes every day beats thirty minutes once a week. Your brain needs repetition across days, not just within one session.',
+      },
+    ],
+  },
+  {
+    slug: 'before-your-interview-or-presentation',
+    icon: '🎯',
+    title: 'Getting Ready for a Big Moment',
+    summary: 'A practical NoPause warm-up routine for interviews, presentations, or any high-stakes conversation.',
+    sections: [
+      {
+        type: 'text',
+        content:
+          'Speaking anxiety is highest when the stakes feel high and your mouth has not warmed up. The majority of pre-presentation anxiety comes from feeling under-prepared — not from a fixed personality trait. The fix is simple: get your voice moving before the moment arrives.',
+      },
+      {
+        type: 'text',
+        content:
+          'A practical routine the day before: open NoPause, pick a prompt from the Argue or Opinion category, and do two sessions back to back. Do not aim for a high score — aim to get comfortable hearing your own voice under mild pressure. Review your pause count after each one. The goal is to notice where you stop, not to be perfect.',
+      },
+      {
+        type: 'score-example',
+        content: [
+          {
+            label: 'A warm-up session',
+            flowScore: 60,
+            speakingTime: '1:20',
+            pauseCount: 6,
+          },
+          {
+            label: 'After two sessions',
+            flowScore: 120,
+            speakingTime: '1:50',
+            pauseCount: 3,
+          },
+        ],
+      },
+      {
+        type: 'text',
+        content:
+          'The morning of: do one short session, 60 to 90 seconds, on any topic. This is not about score — it is about activating your voice and proving to yourself that you can speak clearly before the real moment. Think of it like a musician playing scales before a performance.',
+      },
+      {
+        type: 'tip',
+        content:
+          'Your voice needs reps before it feels natural. Three NoPause sessions the day before a presentation is worth more than an hour of re-reading your notes.',
       },
     ],
   },

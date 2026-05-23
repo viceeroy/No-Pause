@@ -7,20 +7,20 @@ import {
 
 function TextSection({ content }: { content: string }) {
   return (
-    <p className="text-base leading-relaxed text-foreground break-words">{content}</p>
+    <p className="text-base font-sans leading-relaxed text-foreground break-words">{content}</p>
   );
 }
 
 function CalloutSection({ content }: { content: { label: string; value: string }[] }) {
   return (
-    <div className="rounded-xl bg-muted p-4">
+    <div className="rounded-[22px] border border-border bg-surface-card p-5 shadow-card">
       <div className="grid grid-cols-2 gap-3">
         {content.map((item) => (
           <div key={item.label} className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground break-words">
+            <p className="text-xs font-sans font-semibold uppercase tracking-[0.14em] text-muted-foreground break-words">
               {item.label}
             </p>
-            <p className="mt-1 text-sm font-semibold text-foreground break-words">
+            <p className="mt-1 text-sm font-sans font-semibold text-foreground break-words">
               {item.value}
             </p>
           </div>
@@ -32,35 +32,35 @@ function CalloutSection({ content }: { content: { label: string; value: string }
 
 function ScoreExampleSection({ content }: { content: ScoreExampleCard[] }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {content.map((card) => (
         <div
           key={card.label}
-          className="rounded-2xl border bg-card p-5 min-w-0"
+          className="rounded-[22px] border border-border bg-surface-card p-5 shadow-card min-w-0"
         >
-          <p className="text-sm font-medium text-muted-foreground break-words">
+          <p className="text-sm font-sans font-medium text-muted-foreground break-words">
             {card.label}
           </p>
-          <p className="mt-3 text-4xl font-bold text-foreground leading-none">
+          <p className="mt-3 font-serif text-4xl font-medium leading-none text-primary">
             {card.flowScore}
           </p>
-          <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="mt-1 text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">
             Flow Score
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              <p className="text-xs font-sans font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Speaking
               </p>
-              <p className="mt-1 text-sm font-semibold text-foreground">
+              <p className="mt-1 text-sm font-serif font-medium text-foreground">
                 {card.speakingTime}
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              <p className="text-xs font-sans font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Pauses
               </p>
-              <p className="mt-1 text-sm font-semibold text-foreground">
+              <p className="mt-1 text-sm font-serif font-medium text-foreground">
                 {card.pauseCount}
               </p>
             </div>
@@ -86,7 +86,7 @@ function PauseVisualSection({ content }: { content: { caption?: string } }) {
   const total = segments.reduce((sum, s) => sum + s.weight, 0);
 
   return (
-    <div className="rounded-xl bg-muted p-4">
+    <div className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card">
       <div className="flex h-6 w-full overflow-hidden rounded-md">
         {segments.map((segment, idx) => (
           <div
@@ -94,28 +94,28 @@ function PauseVisualSection({ content }: { content: { caption?: string } }) {
             className={
               segment.kind === 'speech'
                 ? 'bg-primary'
-                : 'bg-background border-y border-primary/20'
+                : 'bg-surface-elevated border-y border-primary/20'
             }
             style={{ width: `${(segment.weight / total) * 100}%` }}
             aria-hidden="true"
           />
         ))}
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="mt-3 flex items-center gap-4 text-xs font-sans text-muted-foreground">
         <span className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-sm bg-primary" aria-hidden="true" />
           Speech
         </span>
         <span className="inline-flex items-center gap-2">
           <span
-            className="h-3 w-3 rounded-sm bg-background border border-primary/20"
+            className="h-3 w-3 rounded-sm bg-surface-elevated border border-primary/20"
             aria-hidden="true"
           />
           Silence
         </span>
       </div>
       {content.caption && (
-        <p className="mt-3 text-sm text-muted-foreground break-words">
+        <p className="mt-3 text-sm font-sans text-muted-foreground break-words">
           {content.caption}
         </p>
       )}
@@ -125,7 +125,7 @@ function PauseVisualSection({ content }: { content: { caption?: string } }) {
 
 function TipSection({ content }: { content: string }) {
   return (
-    <div className="border-l-4 border-primary pl-4 py-2 text-sm text-foreground break-words">
+    <div className="border-l-4 border-primary pl-4 py-2 text-sm font-sans text-foreground break-words">
       <span className="mr-1" aria-hidden="true">💡</span>
       {content}
     </div>
@@ -159,24 +159,27 @@ export default function ArticlePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-surface-base">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
         >
           ← Help
         </button>
 
         <header className="mt-6">
-          <p className="text-5xl leading-none" aria-hidden="true">
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-3xl"
+            aria-hidden="true"
+          >
             {article.icon}
-          </p>
-          <h1 className="mt-4 text-3xl font-bold text-foreground break-words">
+          </span>
+          <h1 className="mt-4 text-3xl font-serif font-medium text-foreground break-words">
             {article.title}
           </h1>
-          <p className="mt-3 text-base text-muted-foreground break-words">
+          <p className="mt-3 text-base font-sans text-muted-foreground break-words">
             {article.summary}
           </p>
         </header>
