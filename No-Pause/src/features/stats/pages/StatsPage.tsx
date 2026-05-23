@@ -221,7 +221,7 @@ export default function StatsPage({
       <main className="mx-auto w-full max-w-5xl">
         <button
           type="button"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           className="-ml-2 mb-8 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
         >
           <ChevronLeft size={16} /> Back

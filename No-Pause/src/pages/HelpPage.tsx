@@ -14,6 +14,13 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-surface-base">
       <div className="max-w-4xl mx-auto px-4 py-8">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-6 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Back
+        </button>
         <header className="mb-8">
           <h1 className="text-3xl font-serif font-medium text-foreground">Help</h1>
           <p className="mt-2 text-base font-sans text-muted-foreground">

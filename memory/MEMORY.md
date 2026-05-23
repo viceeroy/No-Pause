@@ -152,9 +152,9 @@ shared/
 1. Authenticated user opens `/practice` (optionally with a prompt from `/prompts`).
 2. `useRecordingController` initializes microphone services and `SpeechAnalyzer`.
 3. `AudioCapture` samples Web Audio RMS, records chunks, and reports diagnostics.
-4. `SpeechSession` tracks speech/silence via `micStateMachine`, emits pause units, runs preview scoring.
-5. Browser SpeechRecognition may produce an initial transcript. `/api/transcription` is a fallback only, not called on every session; it fires when browser SpeechRecognition returns blank or `"No speech detected."` Android skips browser SpeechRecognition entirely and goes straight to Groq fallback via `practiceApi.transcribeAudio()` → `/api/transcription` → Groq Whisper.
-6. `useScoring.buildSessionResult` runs `calculateFlowScore` and assembles `SessionResult`.
+4. `SpeechSession` still tracks speech/silence via `micStateMachine`, but browser `SpeechRecognition` is disabled in `transcription.ts` (commented out, not deleted).
+5. After recording stops, the audio blob is always sent through `practiceApi.transcribeAudio()` → `/api/transcription` → Groq Whisper, which returns the transcript plus word-level timestamps (`{ word, start, end }`).
+6. `useScoring.buildSessionResult` computes `hesitationCount` from word timestamp gaps (`nextWord.start - previousWord.end >= 1.2s`), then runs `calculateFlowScore` and assembles `SessionResult`. If word timestamps are unavailable, it falls back to the RMS-derived `hesitationCount`; this now matches the Telegram bot approach in `voiceHandler.ts`.
 7. `useSession.saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
 8. If the transcript is missing post-session and `audioBlob` exists, `ResultPanel` can show a manual Transcribe button that triggers `useSession.requestTranscription()` → `practiceApi.transcribeAudio()` → `/api/transcription`.
 9. Optional AI feedback: `practiceApi.analyzeSpeech()` → `/api/feedback` → Groq → stored on session.
@@ -269,6 +269,8 @@ Notes:
 - **`createTelegramBot`** — `src/lib/telegram/router.ts` — Telegraf command/action registration.
 - **`practiceApi`** — `src/lib/practiceApi.ts` — browser-facing facade for all data operations.
 - **`getWordCount`** — `src/lib/core/utils.ts` — canonical word count helper used everywhere a transcript word threshold is needed.
+- **`parseTranscribedWords`** — `src/lib/core/utils.ts` — canonical word timestamp parser, used by `practiceApi.ts`, `transcription.ts`, and `useScoring.ts`.
+- **`TranscribedWord`** — `src/lib/core/utils.ts` — canonical word timestamp type.
 - **`arrayBufferToBase64`** — `src/shared/lib/utils.ts` — canonical audio buffer encoder used by session and transcription paths.
 
 ---
@@ -277,9 +279,8 @@ Notes:
 
 - **`normalizeMode()` always returns `"speaking"`** — `src/lib/core/modes.ts`. Only one mode exists; the structure is a placeholder for potential future modes.
 - **`window.__nopauseExportLogs`** — debug hook in `ResultPanel.tsx`; visible only when `localStorage.getItem('debugLogs') === 'true'`.
-- **Android transcription bypass** — Android skips browser `SpeechRecognition` to avoid triggering a second mic-permission prompt.
-- **Web transcription fallback** — Web `/api/transcription` is fallback-only during stop flow: it runs when browser SpeechRecognition returns blank or `"No speech detected."` A manual ResultPanel Transcribe button can also call it after the session if the transcript is missing and `audioBlob` exists.
-- **Groq word timestamps unused on web** — Groq Whisper already returns word-level timestamps (`{ word, start, end }`) on every `/api/transcription` call. The endpoint sends the transcript plus `words` to the client, but `practiceApi.transcribeAudio` currently discards `words` and returns only `transcript`. Web scoring uses RMS-derived `hesitationCount` from the browser audio pipeline, not word timestamps.
+- **Browser SpeechRecognition disabled** — Browser `SpeechRecognition` is commented out in `transcription.ts` (not deleted) for easy rollback. Android no longer needs special transcription handling because browser SpeechRecognition is disabled for all platforms.
+- **RMS pipeline still running** — `micStateMachine`, `speechSession`, and `audioCapture` still run during recording, but RMS-derived `hesitationCount` is no longer used for scoring when word timestamps are available. It can be removed in a future cleanup.
 - **Legacy column fallback** — `practiceApi.ts` and `insertSession` retry with a smaller column set if `total_silence_time` or `analysis_feedback` columns are missing (schema migration safety net).
 - **Vercel root** — The Vercel project root is the repo root, not `No-Pause/`. Running `vercel deploy` from `No-Pause/` causes a doubled `No-Pause/No-Pause` path error.
 - **`APP_URL`, `SITE_URL`, and Google redirect URLs** are hardcoded and require code changes for non-production domains.
@@ -351,3 +352,13 @@ The following cleanup items were completed in the most recent refactoring sessio
 - Imports: `calculateFlowScore` from `@/lib/core/scoring`, `getWordCount` from `@/lib/core/utils`, `AnalyzerResults`, `SessionResult`, `formatMMSS`.
 - Exports: `BuildSessionResultInput`, `BuildSessionResultOutput`, `buildSessionResult`, `useScoring`.
 - `words` field in output is `number | null`; also written to `sessionResult.wordCount`.
+
+---
+
+### #14 — Groq-primary web transcription and timestamp-based scoring
+
+**What changed:** Browser SpeechRecognition disabled as primary transcription source. Groq Whisper is now called on every web session (was previously fallback only). Word timestamps from Groq are passed through practiceApi → transcription → useScoring. Hesitation count is now computed from word timestamp gaps (same method as Telegram bot in voiceHandler.ts). RMS pipeline still runs but its hesitationCount is only used as fallback when timestamps are unavailable. parseTranscribedWords and TranscribedWord type deduplicated into src/lib/core/utils.ts.
+
+**Files changed:** practiceApi.ts, transcription.ts, useScoring.ts, useSession.ts, speechAnalyzer.ts, speechTypes.ts, lib/core/utils.ts
+
+**Do not** re-enable browser SpeechRecognition as primary without removing the Groq-primary path first.

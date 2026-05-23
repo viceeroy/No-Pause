@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, CircleHelp } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useBlocker, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/shared/components/ui/dialog';
 import { cn } from '@/shared/lib/utils';
 import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPanel';
 import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
@@ -32,6 +39,35 @@ export default function PracticePage() {
     selectedTimerSeconds,
   });
   const promptTextParam = searchParams.get('prompt_text');
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
+
+  const blocker = useBlocker(() => state.state === 'recording');
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      setShowLeaveWarning(true);
+    }
+  }, [blocker.state]);
+
+  const handleBackClick = () => {
+    if (state.state === 'recording') {
+      setShowLeaveWarning(true);
+    } else {
+      recording.handleBack();
+    }
+  };
+
+  const handleLeaveConfirm = () => {
+    setShowLeaveWarning(false);
+    if (blocker.state === 'blocked') blocker.reset();
+    recording.handleBack();
+  };
+
+  const handleLeaveCancel = () => {
+    setShowLeaveWarning(false);
+    if (blocker.state === 'blocked') blocker.reset();
+  };
+
   const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';
   const promptSource: 'prompts' | 'random' | null = promptTextParam
     ? 'prompts'
@@ -95,7 +131,7 @@ export default function PracticePage() {
         'flex w-full items-center justify-between shrink-0',
         state.isFixedScreen ? 'mb-3' : 'mb-8'
       )}>
-        <button onClick={recording.handleBack} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0">
+        <button onClick={handleBackClick} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0">
           <ChevronLeft size={16} /> Back
         </button>
         {state.state === 'setup' && (
@@ -163,6 +199,35 @@ export default function PracticePage() {
           setCopied={state.setCopied}
         />
       )}
+
+      <Dialog open={showLeaveWarning} onOpenChange={(open) => { if (!open) handleLeaveCancel(); }}>
+        <DialogContent className="max-w-sm gap-0 overflow-hidden rounded-[20px] border-border bg-surface-card p-0">
+          <div className="p-6">
+            <DialogHeader className="gap-2">
+              <DialogTitle className="text-lg font-serif text-foreground">Leave session?</DialogTitle>
+              <DialogDescription className="text-sm font-sans leading-relaxed text-muted-foreground">
+                Your recording will be lost. This can't be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleLeaveConfirm}
+                className="w-full rounded-full border border-border bg-surface-elevated px-5 py-3 text-sm font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
+              >
+                Leave session
+              </button>
+              <button
+                type="button"
+                onClick={handleLeaveCancel}
+                className="w-full rounded-full bg-primary px-5 py-3 text-sm font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110"
+              >
+                Keep recording
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
