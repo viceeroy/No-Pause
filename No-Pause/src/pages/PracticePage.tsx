@@ -33,6 +33,7 @@ export default function PracticePage() {
   const [selectedTimerSeconds, setSelectedTimerSeconds] = useState(0);
   const [timerMenuOpen, setTimerMenuOpen] = useState(false);
   const state = usePracticeState();
+  const { setTimeLeft, setTopicPrompt } = state;
   const recording = useRecordingController({
     navigate,
     state,
@@ -40,7 +41,6 @@ export default function PracticePage() {
   });
   const promptTextParam = searchParams.get('prompt_text');
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
-
   const blocker = useBlocker(() => state.state === 'recording');
 
   useEffect(() => {
@@ -48,6 +48,20 @@ export default function PracticePage() {
       setShowLeaveWarning(true);
     }
   }, [blocker.state]);
+
+  useEffect(() => {
+    if (state.state !== 'recording') return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [state.state]);
 
   const handleBackClick = () => {
     if (state.state === 'recording') {
@@ -80,14 +94,14 @@ export default function PracticePage() {
   );
 
   useEffect(() => {
-    state.setTimeLeft(0);
-    state.setTopicPrompt(promptTextParam ? {
+    setTimeLeft(0);
+    setTopicPrompt(promptTextParam ? {
       id: 'speaking-practice-topic',
       topicTitle: promptTextParam,
       category: 'EXPERIENCE',
       cueCard: [],
     } : null);
-  }, [promptTextParam, state.setTimeLeft, state.setTopicPrompt]);
+  }, [promptTextParam, setTimeLeft, setTopicPrompt]);
 
   useEffect(() => {
     if (state.state === 'recording') {

@@ -95,9 +95,9 @@ type AuthFixtures = {
 };
 
 export const test = base.extend<AuthFixtures>({
-  authenticatedPage: async ({ page }, use) => {
+  authenticatedPage: async ({ page }, run) => {
     await installMockSupabaseAuth(page);
-    await use(page);
+    await run(page);
   },
 });
 

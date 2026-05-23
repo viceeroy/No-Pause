@@ -362,7 +362,10 @@ describe('stats architecture', () => {
 
 describe('result message formatting architecture', () => {
   it('uses Speak in the private reply keyboard and keeps prompt as an inline action', () => {
-    expect(replyKeyboard.reply_markup.keyboard[0][2]).toBe('🎤 Speak');
+    expect(replyKeyboard.reply_markup.keyboard).toEqual([
+      ['🎤 Speak', '📈 My Stats'],
+      ['⚔️ Challenge', 'ℹ️ About'],
+    ]);
 
     const promptAction = speakPromptKeyboard.reply_markup.inline_keyboard[0][0];
     expect(promptAction).toMatchObject({
@@ -473,10 +476,14 @@ describe('result message formatting architecture', () => {
       callback_data: `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}challenge-1:session-1`,
     });
     expect(resultActions[1][0]).toMatchObject({
-      text: '🔄 Try Again',
+      text: '🤖 AI Feedback',
+      callback_data: 'ai_feedback:session-1',
+    });
+    expect(resultActions[2][0]).toMatchObject({
+      text: '🔁 Try Again',
       callback_data: `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}challenge-1`,
     });
-    expect(resultActions[1][0].callback_data).not.toBe(TRY_AGAIN_ACTION);
+    expect(resultActions[2][0].callback_data).not.toBe(TRY_AGAIN_ACTION);
     expect(resultActions.flat()).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ text: '✅ Approve' })]),
     );
@@ -859,6 +866,90 @@ describe('module export architecture', () => {
   });
 });
 
+describe('Groq transcription architecture', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.restoreAllMocks();
+    vi.doUnmock('../../src/services/groq.js');
+    vi.doUnmock('@/services/groq');
+    process.env = { ...originalEnv };
+    process.env.GROQ_API_KEY = 'groq-key';
+  });
+
+  it('normalizes top-level Groq word timestamps', async () => {
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        text: 'hello world',
+        words: [
+          { word: 'hello', start: 0, end: 0.4 },
+          { word: 'world', start: 0.8, end: 1.2, type: 'word' },
+        ],
+        segments: [
+          {
+            words: [
+              { word: 'ignored', start: 9, end: 10 },
+            ],
+          },
+        ],
+      }),
+    } as Response)));
+
+    const { transcribeAudioWithGroq } = await import('../../src/services/groq.js');
+    const result = await transcribeAudioWithGroq(new Uint8Array([1, 2, 3]).buffer);
+
+    expect(result).toEqual({
+      text: 'hello world',
+      words: [
+        { word: 'hello', start: 0, end: 0.4 },
+        { word: 'world', start: 0.8, end: 1.2, type: 'word' },
+      ],
+    });
+    expect(infoSpy).not.toHaveBeenCalledWith(
+      'Groq transcription response shape',
+      expect.anything(),
+    );
+  });
+
+  it('falls back to segment word timestamps when top-level words are missing', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        text: 'segment words recovered',
+        segments: [
+          {
+            text: 'segment words',
+            words: [
+              { word: 'segment', start: 0, end: 0.7 },
+              { word: 'words', start: 1.1, end: 1.5 },
+            ],
+          },
+          {
+            text: 'recovered',
+            words: [
+              { word: 'recovered', start: 2, end: 2.8 },
+              { word: 'bad', start: 4, end: 3 },
+            ],
+          },
+        ],
+      }),
+    } as Response)));
+
+    const { transcribeAudioWithGroq } = await import('../../src/services/groq.js');
+    const result = await transcribeAudioWithGroq(new Uint8Array([1, 2, 3]).buffer);
+
+    expect(result).toEqual({
+      text: 'segment words recovered',
+      words: [
+        { word: 'segment', start: 0, end: 0.7 },
+        { word: 'words', start: 1.1, end: 1.5 },
+        { word: 'recovered', start: 2, end: 2.8 },
+      ],
+    });
+  });
+});
+
 describe('Telegram group challenge retry architecture', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -1139,7 +1230,13 @@ describe('Telegram AI feedback handler architecture', () => {
       match: [`ai_feedback:${sessionId}`, sessionId],
       reply: vi.fn(async (message: string) => {
         replies.push(message);
+        return { chat: { id: 123 }, message_id: replies.length };
       }),
+      telegram: {
+        editMessageText: vi.fn(async (_chatId: number, _messageId: number, _inlineMessageId: undefined, message: string) => {
+          replies.push(message);
+        }),
+      },
     };
 
     return { ctx, replies };
@@ -1498,11 +1595,12 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback,
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
+      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => {
       order.push('groq');
       return {
-        transcript: 'hello world again',
+        text: 'hello world again',
         words: [
           { word: 'hello', start: 0, end: 1 },
           { word: 'there', start: 1.1, end: 1.2 },
@@ -1644,9 +1742,10 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
+      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
-      transcript: 'hello group challenge',
+      text: 'hello group challenge',
       words: [
         { word: 'hello', start: 0, end: 1 },
         { word: 'group', start: 1.2, end: 2 },
@@ -1714,7 +1813,7 @@ describe('HTTP header ASCII normalization', () => {
             })),
           },
         },
-        from: vi.fn((table: string) => ({
+        from: vi.fn(() => ({
           insert: vi.fn(() => ({
             select: vi.fn(() => ({
               single: vi.fn(async () => ({ data: { id: 'telegram-session-1' }, error: null })),
@@ -1780,7 +1879,8 @@ describe('HTTP header ASCII normalization', () => {
     expect(resultReply?.[1]?.reply_markup?.inline_keyboard?.flat()).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ text: '📤 Send to Group' }),
-        expect.objectContaining({ text: '🔄 Try Again' }),
+        expect.objectContaining({ text: '🤖 AI Feedback' }),
+        expect.objectContaining({ text: '🔁 Try Again' }),
       ]),
     );
     expect(resultReply?.[1]?.reply_markup?.inline_keyboard?.flat()).not.toEqual(
@@ -1795,9 +1895,10 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
+      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
-      transcript: 'should not transcribe',
+      text: 'should not transcribe',
       words: [],
     }));
     vi.doMock('@/services/groq', () => ({
@@ -1912,9 +2013,10 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
+      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
-      transcript: 'should not transcribe',
+      text: 'should not transcribe',
       words: [],
     }));
     vi.doMock('@/services/groq', () => ({
@@ -2042,9 +2144,10 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
+      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
-      transcript: 'should not transcribe',
+      text: 'should not transcribe',
       words: [],
     }));
     vi.doMock('@/services/groq', () => ({
@@ -2201,6 +2304,7 @@ describe('HTTP header ASCII normalization', () => {
       match: ['scr:challenge-1:session-1', 'challenge-1', 'session-1'],
       telegram: { sendMessage },
       answerCbQuery,
+      reply: vi.fn(),
     };
 
     await sendFriendChallengeResult(ctx as never, 123);

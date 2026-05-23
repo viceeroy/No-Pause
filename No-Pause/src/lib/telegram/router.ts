@@ -11,7 +11,6 @@ import {
   CHANGE_PROMPT_ACTION,
   changePromptKeyboard,
   CHALLENGE_LABEL,
-  GET_PROMPT_LABEL,
   GET_PROMPT_ACTION,
   getConnectAccountKeyboard,
   getNoPauseGroupWelcomeMessage,

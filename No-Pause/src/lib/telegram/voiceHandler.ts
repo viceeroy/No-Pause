@@ -71,12 +71,6 @@ export type TelegramSessionRecord = {
   hesitation_log: Array<{ timestamp: number; duration: number; units: number; trailing?: boolean }> | null;
 };
 
-type VerboseTranscriptionResponse = {
-  transcript?: unknown;
-  text?: unknown;
-  words?: unknown;
-};
-
 type TelegramGetFileResponse = {
   ok?: unknown;
   result?: {
@@ -127,29 +121,6 @@ export async function replyWithConnectPrompt(ctx: Context, telegramId: number) {
     stack: getDebugStackSnippet(),
   });
   await ctx.reply(MESSAGES.connectPrompt, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
-}
-
-function parseTranscribedWords(words: unknown): GroqTranscribedWord[] {
-  if (!Array.isArray(words)) {
-    return [];
-  }
-
-  return words.flatMap((word) => {
-    const maybeWord = word as { word?: unknown; start?: unknown; end?: unknown; no_speech_prob?: unknown };
-    const start = Number(maybeWord.start);
-    const end = Number(maybeWord.end);
-    const noSpeechProb = Number(maybeWord.no_speech_prob);
-    if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
-      return [];
-    }
-
-    return [{
-      word: String(maybeWord.word ?? "").trim(),
-      start,
-      end,
-      ...(Number.isFinite(noSpeechProb) ? { no_speech_prob: noSpeechProb } : {}),
-    }];
-  });
 }
 
 function estimateDurationSec(voiceDuration?: number): number {
@@ -220,12 +191,8 @@ function detectPausesFromWordTimestamps(words: GroqTranscribedWord[], pauseThres
 }
 
 async function transcribeAudio(audioBuffer: ArrayBuffer) {
-  const data = await transcribeAudioWithGroq(audioBuffer) as VerboseTranscriptionResponse;
-  const transcript = String(data.transcript ?? data.text ?? "").trim();
-  const words = parseTranscribedWords(data.words);
-  console.log("transcript words:", words.length);
-
-  return { text: transcript, words };
+  const data = await transcribeAudioWithGroq(audioBuffer);
+  return { text: data.text, words: data.words };
 }
 
 async function analyzeTranscript(
@@ -801,7 +768,6 @@ export async function replyWithAiFeedback(
 ) {
   const sessionId = ctx.match[1];
   if (!claimAiFeedbackSession(sessionId)) {
-    await ctx.reply("🤖 Feedback is already being generated — it will arrive shortly.");
     return;
   }
 

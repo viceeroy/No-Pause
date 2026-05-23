@@ -79,7 +79,6 @@ export class AudioAnalyzer {
         onFrame: (frame) => this.session?.handleFrame(frame),
       });
       this.isRunning = true;
-      this.transcription.startBrowserRecognition(() => this.isRunning);
       return true;
     } catch (err) {
       this.options.onStartError?.(err);
@@ -89,7 +88,6 @@ export class AudioAnalyzer {
 
   async stop(): Promise<AnalyzerResults> {
     this.isRunning = false;
-    this.transcription.stopBrowserRecognition();
     const now = Date.now();
     const captureResult = await this.capture.stop();
     const stats = this.session?.finish(now, captureResult.avgVolume) ?? this.emptyStats();
@@ -110,7 +108,6 @@ export class AudioAnalyzer {
 
   destroy() {
     this.isRunning = false;
-    this.transcription.destroy();
     this.capture.destroy();
     this.stream = null;
     this.session = null;
