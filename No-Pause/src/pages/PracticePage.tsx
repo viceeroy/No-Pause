@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, CircleHelp } from 'lucide-react';
-import { useBlocker, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -41,13 +41,6 @@ export default function PracticePage() {
   });
   const promptTextParam = searchParams.get('prompt_text');
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
-  const blocker = useBlocker(() => state.state === 'recording');
-
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      setShowLeaveWarning(true);
-    }
-  }, [blocker.state]);
 
   useEffect(() => {
     if (state.state !== 'recording') return;
@@ -73,13 +66,11 @@ export default function PracticePage() {
 
   const handleLeaveConfirm = () => {
     setShowLeaveWarning(false);
-    if (blocker.state === 'blocked') blocker.reset();
     recording.handleBack();
   };
 
   const handleLeaveCancel = () => {
     setShowLeaveWarning(false);
-    if (blocker.state === 'blocked') blocker.reset();
   };
 
   const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';

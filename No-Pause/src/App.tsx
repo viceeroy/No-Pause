@@ -98,6 +98,7 @@ const AppRoutes = () => {
       <div>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/practise" element={<Navigate to="/practice" replace />} />
           <Route path="/practice" element={<PracticePage />} />
           <Route path="/prompts" element={<PromptsPage />} />
           <Route path="/stats" element={<StatsPage />} />
