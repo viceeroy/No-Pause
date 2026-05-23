@@ -39,13 +39,13 @@ const buildWebPageSchema = (title: string, description: string, canonicalPath: s
 const practiceSeo: Pick<RouteSeoConfig, "title" | "description"> = {
   title: "Speaking Mode | No Pause",
   description:
-    "Practice continuous speaking, reduce hesitation, and build stronger speaking flow.",
+    "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.",
 };
 
 export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   if (pathname === "/") {
     const description =
-      "No Pause is a real-time speaking analytics tool that helps you improve speaking fluency, reduce hesitations, and track your Flow Score.";
+      "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.";
     const title = "No Pause - Real-time Speaking Analytics Tool";
     return {
       title,
@@ -68,7 +68,7 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   if (pathname === "/stats" || pathname === "/history") {
     const title = "Fluency Stats & Progress | No Pause";
     const description =
-      "Review Flow Score trends, session history, and speaking progress across your practice modes.";
+      "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.";
     return {
       title,
       description,
@@ -80,7 +80,7 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   if (pathname === "/help") {
     const title = "Help | No Pause";
     const description =
-      "Get help with NoPause — clear answers about practice, scoring, prompts, challenges, and Telegram.";
+      "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.";
     return {
       title,
       description,
@@ -91,7 +91,7 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
 
   if (pathname === "/connect") {
     const title = "Connect Telegram | No Pause";
-    const description = "Connect your Telegram account to No Pause and get Flow Scores from voice notes.";
+    const description = "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.";
     return {
       title,
       description,
@@ -102,7 +102,7 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   }
 
   const title = "Page Not Found | No Pause";
-  const description = "The page you requested was not found on No Pause.";
+  const description = "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.";
   return {
     title,
     description,

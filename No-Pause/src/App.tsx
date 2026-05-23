@@ -10,6 +10,7 @@ import DashboardPage from "@/features/stats/pages/DashboardPage";
 import PracticePage from "./pages/PracticePage";
 import PromptsPage from "./pages/PromptsPage";
 import HelpPage from "./pages/HelpPage";
+import ArticlePage from "@/features/help/ArticlePage";
 import StatsPage from "@/features/stats/pages/StatsPage";
 import AuthPage from "@/features/auth/pages/AuthPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
@@ -157,6 +158,15 @@ const AuthAwareRoutes = () => {
           <>
             <RouteSeoManager />
             <HelpPage />
+          </>
+        }
+      />
+      <Route
+        path="/help/:slug"
+        element={
+          <>
+            <RouteSeoManager />
+            <ArticlePage />
           </>
         }
       />

@@ -17,7 +17,7 @@ const STREAM_HEALTH_INTERVAL_MS = 2000;
 const ANALYZER_HEALTH_INTERVAL_MS = 2500;
 const MEDIA_RECORDER_STOP_TIMEOUT_MS = 3000;
 const WEBM_AUDIO_MIME_TYPE = 'audio/webm';
-const SMOOTHING_WINDOW = 10;
+const SMOOTHING_WINDOW = 4;
 
 type TrackSettingsWithDiagnostics = MediaTrackSettings & {
   channelCount?: number;
@@ -54,7 +54,7 @@ export class AudioCapture {
   private source: MediaStreamAudioSourceNode | null = null;
   private analyserSink: GainNode | null = null;
   private dataArray: Float32Array | null = null;
-  private animationFrame: number | null = null;
+  private analyzeIntervalId: ReturnType<typeof setInterval> | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private mediaRecorderMimeType = '';
   private audioChunks: Blob[] = [];
@@ -93,6 +93,8 @@ export class AudioCapture {
   private analyzeInterval = 33;
   private frameCount = 0;
   private volumeSamples: number[] = [];
+  private volumeSum = 0;
+  private volumeSampleCount = 0;
   private zeroRmsFrameCount = 0;
   private lastSourceRebindAt = 0;
   private graphRecoveryInProgress = false;
@@ -114,7 +116,7 @@ export class AudioCapture {
     this.startRecorder();
     this.startHealthChecks();
     this.isRunning = true;
-    this.analyze();
+    this.analyzeIntervalId = setInterval(() => this.analyze(), this.analyzeInterval);
   }
 
   getCaptureState() {
@@ -157,12 +159,15 @@ export class AudioCapture {
 
   async stop(): Promise<AudioCaptureStopResult> {
     this.isRunning = false;
-    if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+    if (this.analyzeIntervalId) {
+      clearInterval(this.analyzeIntervalId);
+      this.analyzeIntervalId = null;
+    }
     this.clearHealthChecks();
     const audioBlob = await this.stopRecorder();
     const audioMimeType = this.mediaRecorderMimeType || audioBlob?.type || WEBM_AUDIO_MIME_TYPE;
-    const avgVolume = this.volumeSamples.length > 0
-      ? this.volumeSamples.reduce((a, b) => a + b, 0) / this.volumeSamples.length
+    const avgVolume = this.volumeSampleCount > 0
+      ? this.volumeSum / this.volumeSampleCount
       : 0;
     this.disconnectGraph('destroy');
     return { audioBlob, audioMimeType, avgVolume, frameCount: this.frameCount };
@@ -170,7 +175,10 @@ export class AudioCapture {
 
   destroy() {
     this.isRunning = false;
-    if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+    if (this.analyzeIntervalId) {
+      clearInterval(this.analyzeIntervalId);
+      this.analyzeIntervalId = null;
+    }
     this.clearHealthChecks();
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       try { this.mediaRecorder.stop(); } catch (e) {
@@ -236,6 +244,8 @@ export class AudioCapture {
     this.streamHealthLogs = [];
     this.frameCount = 0;
     this.volumeSamples = [];
+    this.volumeSum = 0;
+    this.volumeSampleCount = 0;
     this.zeroRmsFrameCount = 0;
     this.lastSourceRebindAt = 0;
     this.graphRecoveryInProgress = false;
@@ -395,10 +405,6 @@ export class AudioCapture {
   private analyze() {
     if (!this.isRunning || !this.analyser || !this.dataArray) return;
     const now = Date.now();
-    if (now - this.lastAnalyzeTime < this.analyzeInterval) {
-      this.animationFrame = requestAnimationFrame(() => this.analyze());
-      return;
-    }
     this.lastAnalyzeTime = now;
     this.frameCount++;
 
@@ -417,6 +423,8 @@ export class AudioCapture {
     this.chunkRmsAccumulator += rms;
     if (rms > this.chunkPeakAccumulator) this.chunkPeakAccumulator = rms;
     this.chunkRmsSampleCount += 1;
+    this.volumeSum += rms;
+    this.volumeSampleCount += 1;
     this.volumeSamples.push(rms);
     if (this.volumeSamples.length > SMOOTHING_WINDOW) this.volumeSamples = this.volumeSamples.slice(-SMOOTHING_WINDOW);
     const smoothedRms = this.volumeSamples.reduce((a, b) => a + b, 0) / this.volumeSamples.length;
@@ -436,7 +444,6 @@ export class AudioCapture {
       frequencyData: Array.from(freqData.slice(0, 64)),
       speechEnergy,
     });
-    this.animationFrame = requestAnimationFrame(() => this.analyze());
   }
 
   private handleZeroRmsRecovery(now: number, rms: number) {
