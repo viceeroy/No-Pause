@@ -595,7 +595,7 @@ export const MESSAGES = {
   nopauseInfo:
     "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
   about:
-    "ℹ️ <b>About NoPause</b>\n\nNoPause is your speaking coach on Telegram. Send a voice note, get a Flow Score.\n\n🎤 <b>Practice</b>\nSend any voice note to get scored on pauses, hesitations, and speaking time. Tap Speak when you want a quick reminder, then use the inline Get Prompt button if you want a topic first.\n\n🏆 <b>How scoring works</b>\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTap My Stats to check your streak, best score, and practice time.\n\n🌐 nopause.org",
+    "ℹ️ <b>About NoPause</b>\n\nNoPause helps you speak more fluently. Send a voice note and get a Flow Score — the longer you speak and the fewer pauses you make, the higher your score.\n\n🎤 <b>Practice</b>\nJust send a voice note anytime. Tap Speak for a quick reminder or Get Prompt for a topic idea.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTrack your streak, best score, and practice time.\n\n🌐 nopause.org",
   readyPrivate:
     "🎤 Just send a voice note when you are ready.\n\nLet's see what you've got.",
   welcomeIdentify:
