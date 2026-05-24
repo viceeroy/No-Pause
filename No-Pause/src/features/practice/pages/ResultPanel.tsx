@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -96,6 +96,14 @@ export function ResultPanel({
       </div>
 
       <div className="space-y-6">
+        {lastResults.saveFailed && (
+          <div className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <AlertTriangle size={18} className="shrink-0 text-destructive" />
+            <p className="text-sm font-sans text-foreground">
+              Session not saved — check your connection and retry from the notification.
+            </p>
+          </div>
+        )}
         <section className="rounded-[28px] border border-border bg-surface-card p-6 text-left shadow-card md:p-8">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>

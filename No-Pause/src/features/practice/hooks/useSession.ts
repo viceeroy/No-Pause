@@ -1,9 +1,10 @@
-import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useRef, type Dispatch, type SetStateAction } from 'react';
 import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
 import { blendWithAiScore } from '@/lib/core/scoring';
 import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
 import { getWordCount } from '@/lib/core/utils';
+import { toast } from '@/shared/components/ui/sonner';
 
 type UseSessionOptions = {
   lastResults: SessionResult | null;
@@ -32,6 +33,42 @@ export function useSession({
   userEmail,
   userId,
 }: UseSessionOptions) {
+  const pendingSaveRef = useRef<SaveFinishedSessionInput | null>(null);
+
+  const retrySave = useCallback(async () => {
+    const pending = pendingSaveRef.current;
+    if (!pending) return;
+
+    try {
+      const sessionId = await saveSession({
+        userId,
+        email: userEmail ?? undefined,
+        duration: pending.duration,
+        speakingTime: pending.sessionResult.totalSpeakingTime,
+        silenceTime: pending.sessionResult.totalSilenceTime,
+        pauses: pending.sessionResult.hesitationCount,
+        pauseCount: pending.sessionResult.pauseCount ?? pending.sessionResult.hesitationCount,
+        words: pending.words,
+        mode: pending.normalizedMode,
+        flowScore: pending.sessionResult.flowScore,
+        completed: pending.completed,
+        hesitationLog: pending.sessionResult.hesitationLog,
+        transcript: pending.sessionResult.transcript,
+      });
+      pendingSaveRef.current = null;
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return { ...prev, sessionId, saveFailed: false };
+      });
+      toast.success('Session saved');
+    } catch (error) {
+      console.error('Retry save failed:', error);
+      toast.error("Still couldn't save — check your connection", {
+        action: { label: 'Retry', onClick: () => void retrySave() },
+      });
+    }
+  }, [userId, userEmail, setLastResults]);
+
   const saveFinishedSession = useCallback(async ({
     completed,
     duration,
@@ -39,37 +76,51 @@ export function useSession({
     sessionResult,
     words,
   }: SaveFinishedSessionInput): Promise<void> => {
+    let sessionId: string | null = null;
     try {
-      const [sessionId] = await Promise.all([
-        saveSession({
-          userId,
-          email: userEmail ?? undefined,
-          duration,
-          speakingTime: sessionResult.totalSpeakingTime,
-          silenceTime: sessionResult.totalSilenceTime,
-          pauses: sessionResult.hesitationCount,
-          pauseCount: sessionResult.pauseCount ?? sessionResult.hesitationCount,
-          words,
-          mode: normalizedMode,
-          flowScore: sessionResult.flowScore,
-          completed,
-          hesitationLog: sessionResult.hesitationLog,
-          transcript: sessionResult.transcript,
-        }),
-        updateStreak({
-          userId,
-          email: userEmail ?? undefined,
-          localDate: new Date().toLocaleDateString('en-CA'),
-        }),
-      ]);
+      sessionId = await saveSession({
+        userId,
+        email: userEmail ?? undefined,
+        duration,
+        speakingTime: sessionResult.totalSpeakingTime,
+        silenceTime: sessionResult.totalSilenceTime,
+        pauses: sessionResult.hesitationCount,
+        pauseCount: sessionResult.pauseCount ?? sessionResult.hesitationCount,
+        words,
+        mode: normalizedMode,
+        flowScore: sessionResult.flowScore,
+        completed,
+        hesitationLog: sessionResult.hesitationLog,
+        transcript: sessionResult.transcript,
+      });
       setLastResults((prev) => {
         if (!prev) return prev;
         return { ...prev, sessionId };
       });
     } catch (error) {
-      console.error('Failed to sync session to Supabase:', error);
+      console.error('Failed to save session:', error);
+      pendingSaveRef.current = { completed, duration, normalizedMode, sessionResult, words };
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return { ...prev, saveFailed: true };
+      });
+      toast.error("Couldn't save your session", {
+        description: 'Your results are still here. Tap retry to save.',
+        action: { label: 'Retry', onClick: () => void retrySave() },
+        duration: 10000,
+      });
     }
-  }, [userEmail, userId, setLastResults]);
+
+    try {
+      await updateStreak({
+        userId,
+        email: userEmail ?? undefined,
+        localDate: new Date().toLocaleDateString('en-CA'),
+      });
+    } catch (error) {
+      console.error('Failed to update streak:', error);
+    }
+  }, [userEmail, userId, setLastResults, retrySave]);
 
   const requestFeedback = useCallback(async () => {
     if (!lastResults) return;

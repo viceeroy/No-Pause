@@ -34,6 +34,7 @@ export interface SessionResult {
   baseFlowScore?: number;
   aiScore?: number | null;
   aiScoreFeedback?: string | null;
+  saveFailed?: boolean;
 }
 
 export interface PracticeStateStore {

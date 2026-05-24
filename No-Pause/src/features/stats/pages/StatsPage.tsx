@@ -66,6 +66,10 @@ function formatStatsPracticeTime(seconds: number): string {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
   const minutes = Math.floor(safeSeconds / 60);
 
+  if (minutes === 0) {
+    return `${safeSeconds}s`;
+  }
+
   if (minutes < 60) {
     return `${minutes}m`;
   }
@@ -301,8 +305,8 @@ export default function StatsPage({
           <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
             <Flame size={20} className="mb-6 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Current streak</p>
-            <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
-              {statsLoading ? '...' : `${stats.currentStreak} days`}
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
+              {statsLoading ? '...' : `${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}`}
             </p>
           </article>
           <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
