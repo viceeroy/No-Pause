@@ -25,9 +25,9 @@ export type { PracticeStats, SessionRecord, WeeklyActivityDay, WeeklyStatsCompar
 
 const sessionSupabase: SupabaseLike = browserSupabase as unknown as SupabaseLike;
 const SESSION_SUMMARY_COLUMNS =
-  "id, created_at, mode, duration, speaking_time, total_silence_time, pauses, pause_count, words, flow_score, completed, hesitation_log, source";
-const LEGACY_SESSION_SUMMARY_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, words, flow_score, completed, hesitation_log, source";
+const LEGACY_SESSION_SUMMARY_COLUMNS =
+  "id, created_at, mode, duration, speaking_time, pauses, words, flow_score, completed, hesitation_log, source";
 
 async function getBestSessionSummary(userId: string): Promise<SessionRecord | null> {
   const { data, error } = await browserSupabase
@@ -260,7 +260,6 @@ export async function getPracticeStats(userId: string | null, limit = 15): Promi
           mode: session.mode,
           duration: session.duration,
           speaking_time: session.speakingTime,
-          total_silence_time: session.totalSilenceTime,
           pauses: session.hesitationCount,
           pause_count: session.hesitationCount,
           words: null,

@@ -151,7 +151,6 @@ describe('buildSessionInsertValues', () => {
     expect(values.source).toBe('web');
     expect(values.scoring_version).toBe('1.0');
     expect(values.transcript).toBeNull();
-    expect(values.total_silence_time).toBeNull();
   });
 
   it('uses explicit pauseCount when provided', () => {
@@ -163,7 +162,6 @@ describe('buildSessionInsertValues', () => {
     const values = buildSessionInsertValues({
       ...minimal,
       speakingTime: 55,
-      silenceTime: 5,
       flowScore: 85,
       words: 120,
       completed: true,
@@ -173,7 +171,6 @@ describe('buildSessionInsertValues', () => {
       telegramMessageId: 678,
     });
     expect(values.speaking_time).toBe(55);
-    expect(values.total_silence_time).toBe(5);
     expect(values.flow_score).toBe(85);
     expect(values.words).toBe(120);
     expect(values.completed).toBe(true);
@@ -191,13 +188,11 @@ describe('buildLegacySessionInsertValues', () => {
       duration: 60,
       pauses: 3,
       pauseCount: 5,
-      silenceTime: 10,
       telegramChatId: 123,
       telegramMessageId: 456,
     });
     expect(values).not.toHaveProperty('pause_count');
     expect(values).not.toHaveProperty('hesitations_per_minute');
-    expect(values).not.toHaveProperty('total_silence_time');
     expect(values).not.toHaveProperty('telegram_chat_id');
     expect(values).not.toHaveProperty('telegram_message_id');
     expect(values.pauses).toBe(3);
@@ -215,7 +210,6 @@ describe('isMissingSessionAnalysisColumnError', () => {
 
   it('detects column name in message', () => {
     expect(isMissingSessionAnalysisColumnError({ message: 'column pause_count does not exist' })).toBe(true);
-    expect(isMissingSessionAnalysisColumnError({ message: 'column total_silence_time does not exist' })).toBe(true);
   });
 
   it('returns false for unrelated errors', () => {

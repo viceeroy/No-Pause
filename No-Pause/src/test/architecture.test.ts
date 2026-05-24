@@ -244,7 +244,6 @@ describe('stats architecture', () => {
         mode: 'speaking',
         duration: 60,
         speaking_time: 58,
-        total_silence_time: 2,
         pauses: 0,
         pause_count: 0,
         words: 40,
@@ -259,7 +258,6 @@ describe('stats architecture', () => {
         mode: 'speaking',
         duration: 80,
         speaking_time: 75,
-        total_silence_time: 5,
         pauses: 1,
         pause_count: 1,
         words: 50,
@@ -275,7 +273,6 @@ describe('stats architecture', () => {
       mode: 'speaking',
       duration: 180,
       speaking_time: 178,
-      total_silence_time: 2,
       pauses: 0,
       pause_count: 0,
       words: 150,
@@ -336,7 +333,6 @@ describe('stats architecture', () => {
         mode: 'speaking',
         duration: 90,
         speaking_time: 80,
-        total_silence_time: 10,
         pauses: 99,
         pause_count: 3,
         words: 20,
@@ -661,7 +657,6 @@ describe('stats summary architecture', () => {
         mode: 'speaking',
         duration: 60,
         speaking_time: 55,
-        total_silence_time: 5,
         pauses: 1,
         pause_count: 1,
         words: 10,
@@ -732,14 +727,12 @@ describe('session persistence architecture', () => {
       duration: 60,
       pauses: 2,
       speakingTime: 55,
-      silenceTime: 5,
       mode: 'free_speaking',
       flowScore: 90,
       completed: true,
     });
 
     expect(values.mode).toBe('speaking');
-    expect(values.total_silence_time).toBe(5);
     expect(JSON.stringify(values)).not.toContain('free_speaking');
   });
 
