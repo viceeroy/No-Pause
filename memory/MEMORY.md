@@ -101,7 +101,7 @@ services/
   supabase.ts                   Browser Supabase anon client
   supabaseServer.ts             Server Supabase service-role client (server-only)
   groq.ts                       Groq Whisper transcription + chat completions (server-only)
-  aiFeedback.ts                 generateAiFeedback, analyzePracticeSpeech (server-only; imports getWordCount from lib/core/utils)
+  aiFeedback.ts                 generateAiFeedback, analyzePracticeSpeech — both use shared FEEDBACK_SYSTEM_PROMPT constant; transcript-only, no stats injected (server-only)
   apiQuota.ts                   API quota enforcement via Supabase RPC
 
 providers/
@@ -188,6 +188,8 @@ otherwise:
 ```
 
 **Labels:** `< 50` Needs Practice · `50–99` Getting There · `100–199` Good Flow · `200–299` Great Flow · `≥ 300` Perfect Flow.
+
+**`blendWithAiScore` removed 2026-05-24.** Previously, `scoreSpeechQuality` called Groq to score speech 0–100 on coherence/grammar/word choice and added that integer to the flow score. Was on-demand on web (triggered by "Get AI Feedback" button) but ran **automatically before `insertSession`** on Telegram, meaning Telegram sessions before 2026-05-24 may have inflated `flow_score` values in the DB. Related state fields `baseFlowScore`, `aiScore`, `aiScoreFeedback` also removed.
 
 **Rules:**
 - Only `src/lib/core/scoring.ts` defines the formula. Never fork constants or formulas elsewhere.
@@ -287,6 +289,7 @@ Notes:
 - **`src/lib/core/prompts.ts`** must not be removed; Telegram prompt/challenge behavior depends on it.
 - **Service worker** (`sw.js`) uses stale-while-revalidate for core assets, network-first for navigation.
 - **Filler tracking** was removed repo-wide on 2026-05-18. Any memory or code reference to `filler_count`, `fillerCount`, `generateFillerCount`, or `fillerWordCount` is historical only.
+- **Telegram flow scores may be inflated pre-2026-05-24** — `blendWithAiScore` (AI speech quality 0–100 added to flow score) ran before `insertSession` on the bot, so Telegram sessions saved before that date may have higher `flow_score` values than the formula alone would produce. Web sessions are unaffected (the blend was on-demand and never written back to the DB).
 
 ---
 

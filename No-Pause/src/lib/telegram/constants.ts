@@ -228,7 +228,6 @@ function truncateTextForLimit(text: string, maxLength: number): string {
 function formatResultFields(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
-  aiScoreFeedback?: string | null;
   html?: boolean;
   maxLength?: number;
 }): string {
@@ -236,7 +235,7 @@ function formatResultFields(input: {
   const bonus = completedMinutes * 40;
   const transcript = input.transcript?.trim();
   const label = (text: string) => (input.html ? `<b>${text}</b>` : text);
-  const fields = [
+  const fieldsWithFeedback = [
     `📊 ${label("Flow Score:")} ${input.analysis.flowScore}`,
     ...(bonus > 0 ? [`🥇 ${label("Bonus:")} +${bonus}`] : []),
     "",
@@ -244,12 +243,6 @@ function formatResultFields(input: {
     `🕒 ${label("Session length:")} ${formatTelegramResultDuration(input.analysis.totalSessionTimeSec)}`,
     `🔇 ${label("Pauses:")} ${input.analysis.pauseCount}`,
   ].join("\n");
-
-  const aiFeedbackSection = input.aiScoreFeedback
-    ? `\n\n💬 ${label("Speech Quality:")}\n${input.html ? escapeTelegramHtml(input.aiScoreFeedback) : input.aiScoreFeedback}`
-    : "";
-
-  const fieldsWithFeedback = `${fields}${aiFeedbackSection}`;
 
   if (!transcript) {
     return fieldsWithFeedback;
@@ -270,7 +263,6 @@ function formatResultFields(input: {
 export function getSpeakingResultMessage(input: {
   analysis: FlowAnalysis;
   transcript?: string | null;
-  aiScoreFeedback?: string | null;
   speaker?: string;
 }): string {
   const speakerText = input.speaker
@@ -281,7 +273,6 @@ export function getSpeakingResultMessage(input: {
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
-    aiScoreFeedback: input.aiScoreFeedback,
     html: true,
     maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;
@@ -362,7 +353,6 @@ export function getChallengeResultMessage(input: {
   topic: string;
   analysis: FlowAnalysis;
   transcript?: string | null;
-  aiScoreFeedback?: string | null;
   title?: string;
   attemptCount?: number;
 }): string {
@@ -371,7 +361,6 @@ export function getChallengeResultMessage(input: {
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
     transcript: input.transcript,
-    aiScoreFeedback: input.aiScoreFeedback,
     html: true,
     maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length,
   })}`;

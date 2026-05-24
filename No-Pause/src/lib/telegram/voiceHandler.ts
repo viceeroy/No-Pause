@@ -3,13 +3,12 @@ import {
   SCORING_VERSION,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
-import { blendWithAiScore, calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
+import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
 import {
   generateAiFeedback,
   isUsableTranscript,
-  scoreSpeechQuality,
 } from "../../services/aiFeedback.js";
 import {
   DAILY_FEEDBACK_LIMIT,
@@ -519,22 +518,12 @@ export async function handleVoiceMessage(
     }
 
     const totalSessionTimeSec = estimateDurationSec(voice.duration);
-    const [analysis, aiScoreResult] = await Promise.all([
-      analyzeTranscript(
-        transcript,
-        transcription.words,
-        totalSessionTimeSec,
-        TELEGRAM_PAUSE_THRESHOLD_MS,
-      ),
-      scoreSpeechQuality(transcript).catch((err) => {
-        console.error("Telegram AI scoring failed (non-fatal):", err);
-        return null;
-      }),
-    ]);
-    if (aiScoreResult) {
-      analysis.flowScore = blendWithAiScore(analysis.flowScore, aiScoreResult.score);
-    }
-    const aiScoreFeedback = aiScoreResult?.feedback ?? null;
+    const analysis = await analyzeTranscript(
+      transcript,
+      transcription.words,
+      totalSessionTimeSec,
+      TELEGRAM_PAUSE_THRESHOLD_MS,
+    );
     let sessionId: string;
     try {
       sessionId = await insertTelegramSession({
@@ -562,7 +551,7 @@ export async function handleVoiceMessage(
 
     if (groupChat) {
       await ctx.reply(
-        getSpeakingResultMessage({ speaker: username, analysis, transcript, aiScoreFeedback }),
+        getSpeakingResultMessage({ speaker: username, analysis, transcript }),
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
@@ -592,7 +581,7 @@ export async function handleVoiceMessage(
           }
         }
 
-        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript, aiScoreFeedback }), {
+        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
           parse_mode: "HTML",
         });
         return;
@@ -600,7 +589,7 @@ export async function handleVoiceMessage(
 
       const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
 
-      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript, aiScoreFeedback }), {
+      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
         ...getFriendChallengeResultActions({
           creatorUsername,
           challengeId: challenge.id,
@@ -626,7 +615,6 @@ export async function handleVoiceMessage(
           topic: challenge.topic,
           analysis,
           transcript,
-          aiScoreFeedback,
           attemptCount,
         }),
         {
@@ -643,7 +631,7 @@ export async function handleVoiceMessage(
     }
 
     await ctx.reply(
-      getSpeakingResultMessage({ analysis, transcript, aiScoreFeedback }),
+      getSpeakingResultMessage({ analysis, transcript }),
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {

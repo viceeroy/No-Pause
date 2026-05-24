@@ -6,7 +6,7 @@ import {
   getQuotaExceededMessage,
   isApiQuotaExceededError,
 } from "../src/services/apiQuota.js";
-import { analyzePracticeSpeech, scoreSpeechQuality, type AnalyzePracticeSpeechInput } from "../src/services/aiFeedback.js";
+import { analyzePracticeSpeech, type AnalyzePracticeSpeechInput } from "../src/services/aiFeedback.js";
 
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
@@ -81,18 +81,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       limit: DAILY_FEEDBACK_LIMIT,
     });
 
-    const [feedback, aiScoreResult] = await Promise.all([
-      analyzePracticeSpeech(input),
-      scoreSpeechQuality(input.transcript).catch((err) => {
-        console.error("AI scoring failed (non-fatal):", err);
-        return null;
-      }),
-    ]);
-    sendJson(res, 200, {
-      feedback,
-      aiScore: aiScoreResult?.score ?? null,
-      aiScoreFeedback: aiScoreResult?.feedback ?? null,
-    });
+    const feedback = await analyzePracticeSpeech(input);
+    sendJson(res, 200, { feedback });
   } catch (error) {
     if (isApiQuotaExceededError(error)) {
       sendJson(res, 429, { error: getQuotaExceededMessage(error.kind) });

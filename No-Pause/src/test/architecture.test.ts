@@ -1595,7 +1595,6 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback,
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
-      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => {
       order.push('groq');
@@ -1742,7 +1741,6 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
-      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
       text: 'hello group challenge',
@@ -1895,7 +1893,6 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
-      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
       text: 'should not transcribe',
@@ -2013,7 +2010,6 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
-      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
       text: 'should not transcribe',
@@ -2144,7 +2140,6 @@ describe('HTTP header ASCII normalization', () => {
     vi.doMock('@/services/aiFeedback', () => ({
       generateAiFeedback: vi.fn(async () => 'Feedback'),
       isUsableTranscript: vi.fn(() => true),
-      scoreSpeechQuality: vi.fn(async () => null),
     }));
     const groqTranscriptionMock = vi.fn(async () => ({
       text: 'should not transcribe',

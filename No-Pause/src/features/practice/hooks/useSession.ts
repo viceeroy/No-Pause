@@ -1,6 +1,5 @@
 import { useCallback, useRef, type Dispatch, type SetStateAction } from 'react';
 import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
-import { blendWithAiScore } from '@/lib/core/scoring';
 import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
 import { getWordCount } from '@/lib/core/utils';
@@ -158,18 +157,10 @@ export function useSession({
       });
       setLastResults((prev) => {
         if (!prev) return prev;
-        const baseScore = prev.baseFlowScore ?? prev.flowScore;
-        const blendedScore = result.aiScore != null
-          ? blendWithAiScore(baseScore, result.aiScore)
-          : prev.flowScore;
         return {
           ...prev,
           analysisFeedback: result.feedback,
           analysisFeedbackLoading: false,
-          baseFlowScore: baseScore,
-          aiScore: result.aiScore,
-          aiScoreFeedback: result.aiScoreFeedback,
-          flowScore: blendedScore,
         };
       });
     } catch (error) {

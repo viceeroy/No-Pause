@@ -65,10 +65,6 @@ export function calculateFlowScore(
   return { score: finalScore, isCompleted: true };
 }
 
-export function blendWithAiScore(baseFlowScore: number, aiScore: number): number {
-  return Math.max(0, baseFlowScore + Math.round(aiScore));
-}
-
 export function getScoreLabel(score: number): string {
   if (score >= 300) return "Perfect Flow";
   if (score >= 200) return "Great Flow";
