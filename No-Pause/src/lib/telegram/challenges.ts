@@ -89,13 +89,16 @@ export function isGroupChallengeExpired(
   return now.getTime() - createdAt >= GROUP_CHALLENGE_EXPIRY_MS;
 }
 
-function formatTelegramDisplayName(chat: { username?: string; first_name?: string; last_name?: string } | null, telegramId: number): string {
+export function formatTelegramDisplayName(
+  chat: { username?: string; first_name?: string; last_name?: string } | null,
+  telegramId: number | string,
+): string {
   if (chat?.username) {
     return `@${chat.username}`;
   }
 
   const fullName = [chat?.first_name, chat?.last_name].filter(Boolean).join(" ").trim();
-  return fullName || `@${telegramId}`;
+  return fullName || String(telegramId);
 }
 
 async function createChallenge(input: {
@@ -314,6 +317,47 @@ export async function recordFriendChallengeSubmission(input: {
   }
 }
 
+export async function getFriendChallengeSubmissionSessionId(input: {
+  challengeId: string;
+  telegramId: number;
+}): Promise<string | null> {
+  const { data, error } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("session_id")
+    .eq("challenge_id", input.challengeId)
+    .eq("telegram_id", input.telegramId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return typeof data?.session_id === "string" && data.session_id ? data.session_id : null;
+}
+
+export async function getFriendChallengeParticipantTelegramId(input: {
+  challengeId: string;
+  creatorTelegramId: number;
+}): Promise<number | null> {
+  const { data, error } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("telegram_id")
+    .eq("challenge_id", input.challengeId)
+    .neq("telegram_id", input.creatorTelegramId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const telegramId = Number(data?.telegram_id);
+  return Number.isFinite(telegramId) ? telegramId : null;
+}
+
 export async function claimFriendChallengeResultSend(input: {
   challengeId: string;
   telegramId: number;
@@ -428,7 +472,7 @@ export async function showGroupChallengeLeaderboard(ctx: Context & { match: RegE
         console.error("Telegram leaderboard username lookup failed", error);
         return {
           rank: index + 1,
-          username: `@${participant.telegramId}`,
+          username: String(participant.telegramId),
           bestFlowScore: participant.bestFlowScore,
           attemptCount: participant.attemptCount,
         };
@@ -478,7 +522,11 @@ export async function replyWithNewFriendChallenge(ctx: Context, telegramId: numb
     });
 
     await ctx.reply(
-      getFriendChallengeShareMessage({ topic, challengeId }),
+      getFriendChallengeShareMessage({
+        creatorName: formatTelegramDisplayName(ctx.from ?? null, telegramId),
+        topic,
+        challengeId,
+      }),
       {
         ...getChallengeShareActions(challengeId, true),
         parse_mode: "HTML",
@@ -541,12 +589,16 @@ export async function handleChallengeDeepLink(
 
     let creatorUsername: string | undefined;
     try {
-      const creatorChat = (await ctx.telegram.getChat(Number(challenge.creator_telegram_id))) as { username?: string };
-      creatorUsername = creatorChat.username;
+      const creatorChat = (await ctx.telegram.getChat(Number(challenge.creator_telegram_id))) as {
+        username?: string;
+        first_name?: string;
+        last_name?: string;
+      };
+      creatorUsername = formatTelegramDisplayName(creatorChat, challenge.creator_telegram_id);
     } catch (error) {
       console.error("Telegram creator username lookup failed", error);
     }
-    creatorUsername ??= String(challenge.creator_telegram_id);
+    creatorUsername ??= formatTelegramDisplayName(null, challenge.creator_telegram_id);
     await upsertPendingChallenge({
       telegramId,
       challengeId: challenge.id,

@@ -16,6 +16,7 @@ export const CHANGE_PROMPT_ACTION = "change_prompt";
 export const CHANGE_GROUP_TOPIC_ACTION_PREFIX = "cg:";
 export const POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "pgr:";
 export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
+export const SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX = "ccr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
 export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
@@ -158,8 +159,10 @@ ${escapeTelegramHtml(topic)}
 Send a new voice message in this DM. Once it is scored, I'll add it to the leaderboard automatically.`;
 }
 
-export function getFriendChallengeShareMessage(input: { topic: string; challengeId: string }): string {
-  return `⚔️ <b>Challenge your friends</b>
+export function getFriendChallengeShareMessage(input: { creatorName: string; topic: string; challengeId: string }): string {
+  const creatorName = input.creatorName.trim().replace(/^@+/, "") || "Someone";
+
+  return `⚔️ <b>${escapeTelegramHtml(creatorName)}'s Challenge</b>
 
 💬 <b>Topic</b>
 ${escapeTelegramHtml(input.topic)}
@@ -337,13 +340,28 @@ export function getFriendChallengeResultActions(input: {
   challengeId: string;
   sessionId: string;
 }) {
-  const creatorLabel = input.creatorUsername.trim().replace(/^@+/, "");
+  const creatorLabel = input.creatorUsername.trim() || "the challenger";
 
   return Markup.inlineKeyboard([
     [
       Markup.button.callback(
-        `Send Result to @${creatorLabel} 📨`,
+        `Send Result to ${creatorLabel} 📨`,
         `${SEND_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`,
+      ),
+    ],
+  ]);
+}
+
+export function getCreatorChallengeResultActions(input: {
+  challengeId: string;
+  sessionId: string;
+  friendTelegramId: number;
+}) {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback(
+        "📤 Share Results",
+        `${SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}:${input.friendTelegramId}`,
       ),
     ],
   ]);
@@ -366,6 +384,19 @@ export function getChallengeResultMessage(input: {
   })}`;
 }
 
+export function getCreatorChallengeSharedResultMessage(input: {
+  topic: string;
+  analysis: FlowAnalysis;
+  transcript?: string | null;
+}): string {
+  return getChallengeResultMessage({
+    title: "Challenger Result",
+    topic: input.topic,
+    analysis: input.analysis,
+    transcript: input.transcript,
+  });
+}
+
 export function getChallengeCreatorNotification(input: {
   friendUsername: string;
   topic: string;
@@ -376,7 +407,7 @@ export function getChallengeCreatorNotification(input: {
   const friend = escapeTelegramHtml(input.friendUsername);
   const topic = escapeTelegramHtml(input.topic);
   if (input.creatorScore === null || input.creatorScore === undefined) {
-    const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>Friend:</b>\n@${friend}\n\n💬 <b>Topic:</b>\n${topic}\n\n`;
+    const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>Friend:</b>\n${friend}\n\n💬 <b>Topic:</b>\n${topic}\n\n`;
     const suffix = "\n\n🎤 Send a voice note when you are ready.";
     return `${prefix}${formatResultFields({
       analysis: input.analysis,
@@ -386,7 +417,7 @@ export function getChallengeCreatorNotification(input: {
     })}${suffix}`;
   }
 
-  const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>Friend:</b>\n@${friend}\n\n💬 <b>Topic:</b>\n${topic}\n\n`;
+  const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>Friend:</b>\n${friend}\n\n💬 <b>Topic:</b>\n${topic}\n\n`;
   const suffix = `\n\n<b>Your Flow Score:</b>\n${input.creatorScore}`;
   return `${prefix}${formatResultFields({
     analysis: input.analysis,
@@ -551,6 +582,18 @@ export const MESSAGES = {
     "📊 You do not have any practice sessions yet.\n\nSend a voice note and let's see what you've got 🎤",
   challengeCreationError:
     "⚠️ I could not create a challenge right now.\n\nPlease try again in a moment.",
+  challengeResultMissing:
+    "I could not find your challenge result right now.",
+  challengeCreatorShareUnauthorized:
+    "Only the challenge creator can share this result.",
+  challengeCreatorShareAlreadySent:
+    "This result has already been shared.",
+  challengeCreatorShareSent:
+    "Shared with your friend.",
+  challengeCreatorShareConfirmation:
+    "✅ Your result was shared.",
+  challengeCreatorShareError:
+    "I could not share that result right now.",
   groupChallengeCreationError:
     "⚠️ I could not create a group challenge right now.\n\nPlease try again in a moment.",
   challengeNotFound:

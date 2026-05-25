@@ -21,6 +21,7 @@ import {
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
+  SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX,
   SPEAK_LABEL,
   speakPromptKeyboard,
   TELEGRAM_BOT_USERNAME,
@@ -44,6 +45,7 @@ import {
   isGroupChat,
   replyWithAiFeedback,
   replyWithConnectPrompt,
+  shareCreatorChallengeResult,
   sendFriendChallengeResult,
   postGroupChallengeResultToGroup,
   TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE,
@@ -261,6 +263,16 @@ export function createTelegramBot() {
     }
 
     await sendFriendChallengeResult(ctx, telegramId);
+  });
+
+  bot.action(new RegExp(`^${SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):([^:]+):(.+)$`), async (ctx) => {
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) {
+      await ctx.answerCbQuery(MESSAGES.challengeResultMissing, { show_alert: true });
+      return;
+    }
+
+    await shareCreatorChallengeResult(ctx, telegramId);
   });
 
   bot.action(new RegExp(`^${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {

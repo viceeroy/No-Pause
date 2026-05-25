@@ -62,22 +62,28 @@ function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
   return { band: 5, feedback: raw };
 }
 
-export async function generateAiFeedback(transcript: string): Promise<AiFeedbackResult> {
-  try {
-    const trimmed = transcript.trim();
-    if (!trimmed) {
-      throw new Error("Transcript is empty");
-    }
-    const raw = await getAIFeedback(trimmed, FEEDBACK_SYSTEM_PROMPT);
-    return parseAiFeedbackResponse(raw);
-  } catch (error) {
-    console.error("Groq feedback failed", {
-      message: error instanceof Error ? error.message : String(error),
-      transcriptLength: transcript.length,
-    });
-    throw error;
-  }
-}
+const buildPracticeFeedbackPrompt = (input: {
+  transcript: string;
+  flowScore: number;
+  hesitationCount: number;
+  speakingTime: number;
+  wordCount: number;
+}) =>
+  `${FEEDBACK_SYSTEM_PROMPT}
+
+SESSION MEASUREMENTS:
+The following are precise measurements from the session, not inferred from the transcript. Use these exact values authoritatively when evaluating the session and writing feedback.
+- Flow Score: ${input.flowScore}
+- Pauses: ${input.hesitationCount}
+- Speaking Time: ${input.speakingTime} seconds
+- Word Count: ${input.wordCount}
+- Transcript: ${input.transcript}
+
+Evaluate vocabulary, grammar, clarity, confidence, and non-fluency coherence from the transcript. For fluency and pacing, use the measured pause data, not a text-based guess. Treat Pauses as the exact hesitation count and Speaking Time as the authoritative session length. Do not infer, estimate, or override the pause count from transcript wording.
+
+Derive the hesitation rate as Pauses / Speaking Time in seconds, using ${input.hesitationCount} / ${input.speakingTime}. Anchor the fluency component of the band to that measured hesitation rate. Keep Flow Score open-ended; do not describe Flow Score as a percentage or fixed 100-point score.
+
+Reference the measured numbers naturally when relevant, for example: "You had ${input.hesitationCount} pauses in ${input.speakingTime} seconds."`;
 
 export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<AiFeedbackResult> {
   try {
@@ -86,9 +92,29 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
       throw new Error("Transcript is empty");
     }
 
-    console.log("analyzeSpeech request", { transcriptLength: trimmed.length });
+    const flowScore = input.flowScore ?? 0;
+    const hesitationCount = input.hesitationCount ?? 0;
+    const speakingTime = input.speakingTime ?? 0;
+    const wordCount = input.wordCount ?? 0;
 
-    const raw = await getAIFeedback(trimmed, FEEDBACK_SYSTEM_PROMPT);
+    console.log("analyzeSpeech request", {
+      transcriptLength: trimmed.length,
+      flowScore,
+      hesitationCount,
+      speakingTime,
+      wordCount,
+    });
+
+    const raw = await getAIFeedback(
+      trimmed,
+      buildPracticeFeedbackPrompt({
+        transcript: trimmed,
+        flowScore,
+        hesitationCount,
+        speakingTime,
+        wordCount,
+      }),
+    );
     const result = parseAiFeedbackResponse(raw);
 
     console.log("analyzeSpeech response", { responseLength: result.feedback.length, band: result.band });

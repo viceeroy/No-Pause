@@ -7,7 +7,7 @@ import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js"
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
 import {
-  generateAiFeedback,
+  analyzePracticeSpeech,
   isUsableTranscript,
 } from "../../services/aiFeedback.js";
 import {
@@ -23,7 +23,10 @@ import { supabaseServer } from "../../services/supabaseServer.js";
 import {
   claimFriendChallengeResultSend,
   deletePendingChallenge,
+  formatTelegramDisplayName,
   getFriendChallenge,
+  getFriendChallengeParticipantTelegramId,
+  getFriendChallengeSubmissionSessionId,
   getGroupChallengeAttemptCount,
   getPendingChallenge,
   isGroupChallengeExpired,
@@ -39,6 +42,8 @@ import {
   getChallengeResultMessage,
   getChallengesTableMissingMessage,
   getConnectAccountKeyboard,
+  getCreatorChallengeResultActions,
+  getCreatorChallengeSharedResultMessage,
   getFriendChallengeResultActions,
   getGroupChallengeResultActions,
   getGroupShareResultMessage,
@@ -98,11 +103,11 @@ export function isGroupChat(ctx: Context): boolean {
 }
 
 export function getTelegramUsername(ctx: Context): string {
-  return ctx.from?.username ? `@${ctx.from.username}` : "@there";
+  return formatTelegramDisplayName(ctx.from ?? null, ctx.from?.id ?? ctx.chat?.id ?? "");
 }
 
 export function getPlainTelegramUsername(ctx: Context): string {
-  return ctx.from?.username ?? String(ctx.from?.id ?? "there");
+  return getTelegramUsername(ctx).replace(/^@+/, "");
 }
 
 function getTelegramFirstName(ctx: Context): string {
@@ -531,7 +536,13 @@ export async function handleVoiceMessage(
     let aiFeedbackText: string | null = null;
     let finalScore = analysis.flowScore;
     try {
-      const aiResult = await generateAiFeedback(transcript);
+      const aiResult = await analyzePracticeSpeech({
+        transcript,
+        hesitationCount: analysis.pauseCount,
+        speakingTime: analysis.speakingTimeSec,
+        flowScore: analysis.flowScore,
+        wordCount: getWordCount(transcript),
+      });
       finalScore = analysis.flowScore + aiResult.band * 10;
       aiFeedbackText = aiResult.feedback;
     } catch (error) {
@@ -602,7 +613,24 @@ export async function handleVoiceMessage(
           }
         }
 
+        let friendTelegramId: number | null = null;
+        try {
+          friendTelegramId = await getFriendChallengeParticipantTelegramId({
+            challengeId: challenge.id,
+            creatorTelegramId: telegramId,
+          });
+        } catch (error) {
+          console.error("Telegram friend challenge participant lookup failed", error);
+        }
+
         await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix, {
+          ...(friendTelegramId
+            ? getCreatorChallengeResultActions({
+                challengeId: challenge.id,
+                sessionId: String(sessionId),
+                friendTelegramId,
+              })
+            : {}),
           parse_mode: "HTML",
         });
         return;
@@ -700,15 +728,28 @@ export async function sendFriendChallengeResult(
 
     const analysis = getSessionAnalysis(session);
     const creatorTelegramId = Number(challenge.creator_telegram_id);
-    const creatorUsername = String(challenge.creator_telegram_id);
+    const creatorUsername = formatTelegramDisplayName(null, challenge.creator_telegram_id);
+    const creatorSessionId = challenge.creator_score === null || challenge.creator_score === undefined
+      ? null
+      : await getFriendChallengeSubmissionSessionId({
+          challengeId: challenge.id,
+          telegramId: creatorTelegramId,
+        });
 
     await ctx.telegram.sendMessage(creatorTelegramId, getChallengeCreatorNotification({
-      friendUsername: getPlainTelegramUsername(ctx),
+      friendUsername: getTelegramUsername(ctx),
       topic: challenge.topic,
       analysis,
       creatorScore: challenge.creator_score,
       transcript: session.transcript,
     }), {
+      ...(creatorSessionId
+        ? getCreatorChallengeResultActions({
+            challengeId: challenge.id,
+            sessionId: creatorSessionId,
+            friendTelegramId: telegramId,
+          })
+        : {}),
       parse_mode: "HTML",
     });
 
@@ -726,6 +767,61 @@ export async function sendFriendChallengeResult(
   } catch (error) {
     console.error("Telegram challenge result send failed", error);
     await ctx.answerCbQuery("I could not send that result right now.", { show_alert: true });
+  }
+}
+
+export async function shareCreatorChallengeResult(
+  ctx: Context & { match: RegExpExecArray },
+  telegramId: number,
+) {
+  const challengeId = ctx.match[1];
+  const sessionId = ctx.match[2];
+  const friendTelegramId = Number(ctx.match[3]);
+
+  try {
+    const [userId, challenge] = await Promise.all([
+      resolveTelegramUser(telegramId),
+      getFriendChallenge(challengeId),
+    ]);
+    if (!userId || !challenge || !Number.isFinite(friendTelegramId)) {
+      await ctx.answerCbQuery(MESSAGES.challengeResultMissing, { show_alert: true });
+      return;
+    }
+
+    if (Number(challenge.creator_telegram_id) !== telegramId) {
+      await ctx.answerCbQuery(MESSAGES.challengeCreatorShareUnauthorized, { show_alert: true });
+      return;
+    }
+
+    const session = await getTelegramSession({ userId, sessionId });
+    if (!session) {
+      await ctx.answerCbQuery(MESSAGES.challengeResultMissing, { show_alert: true });
+      return;
+    }
+
+    const shouldSend = await claimFriendChallengeResultSend({
+      challengeId: challenge.id,
+      telegramId,
+      sessionId,
+    });
+    if (!shouldSend) {
+      await ctx.answerCbQuery(MESSAGES.challengeCreatorShareAlreadySent);
+      return;
+    }
+
+    await ctx.telegram.sendMessage(friendTelegramId, getCreatorChallengeSharedResultMessage({
+      topic: challenge.topic,
+      analysis: getSessionAnalysis(session),
+      transcript: session.transcript,
+    }), {
+      parse_mode: "HTML",
+    });
+
+    await ctx.answerCbQuery(MESSAGES.challengeCreatorShareSent);
+    await ctx.reply(MESSAGES.challengeCreatorShareConfirmation);
+  } catch (error) {
+    console.error("Telegram creator challenge result share failed", error);
+    await ctx.answerCbQuery(MESSAGES.challengeCreatorShareError, { show_alert: true });
   }
 }
 
@@ -796,15 +892,23 @@ export async function replyWithAiFeedback(
       return;
     }
 
-    const transcript = await withTimeout(
-      getTelegramSessionTranscript({ userId, sessionId }),
+    const session = await withTimeout(
+      getTelegramSession({ userId, sessionId }),
       TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
       TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
     );
-    if (!transcript) {
+    const transcript = session?.transcript?.trim() || "";
+    if (!session || !transcript) {
       await ctx.reply(MESSAGES.feedbackTranscriptMissing, { parse_mode: "HTML" });
       return;
     }
+    const analysis = getSessionAnalysis(session);
+    const {
+      flowScore,
+      pauseCount: hesitationCount,
+      speakingTimeSec,
+    } = analysis;
+    const wordCount = getWordCount(transcript);
     console.log("Telegram AI feedback session loaded", {
       telegramId,
       sessionId,
@@ -828,7 +932,17 @@ export async function replyWithAiFeedback(
         sessionId,
         transcriptLength: transcript.length,
       });
-      const aiResult = await withTimeout(generateAiFeedback(transcript), 25_000, "AI feedback timed out");
+      const aiResult = await withTimeout(
+        analyzePracticeSpeech({
+          transcript,
+          hesitationCount,
+          speakingTime: speakingTimeSec,
+          flowScore,
+          wordCount,
+        }),
+        25_000,
+        "AI feedback timed out",
+      );
       console.log("Telegram AI feedback completed", {
         telegramId,
         sessionId,
