@@ -1,6 +1,11 @@
 import { getAIFeedback } from "./groq.js";
 import { getWordCount } from "../lib/core/utils.js";
 
+export type AiFeedbackResult = {
+  band: number;
+  feedback: string;
+};
+
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
   flowScore?: number;
@@ -13,38 +18,58 @@ export function isUsableTranscript(transcript: string): boolean {
   return getWordCount(transcript) >= 3;
 }
 
-const FEEDBACK_SYSTEM_PROMPT = `You are a direct, honest speech analyst. Give clear feedback based exactly on what the user said. No flattery, no filler encouragement. If something is strong, say it. If something needs work, say it plainly.
+const FEEDBACK_SYSTEM_PROMPT = `You are an expert speech coach who scores spoken English using the following internal criteria (never mention these criteria names or scoring system to the user):
 
-You will receive a transcript of a spoken practice session. Analyze it and give feedback using "you."
+INTERNAL SCORING (1-9 scale, integer only):
+- Fluency & Coherence: natural flow, logical development, self-correction ability
+- Lexical Resource: vocabulary range, precision, idiomatic usage
+- Grammatical Range & Accuracy: sentence variety, error frequency, complexity
+- Pronunciation: inferred from word choices, rhythm patterns, natural phrasing
 
-FEEDBACK LENGTH — scale to content, not time:
-- Very short (1–2 sentences spoken): 1–2 sentences only. Comment on what is actually observable. Do not force criteria that need more content.
-- Medium speech: 2–3 short paragraphs.
-- Full developed speech: up to 4 short paragraphs.
+Evaluate the transcript holistically across all four criteria and produce a single integer band from 1 to 9.
 
-CRITERIA — pick only what the speech actually shows. Do not apply all criteria every time. Choose the most relevant:
-- Coherence: does the overall argument or story make logical sense?
-- Fluency: natural rhythm and smoothness of delivery
-- Cohesion: do sentences connect well or just sit next to each other?
-- Word connection: are transitions between ideas smooth or mechanical?
-- Topic connection: does the speaker stay on topic or drift?
-- Topic transitions: how they open, develop, and close the topic
+You MUST respond with valid JSON only. No text before or after the JSON. Format:
+{"band": <integer 1-9>, "feedback": "<your feedback text>"}
 
-GRAMMAR — if there is a grammar or word choice issue, flag it. Quote the exact phrase the user said, then show the corrected version. Example: '"a economics class" should be "an economics class"'. Match the correction level to the speaker's apparent proficiency — do not suggest complex structures to a beginner. If grammar is clean, skip this.
+FEEDBACK WRITING RULES:
+- Write in a casual, conversational tone — like a coach talking directly to the speaker
+- No section headers, no bullet points, no numbered lists
+- Write in flowing paragraphs that naturally weave together observations about fluency, vocabulary, grammar, and coherence
+- Use actual quotes and examples from the transcript to ground every point
+- Make the feedback substantive and detailed — longer is better here
+- Cover what they did well and what needs work, but keep it natural, not formulaic
+- End with a short, casual note about their pauses: mention how many pauses they made, normalize it (pausing is natural and okay), but if there are many pauses, gently suggest working on maintaining continuous speech — keep this light and encouraging, never discouraging
+- Never mention any scoring system, band numbers, or evaluation criteria names
+- Never use generic advice that could apply to anyone — every observation must reference something specific from their speech`;
 
-REFERENCES — always quote specific phrases from their speech. Never give advice that could apply to anyone. Ground every observation in what they actually said.
+function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      typeof parsed.band === "number" &&
+      Number.isInteger(parsed.band) &&
+      parsed.band >= 1 &&
+      parsed.band <= 9 &&
+      typeof parsed.feedback === "string"
+    ) {
+      return { band: parsed.band, feedback: parsed.feedback };
+    }
+  } catch {
+    // JSON parse failed — fall through to fallback
+  }
+  return { band: 5, feedback: raw };
+}
 
-RECOMMENDATION — end with one concrete, actionable suggestion. Give an example sentence or phrase they could actually use, adapted to their level. Only flag what matters most — do not stack multiple recommendations.
-
-TONE — direct and honest. No softening, no filler praise. Do not mention filler word counts, pause counts, or hesitations — those are measured separately and already shown to the user.`;
-
-export async function generateAiFeedback(transcript: string): Promise<string> {
+export async function generateAiFeedback(transcript: string): Promise<AiFeedbackResult> {
   try {
     const trimmed = transcript.trim();
     if (!trimmed) {
       throw new Error("Transcript is empty");
     }
-    return getAIFeedback(trimmed, FEEDBACK_SYSTEM_PROMPT);
+    const raw = await getAIFeedback(trimmed, FEEDBACK_SYSTEM_PROMPT);
+    return parseAiFeedbackResponse(raw);
   } catch (error) {
     console.error("Groq feedback failed", {
       message: error instanceof Error ? error.message : String(error),
@@ -54,7 +79,7 @@ export async function generateAiFeedback(transcript: string): Promise<string> {
   }
 }
 
-export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<string> {
+export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<AiFeedbackResult> {
   try {
     const trimmed = input.transcript.trim();
     if (!trimmed) {
@@ -63,10 +88,11 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
 
     console.log("analyzeSpeech request", { transcriptLength: trimmed.length });
 
-    const output = await getAIFeedback(trimmed, FEEDBACK_SYSTEM_PROMPT);
+    const raw = await getAIFeedback(trimmed, FEEDBACK_SYSTEM_PROMPT);
+    const result = parseAiFeedbackResponse(raw);
 
-    console.log("analyzeSpeech response", { responseLength: output.length });
-    return output;
+    console.log("analyzeSpeech response", { responseLength: result.feedback.length, band: result.band });
+    return result;
   } catch (error) {
     console.error("Groq analyzeSpeech failed", {
       message: error instanceof Error ? error.message : String(error),

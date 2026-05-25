@@ -18,7 +18,6 @@ type RecordingControllerResult = {
   handleRetry: () => void;
   handleBack: () => void;
   stopRecording: () => Promise<void>;
-  requestFeedback: () => Promise<void>;
   requestTranscription: () => Promise<void>;
   soundDetectedRef: React.MutableRefObject<boolean>;
 };
@@ -42,7 +41,6 @@ export function useRecordingController({
 
   const { buildSessionResult } = useScoring();
   const {
-    requestFeedback,
     requestTranscription,
     saveFinishedSession,
   } = useSession({
@@ -78,7 +76,6 @@ export function useRecordingController({
     handleRetry,
     handleBack,
     stopRecording,
-    requestFeedback,
     requestTranscription,
     soundDetectedRef,
   };

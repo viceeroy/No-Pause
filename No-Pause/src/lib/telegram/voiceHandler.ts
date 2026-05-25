@@ -292,12 +292,14 @@ async function insertTelegramSession(input: {
   analysis: FlowAnalysis;
   telegramChatId: number | null;
   telegramMessageId: number | null;
+  flowScoreOverride?: number;
+  analysisFeedback?: string | null;
 }) {
   const sessionId = await insertSession(sessionSupabase, {
     userId: input.userId,
     mode: "speaking",
     transcript: input.transcript,
-    flowScore: input.analysis.flowScore,
+    flowScore: input.flowScoreOverride ?? input.analysis.flowScore,
     completed: input.analysis.isCompleted,
     scoringVersion: SCORING_VERSION,
     source: "telegram",
@@ -313,6 +315,7 @@ async function insertTelegramSession(input: {
     words: getWordCount(input.transcript),
     telegramChatId: input.telegramChatId,
     telegramMessageId: input.telegramMessageId,
+    analysisFeedback: input.analysisFeedback,
   });
 
   await updateStreak(sessionSupabase, {
@@ -524,6 +527,17 @@ export async function handleVoiceMessage(
       totalSessionTimeSec,
       TELEGRAM_PAUSE_THRESHOLD_MS,
     );
+
+    let aiFeedbackText: string | null = null;
+    let finalScore = analysis.flowScore;
+    try {
+      const aiResult = await generateAiFeedback(transcript);
+      finalScore = analysis.flowScore + aiResult.band * 10;
+      aiFeedbackText = aiResult.feedback;
+    } catch (error) {
+      console.error("Telegram inline AI feedback failed", error);
+    }
+
     let sessionId: string;
     try {
       sessionId = await insertTelegramSession({
@@ -532,6 +546,8 @@ export async function handleVoiceMessage(
         analysis,
         telegramChatId,
         telegramMessageId,
+        flowScoreOverride: finalScore,
+        analysisFeedback: aiFeedbackText,
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -549,9 +565,14 @@ export async function handleVoiceMessage(
       throw error;
     }
 
+    const displayAnalysis = { ...analysis, flowScore: finalScore };
+    const feedbackSuffix = aiFeedbackText
+      ? `\n\n🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(aiFeedbackText)}`
+      : "";
+
     if (groupChat) {
       await ctx.reply(
-        getSpeakingResultMessage({ speaker: username, analysis, transcript }),
+        getSpeakingResultMessage({ speaker: username, analysis: displayAnalysis, transcript }) + feedbackSuffix,
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
       return;
@@ -572,7 +593,7 @@ export async function handleVoiceMessage(
 
       if (Number(challenge.creator_telegram_id) === telegramId) {
         try {
-          await updateFriendChallengeCreatorScore(challenge.id, analysis.flowScore);
+          await updateFriendChallengeCreatorScore(challenge.id, finalScore);
         } catch (error) {
           console.error("Telegram challenge creator score update failed", error);
           if (isMissingChallengesTableError(error)) {
@@ -581,7 +602,7 @@ export async function handleVoiceMessage(
           }
         }
 
-        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
+        await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix, {
           parse_mode: "HTML",
         });
         return;
@@ -589,7 +610,7 @@ export async function handleVoiceMessage(
 
       const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
 
-      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis, transcript }), {
+      await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix, {
         ...getFriendChallengeResultActions({
           creatorUsername,
           challengeId: challenge.id,
@@ -613,10 +634,10 @@ export async function handleVoiceMessage(
         getChallengeResultMessage({
           title: "Group Challenge Result",
           topic: challenge.topic,
-          analysis,
+          analysis: displayAnalysis,
           transcript,
           attemptCount,
-        }),
+        }) + feedbackSuffix,
         {
           ...getGroupChallengeResultActions({
             sessionId: String(sessionId),
@@ -631,7 +652,7 @@ export async function handleVoiceMessage(
     }
 
     await ctx.reply(
-      getSpeakingResultMessage({ analysis, transcript }),
+      getSpeakingResultMessage({ analysis: displayAnalysis, transcript }) + feedbackSuffix,
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
   } catch (error) {
@@ -807,17 +828,18 @@ export async function replyWithAiFeedback(
         sessionId,
         transcriptLength: transcript.length,
       });
-      const feedback = await withTimeout(generateAiFeedback(transcript), 25_000, "AI feedback timed out");
+      const aiResult = await withTimeout(generateAiFeedback(transcript), 25_000, "AI feedback timed out");
       console.log("Telegram AI feedback completed", {
         telegramId,
         sessionId,
-        feedbackLength: feedback.length,
+        feedbackLength: aiResult.feedback.length,
+        band: aiResult.band,
       });
       await ctx.telegram.editMessageText(
         pendingMsg.chat.id,
         pendingMsg.message_id,
         undefined,
-        `🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}`,
+        `🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(aiResult.feedback)}`,
         { parse_mode: "HTML" },
       );
     } catch (error) {

@@ -121,62 +121,6 @@ export function useSession({
     }
   }, [userEmail, userId, setLastResults, retrySave]);
 
-  const requestFeedback = useCallback(async () => {
-    if (!lastResults) return;
-    if (lastResults.analysisFeedbackLoading) return;
-    if (lastResults.analysisFeedback) return;
-
-    const transcript = lastResults.transcript.trim();
-    const shouldAnalyze =
-      transcript.length > 0 &&
-      transcript !== 'No speech detected.' &&
-      !transcript.startsWith('Transcription failed');
-    if (!shouldAnalyze) return;
-
-    setLastResults((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        analysisFeedbackLoading: true,
-        analysisFeedbackError: undefined,
-      };
-    });
-
-    try {
-      const result = await analyzeSpeech({
-        transcript,
-        flowScore: lastResults.flowScore,
-        hesitationCount: lastResults.hesitationCount,
-        speakingTime: lastResults.totalSpeakingTime,
-        wordCount: lastResults.wordCount ?? undefined,
-      });
-      await updateSession({
-        sessionId: lastResults.sessionId,
-        userId,
-        analysisFeedback: result.feedback,
-      });
-      setLastResults((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          analysisFeedback: result.feedback,
-          analysisFeedbackLoading: false,
-        };
-      });
-    } catch (error) {
-      console.error('Failed to analyze transcript:', error);
-      const message = getErrorMessage(error);
-      setLastResults((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          analysisFeedbackError: message,
-          analysisFeedbackLoading: false,
-        };
-      });
-    }
-  }, [lastResults, setLastResults, userId]);
-
   const requestTranscription = useCallback(async () => {
     if (!lastResults) return;
     if (lastResults.transcriptionLoading) return;
@@ -220,10 +164,59 @@ export function useSession({
           transcriptionLoading: false,
           transcriptionError: undefined,
           analysisFeedback: undefined,
-          analysisFeedbackLoading: false,
+          analysisFeedbackLoading: true,
           analysisFeedbackError: undefined,
         };
       });
+
+      const shouldAnalyze =
+        transcript.trim().length > 0 &&
+        transcript !== 'No speech detected.' &&
+        !transcript.startsWith('Transcription failed');
+
+      if (shouldAnalyze) {
+        try {
+          const result = await analyzeSpeech({
+            transcript,
+            flowScore: lastResults.flowScore,
+            hesitationCount: lastResults.hesitationCount,
+            speakingTime: lastResults.totalSpeakingTime,
+            wordCount: words ?? undefined,
+          });
+          const finalScore = lastResults.flowScore + result.band * 10;
+          await updateSession({
+            sessionId: lastResults.sessionId,
+            userId,
+            analysisFeedback: result.feedback,
+            flowScore: finalScore,
+          });
+          setLastResults((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              analysisFeedback: result.feedback,
+              analysisFeedbackLoading: false,
+              flowScore: finalScore,
+            };
+          });
+        } catch (error) {
+          console.error('Failed to analyze transcript:', error);
+          const message = getErrorMessage(error);
+          setLastResults((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              analysisFeedbackError: message,
+              analysisFeedbackLoading: false,
+            };
+          });
+        }
+      } else {
+        setLastResults((prev) => {
+          if (!prev) return prev;
+          return { ...prev, analysisFeedbackLoading: false };
+        });
+      }
     } catch (error) {
       console.error('Failed to transcribe audio:', error);
       const message = getErrorMessage(error);
@@ -239,7 +232,6 @@ export function useSession({
   }, [lastResults, setLastResults, userId]);
 
   return {
-    requestFeedback,
     requestTranscription,
     saveFinishedSession,
   };

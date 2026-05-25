@@ -146,6 +146,7 @@ export async function transcribeAudio(input: Base64TranscriptionInput): Promise<
 
 export type FeedbackResult = {
   feedback: string;
+  band: number;
 };
 
 export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<FeedbackResult> {
@@ -157,9 +158,11 @@ export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<
     },
     body: JSON.stringify(input),
   });
-  const body = await readEndpointJson<{ feedback?: unknown }>(response);
+  const body = await readEndpointJson<{ feedback?: unknown; band?: unknown }>(response);
+  const band = Number(body.band);
   return {
     feedback: String(body.feedback ?? ""),
+    band: Number.isInteger(band) && band >= 1 && band <= 9 ? band : 5,
   };
 }
 
@@ -186,6 +189,7 @@ type UpdateSessionInput = {
   words?: number | null;
   transcript?: string | null;
   analysisFeedback?: string | null;
+  flowScore?: number | null;
 };
 
 export async function saveSession(input: SaveSessionInput): Promise<string | null> {
@@ -214,6 +218,7 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
   if (input.transcript !== undefined) updates.transcript = input.transcript;
   if (input.words !== undefined) updates.words = input.words;
   if (input.analysisFeedback !== undefined) updates.analysis_feedback = input.analysisFeedback;
+  if (input.flowScore !== undefined) updates.flow_score = input.flowScore;
   if (Object.keys(updates).length === 0) return;
 
   const { error } = await browserSupabase

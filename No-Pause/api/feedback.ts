@@ -81,8 +81,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       limit: DAILY_FEEDBACK_LIMIT,
     });
 
-    const feedback = await analyzePracticeSpeech(input);
-    sendJson(res, 200, { feedback });
+    const result = await analyzePracticeSpeech(input);
+    sendJson(res, 200, { feedback: result.feedback, band: result.band });
   } catch (error) {
     if (isApiQuotaExceededError(error)) {
       sendJson(res, 429, { error: getQuotaExceededMessage(error.kind) });

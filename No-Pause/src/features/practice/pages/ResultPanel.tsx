@@ -10,7 +10,6 @@ type ResultPanelProps = {
   lastResults: SessionResult;
   showResultsDebugExport: boolean;
   handleRetry: () => void;
-  requestFeedback: () => void;
   requestTranscription: () => void;
   copied: boolean;
   setCopied: React.Dispatch<React.SetStateAction<boolean>>;
@@ -24,7 +23,6 @@ export function ResultPanel({
   lastResults,
   showResultsDebugExport,
   handleRetry,
-  requestFeedback,
   requestTranscription,
   copied,
   setCopied,
@@ -75,7 +73,6 @@ export function ResultPanel({
     transcript !== 'No speech detected.' &&
     !transcript.startsWith('Transcription failed');
   const showTranscribeButton = !!lastResults.audioBlob && !transcriptReady;
-  const feedbackAvailable = !!lastResults.analysisFeedback || lastResults.analysisFeedbackLoading;
   const speakingTime = Math.max(0, lastResults.totalSpeakingTime || 0);
   const sessionLength = Math.max(0, lastResults.totalSessionTime || 0);
   const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
@@ -159,28 +156,21 @@ export function ResultPanel({
               </button>
             ) : null}
           </div>
-          {feedbackAvailable ? (
-            lastResults.analysisFeedbackLoading ? (
-              <p className="font-sans text-sm leading-relaxed text-muted-foreground">Generating feedback...</p>
-            ) : (
-              <div className="font-sans text-sm leading-relaxed text-foreground">
-                <ReactMarkdown>{lastResults.analysisFeedback || 'AI feedback unavailable.'}</ReactMarkdown>
-              </div>
-            )
+          {lastResults.analysisFeedbackLoading ? (
+            <div className="space-y-3 animate-pulse">
+              <div className="h-4 w-3/4 rounded bg-muted-foreground/15" />
+              <div className="h-4 w-full rounded bg-muted-foreground/15" />
+              <div className="h-4 w-5/6 rounded bg-muted-foreground/15" />
+              <div className="h-4 w-2/3 rounded bg-muted-foreground/15" />
+            </div>
+          ) : lastResults.analysisFeedback ? (
+            <div className="font-sans text-sm leading-relaxed text-foreground">
+              <ReactMarkdown>{lastResults.analysisFeedback}</ReactMarkdown>
+            </div>
           ) : (
-            <>
-              <p className="mb-4 font-sans text-sm leading-relaxed text-muted-foreground">
-                {getCoachingNote()} You spoke for {Math.round(speakingTargetPercent)}% of the session.
-              </p>
-              <button
-                type="button"
-                onClick={() => requestFeedback()}
-                disabled={lastResults.analysisFeedbackLoading}
-                className="rounded-full bg-primary px-5 py-2.5 text-sm font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:opacity-60"
-              >
-                Get AI Feedback
-              </button>
-            </>
+            <p className="font-sans text-sm leading-relaxed text-muted-foreground">
+              Feedback will appear here after transcription.
+            </p>
           )}
           {lastResults.analysisFeedbackError && (
             <p className="mt-3 text-sm font-sans text-destructive">{lastResults.analysisFeedbackError}</p>
