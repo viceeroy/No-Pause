@@ -42,6 +42,7 @@ export function useRecordingController({
   const { buildSessionResult } = useScoring();
   const {
     requestTranscription,
+    requestFeedback,
     saveFinishedSession,
   } = useSession({
     lastResults,
@@ -58,6 +59,7 @@ export function useRecordingController({
   } = useRecording({
     buildSessionResult,
     navigate,
+    requestFeedback,
     saveFinishedSession,
     selectedTimerSeconds,
     state,

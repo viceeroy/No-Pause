@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -30,6 +30,36 @@ export function ResultPanel({
   const navigate = useNavigate();
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [copiedTranscript, setCopiedTranscript] = useState(false);
+  const [displayedScore, setDisplayedScore] = useState(lastResults.flowScore);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!lastResults.bandPoints) {
+      setDisplayedScore(lastResults.flowScore);
+      return;
+    }
+    if (hasAnimated.current) return;
+    hasAnimated.current = true;
+
+    const baseScore = lastResults.flowScore - lastResults.bandPoints;
+    const finalScore = lastResults.flowScore;
+    const duration = 800;
+    const startTime = performance.now();
+
+    let frameId: number;
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayedScore(Math.round(baseScore + (finalScore - baseScore) * eased));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [lastResults.bandPoints, lastResults.flowScore]);
   const copyText = async (text: string, onCopied: (copied: boolean) => void) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -105,7 +135,14 @@ export function ResultPanel({
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="mb-2 text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">Flow Score</p>
-              <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">{lastResults.flowScore}</p>
+              <div className="flex items-baseline gap-3">
+                <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">{displayedScore}</p>
+                {lastResults.bandPoints != null && lastResults.bandPoints > 0 && (
+                  <span className="font-sans text-2xl font-bold text-green-400 md:text-3xl">
+                    +{lastResults.bandPoints}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <span className="font-sans text-base font-semibold tabular-nums text-muted-foreground md:text-lg">
@@ -157,11 +194,8 @@ export function ResultPanel({
             ) : null}
           </div>
           {lastResults.analysisFeedbackLoading ? (
-            <div className="space-y-3 animate-pulse">
-              <div className="h-4 w-3/4 rounded bg-muted-foreground/15" />
-              <div className="h-4 w-full rounded bg-muted-foreground/15" />
-              <div className="h-4 w-5/6 rounded bg-muted-foreground/15" />
-              <div className="h-4 w-2/3 rounded bg-muted-foreground/15" />
+            <div className="space-y-3">
+              <p className="text-sm font-sans text-muted-foreground animate-pulse">AI feedback is being generated...</p>
             </div>
           ) : lastResults.analysisFeedback ? (
             <div className="font-sans text-sm leading-relaxed text-foreground">

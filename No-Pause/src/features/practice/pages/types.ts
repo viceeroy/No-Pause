@@ -26,6 +26,7 @@ export interface SessionResult {
   analysisFeedback?: string;
   analysisFeedbackLoading?: boolean;
   analysisFeedbackError?: string;
+  bandPoints?: number;
   transcriptionLoading?: boolean;
   transcriptionError?: string;
   wordCount: number | null;

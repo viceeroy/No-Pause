@@ -13,6 +13,7 @@ import {
 } from '@/lib/core/scoring';
 import type { PracticeStateStore } from '@/features/practice/pages/types';
 import type { BuildSessionResultOutput } from './useScoring';
+import type { RequestFeedbackInput, SaveSessionResult } from './useSession';
 
 type SessionData = {
   startTime: number;
@@ -27,7 +28,8 @@ type UseRecordingOptions = {
     startTime: number;
   }) => BuildSessionResultOutput;
   navigate: NavigateFunction;
-  saveFinishedSession: (input: BuildSessionResultOutput) => Promise<void>;
+  requestFeedback: (input: RequestFeedbackInput) => Promise<void>;
+  saveFinishedSession: (input: BuildSessionResultOutput) => Promise<SaveSessionResult>;
   selectedTimerSeconds?: number;
   state: PracticeStateStore;
 };
@@ -132,6 +134,7 @@ function buildDiagnosticsSummary(snapshot: AnalyzerDiagnosticsSnapshot) {
 export function useRecording({
   buildSessionResult,
   navigate,
+  requestFeedback,
   saveFinishedSession,
   selectedTimerSeconds = 0,
   state,
@@ -195,14 +198,31 @@ export function useRecording({
         startTime,
       });
 
-      await saveFinishedSession(sessionBuild);
+      const { sessionId, saveFailed } = await saveFinishedSession(sessionBuild);
 
-      setLastResults(sessionBuild.sessionResult);
+      const sessionResult = { ...sessionBuild.sessionResult, sessionId, saveFailed };
+      setLastResults(sessionResult);
       setState('done');
       isRecordingRef.current = false;
       setShowMicRetry(false);
+
+      const t = sessionResult.transcript;
+      const transcriptUsable =
+        t && t.trim().length > 0 &&
+        t !== 'No speech detected.' &&
+        !t.startsWith('Transcription failed');
+      if (transcriptUsable && sessionResult.isCompleted) {
+        void requestFeedback({
+          sessionId,
+          flowScore: sessionResult.flowScore,
+          transcript: t,
+          hesitationCount: sessionResult.hesitationCount,
+          speakingTime: sessionResult.totalSpeakingTime,
+          wordCount: sessionResult.wordCount ?? undefined,
+        });
+      }
     }
-  }, [buildSessionResult, saveFinishedSession, setLastResults, setState, setShowMicRetry]);
+  }, [buildSessionResult, requestFeedback, saveFinishedSession, setLastResults, setState, setShowMicRetry]);
 
   const startRecording = useCallback(async () => {
     try {

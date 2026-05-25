@@ -20,6 +20,20 @@ type SaveFinishedSessionInput = {
   words: number | null;
 };
 
+export type SaveSessionResult = {
+  sessionId: string | null;
+  saveFailed: boolean;
+};
+
+export type RequestFeedbackInput = {
+  sessionId?: string | null;
+  flowScore: number;
+  transcript: string;
+  hesitationCount: number;
+  speakingTime: number;
+  wordCount?: number;
+};
+
 function getErrorMessage(error: unknown): string {
   return error && typeof error === 'object' && 'message' in error
     ? String((error as { message?: unknown }).message)
@@ -74,7 +88,7 @@ export function useSession({
     normalizedMode,
     sessionResult,
     words,
-  }: SaveFinishedSessionInput): Promise<void> => {
+  }: SaveFinishedSessionInput): Promise<SaveSessionResult> => {
     let sessionId: string | null = null;
     try {
       sessionId = await saveSession({
@@ -92,22 +106,15 @@ export function useSession({
         hesitationLog: sessionResult.hesitationLog,
         transcript: sessionResult.transcript,
       });
-      setLastResults((prev) => {
-        if (!prev) return prev;
-        return { ...prev, sessionId };
-      });
     } catch (error) {
       console.error('Failed to save session:', error);
       pendingSaveRef.current = { completed, duration, normalizedMode, sessionResult, words };
-      setLastResults((prev) => {
-        if (!prev) return prev;
-        return { ...prev, saveFailed: true };
-      });
       toast.error("Couldn't save your session", {
         description: 'Your results are still here. Tap retry to save.',
         action: { label: 'Retry', onClick: () => void retrySave() },
         duration: 10000,
       });
+      return { sessionId: null, saveFailed: true };
     }
 
     try {
@@ -119,7 +126,55 @@ export function useSession({
     } catch (error) {
       console.error('Failed to update streak:', error);
     }
-  }, [userEmail, userId, setLastResults, retrySave]);
+
+    return { sessionId, saveFailed: false };
+  }, [userEmail, userId, retrySave]);
+
+  const requestFeedback = useCallback(async (input: RequestFeedbackInput) => {
+    try {
+      const result = await analyzeSpeech({
+        transcript: input.transcript,
+        flowScore: input.flowScore,
+        hesitationCount: input.hesitationCount,
+        speakingTime: input.speakingTime,
+        wordCount: input.wordCount,
+      });
+
+      const bandPoints = result.band * 10;
+      const finalScore = input.flowScore + bandPoints;
+
+      if (input.sessionId && userId) {
+        updateSession({
+          sessionId: input.sessionId,
+          userId,
+          analysisFeedback: result.feedback,
+          flowScore: finalScore,
+        }).catch(console.error);
+      }
+
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          flowScore: finalScore,
+          bandPoints,
+          analysisFeedback: result.feedback,
+          analysisFeedbackLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to get AI feedback:', error);
+      const message = getErrorMessage(error);
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          analysisFeedbackError: message,
+          analysisFeedbackLoading: false,
+        };
+      });
+    }
+  }, [setLastResults, userId]);
 
   const requestTranscription = useCallback(async () => {
     if (!lastResults) return;
@@ -183,7 +238,8 @@ export function useSession({
             speakingTime: lastResults.totalSpeakingTime,
             wordCount: words ?? undefined,
           });
-          const finalScore = lastResults.flowScore + result.band * 10;
+          const bandPoints = result.band * 10;
+          const finalScore = lastResults.flowScore + bandPoints;
           await updateSession({
             sessionId: lastResults.sessionId,
             userId,
@@ -197,6 +253,7 @@ export function useSession({
               analysisFeedback: result.feedback,
               analysisFeedbackLoading: false,
               flowScore: finalScore,
+              bandPoints,
             };
           });
         } catch (error) {
@@ -233,6 +290,7 @@ export function useSession({
 
   return {
     requestTranscription,
+    requestFeedback,
     saveFinishedSession,
   };
 }

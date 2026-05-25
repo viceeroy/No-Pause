@@ -111,6 +111,13 @@ export function buildSessionResult({
     });
   }
 
+  const transcriptUsable = Boolean(
+    transcript &&
+    transcript.trim().length > 0 &&
+    transcript !== 'No speech detected.' &&
+    !transcript.startsWith('Transcription failed'),
+  );
+
   const scoreResult = calculateFlowScore(scoreInput.hesitationCount, {
     speakingTimeSec: scoreInput.speakingTimeSec,
     totalSessionTimeSec: scoreInput.totalSessionTimeSec,
@@ -147,7 +154,7 @@ export function buildSessionResult({
       audioMimeType: results.audioMimeType,
       transcript,
       analysisFeedback: undefined,
-      analysisFeedbackLoading: false,
+      analysisFeedbackLoading: transcriptUsable && scoreResult.isCompleted,
       analysisFeedbackError: undefined,
       transcriptionLoading: false,
       transcriptionError: undefined,
