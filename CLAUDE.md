@@ -2,7 +2,7 @@
 
 **NoPause** (nopause.org) — live speech fluency PWA. Solo founder. Implementation only. Architecture is pre-decided in Claude chat. If unclear, ask — don't invent.
 
-> Full reference: `memory/MEMORY.md` (stack, schema, data flows, invariants, decision log)
+> Full reference: `memory/system.md` (stack, schema, data flows, invariants, decision log)
 > Failure patterns: `memory/ERRORS.md` (check before similar tasks)
 > Import graph: `INDEX.md` (check before adding dependencies)
 
@@ -88,7 +88,7 @@ Files changed: [list]
 What changed per file: [one line each]
 Intentionally not touched: [list]
 Follow-up needed: [list or "none"]
-MEMORY.md needs update: [yes/no — which section]
+system.md needs update: [yes/no — which section]
 ```
 
 ---

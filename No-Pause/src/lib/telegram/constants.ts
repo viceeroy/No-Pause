@@ -320,17 +320,17 @@ export function getGroupChallengeResultActions(input: {
   ]);
 }
 
-export function getChallengeShareActions(challengeId: string, createdByViewer = false) {
-  const challengeDeepLink = getChallengeDeepLink(challengeId);
+function getChallengeShareUrl(challengeId: string): string {
+  const deepLink = getChallengeDeepLink(challengeId);
+  return `https://t.me/share/url?url=${encodeURIComponent(deepLink)}&text=${encodeURIComponent("Can you beat my score? 🎤")}`;
+}
 
+export function getChallengeShareActions(challengeId: string, createdByViewer = false) {
   return Markup.inlineKeyboard([
     [
       createdByViewer
-        ? Markup.button.url(
-            "📤 Share Challenge",
-            challengeDeepLink,
-          )
-        : Markup.button.url("🎤 Accept Challenge", challengeDeepLink),
+        ? Markup.button.url("📤 Share Challenge", getChallengeShareUrl(challengeId))
+        : Markup.button.url("🎤 Accept Challenge", getChallengeDeepLink(challengeId)),
     ],
   ]);
 }
