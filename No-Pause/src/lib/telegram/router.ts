@@ -4,6 +4,7 @@ import { getRandomPrompt } from "../core/prompts.js";
 import { getTelegramChallengeCounts, getTelegramPracticeStats, getTelegramWeeklyStatsComparison } from "../core/queries.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
+import { supabaseServer } from "../../services/supabaseServer.js";
 import {
   AI_FEEDBACK_ACTION_PREFIX,
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
@@ -195,7 +196,24 @@ export function createTelegramBot() {
   bot.command("about", async (ctx) => {
     if (isGroupChat(ctx)) return;
 
-    await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
+    let userPrefix = "";
+    const telegramId = getTelegramId(ctx);
+    if (telegramId) {
+      try {
+        const userId = await resolveTelegramUser(telegramId);
+        if (userId) {
+          const { data } = await supabaseServer.auth.admin.getUserById(userId);
+          if (data?.user) {
+            const fullName = data.user.user_metadata?.full_name ?? data.user.user_metadata?.name;
+            userPrefix = MESSAGES.aboutUserPrefix(fullName, data.user.email);
+          }
+        }
+      } catch {
+        // skip user info silently
+      }
+    }
+
+    await ctx.reply(`${userPrefix}${MESSAGES.about}`, { ...replyKeyboard, parse_mode: "HTML" });
   });
 
   bot.command("register", async (ctx) => {
