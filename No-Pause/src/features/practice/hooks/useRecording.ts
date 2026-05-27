@@ -211,7 +211,7 @@ export function useRecording({
         t && t.trim().length > 0 &&
         t !== 'No speech detected.' &&
         !t.startsWith('Transcription failed');
-      if (transcriptUsable && sessionResult.isCompleted) {
+      if (transcriptUsable) {
         void requestFeedback({
           sessionId,
           flowScore: sessionResult.flowScore,

@@ -154,7 +154,7 @@ export function buildSessionResult({
       audioMimeType: results.audioMimeType,
       transcript,
       analysisFeedback: undefined,
-      analysisFeedbackLoading: transcriptUsable && scoreResult.isCompleted,
+      analysisFeedbackLoading: transcriptUsable,
       analysisFeedbackError: undefined,
       transcriptionLoading: false,
       transcriptionError: undefined,

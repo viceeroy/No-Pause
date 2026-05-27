@@ -140,7 +140,7 @@ export function useSession({
         wordCount: input.wordCount,
       });
 
-      const bandPoints = result.band * 10;
+      const bandPoints = input.flowScore > 0 ? result.band * 10 : 0;
       const finalScore = input.flowScore + bandPoints;
 
       if (input.sessionId && userId) {

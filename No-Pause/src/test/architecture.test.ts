@@ -221,6 +221,47 @@ describe('speaking mode scoring architecture', () => {
     nowSpy.mockRestore();
   });
 
+  it('keeps short transcribed sessions at score 0 while allowing AI feedback to load', () => {
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(8_000);
+
+    const result = buildSessionResult({
+      startTime: 4_000,
+      results: {
+        totalSpeakingTime: 4,
+        totalSilenceTime: 0,
+        hesitationSilenceTime: 0,
+        hesitationCount: 0,
+        hesitationLog: [],
+        longestFlowStreak: 0,
+        frameCount: 1,
+        noiseFloor: 0,
+        totalTime: 4_000,
+        avgVolume: 0.1,
+        audioBlob: null,
+        audioMimeType: 'audio/webm',
+        transcript: 'short attempt',
+      },
+    });
+
+    expect(result.sessionResult).toMatchObject({
+      flowScore: 0,
+      totalSpeakingTime: 4,
+      isCompleted: false,
+      analysisFeedbackLoading: true,
+    });
+
+    nowSpy.mockRestore();
+  });
+
+  it('routes short transcribed sessions through feedback without adding band points to Flow Score', () => {
+    const recordingSource = readFileSync(`${process.cwd()}/src/features/practice/hooks/useRecording.ts`, 'utf8');
+    const sessionSource = readFileSync(`${process.cwd()}/src/features/practice/hooks/useSession.ts`, 'utf8');
+
+    expect(recordingSource).toContain('if (transcriptUsable) {');
+    expect(recordingSource).not.toContain('transcriptUsable && sessionResult.isCompleted');
+    expect(sessionSource).toContain('const bandPoints = input.flowScore > 0 ? result.band * 10 : 0;');
+  });
+
   it.each([
     { score: 300, label: 'Perfect Flow' },
     { score: 299, label: 'Great Flow' },
