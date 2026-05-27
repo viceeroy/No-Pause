@@ -665,6 +665,8 @@ describe('stats summary architecture', () => {
       currentStreak: 4,
       bestStreak: 9,
       lastSessionDate: '2026-05-19T10:00:00.000Z',
+      friendChallenges: 0,
+      groupChallenges: 0,
     });
 
     expect(message).toContain('<b>Weekly</b>');

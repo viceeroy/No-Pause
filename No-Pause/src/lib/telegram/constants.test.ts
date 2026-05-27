@@ -186,6 +186,8 @@ describe('getTelegramStatsMessage', () => {
       currentStreak: 3,
       bestStreak: 7,
       lastSessionDate: '2026-05-21T12:00:00Z',
+      friendChallenges: 4,
+      groupChallenges: 2,
     });
     expect(msg).toContain('200');
     expect(msg).toContain('150');
@@ -205,6 +207,8 @@ describe('getTelegramStatsMessage', () => {
       currentStreak: 0,
       bestStreak: 0,
       lastSessionDate: null,
+      friendChallenges: 0,
+      groupChallenges: 0,
     });
     expect(msg).toContain('None yet');
   });

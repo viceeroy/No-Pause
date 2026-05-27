@@ -244,6 +244,39 @@ export async function getTelegramPracticeStats(userId: string, limit = 15): Prom
   return buildPracticeStats(sessionSets, streak);
 }
 
+export async function getTelegramChallengeCounts(telegramId: number): Promise<{ friendChallenges: number; groupChallenges: number }> {
+  try {
+    const supabase = await getServerSupabase();
+
+    const { data, error } = await supabase
+      .from("telegram_challenge_attempts")
+      .select("challenge_id, challenges(status)")
+      .eq("telegram_id", telegramId);
+
+    if (error) {
+      console.error("Telegram challenge counts query failed", error);
+      return { friendChallenges: 0, groupChallenges: 0 };
+    }
+
+    let friendChallenges = 0;
+    let groupChallenges = 0;
+
+    for (const attempt of data ?? []) {
+      const challenges = (attempt as Record<string, unknown>).challenges as { status: string } | null;
+      if (challenges?.status?.startsWith("group_pending")) {
+        groupChallenges++;
+      } else {
+        friendChallenges++;
+      }
+    }
+
+    return { friendChallenges, groupChallenges };
+  } catch (error) {
+    console.error("Telegram challenge counts failed", error);
+    return { friendChallenges: 0, groupChallenges: 0 };
+  }
+}
+
 export async function getTelegramWeeklyStatsComparison(userId: string): Promise<WeeklyStatsComparison> {
   return buildWeeklyStatsComparison(await getTelegramSessions(userId));
 }

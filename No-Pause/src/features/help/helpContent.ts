@@ -52,7 +52,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'Your results page has four numbers worth understanding. Flow Score captures how continuously you spoke — higher means fewer long stops broke your momentum. Speaking time is how long your voice was actually active. Pause count is how many times you stopped for longer than a natural breath. Silence time is the total of those gaps added together.',
+          'Your results page has three numbers worth understanding. Flow Score captures how continuously you spoke — higher means fewer long stops broke your momentum. Speaking time is how long your voice was actually active. Pause count is how many times you stopped for longer than a natural breath.',
       },
       {
         type: 'score-example',

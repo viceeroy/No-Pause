@@ -1,11 +1,10 @@
 import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
-import { getTelegramPracticeStats, getTelegramWeeklyStatsComparison } from "../core/queries.js";
+import { getTelegramChallengeCounts, getTelegramPracticeStats, getTelegramWeeklyStatsComparison } from "../core/queries.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import {
-  ABOUT_LABEL,
   AI_FEEDBACK_ACTION_PREFIX,
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
   CHANGE_PROMPT_ACTION,
@@ -17,7 +16,6 @@ import {
   getTelegramStatsMessage,
   GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   MESSAGES,
-  MY_STATS_LABEL,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
@@ -115,6 +113,8 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
     return;
   }
 
+  const challengeCounts = await getTelegramChallengeCounts(telegramId);
+
   await ctx.reply(
     getTelegramStatsMessage({
       weeklyBestFlowScore: weeklyStats.currentWeek.bestFlowScore,
@@ -125,6 +125,8 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
       currentStreak: stats.currentStreak,
       bestStreak: stats.bestStreak,
       lastSessionDate: stats.lastSessionDate,
+      friendChallenges: challengeCounts.friendChallenges,
+      groupChallenges: challengeCounts.groupChallenges,
     }),
     { ...replyKeyboard, parse_mode: "HTML" },
   );
@@ -136,6 +138,7 @@ export function createTelegramBot() {
   void bot.telegram.setMyCommands([
     { command: "start", description: "Start or connect NoPause" },
     { command: "about", description: "About NoPause" },
+    { command: "stats", description: "View your stats" },
     { command: "register", description: "Connect or switch account" },
   ], { scope: { type: "all_private_chats" } }).catch((error) => {
     console.error("Telegram command menu registration failed", error);
@@ -207,6 +210,15 @@ export function createTelegramBot() {
     await ctx.reply(MESSAGES.register, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
   });
 
+  bot.command("stats", async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) return;
+
+    await replyWithStatus(ctx, telegramId);
+  });
+
   bot.command("nopause", async (ctx) => {
     if (!isGroupChat(ctx)) return;
     const telegramId = getTelegramId(ctx);
@@ -230,25 +242,10 @@ export function createTelegramBot() {
     await replyWithNewFriendChallenge(ctx, telegramId);
   });
 
-  bot.hears(MY_STATS_LABEL, async (ctx) => {
-    if (isGroupChat(ctx)) return;
-
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) return;
-
-    await replyWithStatus(ctx, telegramId);
-  });
-
   bot.hears(SPEAK_LABEL, async (ctx) => {
     if (isGroupChat(ctx)) return;
 
     await ctx.reply(MESSAGES.speakPrivate, { ...speakPromptKeyboard, parse_mode: "HTML" });
-  });
-
-  bot.hears(ABOUT_LABEL, async (ctx) => {
-    if (isGroupChat(ctx)) return;
-
-    await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
   });
 
   bot.action(new RegExp(`^${CHANGE_GROUP_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {

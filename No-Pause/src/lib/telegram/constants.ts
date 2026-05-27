@@ -64,8 +64,7 @@ export type FlowAnalysis = {
 };
 
 export const replyKeyboard = Markup.keyboard([
-  [SPEAK_LABEL, MY_STATS_LABEL],
-  [CHALLENGE_LABEL, ABOUT_LABEL],
+  [SPEAK_LABEL, CHALLENGE_LABEL],
 ]).resize();
 
 export const speakPromptKeyboard = Markup.inlineKeyboard([
@@ -556,6 +555,8 @@ export function getTelegramStatsMessage(input: {
   currentStreak: number;
   bestStreak: number;
   lastSessionDate: string | null;
+  friendChallenges: number;
+  groupChallenges: number;
 }): string {
   return `📊 <b>Your NoPause Stats</b>
 
@@ -568,7 +569,11 @@ export function getTelegramStatsMessage(input: {
 
 🌐 <b>All-Time</b>
 🎯 <b>Total Sessions:</b> ${formatStatsCount(input.totalSessions)}
-⏱ <b>Total Practice Time:</b> ${formatStatsPracticeTime(input.totalPracticeTime)}`;
+⏱ <b>Total Practice Time:</b> ${formatStatsPracticeTime(input.totalPracticeTime)}
+
+⚔️ <b>Challenges</b>
+👥 Friend challenges: <b>${input.friendChallenges}</b>
+🏆 Group challenges: <b>${input.groupChallenges}</b>`;
 }
 
 export const MESSAGES = {
@@ -624,11 +629,11 @@ export const MESSAGES = {
   voiceTooLong:
     "🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.",
   challengeForwardHint:
-    "👆 Forward the message above to your friends so they can accept your challenge!",
+    "👆 Forward the message above to your friends so they can accept your challenge!\n\n🌐 <a href=\"https://nopause.org\">nopause.org</a>",
   statsPrivate:
     "📊 Open @NoPauseAI_bot directly to view your stats.",
   speakPrivate:
-    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your fluency, pauses, and Flow Score.\n\nNeed an idea first?",
+    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your fluency, pauses, and Flow Score.\n\nNeed an idea first?\n\n🌐 <a href=\"https://nopause.org\">nopause.org</a>",
   scoringInfo:
     "🏆 <b>How scoring works</b>\n\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points",
   challengeInfo:
