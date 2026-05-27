@@ -1,0 +1,697 @@
+{
+  "nodes": [
+    {
+      "id": "constants_TelegramConstants",
+      "label": "Telegram Constants & Message Builders",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/constants.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "constants_FlowAnalysisType",
+      "label": "FlowAnalysis Type",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/constants.ts",
+      "source_location": "line 55",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "constants_TelegramChallengeSQL",
+      "label": "Telegram Challenge Tables SQL Schema",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/constants.ts",
+      "source_location": "line 26",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandler_VoiceHandler",
+      "label": "Telegram Voice Handler",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandler_handleVoiceMessage",
+      "label": "handleVoiceMessage Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 387",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandler_insertTelegramSession",
+      "label": "insertTelegramSession Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 258",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandler_detectPauses",
+      "label": "detectPausesFromWordTimestamps Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 165",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandler_sendFriendChallengeResult",
+      "label": "sendFriendChallengeResult Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 652",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandler_postGroupChallengeResult",
+      "label": "postGroupChallengeResultToGroup Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 717",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "constantsTest_TelegramConstantsTest",
+      "label": "Telegram Constants Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/constants.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "Sessions_SessionsPage",
+      "label": "Sessions Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/pages/Sessions.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ConnectTelegram_ConnectTelegramPage",
+      "label": "ConnectTelegram Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/pages/ConnectTelegram.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "PracticePage_PracticePage",
+      "label": "Practice Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/pages/PracticePage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "HelpPage_HelpPage",
+      "label": "Help Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/pages/HelpPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "PromptsPage_PromptsPage",
+      "label": "Prompts Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/pages/PromptsPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "NotFound_NotFoundPage",
+      "label": "Not Found (404) Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/pages/NotFound.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "supabaseServer_SupabaseServerClient",
+      "label": "Supabase Server Client (Service Role)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/supabaseServer.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "groq_GroqService",
+      "label": "Groq AI Service",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/groq.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "groq_transcribeAudioWithGroq",
+      "label": "transcribeAudioWithGroq Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/groq.ts",
+      "source_location": "line 92",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "groq_getAIFeedback",
+      "label": "getAIFeedback Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/groq.ts",
+      "source_location": "line 142",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "groq_GroqTranscribedWord",
+      "label": "GroqTranscribedWord Type",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/groq.ts",
+      "source_location": "line 15",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "aiFeedback_AiFeedbackService",
+      "label": "AI Feedback Service",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "aiFeedback_generateAiFeedback",
+      "label": "generateAiFeedback Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 86",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "aiFeedback_analyzePracticeSpeech",
+      "label": "analyzePracticeSpeech Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 107",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "aiFeedback_isUsableTranscript",
+      "label": "isUsableTranscript Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "aiFeedback_IELTSBandScoring",
+      "label": "IELTS-Style Band Scoring System",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 21",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "supabase_SupabaseBrowserClient",
+      "label": "Supabase Browser Client (Anon Key)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/supabase.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "apiQuota_ApiQuotaService",
+      "label": "API Quota Service",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/apiQuota.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "apiQuota_consumeApiQuota",
+      "label": "consumeApiQuota Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/apiQuota.ts",
+      "source_location": "line 25",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "apiQuota_ApiQuotaExceededError",
+      "label": "ApiQuotaExceededError Class",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/apiQuota.ts",
+      "source_location": "line 8",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "launch_ClaudeLaunchConfig",
+      "label": "Claude Code Launch Configuration",
+      "file_type": "document",
+      "source_file": "No-Pause/.claude/launch.json",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "vscode_launch_VSCodeLaunchConfig",
+      "label": "VSCode Launch Configuration",
+      "file_type": "document",
+      "source_file": "No-Pause/.vscode/launch.json",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "voiceHandler_handleVoiceMessage",
+      "target": "groq_transcribeAudioWithGroq",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 476",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_handleVoiceMessage",
+      "target": "aiFeedback_generateAiFeedback",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 496",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_handleVoiceMessage",
+      "target": "apiQuota_consumeApiQuota",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 467",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_handleVoiceMessage",
+      "target": "voiceHandler_insertTelegramSession",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 511",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_handleVoiceMessage",
+      "target": "voiceHandler_detectPauses",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 209",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_VoiceHandler",
+      "target": "supabaseServer_SupabaseServerClient",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 21",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_VoiceHandler",
+      "target": "constants_TelegramConstants",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 37-50",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_VoiceHandler",
+      "target": "constants_FlowAnalysisType",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 37",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_detectPauses",
+      "target": "groq_GroqTranscribedWord",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 165",
+      "weight": 1.0
+    },
+    {
+      "source": "aiFeedback_generateAiFeedback",
+      "target": "groq_getAIFeedback",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 96",
+      "weight": 1.0
+    },
+    {
+      "source": "aiFeedback_analyzePracticeSpeech",
+      "target": "groq_getAIFeedback",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 117",
+      "weight": 1.0
+    },
+    {
+      "source": "aiFeedback_AiFeedbackService",
+      "target": "aiFeedback_IELTSBandScoring",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/aiFeedback.ts",
+      "source_location": "line 21-51",
+      "weight": 1.0
+    },
+    {
+      "source": "aiFeedback_isUsableTranscript",
+      "target": "aiFeedback_generateAiFeedback",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 479",
+      "weight": 0.8
+    },
+    {
+      "source": "apiQuota_consumeApiQuota",
+      "target": "supabaseServer_SupabaseServerClient",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/apiQuota.ts",
+      "source_location": "line 30",
+      "weight": 1.0
+    },
+    {
+      "source": "Sessions_SessionsPage",
+      "target": "supabase_SupabaseBrowserClient",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "No-Pause/src/pages/Sessions.tsx",
+      "source_location": null,
+      "weight": 0.7
+    },
+    {
+      "source": "ConnectTelegram_ConnectTelegramPage",
+      "target": "supabase_SupabaseBrowserClient",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/pages/ConnectTelegram.tsx",
+      "source_location": "line 54",
+      "weight": 1.0
+    },
+    {
+      "source": "ConnectTelegram_ConnectTelegramPage",
+      "target": "supabaseServer_SupabaseServerClient",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/src/pages/ConnectTelegram.tsx",
+      "source_location": "line 75",
+      "weight": 0.8
+    },
+    {
+      "source": "PracticePage_PracticePage",
+      "target": "PromptsPage_PromptsPage",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/pages/PracticePage.tsx",
+      "source_location": "line 117",
+      "weight": 1.0
+    },
+    {
+      "source": "PromptsPage_PromptsPage",
+      "target": "PracticePage_PracticePage",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/pages/PromptsPage.tsx",
+      "source_location": "line 11",
+      "weight": 1.0
+    },
+    {
+      "source": "PracticePage_PracticePage",
+      "target": "HelpPage_HelpPage",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/pages/PracticePage.tsx",
+      "source_location": "line 145",
+      "weight": 1.0
+    },
+    {
+      "source": "constantsTest_TelegramConstantsTest",
+      "target": "constants_TelegramConstants",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/constants.test.ts",
+      "source_location": "line 4",
+      "weight": 1.0
+    },
+    {
+      "source": "groq_GroqService",
+      "target": "groq_transcribeAudioWithGroq",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/groq.ts",
+      "source_location": "line 92",
+      "weight": 1.0
+    },
+    {
+      "source": "groq_GroqService",
+      "target": "groq_getAIFeedback",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/groq.ts",
+      "source_location": "line 142",
+      "weight": 1.0
+    },
+    {
+      "source": "supabaseServer_SupabaseServerClient",
+      "target": "supabase_SupabaseBrowserClient",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/src/services/supabaseServer.ts",
+      "source_location": null,
+      "weight": 0.6
+    },
+    {
+      "source": "voiceHandler_sendFriendChallengeResult",
+      "target": "voiceHandler_VoiceHandler",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 652",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_postGroupChallengeResult",
+      "target": "voiceHandler_VoiceHandler",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 717",
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandler_handleVoiceMessage",
+      "target": "constants_FlowAnalysisType",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "source_location": "line 202",
+      "weight": 1.0
+    },
+    {
+      "source": "constants_TelegramChallengeSQL",
+      "target": "supabaseServer_SupabaseServerClient",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/src/lib/telegram/constants.ts",
+      "source_location": "line 26",
+      "weight": 0.8
+    },
+    {
+      "source": "launch_ClaudeLaunchConfig",
+      "target": "vscode_launch_VSCodeLaunchConfig",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "No-Pause/.claude/launch.json",
+      "source_location": null,
+      "weight": 0.5
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_voice_pipeline",
+      "label": "Telegram Voice Processing Pipeline",
+      "nodes": [
+        "voiceHandler_handleVoiceMessage",
+        "groq_transcribeAudioWithGroq",
+        "aiFeedback_generateAiFeedback",
+        "voiceHandler_insertTelegramSession"
+      ],
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "description": "End-to-end pipeline: voice download -> Groq transcription -> AI feedback -> Supabase session insert"
+    },
+    {
+      "id": "hyperedge_challenge_flow",
+      "label": "Telegram Challenge Result Dispatch Flow",
+      "nodes": [
+        "voiceHandler_handleVoiceMessage",
+        "voiceHandler_sendFriendChallengeResult",
+        "voiceHandler_postGroupChallengeResult",
+        "constants_TelegramConstants"
+      ],
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.ts",
+      "description": "Challenge result routing: handleVoiceMessage dispatches to friend or group challenge handlers using constants message builders"
+    },
+    {
+      "id": "hyperedge_quota_guard",
+      "label": "API Quota Guard Pattern",
+      "nodes": [
+        "apiQuota_consumeApiQuota",
+        "apiQuota_ApiQuotaExceededError",
+        "supabaseServer_SupabaseServerClient",
+        "voiceHandler_handleVoiceMessage"
+      ],
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/services/apiQuota.ts",
+      "description": "Quota enforcement: consumeApiQuota calls Supabase RPC, throws ApiQuotaExceededError, caught in handleVoiceMessage before Groq calls"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

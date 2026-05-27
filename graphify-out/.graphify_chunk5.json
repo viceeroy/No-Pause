@@ -1,0 +1,804 @@
+{
+  "nodes": [
+    {
+      "id": "useInstallPlatform_hook",
+      "label": "useInstallPlatform Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/hooks/useInstallPlatform.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "sharedUtils_cn",
+      "label": "Shared Utils (cn / arrayBufferToBase64)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/lib/utils.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "routeSeo_getRouteSeoConfig",
+      "label": "Route SEO Config (getRouteSeoConfig)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/seo/routeSeo.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "scoringTest_flowScore",
+      "label": "Flow Score Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/__tests__/scoring.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "practiceApi_module",
+      "label": "Practice API (practiceApi.ts)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "telegramAuth_upsertConnection",
+      "label": "Telegram Auth (upsertTelegramConnection)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegramAuth.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreUtils_module",
+      "label": "Core Utils (getWordCount / escapeTelegramHtml / parseTranscribedWords)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/utils.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreUtilsTest_module",
+      "label": "Core Utils Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/utils.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreQueries_module",
+      "label": "Core Queries (practiceStats / sessionRecord / weeklyStats)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreModes_module",
+      "label": "Core Modes (normalizeMode)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/modes.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "corePrompts_module",
+      "label": "Core Prompts (promptCategories / getRandomPrompt)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/prompts.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreSession_module",
+      "label": "Core Session (insertSession / updateStreak / buildSessionInsertValues)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreSessionTest_module",
+      "label": "Core Session Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/session.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreConstants_module",
+      "label": "Core Constants (SCORING_VERSION / PAUSE_THRESHOLD / APP_URL)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/constants.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreScoring_module",
+      "label": "Core Scoring (calculateFlowScore / getScoreLabel)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/scoring.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreTimeTest_module",
+      "label": "Core Time Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/time.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreUser_module",
+      "label": "Core User (resolveTelegramUser)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/user.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreTime_module",
+      "label": "Core Time (formatDuration / formatPracticeTotalDuration)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/time.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "telegramChallenges_module",
+      "label": "Telegram Challenges (createFriendChallenge / handleChallengeDeepLink / leaderboard)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "telegramRouter_module",
+      "label": "Telegram Router (createTelegramBot)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "voiceHandlerTest_module",
+      "label": "Voice Handler Tests (pause detection / speaking time)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "supabase_browserClient",
+      "label": "Supabase Browser Client",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/supabase.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "supabaseServer_client",
+      "label": "Supabase Server Client",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/supabaseServer.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "flowScore_formula",
+      "label": "Flow Score Formula (speakingTime + completedMinutes*40 - hesitations*10)",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/core/scoring.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "pauseThreshold_constant",
+      "label": "Pause Threshold Constant (1.2s / 1200ms)",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/core/constants.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "db_sessions_table",
+      "label": "DB: sessions table",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "db_streaks_table",
+      "label": "DB: streaks table",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "db_telegram_connections_table",
+      "label": "DB: telegram_connections table",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/telegramAuth.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "db_challenges_table",
+      "label": "DB: challenges table",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "db_telegram_challenge_state_table",
+      "label": "DB: telegram_challenge_state table",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "db_telegram_challenge_attempts_table",
+      "label": "DB: telegram_challenge_attempts table",
+      "file_type": "document",
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "scoringTest_flowScore",
+      "target": "coreScoring_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/__tests__/scoring.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreScoring_module",
+      "target": "flowScore_formula",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/scoring.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreScoring_module",
+      "target": "coreConstants_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/scoring.ts",
+      "source_location": null,
+      "weight": 0.8
+    },
+    {
+      "source": "coreConstants_module",
+      "target": "pauseThreshold_constant",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/constants.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreSession_module",
+      "target": "coreConstants_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "weight": 0.8
+    },
+    {
+      "source": "coreSession_module",
+      "target": "db_sessions_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreSession_module",
+      "target": "db_streaks_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreSessionTest_module",
+      "target": "coreSession_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/session.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreUtilsTest_module",
+      "target": "coreUtils_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/utils.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreTimeTest_module",
+      "target": "coreTime_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/time.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreQueries_module",
+      "target": "coreModes_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "coreQueries_module",
+      "target": "coreSession_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreQueries_module",
+      "target": "supabaseServer_client",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreQueries_module",
+      "target": "db_sessions_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreQueries_module",
+      "target": "db_streaks_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "practiceApi_module",
+      "target": "coreSession_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "practiceApi_module",
+      "target": "coreQueries_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "practiceApi_module",
+      "target": "supabase_browserClient",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "practiceApi_module",
+      "target": "coreUtils_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "practiceApi_module",
+      "target": "db_sessions_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramAuth_upsertConnection",
+      "target": "supabaseServer_client",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegramAuth.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramAuth_upsertConnection",
+      "target": "db_telegram_connections_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegramAuth.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreUser_module",
+      "target": "supabaseServer_client",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/user.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "coreUser_module",
+      "target": "db_telegram_connections_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/user.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramChallenges_module",
+      "target": "corePrompts_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "telegramChallenges_module",
+      "target": "coreUser_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramChallenges_module",
+      "target": "supabaseServer_client",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramChallenges_module",
+      "target": "db_challenges_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramChallenges_module",
+      "target": "db_telegram_challenge_state_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramChallenges_module",
+      "target": "db_telegram_challenge_attempts_table",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/challenges.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramRouter_module",
+      "target": "corePrompts_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "telegramRouter_module",
+      "target": "coreQueries_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramRouter_module",
+      "target": "coreUtils_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "telegramRouter_module",
+      "target": "coreUser_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "telegramRouter_module",
+      "target": "telegramChallenges_module",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "voiceHandlerTest_module",
+      "target": "pauseThreshold_constant",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.test.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "voiceHandlerTest_module",
+      "target": "coreScoring_module",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/src/lib/telegram/voiceHandler.test.ts",
+      "source_location": null,
+      "weight": 0.7
+    },
+    {
+      "source": "routeSeo_getRouteSeoConfig",
+      "target": "coreScoring_module",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.6,
+      "source_file": "No-Pause/src/shared/seo/routeSeo.ts",
+      "source_location": null,
+      "weight": 0.4
+    },
+    {
+      "source": "coreQueries_module",
+      "target": "flowScore_formula",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/src/lib/core/queries.ts",
+      "source_location": null,
+      "weight": 0.8
+    },
+    {
+      "source": "practiceApi_module",
+      "target": "flowScore_formula",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 0.8
+    },
+    {
+      "source": "sharedUtils_cn",
+      "target": "practiceApi_module",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "No-Pause/src/shared/lib/utils.ts",
+      "source_location": null,
+      "weight": 0.5
+    },
+    {
+      "source": "coreSession_module",
+      "target": "coreModes_module",
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/src/lib/core/session.ts",
+      "source_location": null,
+      "weight": 0.8
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_session_write_pipeline",
+      "label": "Session Write Pipeline (web)",
+      "nodes": ["practiceApi_module", "coreSession_module", "supabase_browserClient", "db_sessions_table"],
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "id": "hyperedge_telegram_challenge_flow",
+      "label": "Telegram Challenge Flow (router → challenges → DB)",
+      "nodes": ["telegramRouter_module", "telegramChallenges_module", "coreUser_module", "supabaseServer_client", "db_challenges_table"],
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/telegram/router.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "id": "hyperedge_scoring_invariant",
+      "label": "Frozen Flow Score Invariant (formula → tests → constants)",
+      "nodes": ["coreScoring_module", "coreConstants_module", "flowScore_formula", "scoringTest_flowScore", "pauseThreshold_constant"],
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/lib/core/scoring.ts",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

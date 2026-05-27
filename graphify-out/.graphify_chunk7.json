@@ -1,0 +1,1439 @@
+{
+  "nodes": [
+    {
+      "id": "CHANGELOG_project_history",
+      "label": "NoPause Project Changelog",
+      "file_type": "document",
+      "source_file": "CHANGELOG.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "README_root_overview",
+      "label": "Root README — NoPause Overview",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "AGENTS_deploy_workflow",
+      "label": "AGENTS.md — Codex Deploy Workflow",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "CLAUDE_coding_rules",
+      "label": "CLAUDE.md — Agent Coding Rules",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "index_html_entry",
+      "label": "index.html — PWA Entry Point & SEO",
+      "file_type": "document",
+      "source_file": "No-Pause/index.html",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "nopause_readme_app",
+      "label": "No-Pause/README.md — App README",
+      "file_type": "document",
+      "source_file": "No-Pause/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "INDEX_md_import_graph",
+      "label": "INDEX.md — Module Import Graph",
+      "file_type": "document",
+      "source_file": "No-Pause/INDEX.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "memory_system_md",
+      "label": "memory/system.md — System Reference",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "audit_architecture",
+      "label": "Audit #7: Architecture & Duplication",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/architecture.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_flow_score",
+      "label": "Audit #4: Flow Score Accuracy",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_accessibility",
+      "label": "Audit #9: Accessibility & UX Edge Cases",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/accessibility.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_performance",
+      "label": "Audit #6: Performance",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/performance.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_pwa_auth",
+      "label": "Audit #8: PWA, Auth & Service Worker",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_supabase_security",
+      "label": "Audit #5: Supabase Security & RLS",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_error_handling",
+      "label": "Audit #3: Error Handling & Edge Cases",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/error-handling.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_dead_code",
+      "label": "Audit #1: Dead Code & Unused Exports",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/dead-code.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "audit_type_safety",
+      "label": "Audit #2: Type Safety & Null Safety",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/type-safety.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-24",
+      "author": null
+    },
+    {
+      "id": "robots_txt",
+      "label": "robots.txt — Crawler Directives",
+      "file_type": "document",
+      "source_file": "No-Pause/public/robots.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "preview_png_social",
+      "label": "preview.png — Social Share / OG Image",
+      "file_type": "image",
+      "source_file": "No-Pause/public/preview.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "favicon_png_icon",
+      "label": "favicon.png — Browser Tab Icon",
+      "file_type": "image",
+      "source_file": "No-Pause/public/favicon.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "icon_192_pwa",
+      "label": "icon-192.png — PWA Icon 192×192",
+      "file_type": "image",
+      "source_file": "No-Pause/public/icon-192.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "icon_512_pwa",
+      "label": "icon-512.png — PWA Icon 512×512",
+      "file_type": "image",
+      "source_file": "No-Pause/public/icon-512.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_flow_score_formula",
+      "label": "Flow Score Formula (frozen invariant)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_nopause_brand",
+      "label": "NoPause Brand Identity",
+      "file_type": "image",
+      "source_file": "No-Pause/public/preview.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_pwa_manifest",
+      "label": "PWA Manifest & Install Flow",
+      "file_type": "document",
+      "source_file": "No-Pause/index.html",
+      "source_location": "link rel=manifest",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_locked_stack",
+      "label": "Locked Technology Stack (CLAUDE.md constraint)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "Locked Stack section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_deploy_workflow",
+      "label": "Vercel Deploy Workflow",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Deploy Workflow section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_rls_security",
+      "label": "Supabase RLS Security Model",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_pause_threshold",
+      "label": "Fixed 1.2s Pause Threshold",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_web_telegram_divergence",
+      "label": "Web vs Telegram Scoring Divergence",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": "HIGH-1 section",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_supabase_browser_client",
+      "label": "Supabase Browser Client (anon key + RLS)",
+      "file_type": "document",
+      "source_file": "No-Pause/INDEX.md",
+      "source_location": "Providers And Services section",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_supabase_server_client",
+      "label": "Supabase Server Client (service-role, server-only)",
+      "file_type": "document",
+      "source_file": "No-Pause/INDEX.md",
+      "source_location": "Providers And Services section",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_groq_whisper",
+      "label": "Groq Whisper Transcription (server-side STT)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Stack table",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_telegram_bot",
+      "label": "Telegram Bot (@NoPauseAI_bot)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Stack table",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_practice_state_machine",
+      "label": "Practice State Machine (setup→countdown→recording→finishing→done)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Practice State Machine section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_db_schema",
+      "label": "Database Schema (sessions, streaks, telegram tables)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Database Tables section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_web_speaking_flow",
+      "label": "Web Speaking Mode Data Flow",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow — Web Speaking Mode",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_telegram_voice_flow",
+      "label": "Telegram Voice/Challenge Data Flow",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow — Telegram Voice / Challenge",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_ai_blend_removed",
+      "label": "blendWithAiScore Removal (2026-05-24)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Flow Score Formula — blendWithAiScore removed note",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_seo_metadata",
+      "label": "SEO Metadata & Open Graph Tags",
+      "file_type": "document",
+      "source_file": "No-Pause/index.html",
+      "source_location": "<head> section",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_privacy_client_audio",
+      "label": "Privacy: Client-Side Audio Analysis (no server stream)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "Privacy & Architecture section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_service_worker",
+      "label": "Service Worker (nopause-shell-v2, stale-while-revalidate)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Stack table — PWA row",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_deploy_root_quirk",
+      "label": "Vercel Deploy Root Quirk (repo root, not No-Pause/)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_filler_removal",
+      "label": "Filler Word Tracking Removal (2026-05-18)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks — Filler tracking removed",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_word_timestamp_scoring",
+      "label": "Word-Timestamp-Based Pause Detection (Groq-primary)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Recent Refactoring #14",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_sessions_rls_missing",
+      "label": "CRITICAL: sessions/streaks Tables Missing RLS",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "CRITICAL-1, CRITICAL-2",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_ios_pwa_broken",
+      "label": "iOS PWA Missing Apple Meta Tags",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "HIGH-3",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_confetti_perf",
+      "label": "Confetti Performance Issue (80 setState/frame)",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/performance.md",
+      "source_location": "HIGH-1",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_silent_session_loss",
+      "label": "Silent Session Loss on Save Failure",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/error-handling.md",
+      "source_location": "HIGH-1",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_strict_mode_off",
+      "label": "TypeScript strict:false in Frontend tsconfig",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/type-safety.md",
+      "source_location": "HIGH-1",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_hesitation_pause_naming",
+      "label": "hesitationCount vs pauseCount Naming Split",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/architecture.md",
+      "source_location": "HIGH-4",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_reduced_motion_missing",
+      "label": "Missing prefers-reduced-motion Support",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/accessibility.md",
+      "source_location": "HIGH-5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_obsidian_logging",
+      "label": "Obsidian Vault Changelog Logging Convention",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "Obsidian Vault Logging section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "concept_sendJson_duplication",
+      "label": "sendJson Duplication Across 3 API Files",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/architecture.md",
+      "source_location": "HIGH-1",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "concept_open_redirect",
+      "label": "Open Redirect Vulnerability (// prefix bypass)",
+      "file_type": "document",
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "HIGH-3",
+      "source_url": null,
+      "captured_at": null,
+      "author": null
+    },
+    {
+      "id": "rationale_frozen_flow_score",
+      "label": "Rationale: Flow Score Formula is Frozen",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "rationale_server_only_keys",
+      "label": "Rationale: Provider Keys Must Be Server-Only",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Environment Variables — Never add VITE_GROQ_API_KEY",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "rationale_vercel_root",
+      "label": "Rationale: Vercel Project Root is Repo Root",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks — Vercel root",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "rationale_single_mode",
+      "label": "Rationale: Single Practice Mode ('speaking' only)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks — normalizeMode always returns speaking",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "rationale_client_audio_privacy",
+      "label": "Rationale: Client-Side Audio for Privacy",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "Privacy & Architecture section",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    },
+    {
+      "id": "rationale_groq_primary",
+      "label": "Rationale: Groq Whisper as Primary Transcription (browser SpeechRecognition disabled)",
+      "file_type": "document",
+      "source_file": "memory/system.md",
+      "source_location": "Recent Refactoring #14",
+      "source_url": null,
+      "captured_at": null,
+      "author": "Bobur Karimov"
+    }
+  ],
+  "edges": [
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "memory_system_md",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Line 4: Full reference: memory/system.md",
+      "weight": 1.0
+    },
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "INDEX_md_import_graph",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Line 6: Import graph: INDEX.md",
+      "weight": 1.0
+    },
+    {
+      "source": "AGENTS_deploy_workflow",
+      "target": "CLAUDE_coding_rules",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "AGENTS.md",
+      "source_location": "Line 3: Coding rules live in CLAUDE.md",
+      "weight": 1.0
+    },
+    {
+      "source": "README_root_overview",
+      "target": "memory_system_md",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "Architecture section: lives in memory/MEMORY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "README_root_overview",
+      "target": "INDEX_md_import_graph",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "Architecture section: No-Pause/INDEX.md",
+      "weight": 1.0
+    },
+    {
+      "source": "README_root_overview",
+      "target": "CHANGELOG_project_history",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "Architecture section: CHANGELOG.md",
+      "weight": 1.0
+    },
+    {
+      "source": "index_html_entry",
+      "target": "concept_seo_metadata",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/index.html",
+      "source_location": "<head> Open Graph and Twitter card tags",
+      "weight": 1.0
+    },
+    {
+      "source": "index_html_entry",
+      "target": "concept_pwa_manifest",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/index.html",
+      "source_location": "link rel=manifest href=/manifest.json",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_seo_metadata",
+      "target": "preview_png_social",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/index.html",
+      "source_location": "og:image and twitter:image pointing to /preview.png",
+      "weight": 1.0
+    },
+    {
+      "source": "index_html_entry",
+      "target": "favicon_png_icon",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/index.html",
+      "source_location": "link rel=icon href=/favicon.png",
+      "weight": 1.0
+    },
+    {
+      "source": "favicon_png_icon",
+      "target": "concept_nopause_brand",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/public/favicon.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "icon_192_pwa",
+      "target": "concept_nopause_brand",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/public/icon-192.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "icon_512_pwa",
+      "target": "concept_nopause_brand",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/public/icon-512.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "preview_png_social",
+      "target": "concept_nopause_brand",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/public/preview.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_pwa_manifest",
+      "target": "icon_192_pwa",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "MEDIUM-3: manifest.json uses single icon 512x512",
+      "weight": 0.9
+    },
+    {
+      "source": "concept_pwa_manifest",
+      "target": "icon_512_pwa",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "MEDIUM-3: manifest.json 512x512 icon purpose any maskable",
+      "weight": 0.9
+    },
+    {
+      "source": "robots_txt",
+      "target": "concept_seo_metadata",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/public/robots.txt",
+      "source_location": "Sitemap: https://www.nopause.org/sitemap.xml",
+      "weight": 0.8
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_flow_score_formula",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Flow Score Formula section",
+      "weight": 1.0
+    },
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "concept_flow_score_formula",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules: Flow Score is frozen",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_frozen_flow_score",
+      "target": "concept_flow_score_formula",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules section",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_flow_score",
+      "target": "concept_flow_score_formula",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": "Pipeline Trace section",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_flow_score",
+      "target": "concept_web_telegram_divergence",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": "HIGH-1: Web vs Telegram pause detection divergence",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_flow_score",
+      "target": "concept_pause_threshold",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": "detectPausesFromWordTimestamps — gaps >= 1200ms",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_flow_score",
+      "target": "concept_ai_blend_removed",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": "HIGH-2: blendWithAiScore can dramatically change score",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_ai_blend_removed",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Flow Score Formula — blendWithAiScore removed 2026-05-24",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_architecture",
+      "target": "concept_hesitation_pause_naming",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/architecture.md",
+      "source_location": "HIGH-4",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_architecture",
+      "target": "concept_sendJson_duplication",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/architecture.md",
+      "source_location": "HIGH-1",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_supabase_security",
+      "target": "concept_sessions_rls_missing",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "CRITICAL-1, CRITICAL-2",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_supabase_security",
+      "target": "concept_rls_security",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "Table-by-Table RLS Summary",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_supabase_security",
+      "target": "concept_open_redirect",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "HIGH-3",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_pwa_auth",
+      "target": "concept_ios_pwa_broken",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "HIGH-3",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_pwa_auth",
+      "target": "concept_service_worker",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "Service Worker section",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_pwa_auth",
+      "target": "concept_open_redirect",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "MEDIUM-4: Auth callback returnTo allows // prefix",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_performance",
+      "target": "concept_confetti_perf",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/performance.md",
+      "source_location": "HIGH-1",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_error_handling",
+      "target": "concept_silent_session_loss",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/error-handling.md",
+      "source_location": "HIGH-1",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_type_safety",
+      "target": "concept_strict_mode_off",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/type-safety.md",
+      "source_location": "HIGH-1",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_accessibility",
+      "target": "concept_reduced_motion_missing",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/accessibility.md",
+      "source_location": "HIGH-5",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_accessibility",
+      "target": "concept_confetti_perf",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "No-Pause/audits/accessibility.md",
+      "source_location": "HIGH-5: Confetti ignores prefers-reduced-motion",
+      "weight": 0.75
+    },
+    {
+      "source": "concept_reduced_motion_missing",
+      "target": "concept_confetti_perf",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/audits/accessibility.md",
+      "source_location": "HIGH-5: same Confetti component",
+      "weight": 0.8
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_practice_state_machine",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Practice State Machine section",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_db_schema",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Database Tables section",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_web_speaking_flow",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow — Web Speaking Mode",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_telegram_voice_flow",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow — Telegram Voice / Challenge",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_groq_whisper",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Stack table: STT row",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_telegram_bot",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Stack table: Telegram bot row",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_locked_stack",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Stack table",
+      "weight": 1.0
+    },
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "concept_locked_stack",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Locked Stack section",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_word_timestamp_scoring",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Recent Refactoring #14",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_word_timestamp_scoring",
+      "target": "concept_web_telegram_divergence",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/audits/flow-score.md",
+      "source_location": "HIGH-1",
+      "weight": 0.85
+    },
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "concept_pause_threshold",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules: Pause threshold is fixed at 1.2s",
+      "weight": 1.0
+    },
+    {
+      "source": "memory_system_md",
+      "target": "concept_filler_removal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks — Filler tracking removed",
+      "weight": 1.0
+    },
+    {
+      "source": "CHANGELOG_project_history",
+      "target": "concept_filler_removal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CHANGELOG.md",
+      "source_location": "May 18, 2026 entry",
+      "weight": 1.0
+    },
+    {
+      "source": "CHANGELOG_project_history",
+      "target": "concept_ai_blend_removed",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "memory/system.md",
+      "source_location": "blendWithAiScore removed 2026-05-24 note",
+      "weight": 0.8
+    },
+    {
+      "source": "CHANGELOG_project_history",
+      "target": "concept_word_timestamp_scoring",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "CHANGELOG.md",
+      "source_location": "May 22, 2026 consolidated project documentation",
+      "weight": 0.8
+    },
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "concept_rls_security",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Hard Rules: RLS always. supabaseServer is server-only",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_server_only_keys",
+      "target": "concept_supabase_server_client",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Never add VITE_GROQ_API_KEY",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_vercel_root",
+      "target": "concept_deploy_workflow",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks — Vercel root",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_single_mode",
+      "target": "concept_practice_state_machine",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "memory/system.md",
+      "source_location": "normalizeMode always returns speaking",
+      "weight": 0.8
+    },
+    {
+      "source": "rationale_client_audio_privacy",
+      "target": "concept_privacy_client_audio",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "Privacy & Architecture section",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_groq_primary",
+      "target": "concept_groq_whisper",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Recent Refactoring #14",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_supabase_browser_client",
+      "target": "concept_rls_security",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/INDEX.md",
+      "source_location": "Providers And Services: supabase.ts — browser client anon key + RLS only",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_sessions_rls_missing",
+      "target": "concept_rls_security",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "CRITICAL-1",
+      "weight": 1.0
+    },
+    {
+      "source": "CLAUDE_coding_rules",
+      "target": "concept_obsidian_logging",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CLAUDE.md",
+      "source_location": "Obsidian Vault Logging section",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_deploy_workflow",
+      "target": "concept_deploy_root_quirk",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Notable Quirks — Vercel root and Deploy Workflow section",
+      "weight": 1.0
+    },
+    {
+      "source": "AGENTS_deploy_workflow",
+      "target": "concept_deploy_workflow",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "AGENTS.md",
+      "source_location": "Deploy Command section",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_dead_code",
+      "target": "concept_hesitation_pause_naming",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/audits/dead-code.md",
+      "source_location": "MEDIUM-3: MODE_LABELS / normalizeMode always one value",
+      "weight": 0.8
+    },
+    {
+      "source": "audit_dead_code",
+      "target": "concept_locked_stack",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "No-Pause/audits/dead-code.md",
+      "source_location": "MEDIUM-5: Multi-mode infrastructure for single-mode app",
+      "weight": 0.7
+    },
+    {
+      "source": "concept_ios_pwa_broken",
+      "target": "concept_pwa_manifest",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "HIGH-3: missing apple-mobile-web-app-capable meta tags",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_service_worker",
+      "target": "concept_pwa_manifest",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/audits/pwa-auth.md",
+      "source_location": "Service Worker and PWA Install Flow sections",
+      "weight": 0.85
+    },
+    {
+      "source": "concept_telegram_voice_flow",
+      "target": "concept_telegram_bot",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow — Telegram Voice / Challenge",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_web_speaking_flow",
+      "target": "concept_groq_whisper",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow step 5: practiceApi.transcribeAudio -> /api/transcription -> Groq Whisper",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_telegram_voice_flow",
+      "target": "concept_groq_whisper",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow step 3: transcribeAudioWithGroq -> Groq Whisper",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_web_speaking_flow",
+      "target": "concept_flow_score_formula",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow step 6: calculateFlowScore",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_telegram_voice_flow",
+      "target": "concept_flow_score_formula",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "memory/system.md",
+      "source_location": "Data Flow step 6: calculateFlowScore(pauseCount)",
+      "weight": 1.0
+    },
+    {
+      "source": "concept_db_schema",
+      "target": "concept_sessions_rls_missing",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/audits/supabase-security.md",
+      "source_location": "CRITICAL-1: sessions table has no RLS policies",
+      "weight": 0.85
+    },
+    {
+      "source": "concept_silent_session_loss",
+      "target": "concept_web_speaking_flow",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/audits/error-handling.md",
+      "source_location": "HIGH-1: saveFinishedSession failure silently loses session",
+      "weight": 0.8
+    },
+    {
+      "source": "concept_strict_mode_off",
+      "target": "concept_locked_stack",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.3,
+      "source_file": "No-Pause/audits/type-safety.md",
+      "source_location": "HIGH-1: tsconfig.app.json strict:false",
+      "weight": 0.3
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_flow_score_pipeline",
+      "label": "Flow Score Computation Pipeline",
+      "node_ids": [
+        "concept_flow_score_formula",
+        "concept_pause_threshold",
+        "concept_word_timestamp_scoring",
+        "concept_web_telegram_divergence",
+        "audit_flow_score"
+      ],
+      "relation": "jointly_define",
+      "description": "The Flow Score pipeline involves the frozen formula in scoring.ts, the fixed 1.2s pause threshold, Groq-primary word-timestamp pause detection, and exposes a known divergence between the web (RMS) and Telegram (word-gap) measurement methods.",
+      "source_files": ["No-Pause/audits/flow-score.md", "CLAUDE.md", "memory/system.md"],
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "hyperedge_security_boundary",
+      "label": "Security Boundary: RLS + Server-Only Keys + Auth Redirect",
+      "node_ids": [
+        "concept_rls_security",
+        "concept_sessions_rls_missing",
+        "concept_supabase_server_client",
+        "concept_open_redirect",
+        "audit_supabase_security"
+      ],
+      "relation": "jointly_define",
+      "description": "The app's security model relies on Supabase RLS, server-only service-role keys, and safe auth redirects. The audit reveals critical gaps: sessions/streaks tables may lack RLS, and auth callback allows protocol-relative redirect bypass.",
+      "source_files": ["No-Pause/audits/supabase-security.md", "CLAUDE.md"],
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "hyperedge_pwa_brand_assets",
+      "label": "PWA Brand Asset Set",
+      "node_ids": [
+        "favicon_png_icon",
+        "icon_192_pwa",
+        "icon_512_pwa",
+        "preview_png_social",
+        "concept_nopause_brand",
+        "concept_pwa_manifest"
+      ],
+      "relation": "jointly_define",
+      "description": "All NoPause brand assets share the same design: gold speech-bubble icon with audio waveform bars on a dark navy background. The favicon, 192px icon, 512px icon, and OG preview image collectively form the app's visual identity and are referenced by the PWA manifest and index.html.",
+      "source_files": ["No-Pause/public/preview.png", "No-Pause/public/favicon.png", "No-Pause/public/icon-192.png", "No-Pause/public/icon-512.png", "No-Pause/index.html"],
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

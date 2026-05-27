@@ -99,3 +99,19 @@ system.md needs update: [yes/no — which section]
 - Ambiguous spec → state your interpretation before proceeding
 - Flag tensions as `⚠️ TENSION:` inline
 - Use `/clear` between unrelated tasks
+
+---
+
+## Obsidian Vault Logging
+
+After completing any significant task or feature:
+
+1. Update `CHANGELOG.md` in the project root
+2. Save a new file to `/Users/viseeroy/Desktop/NoPause.sd/Changelog/`
+   - Filename: `YYYY-MM-DD-short-description.md`
+   - Content: what changed, why, what's next (max 20 lines)
+
+For system/architecture updates only (stack changes, major refactors):
+- Append to `/Users/viseeroy/Desktop/NoPause.sd/Decisions/system.md` — new entries at top with date
+- Do not create new files in Decisions/
+- Skip for small fixes and minor tweaks

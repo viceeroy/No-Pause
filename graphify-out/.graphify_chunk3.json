@@ -1,0 +1,769 @@
+{
+  "nodes": [
+    {
+      "id": "ServiceWorkerUpdateContext",
+      "label": "Service Worker Update Context Provider",
+      "file_type": "code",
+      "source_file": "No-Pause/src/providers/ServiceWorkerUpdateContext.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "AuthContext",
+      "label": "Auth Context Provider",
+      "file_type": "code",
+      "source_file": "No-Pause/src/providers/AuthContext.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "PWAInstallContext",
+      "label": "PWA Install Context Provider",
+      "file_type": "code",
+      "source_file": "No-Pause/src/providers/PWAInstallContext.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "AuthPage",
+      "label": "Auth Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/auth/pages/AuthPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "AuthCallbackPage",
+      "label": "Auth Callback Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/auth/pages/AuthCallbackPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "SignUpPage",
+      "label": "Sign Up Page",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/auth/pages/SignUpPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "VoiceVisualizer",
+      "label": "Voice Visualizer Canvas Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/components/VoiceVisualizer.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "useRecording",
+      "label": "useRecording Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "useSession",
+      "label": "useSession Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "useScoring",
+      "label": "useScoring Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/hooks/useScoring.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "audioRecording",
+      "label": "Audio Recording Factory (createAudioAnalyzer)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/audioRecording.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "speechAnalyzer",
+      "label": "AudioAnalyzer Class",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "audioCapture",
+      "label": "AudioCapture Class",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/audioCapture.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "micService",
+      "label": "MicService Singleton",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/micService.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "speechSession",
+      "label": "SpeechSession Class",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "speechTypes",
+      "label": "Speech Types (AudioDataPayload, AnalyzerResults)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/speechTypes.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "speechSession_test",
+      "label": "SpeechSession Unit Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "transcription",
+      "label": "TranscriptionController Class",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/transcription.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "micStateMachine",
+      "label": "Mic State Machine (applyMicStateFrame, finalizeMicState)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/micStateMachine.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "micStateMachine_test",
+      "label": "Mic State Machine Unit Tests",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/mic-state-machine.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "diagnostics",
+      "label": "Analyzer Diagnostics (buildDiagnosticsSnapshot, getPlatformDiagnostics)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/diagnostics.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "supabase_service",
+      "label": "Supabase Browser Client",
+      "file_type": "code",
+      "source_file": "No-Pause/src/services/supabase.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "practiceApi",
+      "label": "Practice API (Supabase session writes)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "scoring_lib",
+      "label": "Flow Score Core Library",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/scoring.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "shared_utils",
+      "label": "Shared Utilities (arrayBufferToBase64)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/lib/utils.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "core_utils",
+      "label": "Core Utilities (getWordCount, parseTranscribedWords)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/utils.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "AuthContext",
+      "target": "supabase_service",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/providers/AuthContext.tsx",
+      "source_location": "line 10",
+      "weight": 1.0
+    },
+    {
+      "source": "AuthContext",
+      "target": "supabase_service",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/providers/AuthContext.tsx",
+      "source_location": "signInWithGoogle: supabase.auth.signInWithOAuth, signOut: supabase.auth.signOut",
+      "weight": 1.0
+    },
+    {
+      "source": "AuthPage",
+      "target": "AuthContext",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/auth/pages/AuthPage.tsx",
+      "source_location": "useAuth() hook",
+      "weight": 1.0
+    },
+    {
+      "source": "AuthPage",
+      "target": "AuthContext",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/auth/pages/AuthPage.tsx",
+      "source_location": "signInWithGoogle destructured from useAuth()",
+      "weight": 1.0
+    },
+    {
+      "source": "AuthCallbackPage",
+      "target": "AuthContext",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/auth/pages/AuthCallbackPage.tsx",
+      "source_location": "useAuth() — reads isLoading and session",
+      "weight": 1.0
+    },
+    {
+      "source": "SignUpPage",
+      "target": "AuthContext",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/auth/pages/SignUpPage.tsx",
+      "source_location": "useAuth() hook, signInWithGoogle",
+      "weight": 1.0
+    },
+    {
+      "source": "AuthCallbackPage",
+      "target": "AuthPage",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/auth/pages/AuthCallbackPage.tsx",
+      "source_location": "navigate('/auth') on no session; Link to='/auth'",
+      "weight": 0.8
+    },
+    {
+      "source": "useRecording",
+      "target": "audioRecording",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "createAudioAnalyzer()",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "micService",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "micService.init(), micService.reset(), micService.retryInit(), micService.getStream(), micService.getAudioContext(), micService.setTracksEnabled(), micService.ensureAudioContextRunning()",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "speechAnalyzer",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "analyzerRef.current.start(), .stop(), .destroy(), .getCaptureState(), .getDiagnosticsSnapshot(), .isRunning",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "scoring_lib",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "DEFAULT_PAUSE_THRESHOLD, DEFAULT_PAUSE_THRESHOLD_MS from scoring",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "practiceApi",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "transcribeAudio imported from practiceApi",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "useSession",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "requestFeedback and saveFinishedSession passed as props from useSession",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "useScoring",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "buildSessionResult passed as prop from useScoring",
+      "weight": 1.0
+    },
+    {
+      "source": "useRecording",
+      "target": "diagnostics",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "AnalyzerDiagnosticsSnapshot type used; getDiagnosticsSnapshot() called on analyzer",
+      "weight": 1.0
+    },
+    {
+      "source": "useSession",
+      "target": "practiceApi",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": "analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak",
+      "weight": 1.0
+    },
+    {
+      "source": "useSession",
+      "target": "shared_utils",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": "arrayBufferToBase64",
+      "weight": 1.0
+    },
+    {
+      "source": "useSession",
+      "target": "core_utils",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": "getWordCount",
+      "weight": 1.0
+    },
+    {
+      "source": "useScoring",
+      "target": "scoring_lib",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useScoring.ts",
+      "source_location": "calculateFlowScore",
+      "weight": 1.0
+    },
+    {
+      "source": "useScoring",
+      "target": "speechAnalyzer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useScoring.ts",
+      "source_location": "type AnalyzerResults from speechAnalyzer",
+      "weight": 0.8
+    },
+    {
+      "source": "useScoring",
+      "target": "core_utils",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useScoring.ts",
+      "source_location": "getWordCount, parseTranscribedWords",
+      "weight": 1.0
+    },
+    {
+      "source": "audioRecording",
+      "target": "speechAnalyzer",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/audioRecording.ts",
+      "source_location": "new AudioAnalyzer(options)",
+      "weight": 1.0
+    },
+    {
+      "source": "speechAnalyzer",
+      "target": "audioCapture",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": "new AudioCapture(); this.capture.start(), .stop(), .destroy(), .getCaptureState(), .getDiagnosticsSnapshot(), .hasAudioSignal()",
+      "weight": 1.0
+    },
+    {
+      "source": "speechAnalyzer",
+      "target": "speechSession",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": "new SpeechSession(); this.session.start(), .finish(), .handleFrame()",
+      "weight": 1.0
+    },
+    {
+      "source": "speechAnalyzer",
+      "target": "transcription",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": "new TranscriptionController(); this.transcription.reset(), .finalizeTranscript()",
+      "weight": 1.0
+    },
+    {
+      "source": "speechAnalyzer",
+      "target": "speechTypes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": "re-exports AnalyzerResults, AudioDataPayload from speechTypes",
+      "weight": 1.0
+    },
+    {
+      "source": "speechAnalyzer",
+      "target": "scoring_lib",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": "calculateFlowScore, FlowScoreOptions, FlowScoreResult",
+      "weight": 1.0
+    },
+    {
+      "source": "audioCapture",
+      "target": "diagnostics",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/audioCapture.ts",
+      "source_location": "buildDiagnosticsSnapshot, createDiagnosticsSessionId, getPlatformDiagnostics",
+      "weight": 1.0
+    },
+    {
+      "source": "speechSession",
+      "target": "micStateMachine",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.ts",
+      "source_location": "applyMicStateFrame(), finalizeMicState()",
+      "weight": 1.0
+    },
+    {
+      "source": "speechSession",
+      "target": "audioCapture",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.ts",
+      "source_location": "type AudioCaptureFrame from audioCapture",
+      "weight": 0.8
+    },
+    {
+      "source": "speechSession",
+      "target": "speechTypes",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.ts",
+      "source_location": "type AnalyzerResults, AudioDataPayload from speechTypes",
+      "weight": 0.8
+    },
+    {
+      "source": "speechSession",
+      "target": "scoring_lib",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.ts",
+      "source_location": "calculateFlowScore, DEFAULT_PAUSE_THRESHOLD_MS",
+      "weight": 1.0
+    },
+    {
+      "source": "transcription",
+      "target": "shared_utils",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/transcription.ts",
+      "source_location": "arrayBufferToBase64",
+      "weight": 1.0
+    },
+    {
+      "source": "transcription",
+      "target": "core_utils",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/transcription.ts",
+      "source_location": "parseTranscribedWords, TranscribedWord",
+      "weight": 1.0
+    },
+    {
+      "source": "speechSession_test",
+      "target": "speechSession",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.test.ts",
+      "source_location": "import SpeechSession from speechSession",
+      "weight": 1.0
+    },
+    {
+      "source": "speechSession_test",
+      "target": "audioCapture",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechSession.test.ts",
+      "source_location": "type AudioCaptureFrame",
+      "weight": 0.8
+    },
+    {
+      "source": "micStateMachine_test",
+      "target": "micStateMachine",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/mic-state-machine.test.ts",
+      "source_location": "import applyMicStateFrame, finalizeMicState, MicStateSnapshot",
+      "weight": 1.0
+    },
+    {
+      "source": "VoiceVisualizer",
+      "target": "speechTypes",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/src/features/practice/components/VoiceVisualizer.tsx",
+      "source_location": "frequencyData and volume props match AudioDataPayload fields",
+      "weight": 0.8
+    },
+    {
+      "source": "useRecording",
+      "target": "VoiceVisualizer",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": "setAudioData(data) in onData callback feeds AudioDataPayload; VoiceVisualizer consumes frequencyData/volume",
+      "weight": 0.85
+    },
+    {
+      "source": "ServiceWorkerUpdateContext",
+      "target": "PWAInstallContext",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "No-Pause/src/providers/ServiceWorkerUpdateContext.tsx",
+      "source_location": "Both are PWA lifecycle providers managing browser install/update state",
+      "weight": 0.75
+    },
+    {
+      "source": "micStateMachine",
+      "target": "speechSession",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/micStateMachine.ts",
+      "source_location": "MicStateSnapshot is the state struct owned and threaded through SpeechSession",
+      "weight": 0.9
+    },
+    {
+      "source": "useSession",
+      "target": "useScoring",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": "SessionResult from useScoring.buildSessionResult is consumed by saveFinishedSession in useSession",
+      "weight": 0.85
+    },
+    {
+      "source": "useSession",
+      "target": "scoring_lib",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": "analyzeSpeech result.band * 10 added to flowScore — band scoring extends Flow Score",
+      "weight": 1.0
+    },
+    {
+      "source": "audioCapture",
+      "target": "speechSession",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/src/features/practice/lib/audioCapture.ts",
+      "source_location": "AudioCaptureFrame produced by AudioCapture.analyze() is consumed by SpeechSession.handleFrame()",
+      "weight": 0.9
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "audio_pipeline_hyperedge",
+      "label": "Full Audio Capture Pipeline",
+      "nodes": ["micService", "audioCapture", "speechSession", "micStateMachine"],
+      "relation": "implements",
+      "description": "micService acquires the MediaStream; AudioCapture wraps MediaRecorder + AnalyserNode and emits AudioCaptureFrame; SpeechSession ingests each frame and delegates state transitions to micStateMachine (applyMicStateFrame/finalizeMicState).",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "weight": 1.0
+    },
+    {
+      "id": "session_lifecycle_hyperedge",
+      "label": "Practice Session Lifecycle",
+      "nodes": ["useRecording", "useScoring", "useSession", "practiceApi"],
+      "relation": "implements",
+      "description": "useRecording drives mic init, countdown, recording, and stop; on stop it calls useScoring.buildSessionResult to derive scores, then calls useSession.saveFinishedSession (which calls practiceApi.saveSession and updateStreak) and useSession.requestFeedback (which calls practiceApi.analyzeSpeech and updateSession).",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "weight": 1.0
+    },
+    {
+      "id": "auth_flow_hyperedge",
+      "label": "Google OAuth Auth Flow",
+      "nodes": ["AuthPage", "SignUpPage", "AuthContext", "supabase_service"],
+      "relation": "implements",
+      "description": "AuthPage and SignUpPage both call useAuth().signInWithGoogle(); AuthContext handles the OAuth flow via supabase.auth.signInWithOAuth with PKCE redirect to /auth/callback which AuthCallbackPage handles by reading session from AuthContext.",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/providers/AuthContext.tsx",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

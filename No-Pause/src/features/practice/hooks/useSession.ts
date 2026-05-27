@@ -225,6 +225,7 @@ export function useSession({
       });
 
       const shouldAnalyze =
+        lastResults.flowScore > 0 &&
         transcript.trim().length > 0 &&
         transcript !== 'No speech detected.' &&
         !transcript.startsWith('Transcription failed');

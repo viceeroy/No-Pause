@@ -1,0 +1,960 @@
+{
+  "nodes": [
+    {
+      "id": "diagnostics_test_DiagnosticsTest",
+      "label": "Diagnostics Test Suite",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/diagnostics.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "diagnostics_buildDiagnosticsSnapshot",
+      "label": "buildDiagnosticsSnapshot",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/diagnostics.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "diagnostics_getPlatformDiagnostics",
+      "label": "getPlatformDiagnostics",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/diagnostics.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "useRecordingController_test_RecordingControllerTest",
+      "label": "useRecordingController Test Suite",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "useRecordingController_useRecordingController",
+      "label": "useRecordingController Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "types_PracticeStateStore",
+      "label": "PracticeStateStore Interface",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/types.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "types_PracticeState",
+      "label": "PracticeState Type",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/types.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "types_SessionResult",
+      "label": "SessionResult Interface",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/types.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "types_TopicPrompt",
+      "label": "TopicPrompt Type",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/types.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "SetupCountdownPanel_SetupCountdownPanel",
+      "label": "SetupCountdownPanel Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/SetupCountdownPanel.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "RecordingPanel_RecordingPanel",
+      "label": "RecordingPanel Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/RecordingPanel.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "usePracticeState_usePracticeState",
+      "label": "usePracticeState Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ResultPanel_ResultPanel",
+      "label": "ResultPanel Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/ResultPanel.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ResultSkeletonPanel_ResultSkeletonPanel",
+      "label": "ResultSkeletonPanel Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/ResultSkeletonPanel.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "usePracticeState_test_PracticeStateTest",
+      "label": "usePracticeState Test Suite",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.test.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "time_formatMMSS",
+      "label": "formatMMSS Utility",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/pages/time.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreTime_formatDuration",
+      "label": "formatDuration (core/time)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/time.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "StatsPage_StatsPage",
+      "label": "StatsPage Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "DashboardPage_DashboardPage",
+      "label": "DashboardPage Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "practiceApi_getPracticeStats",
+      "label": "getPracticeStats API",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "practiceApi_getWeeklyActivityDays",
+      "label": "getWeeklyActivityDays API",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "practiceApi_getWeeklyStatsComparison",
+      "label": "getWeeklyStatsComparison API",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/practiceApi.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "faqContent_FAQ_ITEMS",
+      "label": "FAQ_ITEMS Content",
+      "file_type": "document",
+      "source_file": "No-Pause/src/features/help/faqContent.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "helpContent_HELP_ARTICLES",
+      "label": "HELP_ARTICLES Content",
+      "file_type": "document",
+      "source_file": "No-Pause/src/features/help/helpContent.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "helpContent_getArticleBySlug",
+      "label": "getArticleBySlug Function",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/help/helpContent.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ArticlePage_ArticlePage",
+      "label": "ArticlePage Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/help/ArticlePage.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "Confetti_Confetti",
+      "label": "Confetti Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/components/Confetti.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ui_Sonner",
+      "label": "Toaster (Sonner) Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/components/ui/sonner.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ui_Accordion",
+      "label": "Accordion UI Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/components/ui/accordion.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ui_Tooltip",
+      "label": "Tooltip UI Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/components/ui/tooltip.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ui_Dialog",
+      "label": "Dialog UI Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/components/ui/dialog.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "hooks_useRecording",
+      "label": "useRecording Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/hooks/useRecording.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "hooks_useScoring",
+      "label": "useScoring Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/hooks/useScoring.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "hooks_useSession",
+      "label": "useSession Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/hooks/useSession.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "AuthContext_useAuth",
+      "label": "useAuth (AuthContext)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/providers/AuthContext.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "speechAnalyzer_AudioDataPayload",
+      "label": "AudioDataPayload Type",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/speechAnalyzer.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "VoiceVisualizer_VoiceVisualizer",
+      "label": "VoiceVisualizer Component",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/components/VoiceVisualizer.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "micService_micService",
+      "label": "micService",
+      "file_type": "code",
+      "source_file": "No-Pause/src/features/practice/lib/micService.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "PWAInstallContext_usePWAInstall",
+      "label": "usePWAInstall Context",
+      "file_type": "code",
+      "source_file": "No-Pause/src/providers/PWAInstallContext.tsx",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "useInstallPlatform_useInstallPlatform",
+      "label": "useInstallPlatform Hook",
+      "file_type": "code",
+      "source_file": "No-Pause/src/shared/hooks/useInstallPlatform.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "coreModes_normalizeMode",
+      "label": "normalizeMode (core/modes)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/modes.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "corePrompts_opinionPrompts",
+      "label": "opinionPrompts (core/prompts)",
+      "file_type": "code",
+      "source_file": "No-Pause/src/lib/core/prompts.ts",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "diagnostics_test_DiagnosticsTest",
+      "target": "diagnostics_buildDiagnosticsSnapshot",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/diagnostics.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "diagnostics_test_DiagnosticsTest",
+      "target": "diagnostics_getPlatformDiagnostics",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/lib/analyzer/diagnostics.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_test_RecordingControllerTest",
+      "target": "useRecordingController_useRecordingController",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_test_RecordingControllerTest",
+      "target": "types_PracticeStateStore",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_test_RecordingControllerTest",
+      "target": "micService_micService",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.test.ts",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "SetupCountdownPanel_SetupCountdownPanel",
+      "target": "types_PracticeState",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/SetupCountdownPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "RecordingPanel_RecordingPanel",
+      "target": "VoiceVisualizer_VoiceVisualizer",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/RecordingPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "RecordingPanel_RecordingPanel",
+      "target": "speechAnalyzer_AudioDataPayload",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/RecordingPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "RecordingPanel_RecordingPanel",
+      "target": "time_formatMMSS",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/RecordingPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "usePracticeState_usePracticeState",
+      "target": "types_PracticeStateStore",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "usePracticeState_usePracticeState",
+      "target": "types_SessionResult",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "usePracticeState_usePracticeState",
+      "target": "speechAnalyzer_AudioDataPayload",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "usePracticeState_test_PracticeStateTest",
+      "target": "usePracticeState_usePracticeState",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.test.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ResultPanel_ResultPanel",
+      "target": "types_SessionResult",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/ResultPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ResultPanel_ResultPanel",
+      "target": "Confetti_Confetti",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/ResultPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ResultPanel_ResultPanel",
+      "target": "time_formatMMSS",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/ResultPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "time_formatMMSS",
+      "target": "coreTime_formatDuration",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/time.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_useRecordingController",
+      "target": "hooks_useRecording",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_useRecordingController",
+      "target": "hooks_useScoring",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_useRecordingController",
+      "target": "hooks_useSession",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_useRecordingController",
+      "target": "AuthContext_useAuth",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "useRecordingController_useRecordingController",
+      "target": "types_PracticeStateStore",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "practiceApi_getPracticeStats",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "practiceApi_getWeeklyActivityDays",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "practiceApi_getWeeklyStatsComparison",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "AuthContext_useAuth",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "ui_Tooltip",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "coreModes_normalizeMode",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "StatsPage_StatsPage",
+      "target": "coreTime_formatDuration",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "practiceApi_getPracticeStats",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "AuthContext_useAuth",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "PWAInstallContext_usePWAInstall",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "useInstallPlatform_useInstallPlatform",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "ui_Dialog",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "ui_Tooltip",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "DashboardPage_DashboardPage",
+      "target": "corePrompts_opinionPrompts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/DashboardPage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ArticlePage_ArticlePage",
+      "target": "helpContent_getArticleBySlug",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/help/ArticlePage.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ArticlePage_ArticlePage",
+      "target": "helpContent_HELP_ARTICLES",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/src/features/help/ArticlePage.tsx",
+      "source_location": null,
+      "weight": 0.9
+    },
+    {
+      "source": "helpContent_getArticleBySlug",
+      "target": "helpContent_HELP_ARTICLES",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/help/helpContent.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ui_Accordion",
+      "target": "ui_Accordion",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.7,
+      "source_file": "No-Pause/src/shared/components/ui/accordion.tsx",
+      "source_location": null,
+      "weight": 0.7
+    },
+    {
+      "source": "faqContent_FAQ_ITEMS",
+      "target": "ui_Accordion",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "No-Pause/src/features/help/faqContent.ts",
+      "source_location": null,
+      "weight": 0.8
+    },
+    {
+      "source": "ResultPanel_ResultPanel",
+      "target": "types_SessionResult",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/ResultPanel.tsx",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "usePracticeState_usePracticeState",
+      "target": "types_TopicPrompt",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.ts",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "ResultPanel_ResultPanel",
+      "target": "ResultSkeletonPanel_ResultSkeletonPanel",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "No-Pause/src/features/practice/pages/ResultPanel.tsx",
+      "source_location": null,
+      "weight": 0.85
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_practice_panel_state_flow",
+      "label": "Practice Panel State Flow",
+      "node_ids": [
+        "usePracticeState_usePracticeState",
+        "SetupCountdownPanel_SetupCountdownPanel",
+        "RecordingPanel_RecordingPanel",
+        "ResultPanel_ResultPanel",
+        "types_PracticeState"
+      ],
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "No-Pause/src/features/practice/pages/usePracticeState.ts",
+      "description": "usePracticeState drives all practice panels through PracticeState lifecycle: setup → countdown → recording → finishing → done"
+    },
+    {
+      "id": "hyperedge_recording_controller_orchestration",
+      "label": "Recording Controller Orchestration",
+      "node_ids": [
+        "useRecordingController_useRecordingController",
+        "hooks_useRecording",
+        "hooks_useScoring",
+        "hooks_useSession",
+        "AuthContext_useAuth"
+      ],
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/practice/pages/useRecordingController.ts",
+      "description": "useRecordingController composes useRecording, useScoring, useSession, and useAuth to orchestrate the full recording lifecycle"
+    },
+    {
+      "id": "hyperedge_stats_api_consumers",
+      "label": "Stats API Consumers",
+      "node_ids": [
+        "StatsPage_StatsPage",
+        "DashboardPage_DashboardPage",
+        "practiceApi_getPracticeStats",
+        "practiceApi_getWeeklyActivityDays",
+        "practiceApi_getWeeklyStatsComparison"
+      ],
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "No-Pause/src/features/stats/pages/StatsPage.tsx",
+      "description": "Both StatsPage and DashboardPage consume practiceApi stats functions to display user progress metrics"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

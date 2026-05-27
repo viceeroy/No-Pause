@@ -46,7 +46,7 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
   if (pathname === "/") {
     const description =
       "NoPause helps you speak with confidence. Record yourself, get a real-time Flow Score, reduce hesitations, and track your fluency over time.";
-    const title = "No Pause - Real-time Speaking Analytics Tool";
+    const title = "NoPause – Speak with Confidence";
     return {
       title,
       description,

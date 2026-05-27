@@ -1,0 +1,727 @@
+{
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/tsconfig.node.json": {
+    "mtime": 1779357217.9615293,
+    "ast_hash": "8a2ab515308f6bbe7a8b2927f9991b90",
+    "semantic_hash": "8a2ab515308f6bbe7a8b2927f9991b90"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/vercel.json": {
+    "mtime": 1779357217.9616594,
+    "ast_hash": "adfbdb73fe7d5de99d9b98ed5c5ab0c9",
+    "semantic_hash": "adfbdb73fe7d5de99d9b98ed5c5ab0c9"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/tsconfig.app.json": {
+    "mtime": 1779357217.9613965,
+    "ast_hash": "23e3ffb8375f0d5a8c5f3210429137ef",
+    "semantic_hash": "23e3ffb8375f0d5a8c5f3210429137ef"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/tailwind.config.ts": {
+    "mtime": 1779615948.7696333,
+    "ast_hash": "99c8df3eae688c2515513ed468e552c0",
+    "semantic_hash": "99c8df3eae688c2515513ed468e552c0"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/package.json": {
+    "mtime": 1779615948.7631059,
+    "ast_hash": "ce7cfdf10281432d85e80293f0aa1a6a",
+    "semantic_hash": "ce7cfdf10281432d85e80293f0aa1a6a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/components.json": {
+    "mtime": 1773114443.9657667,
+    "ast_hash": "a547944ace00dc5d5373aaca70a40bc4",
+    "semantic_hash": "a547944ace00dc5d5373aaca70a40bc4"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/tsconfig.json": {
+    "mtime": 1773114443.979267,
+    "ast_hash": "5b34c7c6d563f3f144600a145d77bbde",
+    "semantic_hash": "5b34c7c6d563f3f144600a145d77bbde"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/playwright.config.ts": {
+    "mtime": 1779357217.9495337,
+    "ast_hash": "6aa37fe45226498b05c8670055c525f3",
+    "semantic_hash": "6aa37fe45226498b05c8670055c525f3"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/eslint.config.js": {
+    "mtime": 1773114443.9658542,
+    "ast_hash": "821f8389a102ee5f815b6f35a225343d",
+    "semantic_hash": "821f8389a102ee5f815b6f35a225343d"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/vite.config.ts": {
+    "mtime": 1779714286.5694146,
+    "ast_hash": "4c7cc9705e262a3ebe2e47d06d5aafb3",
+    "semantic_hash": "4c7cc9705e262a3ebe2e47d06d5aafb3"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/vitest.config.ts": {
+    "mtime": 1779357217.9620714,
+    "ast_hash": "1c31d38e02345279285cf4da06ff808a",
+    "semantic_hash": "1c31d38e02345279285cf4da06ff808a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/postcss.config.js": {
+    "mtime": 1773114443.9668865,
+    "ast_hash": "c735540bb63936a123bc867d950c9f69",
+    "semantic_hash": "c735540bb63936a123bc867d950c9f69"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/.claude/launch.json": {
+    "mtime": 1779714161.2060106,
+    "ast_hash": "aaa5049616b45c041f7fcbbc2c989705",
+    "semantic_hash": "aaa5049616b45c041f7fcbbc2c989705"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/add_telegram_connections.sql": {
+    "mtime": 1779357217.9610531,
+    "ast_hash": "a62824eb2b3b674c2f3aa9e05c3d4d0d",
+    "semantic_hash": "a62824eb2b3b674c2f3aa9e05c3d4d0d"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/add_practice_stats_rpc_and_api_usage.sql": {
+    "mtime": 1779357217.960718,
+    "ast_hash": "7616fc568c8d5a02e1a9cff57cbd7c52",
+    "semantic_hash": "7616fc568c8d5a02e1a9cff57cbd7c52"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260510001000_use_utc_month_boundaries_for_practice_stats.sql": {
+    "mtime": 1779357217.9604867,
+    "ast_hash": "bcc7fa77ff32340dad85a09353dbbd67",
+    "semantic_hash": "bcc7fa77ff32340dad85a09353dbbd67"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/add_sessions_pause_count.sql": {
+    "mtime": 1779357217.9608035,
+    "ast_hash": "55d3f50c7a21b0269410f0ed69f13c58",
+    "semantic_hash": "55d3f50c7a21b0269410f0ed69f13c58"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260524140000_scope_totals_to_completed.sql": {
+    "mtime": 1779634243.9816024,
+    "ast_hash": "8178da6099d84e4698709ef5f00bf615",
+    "semantic_hash": "8178da6099d84e4698709ef5f00bf615"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260509000000_add_telegram_message_id_to_sessions.sql": {
+    "mtime": 1779357217.9603326,
+    "ast_hash": "56203edab38474c3d15a68a597bf5a33",
+    "semantic_hash": "56203edab38474c3d15a68a597bf5a33"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260524130000_fix_get_practice_stats_rpc.sql": {
+    "mtime": 1779633757.2107425,
+    "ast_hash": "94f9817d346039a223e2cc62e90c67b0",
+    "semantic_hash": "94f9817d346039a223e2cc62e90c67b0"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260510002000_add_total_silence_time_to_sessions.sql": {
+    "mtime": 1779357217.9605637,
+    "ast_hash": "5a187b42228e07d4b50c50b2c97da477",
+    "semantic_hash": "5a187b42228e07d4b50c50b2c97da477"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/add_sessions_source.sql": {
+    "mtime": 1779357217.9608784,
+    "ast_hash": "f43229506352d7250aba53757dcfe93d",
+    "semantic_hash": "f43229506352d7250aba53757dcfe93d"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260507133131_add_telegram_challenge_attempts.sql": {
+    "mtime": 1779357217.960248,
+    "ast_hash": "844bcac399d78331636a9878280de2c1",
+    "semantic_hash": "844bcac399d78331636a9878280de2c1"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260524120000_fix_rls.sql": {
+    "mtime": 1779615948.7855356,
+    "ast_hash": "e97711167d70b6bdaa0331142b56033e",
+    "semantic_hash": "e97711167d70b6bdaa0331142b56033e"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/add_telegram_session_analysis_columns.sql": {
+    "mtime": 1779357217.9611187,
+    "ast_hash": "5d25437e66795fcbbc6a4fe4cbc69f85",
+    "semantic_hash": "5d25437e66795fcbbc6a4fe4cbc69f85"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/add_telegram_challenge_state.sql": {
+    "mtime": 1779357217.960977,
+    "ast_hash": "3ee51c4fd3b312c58af39c62962de02b",
+    "semantic_hash": "3ee51c4fd3b312c58af39c62962de02b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/supabase/migrations/20260509001000_add_friend_result_send_guard.sql": {
+    "mtime": 1779357217.960411,
+    "ast_hash": "639c3a374a4676c1aa12fa5318053fb3",
+    "semantic_hash": "639c3a374a4676c1aa12fa5318053fb3"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/manifest.json": {
+    "mtime": 1773114443.9676332,
+    "ast_hash": "84395a5a36b5746921763d45a24e6589",
+    "semantic_hash": "84395a5a36b5746921763d45a24e6589"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/sw.js": {
+    "mtime": 1773114443.9682763,
+    "ast_hash": "38b1b0caed238a878fa55f65fdb62b67",
+    "semantic_hash": "38b1b0caed238a878fa55f65fdb62b67"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/scripts/prerender-help.mjs": {
+    "mtime": 1779357217.9500494,
+    "ast_hash": "64d99ea1d37b9b718f084207359de204",
+    "semantic_hash": "64d99ea1d37b9b718f084207359de204"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/api/feedback.ts": {
+    "mtime": 1779712683.2001395,
+    "ast_hash": "6389b51109a3151e15cc393fb88f11f6",
+    "semantic_hash": "6389b51109a3151e15cc393fb88f11f6"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/api/transcription.ts": {
+    "mtime": 1779357217.9484127,
+    "ast_hash": "b8664276229d227b9bfc56d04f21cfe1",
+    "semantic_hash": "b8664276229d227b9bfc56d04f21cfe1"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/api/telegram/webhook.ts": {
+    "mtime": 1779357217.94827,
+    "ast_hash": "245d02397a44e34aa5fdcd73db50c74a",
+    "semantic_hash": "245d02397a44e34aa5fdcd73db50c74a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/api/telegram/connect.ts": {
+    "mtime": 1779441631.3719199,
+    "ast_hash": "5ccdc201cd8d21b3f841bd168c5cd33a",
+    "semantic_hash": "5ccdc201cd8d21b3f841bd168c5cd33a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/e2e/dashboard-prompts.spec.ts": {
+    "mtime": 1779357217.9485352,
+    "ast_hash": "907122e7d2b11a34df3f6cf9b371f9b6",
+    "semantic_hash": "907122e7d2b11a34df3f6cf9b371f9b6"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/e2e/fixtures/auth.ts": {
+    "mtime": 1779615948.7613096,
+    "ast_hash": "d343fc46a6836d493e7ed061d352bdbb",
+    "semantic_hash": "d343fc46a6836d493e7ed061d352bdbb"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/App.tsx": {
+    "mtime": 1779615948.7634993,
+    "ast_hash": "4d7fc93576e6718df48c605a8c6676e7",
+    "semantic_hash": "4d7fc93576e6718df48c605a8c6676e7"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/main.tsx": {
+    "mtime": 1779357217.9570277,
+    "ast_hash": "27fc77e54d76e759c3043b25546797e1",
+    "semantic_hash": "27fc77e54d76e759c3043b25546797e1"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/instrument.ts": {
+    "mtime": 1779357217.9551027,
+    "ast_hash": "ae2c4ea77463410e8333fe41f0249092",
+    "semantic_hash": "ae2c4ea77463410e8333fe41f0249092"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/vite-env.d.ts": {
+    "mtime": 1773114443.978916,
+    "ast_hash": "0352474ba2918efe13895edbc3780d94",
+    "semantic_hash": "0352474ba2918efe13895edbc3780d94"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/test/setup.ts": {
+    "mtime": 1779357217.9600194,
+    "ast_hash": "d8410c8a9ce4046cc231ff620c917a5f",
+    "semantic_hash": "d8410c8a9ce4046cc231ff620c917a5f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/test/architecture.test.ts": {
+    "mtime": 1779721611.8759923,
+    "ast_hash": "50c815952a7774df661106f6b5af5554",
+    "semantic_hash": "50c815952a7774df661106f6b5af5554"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/providers/ServiceWorkerUpdateContext.tsx": {
+    "mtime": 1779357217.9582362,
+    "ast_hash": "fdeb057781afb5fd1bf955556c2b4e51",
+    "semantic_hash": "fdeb057781afb5fd1bf955556c2b4e51"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/providers/AuthContext.tsx": {
+    "mtime": 1779357217.9579651,
+    "ast_hash": "bf98642b5180220e2ad939e537905cd2",
+    "semantic_hash": "bf98642b5180220e2ad939e537905cd2"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/providers/PWAInstallContext.tsx": {
+    "mtime": 1779357217.9580355,
+    "ast_hash": "cf9d61e89dbffa32843da6a01c1b1f4f",
+    "semantic_hash": "cf9d61e89dbffa32843da6a01c1b1f4f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/auth/pages/AuthPage.tsx": {
+    "mtime": 1779357217.9507263,
+    "ast_hash": "f3006e3d94abe038d301ae26d27ee1a5",
+    "semantic_hash": "f3006e3d94abe038d301ae26d27ee1a5"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/auth/pages/AuthCallbackPage.tsx": {
+    "mtime": 1779357217.9506056,
+    "ast_hash": "06761e8db64235579d0d758b9b7b8c2b",
+    "semantic_hash": "06761e8db64235579d0d758b9b7b8c2b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/auth/pages/SignUpPage.tsx": {
+    "mtime": 1779357217.9508615,
+    "ast_hash": "3410667f7083d1843885edda51f13ce0",
+    "semantic_hash": "3410667f7083d1843885edda51f13ce0"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/components/VoiceVisualizer.tsx": {
+    "mtime": 1779357217.9510932,
+    "ast_hash": "47f8cdef6afc37292c465b552f4a29aa",
+    "semantic_hash": "47f8cdef6afc37292c465b552f4a29aa"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/hooks/useRecording.ts": {
+    "mtime": 1779716409.632625,
+    "ast_hash": "99cc5fe96101fcb591b8904e97ec430f",
+    "semantic_hash": "99cc5fe96101fcb591b8904e97ec430f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/hooks/useSession.ts": {
+    "mtime": 1779794647.3123496,
+    "ast_hash": "6a9e232777b53184061b573e701cb986",
+    "semantic_hash": "6a9e232777b53184061b573e701cb986"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/hooks/useScoring.ts": {
+    "mtime": 1779716332.727325,
+    "ast_hash": "17765e339705b48450aeb911a5c02f00",
+    "semantic_hash": "17765e339705b48450aeb911a5c02f00"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/audioRecording.ts": {
+    "mtime": 1779357217.952529,
+    "ast_hash": "4172c988eb23f9b4e0ec8c0ab4d6fec6",
+    "semantic_hash": "4172c988eb23f9b4e0ec8c0ab4d6fec6"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/speechAnalyzer.ts": {
+    "mtime": 1779615948.765094,
+    "ast_hash": "82dcbd2e01a1f0743224cf8c1d808ef8",
+    "semantic_hash": "82dcbd2e01a1f0743224cf8c1d808ef8"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/audioCapture.ts": {
+    "mtime": 1779615948.764883,
+    "ast_hash": "c3f5a48c1bb2cc252bd81e30fe76edbd",
+    "semantic_hash": "c3f5a48c1bb2cc252bd81e30fe76edbd"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/micService.ts": {
+    "mtime": 1779357217.9526768,
+    "ast_hash": "8ca88e1a18386655bc1804e779e00ff9",
+    "semantic_hash": "8ca88e1a18386655bc1804e779e00ff9"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/speechSession.ts": {
+    "mtime": 1779357217.9530385,
+    "ast_hash": "074ad144bf8aaebbe508922ea8395169",
+    "semantic_hash": "074ad144bf8aaebbe508922ea8395169"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/speechTypes.ts": {
+    "mtime": 1779357217.9531136,
+    "ast_hash": "91573083de0599b58ba05a8cd7d3011c",
+    "semantic_hash": "91573083de0599b58ba05a8cd7d3011c"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/speechSession.test.ts": {
+    "mtime": 1779357217.952908,
+    "ast_hash": "6b9614814a056edf56b800eb7c14820a",
+    "semantic_hash": "6b9614814a056edf56b800eb7c14820a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/transcription.ts": {
+    "mtime": 1779615948.765237,
+    "ast_hash": "d2d2a68fe53fa6845768fbaa33a2396a",
+    "semantic_hash": "d2d2a68fe53fa6845768fbaa33a2396a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/analyzer/micStateMachine.ts": {
+    "mtime": 1779357217.9522624,
+    "ast_hash": "59e483c0fe134ce0fa933859c0956a91",
+    "semantic_hash": "59e483c0fe134ce0fa933859c0956a91"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/analyzer/mic-state-machine.test.ts": {
+    "mtime": 1779357217.9521317,
+    "ast_hash": "27b9107eda5132b2ae0948c943695036",
+    "semantic_hash": "27b9107eda5132b2ae0948c943695036"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/analyzer/diagnostics.ts": {
+    "mtime": 1779357217.952058,
+    "ast_hash": "3d2bcfad2a6364cafa9e6b61c006285a",
+    "semantic_hash": "3d2bcfad2a6364cafa9e6b61c006285a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/lib/analyzer/diagnostics.test.ts": {
+    "mtime": 1779357217.9518178,
+    "ast_hash": "6c7c0e10667a503d2e488808bf13c38b",
+    "semantic_hash": "6c7c0e10667a503d2e488808bf13c38b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/useRecordingController.test.ts": {
+    "mtime": 1779357217.9543805,
+    "ast_hash": "c2544a2e2872f3c8d48b672fa86bd746",
+    "semantic_hash": "c2544a2e2872f3c8d48b672fa86bd746"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/SetupCountdownPanel.tsx": {
+    "mtime": 1779441631.3363423,
+    "ast_hash": "2cd0108ec1b40562ccdfae994e08cb64",
+    "semantic_hash": "2cd0108ec1b40562ccdfae994e08cb64"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/RecordingPanel.tsx": {
+    "mtime": 1779441631.335712,
+    "ast_hash": "439f71c93efa974d0dee461622e8a85e",
+    "semantic_hash": "439f71c93efa974d0dee461622e8a85e"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/usePracticeState.ts": {
+    "mtime": 1779357217.9543042,
+    "ast_hash": "d6afd3e07edc32b3d12b5948f795b421",
+    "semantic_hash": "d6afd3e07edc32b3d12b5948f795b421"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/ResultPanel.tsx": {
+    "mtime": 1779716456.5369055,
+    "ast_hash": "f22aca7c6088c64f1eadc4b8159a9991",
+    "semantic_hash": "f22aca7c6088c64f1eadc4b8159a9991"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/types.ts": {
+    "mtime": 1779716306.7811844,
+    "ast_hash": "79e8aa84b71928b9d6ecd37c8e320cf2",
+    "semantic_hash": "79e8aa84b71928b9d6ecd37c8e320cf2"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/ResultSkeletonPanel.tsx": {
+    "mtime": 1779715725.2664676,
+    "ast_hash": "9252bb77c69e4b88c5e13f11622e7813",
+    "semantic_hash": "9252bb77c69e4b88c5e13f11622e7813"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/usePracticeState.test.ts": {
+    "mtime": 1779357217.9542341,
+    "ast_hash": "5707b41ee4c037a844bcf7cfde3b0037",
+    "semantic_hash": "5707b41ee4c037a844bcf7cfde3b0037"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/time.ts": {
+    "mtime": 1779357217.9541001,
+    "ast_hash": "ed34db4d284ec59648099366d2522cbf",
+    "semantic_hash": "ed34db4d284ec59648099366d2522cbf"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/practice/pages/useRecordingController.ts": {
+    "mtime": 1779716416.0441506,
+    "ast_hash": "d0e510452e5c46d0959c550d8e4603d4",
+    "semantic_hash": "d0e510452e5c46d0959c550d8e4603d4"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/stats/pages/StatsPage.tsx": {
+    "mtime": 1779615948.7852106,
+    "ast_hash": "97061e334d2e47845b0e181a55f56a45",
+    "semantic_hash": "97061e334d2e47845b0e181a55f56a45"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/stats/pages/DashboardPage.tsx": {
+    "mtime": 1779615948.7661524,
+    "ast_hash": "23a9291a8e3dec35be4d44602220c128",
+    "semantic_hash": "23a9291a8e3dec35be4d44602220c128"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/help/faqContent.ts": {
+    "mtime": 1779615948.763844,
+    "ast_hash": "d698375cb150c3b99f73cbe71dadcd0c",
+    "semantic_hash": "d698375cb150c3b99f73cbe71dadcd0c"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/help/helpContent.ts": {
+    "mtime": 1779615948.7639966,
+    "ast_hash": "f1a5507ca5e683c5c6054c2ff041e2f1",
+    "semantic_hash": "f1a5507ca5e683c5c6054c2ff041e2f1"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/features/help/ArticlePage.tsx": {
+    "mtime": 1779615948.7637062,
+    "ast_hash": "96725b6e8094cb05f5350e1f4a7f8e1d",
+    "semantic_hash": "96725b6e8094cb05f5350e1f4a7f8e1d"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/components/Confetti.tsx": {
+    "mtime": 1779357217.958917,
+    "ast_hash": "9d86a611716f47a66f98d5f399ae49e6",
+    "semantic_hash": "9d86a611716f47a66f98d5f399ae49e6"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/components/ui/sonner.tsx": {
+    "mtime": 1779357217.959123,
+    "ast_hash": "ae4b6f72c4746346856cedc45869a7b3",
+    "semantic_hash": "ae4b6f72c4746346856cedc45869a7b3"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/components/ui/accordion.tsx": {
+    "mtime": 1779615948.7685254,
+    "ast_hash": "9be3ef2dee671faf2932c334bb32f439",
+    "semantic_hash": "9be3ef2dee671faf2932c334bb32f439"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/components/ui/tooltip.tsx": {
+    "mtime": 1779357217.9591944,
+    "ast_hash": "ced89f9b86650c4de301fe97300f3b1a",
+    "semantic_hash": "ced89f9b86650c4de301fe97300f3b1a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/components/ui/dialog.tsx": {
+    "mtime": 1779357217.9590518,
+    "ast_hash": "b5fe9662c6bfbaaf9121af100e153dd6",
+    "semantic_hash": "b5fe9662c6bfbaaf9121af100e153dd6"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/hooks/useInstallPlatform.ts": {
+    "mtime": 1779357217.9593077,
+    "ast_hash": "655e046c2007c124116b424ac6f83d7c",
+    "semantic_hash": "655e046c2007c124116b424ac6f83d7c"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/lib/utils.ts": {
+    "mtime": 1779441631.3412278,
+    "ast_hash": "980166074a4cf0f8656f1e0b19e8c902",
+    "semantic_hash": "980166074a4cf0f8656f1e0b19e8c902"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/shared/seo/routeSeo.ts": {
+    "mtime": 1779793694.819406,
+    "ast_hash": "4804e7c9bf604dbfe389b0f55659fc5f",
+    "semantic_hash": "4804e7c9bf604dbfe389b0f55659fc5f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/__tests__/scoring.test.ts": {
+    "mtime": 1779357217.9503882,
+    "ast_hash": "f5f62dc43546258dc034b3c122c648f8",
+    "semantic_hash": "f5f62dc43546258dc034b3c122c648f8"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/practiceApi.ts": {
+    "mtime": 1779712711.276093,
+    "ast_hash": "ee6c34b7a9ce5440a413a105685d5b9f",
+    "semantic_hash": "ee6c34b7a9ce5440a413a105685d5b9f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegramAuth.ts": {
+    "mtime": 1779357217.9569137,
+    "ast_hash": "b5724d33b91f79bbefae7444adf24e4e",
+    "semantic_hash": "b5724d33b91f79bbefae7444adf24e4e"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/utils.test.ts": {
+    "mtime": 1779441631.338052,
+    "ast_hash": "36767f9819a5e74ecb24b55a5f501f8e",
+    "semantic_hash": "36767f9819a5e74ecb24b55a5f501f8e"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/queries.ts": {
+    "mtime": 1779633822.0345533,
+    "ast_hash": "7c10ca6e3ea0b624d081b3665e4382e7",
+    "semantic_hash": "7c10ca6e3ea0b624d081b3665e4382e7"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/utils.ts": {
+    "mtime": 1779615948.7666101,
+    "ast_hash": "89087763af1750d783617745f58b9e1c",
+    "semantic_hash": "89087763af1750d783617745f58b9e1c"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/modes.ts": {
+    "mtime": 1779357217.955338,
+    "ast_hash": "b5482894681e4f493e96f053d6ed7b37",
+    "semantic_hash": "b5482894681e4f493e96f053d6ed7b37"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/prompts.ts": {
+    "mtime": 1779357217.955466,
+    "ast_hash": "6f3bde75f5021a05f355bb8c98926a64",
+    "semantic_hash": "6f3bde75f5021a05f355bb8c98926a64"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/session.ts": {
+    "mtime": 1779633850.2456808,
+    "ast_hash": "bdbc0c81f525a76c98d6445c8395830b",
+    "semantic_hash": "bdbc0c81f525a76c98d6445c8395830b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/constants.ts": {
+    "mtime": 1779357217.955265,
+    "ast_hash": "1ae2012e455bf0c48eedd7c312c5a0e6",
+    "semantic_hash": "1ae2012e455bf0c48eedd7c312c5a0e6"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/scoring.ts": {
+    "mtime": 1779618190.392744,
+    "ast_hash": "5fef9a1f0bb24ae0d6329d0378fe27c7",
+    "semantic_hash": "5fef9a1f0bb24ae0d6329d0378fe27c7"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/session.test.ts": {
+    "mtime": 1779633870.3359373,
+    "ast_hash": "2f01048de837b25792aaa1d6cfe766ee",
+    "semantic_hash": "2f01048de837b25792aaa1d6cfe766ee"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/time.test.ts": {
+    "mtime": 1779441631.3379178,
+    "ast_hash": "8bd5a8e97a8161eb678d5b98a71d57e7",
+    "semantic_hash": "8bd5a8e97a8161eb678d5b98a71d57e7"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/user.ts": {
+    "mtime": 1779357217.955967,
+    "ast_hash": "5bdeb110553ea8120e30968f8ed377db",
+    "semantic_hash": "5bdeb110553ea8120e30968f8ed377db"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/core/time.ts": {
+    "mtime": 1779359286.9467442,
+    "ast_hash": "7aba1448e32767ed0e9a2c70254014d2",
+    "semantic_hash": "7aba1448e32767ed0e9a2c70254014d2"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegram/challenges.ts": {
+    "mtime": 1779792122.442096,
+    "ast_hash": "b09643f5d87e312eacb81c5df275e0a1",
+    "semantic_hash": "b09643f5d87e312eacb81c5df275e0a1"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegram/router.ts": {
+    "mtime": 1779721397.6345246,
+    "ast_hash": "83a28c1bae0bbab852048d351e32b7a7",
+    "semantic_hash": "83a28c1bae0bbab852048d351e32b7a7"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegram/voiceHandler.test.ts": {
+    "mtime": 1779441631.3396375,
+    "ast_hash": "f7670c4c2b9d9919d430e6992f09f322",
+    "semantic_hash": "f7670c4c2b9d9919d430e6992f09f322"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegram/constants.ts": {
+    "mtime": 1779793458.346746,
+    "ast_hash": "08be38a9473918fd763f208137498a68",
+    "semantic_hash": "08be38a9473918fd763f208137498a68"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegram/voiceHandler.ts": {
+    "mtime": 1779794652.985543,
+    "ast_hash": "381c9b15a89012bdcaa07b7b1f8cb2ed",
+    "semantic_hash": "381c9b15a89012bdcaa07b7b1f8cb2ed"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/lib/telegram/constants.test.ts": {
+    "mtime": 1779441631.3388522,
+    "ast_hash": "d37a18ffeff0761d26f2510eed8a1d4a",
+    "semantic_hash": "d37a18ffeff0761d26f2510eed8a1d4a"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/pages/Sessions.tsx": {
+    "mtime": 1779357217.957846,
+    "ast_hash": "81e98bfec9c5860343adb886af3c474c",
+    "semantic_hash": "81e98bfec9c5860343adb886af3c474c"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/pages/ConnectTelegram.tsx": {
+    "mtime": 1779441631.3780007,
+    "ast_hash": "1dad7eae6eab9108abf8960351961b94",
+    "semantic_hash": "1dad7eae6eab9108abf8960351961b94"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/pages/PracticePage.tsx": {
+    "mtime": 1779712772.957603,
+    "ast_hash": "f2f7a56bbe3dc869357092d37ba938cc",
+    "semantic_hash": "f2f7a56bbe3dc869357092d37ba938cc"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/pages/HelpPage.tsx": {
+    "mtime": 1779615948.767876,
+    "ast_hash": "28786888179203145969bfd2d68cbe66",
+    "semantic_hash": "28786888179203145969bfd2d68cbe66"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/pages/PromptsPage.tsx": {
+    "mtime": 1779615948.7682672,
+    "ast_hash": "13036b260132271d3a76eb7dc4a07cc0",
+    "semantic_hash": "13036b260132271d3a76eb7dc4a07cc0"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/pages/NotFound.tsx": {
+    "mtime": 1779357217.957468,
+    "ast_hash": "262128fb3afab67d4f60a741a105e99d",
+    "semantic_hash": "262128fb3afab67d4f60a741a105e99d"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/services/supabaseServer.ts": {
+    "mtime": 1779357217.9587505,
+    "ast_hash": "00a715dbd84f8b43a37a5a953885a7d9",
+    "semantic_hash": "00a715dbd84f8b43a37a5a953885a7d9"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/services/groq.ts": {
+    "mtime": 1779615948.7684402,
+    "ast_hash": "668e42f5aa7eab311d661c362a87cc44",
+    "semantic_hash": "668e42f5aa7eab311d661c362a87cc44"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/services/aiFeedback.ts": {
+    "mtime": 1779795728.078119,
+    "ast_hash": "031056e4420e97d7144f63b203809ddd",
+    "semantic_hash": "031056e4420e97d7144f63b203809ddd"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/services/supabase.ts": {
+    "mtime": 1779357217.958668,
+    "ast_hash": "366d89073944f0bcc38f83f997a17a15",
+    "semantic_hash": "366d89073944f0bcc38f83f997a17a15"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/src/services/apiQuota.ts": {
+    "mtime": 1779721526.1429636,
+    "ast_hash": "62c472e92b7794d538dbe6e0494a04b4",
+    "semantic_hash": "62c472e92b7794d538dbe6e0494a04b4"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/.claude/settings.local.json": {
+    "mtime": 1779572118.994914,
+    "ast_hash": "bf1f03b45c7f7848473ac19b3b66a2fe",
+    "semantic_hash": "bf1f03b45c7f7848473ac19b3b66a2fe"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/.claude/launch.json": {
+    "mtime": 1779714288.575666,
+    "ast_hash": "f9d2e4bcb79f390310c9bfbc88f4ec7c",
+    "semantic_hash": "f9d2e4bcb79f390310c9bfbc88f4ec7c"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/.vscode/launch.json": {
+    "mtime": 1779357217.946732,
+    "ast_hash": "aee6ae540e0e0c0d2c23da77f6a6d8d2",
+    "semantic_hash": "aee6ae540e0e0c0d2c23da77f6a6d8d2"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/CHANGELOG.md": {
+    "mtime": 1779441631.3329313,
+    "ast_hash": "90d77738f182423e2f4fb2d05782b3c0",
+    "semantic_hash": "90d77738f182423e2f4fb2d05782b3c0"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/README.md": {
+    "mtime": 1779441688.4029825,
+    "ast_hash": "803a417d585b116c95a4c081c1b32bf9",
+    "semantic_hash": "803a417d585b116c95a4c081c1b32bf9"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/AGENTS.md": {
+    "mtime": 1779615980.9079332,
+    "ast_hash": "b5a09399219ea41ab520e1541d32465d",
+    "semantic_hash": "b5a09399219ea41ab520e1541d32465d"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/CLAUDE.md": {
+    "mtime": 1779803745.023854,
+    "ast_hash": "ee42890d7299d0a677619c142faf1214",
+    "semantic_hash": "ee42890d7299d0a677619c142faf1214"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/index.html": {
+    "mtime": 1779793694.1553278,
+    "ast_hash": "ba8389b78eee4e00aaabef47b1dba72b",
+    "semantic_hash": "ba8389b78eee4e00aaabef47b1dba72b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/README.md": {
+    "mtime": 1779357217.9476564,
+    "ast_hash": "4042a43e491dc0d2601c14d430379af1",
+    "semantic_hash": "4042a43e491dc0d2601c14d430379af1"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/INDEX.md": {
+    "mtime": 1779357217.947353,
+    "ast_hash": "8c42da4938085fff838412bf75df8e5b",
+    "semantic_hash": "8c42da4938085fff838412bf75df8e5b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/architecture.md": {
+    "mtime": 1779572862.492105,
+    "ast_hash": "8e6fd430e8a9b4038368ce8685e12f1f",
+    "semantic_hash": "8e6fd430e8a9b4038368ce8685e12f1f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/flow-score.md": {
+    "mtime": 1779551649.8713746,
+    "ast_hash": "0679bc858ebb98f83dcfe1941e6ca323",
+    "semantic_hash": "0679bc858ebb98f83dcfe1941e6ca323"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/accessibility.md": {
+    "mtime": 1779573106.2361717,
+    "ast_hash": "521e1c2b9f21382aa8e0fee2906d1b54",
+    "semantic_hash": "521e1c2b9f21382aa8e0fee2906d1b54"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/performance.md": {
+    "mtime": 1779572274.62127,
+    "ast_hash": "a7848c1fd6deb996effbb251696feca7",
+    "semantic_hash": "a7848c1fd6deb996effbb251696feca7"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/pwa-auth.md": {
+    "mtime": 1779552372.2628677,
+    "ast_hash": "908df9a23a7cd808d93cc12d7583de9f",
+    "semantic_hash": "908df9a23a7cd808d93cc12d7583de9f"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/supabase-security.md": {
+    "mtime": 1779551541.8597453,
+    "ast_hash": "b13845a4090f3e1b717d5337c2d05108",
+    "semantic_hash": "b13845a4090f3e1b717d5337c2d05108"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/error-handling.md": {
+    "mtime": 1779551741.1616144,
+    "ast_hash": "2fdaa84d3dc6ef112ea62787bd373d6b",
+    "semantic_hash": "2fdaa84d3dc6ef112ea62787bd373d6b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/dead-code.md": {
+    "mtime": 1779572545.891446,
+    "ast_hash": "a6dd6e30d05344307c7821f0dfc9e405",
+    "semantic_hash": "a6dd6e30d05344307c7821f0dfc9e405"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/audits/type-safety.md": {
+    "mtime": 1779552179.9526136,
+    "ast_hash": "0768dc75b45ebcfefab18cf4b215bd86",
+    "semantic_hash": "0768dc75b45ebcfefab18cf4b215bd86"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/google4ad73ebb56a52070.html": {
+    "mtime": 1773114443.9672022,
+    "ast_hash": "ee19c3b0574c94da3b6fa4513005ad47",
+    "semantic_hash": "ee19c3b0574c94da3b6fa4513005ad47"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/robots.txt": {
+    "mtime": 1779357217.94965,
+    "ast_hash": "eb616cbfc14c037b80d6f04be21a77ed",
+    "semantic_hash": "eb616cbfc14c037b80d6f04be21a77ed"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/memory/system.md": {
+    "mtime": 1779620883.479726,
+    "ast_hash": "32b260e9be285ff977d0b0b53bf99289",
+    "semantic_hash": "32b260e9be285ff977d0b0b53bf99289"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/preview.png": {
+    "mtime": 1773114443.9679513,
+    "ast_hash": "a3ef3acb6548a8649ab0f8ac197d036b",
+    "semantic_hash": "a3ef3acb6548a8649ab0f8ac197d036b"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/icon-192.png": {
+    "mtime": 1773114443.967365,
+    "ast_hash": "1a34d075c52a968f582219793a3b05c8",
+    "semantic_hash": "1a34d075c52a968f582219793a3b05c8"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/favicon.png": {
+    "mtime": 1773114443.9671204,
+    "ast_hash": "1a34d075c52a968f582219793a3b05c8",
+    "semantic_hash": "1a34d075c52a968f582219793a3b05c8"
+  },
+  "/Users/viseeroy/Documents/GitHub/No-Pause/No-Pause/public/icon-512.png": {
+    "mtime": 1773114443.967529,
+    "ast_hash": "8574d1ca3df79b0db107c64bc2dea5fa",
+    "semantic_hash": "8574d1ca3df79b0db107c64bc2dea5fa"
+  }
+}
