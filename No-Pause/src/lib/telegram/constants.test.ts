@@ -178,39 +178,35 @@ describe('getChallengeResultMessage', () => {
 describe('getTelegramStatsMessage', () => {
   it('includes all stat fields', () => {
     const msg = getTelegramStatsMessage({
-      weeklyBestFlowScore: 200,
-      weeklyAvgFlowScore: 150,
-      weeklySessionCount: 5,
+      bestFlowScore: 200,
+      avgFlowScore: 150,
       totalSessions: 42,
       totalPracticeTime: 3600,
       currentStreak: 3,
       bestStreak: 7,
-      lastSessionDate: '2026-05-21T12:00:00Z',
       friendChallenges: 4,
       groupChallenges: 2,
     });
     expect(msg).toContain('200');
     expect(msg).toContain('150');
-    expect(msg).toContain('5');
     expect(msg).toContain('42');
-    expect(msg).toContain('3 current / 7 best');
+    expect(msg).toContain('3 / 7 best');
     expect(msg).toContain('1h');
   });
 
-  it('handles null last session date', () => {
+  it('handles zero stats', () => {
     const msg = getTelegramStatsMessage({
-      weeklyBestFlowScore: 0,
-      weeklyAvgFlowScore: 0,
-      weeklySessionCount: 0,
+      bestFlowScore: 0,
+      avgFlowScore: 0,
       totalSessions: 0,
       totalPracticeTime: 0,
       currentStreak: 0,
       bestStreak: 0,
-      lastSessionDate: null,
       friendChallenges: 0,
       groupChallenges: 0,
     });
-    expect(msg).toContain('None yet');
+    expect(msg).toContain('Best: 0');
+    expect(msg).toContain('Sessions: 0');
   });
 });
 
