@@ -10,6 +10,7 @@ type UseSessionOptions = {
   setLastResults: Dispatch<SetStateAction<SessionResult | null>>;
   userEmail?: string | null;
   userId: string | null;
+  topic: string | null;
 };
 
 type SaveFinishedSessionInput = {
@@ -45,6 +46,7 @@ export function useSession({
   setLastResults,
   userEmail,
   userId,
+  topic,
 }: UseSessionOptions) {
   const pendingSaveRef = useRef<SaveFinishedSessionInput | null>(null);
 
@@ -131,9 +133,18 @@ export function useSession({
   }, [userEmail, userId, retrySave]);
 
   const requestFeedback = useCallback(async (input: RequestFeedbackInput) => {
+    if (!topic) {
+      setLastResults((prev) => {
+        if (!prev) return prev;
+        return { ...prev, analysisFeedbackLoading: false };
+      });
+      return;
+    }
+
     try {
       const result = await analyzeSpeech({
         transcript: input.transcript,
+        topic,
         flowScore: input.flowScore,
         hesitationCount: input.hesitationCount,
         speakingTime: input.speakingTime,
@@ -174,7 +185,7 @@ export function useSession({
         };
       });
     }
-  }, [setLastResults, userId]);
+  }, [setLastResults, userId, topic]);
 
   const requestTranscription = useCallback(async () => {
     if (!lastResults) return;
@@ -225,6 +236,7 @@ export function useSession({
       });
 
       const shouldAnalyze =
+        !!topic &&
         lastResults.flowScore > 0 &&
         transcript.trim().length > 0 &&
         transcript !== 'No speech detected.' &&
@@ -234,6 +246,7 @@ export function useSession({
         try {
           const result = await analyzeSpeech({
             transcript,
+            topic,
             flowScore: lastResults.flowScore,
             hesitationCount: lastResults.hesitationCount,
             speakingTime: lastResults.totalSpeakingTime,
@@ -287,7 +300,7 @@ export function useSession({
         };
       });
     }
-  }, [lastResults, setLastResults, userId]);
+  }, [lastResults, setLastResults, userId, topic]);
 
   return {
     requestTranscription,

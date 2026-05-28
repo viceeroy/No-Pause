@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
 import { getRandomPrompt } from "../core/prompts.js";
-import { getTelegramChallengeCounts, getTelegramPracticeStats, getTelegramWeeklyStatsComparison } from "../core/queries.js";
+import { getTelegramChallengeCounts, getTelegramPracticeStats } from "../core/queries.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
@@ -17,6 +17,7 @@ import {
   getTelegramStatsMessage,
   GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX,
   MESSAGES,
+  MY_STATS_LABEL,
   POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX,
   replyKeyboard,
   SEND_CHALLENGE_RESULT_ACTION_PREFIX,
@@ -49,8 +50,6 @@ import {
   postGroupChallengeResultToGroup,
   TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE,
 } from "./voiceHandler.js";
-
-const VOICE_ONLY_MESSAGE = "🎤 NoPause only accepts voice notes. Please send a voice note to get your Flow Score.";
 
 function getStartPayload(ctx: Context): string {
   const message = ctx.message as { text?: unknown } | undefined;
@@ -97,11 +96,17 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
   console.log("resolved user_id:", userId);
 
   let stats;
-  let weeklyStats;
+  let fullName: string | null = null;
+  let email: string | null = null;
   try {
-    [stats, weeklyStats] = await Promise.all([
+    [stats] = await Promise.all([
       getTelegramPracticeStats(userId),
-      getTelegramWeeklyStatsComparison(userId),
+      supabaseServer.auth.admin.getUserById(userId).then(({ data }) => {
+        if (data?.user) {
+          fullName = data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? null;
+          email = data.user.email ?? null;
+        }
+      }),
     ]);
   } catch (error) {
     console.error("Telegram stats lookup failed", error);
@@ -118,14 +123,14 @@ async function replyWithStatus(ctx: Context, telegramId: number) {
 
   await ctx.reply(
     getTelegramStatsMessage({
-      weeklyBestFlowScore: weeklyStats.currentWeek.bestFlowScore,
-      weeklyAvgFlowScore: weeklyStats.currentWeek.avgFlowScore,
-      weeklySessionCount: weeklyStats.currentWeek.sessionCount,
+      fullName,
+      email,
+      bestFlowScore: stats.bestFlowScore,
+      avgFlowScore: stats.avgFlowScore,
       totalSessions: stats.totalSessions,
       totalPracticeTime: stats.totalPracticeTime,
       currentStreak: stats.currentStreak,
       bestStreak: stats.bestStreak,
-      lastSessionDate: stats.lastSessionDate,
       friendChallenges: challengeCounts.friendChallenges,
       groupChallenges: challengeCounts.groupChallenges,
     }),
@@ -138,8 +143,6 @@ export function createTelegramBot() {
 
   void bot.telegram.setMyCommands([
     { command: "start", description: "Start or connect NoPause" },
-    { command: "about", description: "About NoPause" },
-    { command: "stats", description: "View your stats" },
     { command: "register", description: "Connect or switch account" },
   ], { scope: { type: "all_private_chats" } }).catch((error) => {
     console.error("Telegram command menu registration failed", error);
@@ -193,29 +196,6 @@ export function createTelegramBot() {
     await ctx.reply(MESSAGES.welcome, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
   });
 
-  bot.command("about", async (ctx) => {
-    if (isGroupChat(ctx)) return;
-
-    let userPrefix = "";
-    const telegramId = getTelegramId(ctx);
-    if (telegramId) {
-      try {
-        const userId = await resolveTelegramUser(telegramId);
-        if (userId) {
-          const { data } = await supabaseServer.auth.admin.getUserById(userId);
-          if (data?.user) {
-            const fullName = data.user.user_metadata?.full_name ?? data.user.user_metadata?.name;
-            userPrefix = MESSAGES.aboutUserPrefix(fullName, data.user.email);
-          }
-        }
-      } catch {
-        // skip user info silently
-      }
-    }
-
-    await ctx.reply(`${userPrefix}${MESSAGES.about}`, { ...replyKeyboard, parse_mode: "HTML" });
-  });
-
   bot.command("register", async (ctx) => {
     if (isGroupChat(ctx)) return;
 
@@ -226,15 +206,6 @@ export function createTelegramBot() {
     }
 
     await ctx.reply(MESSAGES.register, { ...getConnectAccountKeyboard(telegramId), parse_mode: "HTML" });
-  });
-
-  bot.command("stats", async (ctx) => {
-    if (isGroupChat(ctx)) return;
-
-    const telegramId = getTelegramId(ctx);
-    if (!telegramId) return;
-
-    await replyWithStatus(ctx, telegramId);
   });
 
   bot.command("nopause", async (ctx) => {
@@ -257,6 +228,7 @@ export function createTelegramBot() {
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
 
+    console.log('[NoPause:challenge] challenge label pressed', { telegram_id: telegramId, chat_type: ctx.chat?.type });
     await replyWithNewFriendChallenge(ctx, telegramId);
   });
 
@@ -266,14 +238,26 @@ export function createTelegramBot() {
     await ctx.reply(MESSAGES.speakPrivate, { ...speakPromptKeyboard, parse_mode: "HTML" });
   });
 
+  bot.hears(MY_STATS_LABEL, async (ctx) => {
+    if (isGroupChat(ctx)) return;
+
+    const telegramId = getTelegramId(ctx);
+    if (!telegramId) return;
+
+    await replyWithStatus(ctx, telegramId);
+  });
+
   bot.action(new RegExp(`^${CHANGE_GROUP_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    await ctx.answerCbQuery();
+    console.log('[NoPause:challenge] callback', { action: 'change_group_topic', telegram_id: getTelegramId(ctx), challenge_id: ctx.match?.[1] });
     await changeGroupChallengeTopic(ctx);
   });
 
   bot.action(new RegExp(`^${SEND_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
+    await ctx.answerCbQuery();
     const telegramId = getTelegramId(ctx);
+    console.log('[NoPause:challenge] callback', { action: 'send_challenge_result', telegram_id: telegramId, challenge_id: ctx.match?.[1] });
     if (!telegramId) {
-      await ctx.answerCbQuery("I could not find your challenge result right now.", { show_alert: true });
       return;
     }
 
@@ -281,9 +265,10 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):([^:]+):(.+)$`), async (ctx) => {
+    await ctx.answerCbQuery();
     const telegramId = getTelegramId(ctx);
+    console.log('[NoPause:challenge] callback', { action: 'share_creator_challenge_result', telegram_id: telegramId, challenge_id: ctx.match?.[1] });
     if (!telegramId) {
-      await ctx.answerCbQuery(MESSAGES.challengeResultMissing, { show_alert: true });
       return;
     }
 
@@ -291,9 +276,10 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
+    await ctx.answerCbQuery();
     const telegramId = getTelegramId(ctx);
+    console.log('[NoPause:challenge] callback', { action: 'post_group_challenge_result', telegram_id: telegramId, challenge_id: ctx.match?.[1] });
     if (!telegramId) {
-      await ctx.answerCbQuery("I could not find a recent group challenge result right now.", { show_alert: true });
       return;
     }
 
@@ -301,6 +287,8 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    await ctx.answerCbQuery();
+    console.log('[NoPause:challenge] callback', { action: 'group_challenge_leaderboard', telegram_id: getTelegramId(ctx), challenge_id: ctx.match?.[1] });
     await showGroupChallengeLeaderboard(ctx);
   });
 
@@ -320,6 +308,7 @@ export function createTelegramBot() {
   });
 
   bot.action(TRY_AGAIN_ACTION, async (ctx) => {
+    console.log('[NoPause:challenge] callback', { action: 'try_again', telegram_id: getTelegramId(ctx) });
     await ctx.answerCbQuery();
     if (isGroupChat(ctx)) {
       await ctx.reply(
@@ -333,6 +322,7 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${TRY_GROUP_CHALLENGE_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    console.log('[NoPause:challenge] callback', { action: 'try_group_challenge', telegram_id: getTelegramId(ctx), challenge_id: ctx.match?.[1] });
     console.log("Telegram group retry button pressed", {
       callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,
       match: ctx.match?.[1],
@@ -357,6 +347,7 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    console.log('[NoPause:challenge] callback', { action: 'ai_feedback', telegram_id: getTelegramId(ctx), session_id: ctx.match?.[1] });
     try {
       ctx.telegram.webhookReply = false;
       await ctx.answerCbQuery();
@@ -387,10 +378,6 @@ export function createTelegramBot() {
       });
       await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
     }
-  });
-
-  bot.on(["photo", "video", "document", "sticker", "audio", "animation", "video_note"], async (ctx) => {
-    await ctx.reply(VOICE_ONLY_MESSAGE);
   });
 
   bot.on("voice", async (ctx) => {

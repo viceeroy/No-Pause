@@ -65,6 +65,7 @@ export type FlowAnalysis = {
 
 export const replyKeyboard = Markup.keyboard([
   [SPEAK_LABEL, CHALLENGE_LABEL],
+  [MY_STATS_LABEL],
 ]).resize();
 
 export const speakPromptKeyboard = Markup.inlineKeyboard([
@@ -547,33 +548,33 @@ function formatStatsDate(isoString: string | null): string {
 }
 
 export function getTelegramStatsMessage(input: {
-  weeklyBestFlowScore: number;
-  weeklyAvgFlowScore: number;
-  weeklySessionCount: number;
+  fullName?: string | null;
+  email?: string | null;
+  bestFlowScore: number;
+  avgFlowScore: number;
   totalSessions: number;
   totalPracticeTime: number;
   currentStreak: number;
   bestStreak: number;
-  lastSessionDate: string | null;
   friendChallenges: number;
   groupChallenges: number;
 }): string {
-  return `📊 <b>Your NoPause Stats</b>
+  const userLines: string[] = [];
+  if (input.fullName) userLines.push(escapeTelegramHtml(input.fullName));
+  if (input.email) userLines.push(escapeTelegramHtml(input.email));
+  const userPrefix = userLines.length > 0 ? `${userLines.join("\n")}\n\n` : "";
 
-📅 <b>Weekly</b>
-🏆 <b>Best Score:</b> ${input.weeklyBestFlowScore}
-📈 <b>Average Score:</b> ${input.weeklyAvgFlowScore}
-🎯 <b>Sessions:</b> ${input.weeklySessionCount}
-🔥 <b>Streak:</b> ${input.currentStreak} current / ${input.bestStreak} best
-🕒 <b>Last Session:</b> ${formatStatsDate(input.lastSessionDate)}
+  return `${userPrefix}NoPause helps you speak more fluently. Send a voice note, get a Flow Score — fewer pauses, higher score. Practice solo or challenge friends.
 
-🌐 <b>All-Time</b>
-🎯 <b>Total Sessions:</b> ${formatStatsCount(input.totalSessions)}
-⏱ <b>Total Practice Time:</b> ${formatStatsPracticeTime(input.totalPracticeTime)}
+📊 <b>Stats</b>
+🏆 Best: ${input.bestFlowScore}  •  📊 Avg: ${input.avgFlowScore}
+🎯 Sessions: ${formatStatsCount(input.totalSessions)}  •  ⏱ ${formatStatsPracticeTime(input.totalPracticeTime)}
+🔥 Streak: ${input.currentStreak} / ${input.bestStreak} best
 
-⚔️ <b>Challenges</b>
-👥 Friend challenges: <b>${input.friendChallenges}</b>
-🏆 Group challenges: <b>${input.groupChallenges}</b>`;
+👥 Friend challenges: ${input.friendChallenges}
+🏆 Group challenges: ${input.groupChallenges}
+
+🌍 nopause.org`;
 }
 
 export const MESSAGES = {

@@ -13,6 +13,7 @@ type ResultPanelProps = {
   requestTranscription: () => void;
   copied: boolean;
   setCopied: React.Dispatch<React.SetStateAction<boolean>>;
+  promptText?: string;
 };
 
 interface CustomWindow extends Window {
@@ -26,6 +27,7 @@ export function ResultPanel({
   requestTranscription,
   copied,
   setCopied,
+  promptText,
 }: ResultPanelProps) {
   const navigate = useNavigate();
   const [copiedFeedback, setCopiedFeedback] = useState(false);
@@ -193,7 +195,20 @@ export function ResultPanel({
               </button>
             ) : null}
           </div>
-          {lastResults.analysisFeedbackLoading ? (
+          {!promptText ? (
+            <div className="space-y-3">
+              <p className="font-sans text-sm leading-relaxed text-muted-foreground">
+                Choose a topic to unlock AI feedback and boost your flow score
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/prompts')}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-4 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
+              >
+                Prompts
+              </button>
+            </div>
+          ) : lastResults.analysisFeedbackLoading ? (
             <div className="space-y-3">
               <p className="text-sm font-sans text-muted-foreground animate-pulse">AI feedback is being generated...</p>
             </div>
@@ -206,7 +221,7 @@ export function ResultPanel({
               Feedback will appear here after transcription.
             </p>
           )}
-          {lastResults.analysisFeedbackError && (
+          {promptText && lastResults.analysisFeedbackError && (
             <p className="mt-3 text-sm font-sans text-destructive">{lastResults.analysisFeedbackError}</p>
           )}
         </section>

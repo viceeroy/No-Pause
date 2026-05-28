@@ -201,6 +201,7 @@ export default function PracticePage() {
           requestTranscription={recording.requestTranscription}
           copied={state.copied}
           setCopied={state.setCopied}
+          promptText={promptText}
         />
       )}
 

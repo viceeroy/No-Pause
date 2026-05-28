@@ -86,7 +86,9 @@ export function isGroupChallengeExpired(
     return false;
   }
 
-  return now.getTime() - createdAt >= GROUP_CHALLENGE_EXPIRY_MS;
+  const expired = now.getTime() - createdAt >= GROUP_CHALLENGE_EXPIRY_MS;
+  console.log('[NoPause:challenge] expiry check', { created_at: challenge.created_at, now: now.toISOString(), result: expired ? 'expired' : 'valid' });
+  return expired;
 }
 
 export function formatTelegramDisplayName(
@@ -121,9 +123,11 @@ async function createChallenge(input: {
     .single();
 
   if (error) {
+    console.log('[NoPause:challenge] challenge create error', error);
     throw error;
   }
 
+  console.log('[NoPause:challenge] challenge created', { challenge_id: data.id, topic: data.topic, creator_telegram_id: data.creator_telegram_id, type: data.status });
   return data as FriendChallengeRecord;
 }
 
@@ -161,6 +165,7 @@ export async function updateChallengeTopic(challengeId: string, topic: string) {
 }
 
 export async function getFriendChallenge(challengeId: string): Promise<FriendChallengeRecord | null> {
+  const t0 = Date.now();
   const { data, error } = await supabaseServer
     .from("challenges")
     .select("id, topic, creator_telegram_id, creator_score, status, created_at")
@@ -168,9 +173,11 @@ export async function getFriendChallenge(challengeId: string): Promise<FriendCha
     .maybeSingle();
 
   if (error) {
+    console.log('[NoPause:challenge] challenge lookup error', { challengeId, error });
     throw error;
   }
 
+  console.log('[NoPause:challenge] challenge lookup', { challengeId, found: !!data, ms: Date.now() - t0 });
   return data as FriendChallengeRecord | null;
 }
 
@@ -183,6 +190,7 @@ export async function upsertPendingChallenge(input: {
   participantUsername?: string | null;
   creatorUsername?: string | null;
 }) {
+  const t0 = Date.now();
   const { error } = await supabaseServer
     .from("telegram_challenge_state")
     .upsert(
@@ -200,8 +208,11 @@ export async function upsertPendingChallenge(input: {
     );
 
   if (error) {
+    console.log('[NoPause:challenge] state upsert error', error);
     throw error;
   }
+
+  console.log('[NoPause:challenge] state upsert', { telegram_id: input.telegramId, challenge_id: input.challengeId, action: 'upsert', ms: Date.now() - t0 });
 }
 
 export async function getPendingChallenge(telegramId: number): Promise<PendingChallengeRecord | null> {
@@ -219,14 +230,18 @@ export async function getPendingChallenge(telegramId: number): Promise<PendingCh
 }
 
 export async function deletePendingChallenge(telegramId: number) {
+  const t0 = Date.now();
   const { error } = await supabaseServer
     .from("telegram_challenge_state")
     .delete()
     .eq("telegram_id", telegramId);
 
   if (error) {
+    console.log('[NoPause:challenge] state delete error', { telegram_id: telegramId, error });
     throw error;
   }
+
+  console.log('[NoPause:challenge] state delete', { telegram_id: telegramId, ms: Date.now() - t0 });
 }
 
 export async function recordGroupChallengeAttempt(input: {
@@ -384,6 +399,7 @@ export async function claimFriendChallengeResultSend(input: {
 }
 
 export async function getGroupChallengeLeaderboard(challengeId: string): Promise<ChallengeLeaderboardParticipant[]> {
+  const t0 = Date.now();
   const { data: attemptsData, error: attemptsError } = await supabaseServer
     .from("telegram_challenge_attempts")
     .select("id, telegram_id, session_id, created_at")
@@ -439,9 +455,11 @@ export async function getGroupChallengeLeaderboard(challengeId: string): Promise
     });
   });
 
-  return Array.from(byTelegramId.values())
+  const result = Array.from(byTelegramId.values())
     .sort((a, b) => b.bestFlowScore - a.bestFlowScore || a.telegramId - b.telegramId)
     .slice(0, 20);
+  console.log('[NoPause:challenge] leaderboard fetch', { challenge_id: challengeId, participantCount: result.length, scores: result.map(r => ({ telegramId: r.telegramId, score: r.bestFlowScore })), ms: Date.now() - t0 });
+  return result;
 }
 
 export async function showGroupChallengeLeaderboard(ctx: Context & { match: RegExpExecArray }) {

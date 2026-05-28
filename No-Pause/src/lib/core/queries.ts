@@ -82,6 +82,28 @@ type SupabaseRpcLike = {
   ): PromiseLike<{ data: unknown; error: unknown }>;
 };
 
+type SupabaseQueryLike = {
+  from(table: string): {
+    select(columns: string, options?: { count?: "exact"; head?: boolean }): unknown;
+  };
+};
+
+type ChallengeAttemptSummary = {
+  challenge_id: string | null;
+  telegram_id: number | string | null;
+  session_id: string | null;
+};
+
+type ChallengeScoreSummary = {
+  id: string;
+  flow_score: number | null;
+};
+
+type QueryBuilderLike<T> = PromiseLike<{ data: T[] | null; error: unknown }> & {
+  eq(column: string, value: unknown): QueryBuilderLike<T>;
+  in(column: string, values: unknown[]): QueryBuilderLike<T>;
+};
+
 const SESSION_COLUMNS =
   "id, created_at, mode, duration, speaking_time, pauses, pause_count, words, flow_score, completed, hesitation_log, transcript, analysis_feedback, source";
 const LEGACY_SESSION_COLUMNS =
@@ -244,13 +266,16 @@ export async function getTelegramPracticeStats(userId: string, limit = 15): Prom
   return buildPracticeStats(sessionSets, streak);
 }
 
-export async function getTelegramChallengeCounts(telegramId: number): Promise<{ friendChallenges: number; groupChallenges: number }> {
+export async function getTelegramChallengeCounts(
+  telegramId: number,
+  supabaseClient?: SupabaseQueryLike,
+): Promise<{ friendChallenges: number; groupChallenges: number }> {
   try {
-    const supabase = await getServerSupabase();
+    const supabase = supabaseClient ?? await getServerSupabase();
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from("telegram_challenge_attempts")
-      .select("challenge_id, challenges(status)")
+      .select("challenge_id, challenges(status)") as QueryBuilderLike<Array<{ challenge_id: string | null; challenges: { status: string } | null }>[number]>)
       .eq("telegram_id", telegramId);
 
     if (error) {
@@ -274,6 +299,90 @@ export async function getTelegramChallengeCounts(telegramId: number): Promise<{ 
   } catch (error) {
     console.error("Telegram challenge counts failed", error);
     return { friendChallenges: 0, groupChallenges: 0 };
+  }
+}
+
+export async function getTelegramChallengeWins(
+  telegramId: number,
+  supabaseClient?: SupabaseQueryLike,
+): Promise<number> {
+  try {
+    const supabase = supabaseClient ?? await getServerSupabase();
+
+    const { data: userAttemptsData, error: userAttemptsError } = await (supabase
+      .from("telegram_challenge_attempts")
+      .select("challenge_id, telegram_id, session_id") as QueryBuilderLike<ChallengeAttemptSummary>)
+      .eq("telegram_id", telegramId);
+
+    if (userAttemptsError) {
+      console.error("Telegram challenge wins user attempts query failed", userAttemptsError);
+      return 0;
+    }
+
+    const challengeIds = Array.from(new Set(
+      (userAttemptsData ?? [])
+        .map((attempt) => attempt.challenge_id)
+        .filter((challengeId): challengeId is string => Boolean(challengeId)),
+    ));
+    if (challengeIds.length === 0) return 0;
+
+    const { data: attemptsData, error: attemptsError } = await (supabase
+      .from("telegram_challenge_attempts")
+      .select("challenge_id, telegram_id, session_id") as QueryBuilderLike<ChallengeAttemptSummary>)
+      .in("challenge_id", challengeIds);
+
+    if (attemptsError) {
+      console.error("Telegram challenge wins attempts query failed", attemptsError);
+      return 0;
+    }
+
+    const attempts = attemptsData ?? [];
+    const sessionIds = Array.from(new Set(
+      attempts
+        .map((attempt) => attempt.session_id)
+        .filter((sessionId): sessionId is string => Boolean(sessionId)),
+    ));
+    if (sessionIds.length === 0) return 0;
+
+    const { data: sessionsData, error: sessionsError } = await (supabase
+      .from("sessions")
+      .select("id, flow_score") as QueryBuilderLike<ChallengeScoreSummary>)
+      .in("id", sessionIds);
+
+    if (sessionsError) {
+      console.error("Telegram challenge wins sessions query failed", sessionsError);
+      return 0;
+    }
+
+    const scoreBySessionId = new Map(
+      (sessionsData ?? []).flatMap((session) => {
+        const score = Number(session.flow_score);
+        return Number.isFinite(score) ? [[session.id, score] as const] : [];
+      }),
+    );
+    const scoresByChallenge = new Map<string, Array<{ telegramId: number; score: number }>>();
+
+    attempts.forEach((attempt) => {
+      if (!attempt.challenge_id || !attempt.session_id) return;
+      const score = scoreBySessionId.get(attempt.session_id);
+      if (score === undefined) return;
+      const challengeScores = scoresByChallenge.get(attempt.challenge_id) ?? [];
+      challengeScores.push({ telegramId: Number(attempt.telegram_id), score });
+      scoresByChallenge.set(attempt.challenge_id, challengeScores);
+    });
+
+    return Array.from(scoresByChallenge.values()).filter((scores) => {
+      const bestScore = Math.max(...scores.map((entry) => entry.score));
+      const userBestScore = Math.max(
+        ...scores
+          .filter((entry) => entry.telegramId === telegramId)
+          .map((entry) => entry.score),
+      );
+      return Number.isFinite(userBestScore) && userBestScore === bestScore;
+    }).length;
+  } catch (error) {
+    console.error("Telegram challenge wins failed", error);
+    return 0;
   }
 }
 

@@ -101,7 +101,7 @@ services/
   supabase.ts                   Browser Supabase anon client
   supabaseServer.ts             Server Supabase service-role client (server-only)
   groq.ts                       Groq Whisper transcription + chat completions (server-only)
-  aiFeedback.ts                 generateAiFeedback, analyzePracticeSpeech — both use shared FEEDBACK_SYSTEM_PROMPT constant; transcript-only, no stats injected (server-only)
+  aiFeedback.ts                 analyzePracticeSpeech — requires topic; new FEEDBACK_SYSTEM_PROMPT evaluates 4 topic-relative criteria (relevance, development, details, logic), band 1–9; user message includes TOPIC/TRANSCRIPT/STATS; topic-gated at 3 layers: ResultPanel (UI), useSession (requestFeedback early-return + requestTranscription shouldAnalyze gate), api/feedback.ts (400 if topic missing) (server-only)
   apiQuota.ts                   API quota enforcement via Supabase RPC
 
 providers/
@@ -170,7 +170,9 @@ shared/
 6. Transcripts under 3 words (`getWordCount`) are rejected.
 7. Pause units calculated from inter-word timestamp gaps; `calculateFlowScore` scores them.
 8. `insertSession` (source `telegram`) + `updateStreak`.
-9. Bot replies with Flow Score, pauses, speaking time, transcript, and optional AI feedback.
+9. AI feedback runs only when a challenge topic exists (`challenge.topic`); regular (no-challenge) sessions skip AI feedback and append a note prompting the user to pick a topic.
+10. Bot replies with Flow Score, pauses, speaking time, transcript, and optional AI feedback.
+11. `replyWithAiFeedback` (on-demand "AI Feedback" button callback): sessions table has no topic column → always replies with the no-topic note, never calls Groq. Groq call block removed entirely.
 
 ---
 

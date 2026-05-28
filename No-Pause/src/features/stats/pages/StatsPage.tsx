@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
+import { supabase } from '@/services/supabase';
 import {
   getPracticeStats,
   getWeeklyActivityDays,
@@ -9,6 +10,7 @@ import {
   type WeeklyActivityDay,
   type WeeklyStatsComparison,
 } from '@/lib/practiceApi';
+import { getTelegramChallengeCounts, getTelegramChallengeWins } from '@/lib/core/queries';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
@@ -138,6 +140,12 @@ type StatsPageProps = {
   showEmptyStateAction?: boolean;
 };
 
+type TelegramChallengeStats = {
+  friendChallenges: number;
+  groupChallenges: number;
+  wins: number;
+} | null;
+
 export default function StatsPage({
   emptyStateTitle = 'No sessions yet',
   emptyStateMessage = 'Complete a Speaking Mode session to see scored stats.',
@@ -160,6 +168,7 @@ export default function StatsPage({
   });
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityDay[]>(() => createEmptyWeeklyActivity());
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStatsComparison>(() => createEmptyWeeklyStats());
+  const [telegramChallengeStats, setTelegramChallengeStats] = useState<TelegramChallengeStats>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const isMountedRef = useRef(false);
@@ -202,6 +211,58 @@ export default function StatsPage({
   useEffect(() => {
     void loadStats();
   }, [loadStats]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadTelegramChallengeStats() {
+      if (!user?.id) {
+        setTelegramChallengeStats(null);
+        return;
+      }
+
+      const { data: connection, error } = await supabase
+        .from('telegram_connections')
+        .select('telegram_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (isCancelled) return;
+
+      if (error || !connection?.telegram_id) {
+        if (error) console.error('Failed to load Telegram connection:', error);
+        setTelegramChallengeStats(null);
+        return;
+      }
+
+      const telegramId = Number(connection.telegram_id);
+      if (!Number.isFinite(telegramId)) {
+        setTelegramChallengeStats(null);
+        return;
+      }
+
+      const [challengeCounts, wins] = await Promise.all([
+        getTelegramChallengeCounts(telegramId, supabase),
+        getTelegramChallengeWins(telegramId, supabase),
+      ]);
+
+      if (!isCancelled) {
+        setTelegramChallengeStats({
+          ...challengeCounts,
+          wins,
+        });
+      }
+    }
+
+    void loadTelegramChallengeStats().catch((error) => {
+      console.error('Failed to load Telegram challenge stats:', error);
+      if (!isCancelled) setTelegramChallengeStats(null);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user?.id]);
 
   const recentSessions = stats.recentSessions;
   const hasAnySession = recentSessions.length > 0;
@@ -330,20 +391,50 @@ export default function StatsPage({
           href="https://t.me/NoPauseAI_bot"
           target="_blank"
           rel="noopener noreferrer"
-          className="mb-8 flex min-h-[88px] cursor-pointer items-center gap-3 rounded-[20px] border border-border bg-surface-card p-4 shadow-card transition-colors btn-press hover:border-primary/40 hover:bg-surface-elevated md:gap-4 md:p-5"
+          className="mb-8 block min-h-[88px] cursor-pointer rounded-[20px] border border-border bg-surface-card p-4 shadow-card transition-colors btn-press hover:border-primary/40 hover:bg-surface-elevated md:p-5"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
-            <Send size={22} />
-          </span>
-          <div className="min-w-0 flex-1 pr-1 text-left">
-            <h2 className="mb-1 text-base font-serif font-medium text-foreground">Telegram integration</h2>
-            <p className="text-sm font-sans leading-relaxed text-muted-foreground">
-              Optional voice note practice outside the web app.
-            </p>
+          <div className="flex items-center gap-3 md:gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
+              <Send size={22} />
+            </span>
+            <div className="min-w-0 flex-1 pr-1 text-left">
+              <h2 className="mb-1 text-base font-serif font-medium text-foreground">Telegram integration</h2>
+              <p className="text-sm font-sans leading-relaxed text-muted-foreground">
+                Optional voice note practice outside the web app.
+              </p>
+            </div>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-primary">
+              <ArrowUpRight size={16} />
+            </span>
           </div>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-primary">
-            <ArrowUpRight size={16} />
-          </span>
+          {telegramChallengeStats && (
+            <div className="mt-4 grid grid-cols-3 gap-2 md:gap-3">
+              <div className="rounded-[16px] border border-border bg-surface-elevated p-3 text-left">
+                <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-muted-foreground">
+                  Friend Challenges
+                </p>
+                <p className="mt-3 text-2xl font-serif font-medium leading-none text-foreground">
+                  {telegramChallengeStats.friendChallenges}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-border bg-surface-elevated p-3 text-left">
+                <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-muted-foreground">
+                  Group Challenges
+                </p>
+                <p className="mt-3 text-2xl font-serif font-medium leading-none text-foreground">
+                  {telegramChallengeStats.groupChallenges}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-amber-300/60 bg-amber-50 p-3 text-left dark:border-amber-400/40 dark:bg-amber-950/30">
+                <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-amber-700 dark:text-amber-300">
+                  1st Place
+                </p>
+                <p className="mt-3 text-2xl font-serif font-medium leading-none text-amber-600 dark:text-amber-300">
+                  🥇 {telegramChallengeStats.wins}
+                </p>
+              </div>
+            </div>
+          )}
         </a>
 
         {statsError && (

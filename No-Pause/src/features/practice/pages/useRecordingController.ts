@@ -49,6 +49,7 @@ export function useRecordingController({
     setLastResults,
     userEmail,
     userId,
+    topic: state.topicPrompt?.topicTitle ?? null,
   });
   const {
     handleBack,

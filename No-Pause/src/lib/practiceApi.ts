@@ -76,6 +76,7 @@ export type TranscriptionResult = {
 
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
+  topic?: string;
   flowScore?: number;
   hesitationCount?: number;
   speakingTime?: number;

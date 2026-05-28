@@ -30,8 +30,14 @@ function getFeedbackInput(body: Record<string, unknown>): AnalyzePracticeSpeechI
     return null;
   }
 
+  const topic = typeof body.topic === "string" ? body.topic.trim() : "";
+  if (!topic) {
+    return null;
+  }
+
   return {
     transcript,
+    topic,
     flowScore: Number.isFinite(Number(body.flowScore)) ? Number(body.flowScore) : undefined,
     hesitationCount: Number.isFinite(Number(body.hesitationCount)) ? Number(body.hesitationCount) : undefined,
     speakingTime: Number.isFinite(Number(body.speakingTime)) ? Number(body.speakingTime) : undefined,
@@ -71,7 +77,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const body = await readJsonBody(req);
     const input = getFeedbackInput(body as Record<string, unknown>);
     if (!input) {
-      sendJson(res, 400, { error: "transcript is required" });
+      sendJson(res, 400, { error: "transcript and topic are required" });
       return;
     }
 

@@ -8,6 +8,7 @@ export type AiFeedbackResult = {
 
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
+  topic?: string;
   flowScore?: number;
   hesitationCount?: number;
   speakingTime?: number;
@@ -18,40 +19,33 @@ export function isUsableTranscript(transcript: string): boolean {
   return getWordCount(transcript) >= 3;
 }
 
-const FEEDBACK_SYSTEM_PROMPT = `You are a direct, practical speech coach. You evaluate spoken English from transcripts and give honest, useful feedback.
+const FEEDBACK_SYSTEM_PROMPT = `You are a speech coach giving feedback on a spoken response to a specific topic.
 
-SCORING (internal only — never mention criteria names or band numbers to the user):
-Score the transcript on these four criteria, each 1–9:
-- Vocabulary: word range, precision, avoiding repetition, natural word choice
-- Grammar: sentence variety, accuracy, complexity
-- Coherence: logical flow, idea development, staying on point, not rambling
-- Content depth: saying something meaningful vs. filling time with empty phrases
+You will receive:
+- TOPIC: the prompt the user was given
+- TRANSCRIPT: what they said
+- STATS: speaking time, word count, pause count
 
-Average the four scores to produce a single integer band (round to nearest integer, 1–9 minimum 1).
+Evaluate the transcript on exactly these 4 criteria, all relative to the topic:
 
-BAND ANCHORS (use these to calibrate — do not inflate):
-- 1–3: very short, incoherent, single repeated phrases, or essentially no content
-- 4–5: basic sentences, limited vocabulary, partial coherence, simple ideas only
-- 6–7: clear ideas, decent vocabulary, minor grammar issues, some development
-- 8–9: complex sentences, strong varied vocabulary, well-developed argument, precise word choice
+1. TOPIC RELEVANCE — did they actually address the topic, or drift?
+2. IDEA DEVELOPMENT — did they expand their points with reasoning, or just state them once?
+3. SUPPORTING DETAILS — did they use examples, specifics, or evidence?
+4. LOGICAL CONNECTION — do sentences and ideas link together in a coherent thread?
 
-OVERRIDE: If flow score is 0 (session too short or incomplete), the band MUST be 1. Do not score vocabulary, grammar, or coherence on sessions where the speaker did not complete a valid session. Acknowledge the session was too short and encourage a longer attempt — nothing else.
+Assign a band 1–9:
+- 1–2: off-topic, or barely addresses the prompt; incoherent or disconnected
+- 3–4: on-topic but shallow; ideas stated, not developed; few or no supporting details
+- 5–6: addresses the topic with some development and at least one supporting detail; ideas mostly connect
+- 7–8: well-developed response; clear logical thread; good use of specifics tied to the topic
+- 9: exceptionally tight; every idea supports the topic; strong reasoning and details throughout
 
-You MUST respond with valid JSON only. No text before or after. Format:
-{"band": <integer 1-9>, "feedback": "<feedback text>"}
+Be strict. Default to a lower band unless evidence is clearly present in the transcript. A response that mentions the topic but says little of substance is a 3, not a 5.
 
-FEEDBACK RULES:
-- CRITICAL: The session stats block above contains exact sensor measurements. When referencing pause count, speaking time, or flow score in feedback, use ONLY the numbers from [Session stats]. Never infer or estimate these from the transcript text.
-- Casual, direct coach tone — talking to the speaker, not writing a report
-- No headers, no bullet points, no numbered lists — flowing paragraphs only
-- Every observation must quote or reference something specific from their transcript — no generic advice
-- Scale length to content: 2–3 sentences for short/thin sessions, 2–3 short paragraphs for full sessions
-- Lead with the strongest thing they did (with a specific example from transcript)
-- Then one or two concrete things to improve (with specific examples from their words)
-- End with a single natural sentence about pauses: normalize it briefly, and if high suggest working on continuous speech — keep it light, never discouraging
-- Never mention band numbers, scoring criteria, or any evaluation framework
-- Never give advice that could apply to anyone — every point must be grounded in their actual words
-- If speaking time is under 15 seconds or word count is under 20, acknowledge the session was very short and base feedback only on what's actually there — do not pad or invent observations`;
+Write 2–4 sentences of feedback. Be direct and specific — quote the transcript when pointing out strengths or weaknesses. No generic praise.
+
+Respond only in this JSON format:
+{"band": <1-9>, "feedback": "<your feedback here>"}`;
 
 function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
   try {
@@ -73,28 +67,16 @@ function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
   return { band: 5, feedback: raw };
 }
 
-const buildPracticeFeedbackPrompt = (input: {
+const buildPracticeFeedbackUserMessage = (input: {
+  topic: string;
   transcript: string;
-  flowScore: number;
   hesitationCount: number;
   speakingTime: number;
   wordCount: number;
 }) =>
-  `${FEEDBACK_SYSTEM_PROMPT}
-
-SESSION MEASUREMENTS:
-The following are precise measurements from the session, not inferred from the transcript. Use these exact values authoritatively when evaluating the session and writing feedback.
-- Flow Score: ${input.flowScore}
-- Pauses: ${input.hesitationCount}
-- Speaking Time: ${input.speakingTime} seconds
-- Word Count: ${input.wordCount}
-- Transcript: ${input.transcript}
-
-Evaluate vocabulary, grammar, clarity, confidence, and non-fluency coherence from the transcript. For fluency and pacing, use the measured pause data, not a text-based guess. Treat Pauses as the exact hesitation count and Speaking Time as the authoritative session length. Do not infer, estimate, or override the pause count from transcript wording.
-
-Derive the hesitation rate as Pauses / Speaking Time in seconds, using ${input.hesitationCount} / ${input.speakingTime}. Anchor the fluency component of the band to that measured hesitation rate. Keep Flow Score open-ended; do not describe Flow Score as a percentage or fixed 100-point score.
-
-Reference the measured numbers naturally when relevant, for example: "You had ${input.hesitationCount} pauses in ${input.speakingTime} seconds."`;
+  `TOPIC: ${input.topic}
+TRANSCRIPT: ${input.transcript}
+STATS: speaking time ${input.speakingTime}s, word count ${input.wordCount}, pause count ${input.hesitationCount}`;
 
 export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<AiFeedbackResult> {
   try {
@@ -103,28 +85,28 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
       throw new Error("Transcript is empty");
     }
 
-    const flowScore = input.flowScore ?? 0;
+    const topic = input.topic?.trim() || "Not specified";
     const hesitationCount = input.hesitationCount ?? 0;
     const speakingTime = input.speakingTime ?? 0;
     const wordCount = input.wordCount ?? 0;
 
     console.log("analyzeSpeech request", {
       transcriptLength: trimmed.length,
-      flowScore,
       hesitationCount,
       speakingTime,
       wordCount,
+      hasTopic: !!input.topic,
     });
 
     const raw = await getAIFeedback(
-      trimmed,
-      buildPracticeFeedbackPrompt({
+      buildPracticeFeedbackUserMessage({
+        topic,
         transcript: trimmed,
-        flowScore,
         hesitationCount,
         speakingTime,
         wordCount,
       }),
+      FEEDBACK_SYSTEM_PROMPT,
     );
     const result = parseAiFeedbackResponse(raw);
 

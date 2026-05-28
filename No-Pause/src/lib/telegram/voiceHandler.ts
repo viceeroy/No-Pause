@@ -439,6 +439,7 @@ export async function handleVoiceMessage(
   },
   telegramId: number,
 ) {
+  const t_total = Date.now();
   const groupChat = isGroupChat(ctx);
   const username = getTelegramUsername(ctx);
   let userId: string | null;
@@ -450,6 +451,7 @@ export async function handleVoiceMessage(
     return;
   }
 
+  console.log('[NoPause:challenge] user lookup', { telegram_id: telegramId, found: !!userId });
   if (!userId) {
     await replyWithConnectPrompt(ctx, telegramId);
     return;
@@ -473,12 +475,15 @@ export async function handleVoiceMessage(
   try {
     pendingChallenge = groupChat ? null : await getPendingChallenge(telegramId);
     challenge = pendingChallenge ? await getFriendChallenge(pendingChallenge.challenge_id) : null;
+    console.log('[NoPause:challenge] pending challenge lookup', { telegram_id: telegramId, challenge_id: pendingChallenge?.challenge_id ?? null });
     if (pendingChallenge && !challenge) {
+      console.log('[NoPause:challenge] challenge validity check', { valid: false, reason: 'challenge_not_found', telegram_id: telegramId, challenge_id: pendingChallenge.challenge_id });
       await deletePendingChallenge(telegramId);
       await ctx.reply(MESSAGES.challengeNoLongerExists, { parse_mode: "HTML" });
       return;
     }
     if (pendingChallenge?.challenge_type === "group" && challenge && isGroupChallengeExpired(challenge)) {
+      console.log('[NoPause:challenge] expiry check result', { expired: true, telegram_id: telegramId, challenge_id: pendingChallenge.challenge_id });
       await deletePendingChallenge(telegramId);
       await ctx.reply(MESSAGES.groupChallengeExpired, { parse_mode: "HTML" });
       return;
@@ -504,6 +509,7 @@ export async function handleVoiceMessage(
       telegramMessageId,
       sessionId: processedSessionId,
     });
+    console.log('[NoPause:challenge] duplicate message guard hit', { telegram_id: telegramId, telegram_message_id: telegramMessageId, processed_session_id: processedSessionId });
     return;
   }
 
@@ -516,9 +522,16 @@ export async function handleVoiceMessage(
 
     await ctx.reply(MESSAGES.voiceReceived, { parse_mode: "HTML" });
 
+    const t_download = Date.now();
+    console.log('[NoPause:challenge] voice download start', { telegram_id: telegramId, file_id: voice.file_id });
     const audioBuffer = await downloadTelegramVoice(voice.file_id);
+    console.log('[NoPause:challenge] voice download done', { telegram_id: telegramId, ms: Date.now() - t_download, fileSize: audioBuffer.byteLength });
+
+    const t_transcription = Date.now();
+    console.log('[NoPause:challenge] transcription start', { telegram_id: telegramId });
     const transcription = await transcribeAudio(audioBuffer);
     const transcript = transcription.text;
+    console.log('[NoPause:challenge] transcription done', { telegram_id: telegramId, ms: Date.now() - t_transcription, wordCount: transcription.words.length, preview: transcript.slice(0, 50) });
 
     if (!isUsableTranscript(transcript)) {
       await ctx.reply(MESSAGES.unusableTranscript);
@@ -532,24 +545,31 @@ export async function handleVoiceMessage(
       totalSessionTimeSec,
       TELEGRAM_PAUSE_THRESHOLD_MS,
     );
+    console.log('[NoPause:challenge] pause calc', { telegram_id: telegramId, pauseCount: analysis.pauseCount, speakingTime: analysis.speakingTimeSec, flowScore: analysis.flowScore });
 
+    const sessionTopic = challenge?.topic ?? null;
     let aiFeedbackText: string | null = null;
     let finalScore = analysis.flowScore;
-    try {
-      const aiResult = await analyzePracticeSpeech({
-        transcript,
-        hesitationCount: analysis.pauseCount,
-        speakingTime: analysis.speakingTimeSec,
-        flowScore: analysis.flowScore,
-        wordCount: getWordCount(transcript),
-      });
-      finalScore = analysis.flowScore + aiResult.band * 10;
-      aiFeedbackText = aiResult.feedback;
-    } catch (error) {
-      console.error("Telegram inline AI feedback failed", error);
+    if (sessionTopic) {
+      try {
+        const aiResult = await analyzePracticeSpeech({
+          transcript,
+          topic: sessionTopic,
+          hesitationCount: analysis.pauseCount,
+          speakingTime: analysis.speakingTimeSec,
+          flowScore: analysis.flowScore,
+          wordCount: getWordCount(transcript),
+        });
+        finalScore = analysis.flowScore + aiResult.band * 10;
+        aiFeedbackText = aiResult.feedback;
+      } catch (error) {
+        console.error("Telegram inline AI feedback failed", error);
+      }
     }
 
     let sessionId: string;
+    const t_insert = Date.now();
+    console.log('[NoPause:challenge] insertSession start', { telegram_id: telegramId });
     try {
       sessionId = await insertTelegramSession({
         userId,
@@ -560,6 +580,7 @@ export async function handleVoiceMessage(
         flowScoreOverride: finalScore,
         analysisFeedback: aiFeedbackText,
       });
+      console.log('[NoPause:challenge] insertSession done', { telegram_id: telegramId, ms: Date.now() - t_insert, sessionId });
     } catch (error) {
       if (isUniqueViolation(error)) {
         const existingSessionId = await getProcessedTelegramSessionId({ userId, telegramChatId, telegramMessageId });
@@ -582,10 +603,13 @@ export async function handleVoiceMessage(
       : "";
 
     if (groupChat) {
+      const t_reply = Date.now();
       await ctx.reply(
         getSpeakingResultMessage({ speaker: username, analysis: displayAnalysis, transcript }) + feedbackSuffix,
         { ...groupTryAgainKeyboard, parse_mode: "HTML" },
       );
+      console.log('[NoPause:challenge] bot reply sent', { template: 'group_speaking_result', chat_id: telegramChatId, ms: Date.now() - t_reply });
+      console.log('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total });
       return;
     }
 
@@ -623,6 +647,7 @@ export async function handleVoiceMessage(
           console.error("Telegram friend challenge participant lookup failed", error);
         }
 
+        const t_reply_creator = Date.now();
         await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix, {
           ...(friendTelegramId
             ? getCreatorChallengeResultActions({
@@ -633,11 +658,14 @@ export async function handleVoiceMessage(
             : {}),
           parse_mode: "HTML",
         });
+        console.log('[NoPause:challenge] bot reply sent', { template: 'friend_challenge_creator_result', chat_id: telegramChatId, ms: Date.now() - t_reply_creator });
+        console.log('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total });
         return;
       }
 
       const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
 
+      const t_reply_participant = Date.now();
       await ctx.reply(getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix, {
         ...getFriendChallengeResultActions({
           creatorUsername,
@@ -646,6 +674,8 @@ export async function handleVoiceMessage(
         }),
         parse_mode: "HTML",
       });
+      console.log('[NoPause:challenge] bot reply sent', { template: 'friend_challenge_participant_result', chat_id: telegramChatId, ms: Date.now() - t_reply_participant });
+      console.log('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total });
       return;
     }
 
@@ -658,6 +688,7 @@ export async function handleVoiceMessage(
       });
       await deletePendingChallenge(telegramId);
 
+      const t_reply_group = Date.now();
       await ctx.reply(
         getChallengeResultMessage({
           title: "Group Challenge Result",
@@ -676,14 +707,23 @@ export async function handleVoiceMessage(
           parse_mode: "HTML",
         },
       );
+      console.log('[NoPause:challenge] bot reply sent', { template: 'group_challenge_result', chat_id: telegramChatId, ms: Date.now() - t_reply_group });
+      console.log('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total });
       return;
     }
 
+    const noTopicNote = !sessionTopic
+      ? "\n\n💡 Pick a topic to get AI feedback and a higher flow score — use the button below to grab a prompt"
+      : "";
+    const t_reply_default = Date.now();
     await ctx.reply(
-      getSpeakingResultMessage({ analysis: displayAnalysis, transcript }) + feedbackSuffix,
+      getSpeakingResultMessage({ analysis: displayAnalysis, transcript }) + feedbackSuffix + noTopicNote,
       { ...getSessionActions(String(sessionId)), parse_mode: "HTML" },
     );
+    console.log('[NoPause:challenge] bot reply sent', { template: 'speaking_result', chat_id: telegramChatId, ms: Date.now() - t_reply_default });
+    console.log('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total });
   } catch (error) {
+    console.log('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total, error: true });
     if (isApiQuotaExceededError(error)) {
       await ctx.reply(getQuotaExceededMessage(error.kind));
       return;
@@ -897,81 +937,13 @@ export async function replyWithAiFeedback(
       TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
       TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
     );
-    const transcript = session?.transcript?.trim() || "";
-    if (!session || !transcript) {
+    if (!session || !session.transcript?.trim()) {
       await ctx.reply(MESSAGES.feedbackTranscriptMissing, { parse_mode: "HTML" });
       return;
     }
-    const analysis = getSessionAnalysis(session);
-    const {
-      flowScore,
-      pauseCount: hesitationCount,
-      speakingTimeSec,
-    } = analysis;
-    const wordCount = getWordCount(transcript);
-    console.log("Telegram AI feedback session loaded", {
-      telegramId,
-      sessionId,
-      userId,
-      transcriptLength: transcript.length,
-    });
 
-    try {
-      const pendingMsg = await ctx.reply("🤖 AI feedback is being generated...");
-      await withTimeout(
-        consumeApiQuota({
-          userId,
-          kind: "feedback",
-          limit: DAILY_FEEDBACK_LIMIT,
-        }),
-        TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
-        TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
-      );
-      console.log("Telegram AI feedback started", {
-        telegramId,
-        sessionId,
-        transcriptLength: transcript.length,
-      });
-      const aiResult = await withTimeout(
-        analyzePracticeSpeech({
-          transcript,
-          hesitationCount,
-          speakingTime: speakingTimeSec,
-          flowScore,
-          wordCount,
-        }),
-        25_000,
-        "AI feedback timed out",
-      );
-      console.log("Telegram AI feedback completed", {
-        telegramId,
-        sessionId,
-        feedbackLength: aiResult.feedback.length,
-        band: aiResult.band,
-      });
-      await ctx.telegram.editMessageText(
-        pendingMsg.chat.id,
-        pendingMsg.message_id,
-        undefined,
-        `🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(aiResult.feedback)}`,
-        { parse_mode: "HTML" },
-      );
-    } catch (error) {
-      if (isApiQuotaExceededError(error)) {
-        await ctx.reply(getQuotaExceededMessage(error.kind));
-        return;
-      }
-      if (isTelegramAiFeedbackSupabaseTimeout(error)) {
-        await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
-        return;
-      }
-      console.error("Telegram AI feedback failed", {
-        message: error instanceof Error ? error.message : String(error),
-        telegramId,
-        sessionId,
-      });
-      await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
-    }
+    // Sessions table has no topic column — no topic available, matches gate in useSession.ts and api/feedback.ts
+    await ctx.reply("💡 Pick a topic to get AI feedback and a higher flow score — use the button below to grab a prompt");
   } catch (error) {
     if (isTelegramAiFeedbackSupabaseTimeout(error)) {
       await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
