@@ -3,7 +3,8 @@ import {
   SCORING_VERSION,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
-import { calculateFlowScore, DEFAULT_PAUSE_THRESHOLD } from "../core/scoring.js";
+import { calculateFlowScore } from "../core/scoring.js";
+import { analyzeSilenceFromTimestamps } from "../core/silence.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
 import {
@@ -60,7 +61,6 @@ const TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS = 30_000;
 export const TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE =
   "AI feedback is temporarily unavailable. Please try again in a moment.";
 const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR = "Telegram AI feedback Supabase call timed out";
-const TELEGRAM_PAUSE_THRESHOLD_MS = Math.round(DEFAULT_PAUSE_THRESHOLD * 1000);
 const aiFeedbackSessionDebounce = new Map<string, number>();
 
 export type TelegramSessionRecord = {
@@ -149,73 +149,35 @@ function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === "23505";
 }
 
-function getSpeakingTimeSec(words: GroqTranscribedWord[], fallbackDurationSec: number): number {
-  const speakingSeconds = words.reduce((sum, word) => {
-    const duration = Math.max(0, word.end - word.start);
-    return sum + duration;
-  }, 0);
-
-  if (speakingSeconds > 0) {
-    return Math.max(1, Math.round(speakingSeconds));
-  }
-
-  return fallbackDurationSec;
-}
-
-function detectPausesFromWordTimestamps(words: GroqTranscribedWord[], pauseThresholdMs: number) {
-  const orderedWords = [...words]
-    .filter((word) => Number.isFinite(word.start) && Number.isFinite(word.end) && word.end >= word.start)
-    .sort((a, b) => a.start - b.start);
-  const thresholdSec = pauseThresholdMs / 1000;
-
-  return orderedWords.slice(1).reduce(
-    (result, word, index) => {
-      const previousWord = orderedWords[index];
-      const gapSec = Math.max(0, word.start - previousWord.end);
-      if (gapSec < thresholdSec) {
-        return result;
-      }
-
-      const units = Math.floor(gapSec / thresholdSec);
-      const duration = Math.round(gapSec * 1000);
-      return {
-        pauseCount: result.pauseCount + units,
-        pauseLog: [
-          ...result.pauseLog,
-          {
-            timestamp: Math.round(word.start * 1000),
-            duration,
-            units,
-          },
-        ],
-      };
-    },
-    { pauseCount: 0, pauseLog: [] as Array<{ timestamp: number; duration: number; units: number }> },
-  );
-}
-
 async function transcribeAudio(audioBuffer: ArrayBuffer) {
   const data = await transcribeAudioWithGroq(audioBuffer);
   return { text: data.text, words: data.words };
 }
 
-async function analyzeTranscript(
+function analyzeTranscript(
   transcript: string,
   words: GroqTranscribedWord[],
   totalSessionTimeSec: number,
-  pauseThresholdMs: number,
-): Promise<FlowAnalysis> {
-  const speakingTimeSec = getSpeakingTimeSec(words, totalSessionTimeSec);
-  const { pauseCount, pauseLog } = detectPausesFromWordTimestamps(words, pauseThresholdMs);
-  const scoreResult = calculateFlowScore(pauseCount, {
+): FlowAnalysis {
+  const analysis = analyzeSilenceFromTimestamps(words, totalSessionTimeSec);
+  const { speakingTimeSec, totalSilenceSec, gapCount, gaps } = analysis;
+
+  const scoreResult = calculateFlowScore(totalSilenceSec, {
     speakingTimeSec,
     totalSessionTimeSec,
-    hasSpeechEvidence: transcript.trim().length > 0 || words.length > 0 || pauseCount > 0,
+    hasSpeechEvidence: transcript.trim().length > 0 || words.length > 0,
   });
+
+  const pauseLog = gaps.map((gap) => ({
+    timestamp: Math.round(gap.startSec * 1000),
+    duration: Math.round(gap.durationSec * 1000),
+    units: 1,
+  }));
 
   return {
     flowScore: Number.isFinite(scoreResult.score) ? scoreResult.score : 0,
-    pauseCount,
+    pauseCount: gapCount,
+    totalSilenceSec,
     speakingTimeSec,
     totalSessionTimeSec,
     isCompleted: scoreResult.isCompleted,
@@ -312,10 +274,8 @@ async function insertTelegramSession(input: {
     speakingTime: input.analysis.speakingTimeSec,
     pauses: input.analysis.pauseCount,
     pauseCount: input.analysis.pauseCount,
-    hesitationsPerMinute:
-      input.analysis.speakingTimeSec > 0
-        ? input.analysis.pauseCount / (input.analysis.speakingTimeSec / 60)
-        : null,
+    silenceTime: input.analysis.totalSilenceSec,
+    hesitationsPerMinute: null,
     hesitationLog: input.analysis.pauseLog,
     words: getWordCount(input.transcript),
     telegramChatId: input.telegramChatId,
@@ -421,6 +381,7 @@ export function getSessionAnalysis(session: TelegramSessionRecord): FlowAnalysis
   return {
     flowScore: Math.round(Number(session.flow_score ?? 0)),
     pauseCount: Math.round(Number(session.pause_count ?? session.pauses ?? 0)),
+    totalSilenceSec: 0,
     speakingTimeSec,
     totalSessionTimeSec,
     isCompleted: Boolean(session.completed),
@@ -539,13 +500,12 @@ export async function handleVoiceMessage(
     }
 
     const totalSessionTimeSec = estimateDurationSec(voice.duration);
-    const analysis = await analyzeTranscript(
+    const analysis = analyzeTranscript(
       transcript,
       transcription.words,
       totalSessionTimeSec,
-      TELEGRAM_PAUSE_THRESHOLD_MS,
     );
-    console.log('[NoPause:challenge] pause calc', { telegram_id: telegramId, pauseCount: analysis.pauseCount, speakingTime: analysis.speakingTimeSec, flowScore: analysis.flowScore });
+    console.log('[NoPause:challenge] silence calc', { telegram_id: telegramId, totalSilenceSec: analysis.totalSilenceSec, gapCount: analysis.pauseCount, speakingTime: analysis.speakingTimeSec, flowScore: analysis.flowScore });
 
     const sessionTopic = challenge?.topic ?? null;
     let aiFeedbackText: string | null = null;

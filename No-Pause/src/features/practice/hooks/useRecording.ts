@@ -8,9 +8,9 @@ import {
 } from '@/features/practice/lib/speechAnalyzer';
 import { transcribeAudio } from '@/lib/practiceApi';
 import {
-  DEFAULT_PAUSE_THRESHOLD,
   DEFAULT_PAUSE_THRESHOLD_MS,
 } from '@/lib/core/scoring';
+import { DEFAULT_PAUSE_THRESHOLD } from '@/lib/core/constants';
 import type { PracticeStateStore } from '@/features/practice/pages/types';
 import type { BuildSessionResultOutput } from './useScoring';
 import type { RequestFeedbackInput, SaveSessionResult } from './useSession';
@@ -94,16 +94,13 @@ function buildDiagnosticsSummary(snapshot: AnalyzerDiagnosticsSnapshot) {
   });
   if (currentSilenceGapSec > 0) silenceGapsSec.push(currentSilenceGapSec);
   const pauseGapsSec = silenceGapsSec.filter((gapSec) => gapSec > DIAGNOSTICS_PAUSE_THRESHOLD_SEC);
-  const expectedPauseUnits = pauseGapsSec.reduce(
-    (sum, gapSec) => sum + Math.floor(gapSec / DIAGNOSTICS_PAUSE_THRESHOLD_SEC),
-    0,
-  );
+  const expectedTotalSilenceSec = Math.round(pauseGapsSec.reduce((sum, gap) => sum + gap, 0));
   const expectedScore = Math.max(
     0,
     Math.floor(
       speakingTimeSec +
       Math.floor(speakingTimeSec / 60) * 40 -
-      expectedPauseUnits * 10,
+      expectedTotalSilenceSec,
     ),
   );
   const avgRms = average(avgRmsPerChunk);
@@ -125,7 +122,7 @@ function buildDiagnosticsSummary(snapshot: AnalyzerDiagnosticsSnapshot) {
     lowAmplitudeCount,
     avgRms,
     peakRms,
-    expectedPauseUnits,
+    expectedTotalSilenceSec,
     expectedScore,
     healthVerdict,
   };

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, Pause, Share2, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, VolumeX, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -88,7 +88,7 @@ export function ResultPanel({
 
   const getCoachingNote = () => {
     if (lastResults.flowScore === 0) return '';
-    if (lastResults.hesitationCount > 5) return 'Try to reduce pauses — aim for fewer silence gaps';
+    if ((lastResults.totalSilenceSec ?? 0) > 10) return 'Try to reduce silence gaps in your speech';
     if (speakingTargetPercent < 50) return 'Try to fill more of the session with speech';
     if (lastResults.flowScore > 80) return 'Great flow — keep it up';
     return 'Keep building steady, continuous speech';
@@ -112,6 +112,31 @@ export function ResultPanel({
   const statusNote = speakingTime < 5
     ? 'Session too short to score.'
     : lastResults.statusNote;
+
+  if (lastResults.scoringError) {
+    return (
+      <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+        <div className="mb-8 text-left">
+          <p className="mb-2 text-[10px] font-sans font-black uppercase tracking-widest text-muted-foreground">Speaking Mode</p>
+          <h2 className="mb-2 text-3xl font-serif font-medium text-foreground md:text-5xl">Results</h2>
+        </div>
+        <section className="rounded-[28px] border border-destructive/30 bg-destructive/10 p-6 text-left md:p-8">
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={22} className="shrink-0 text-destructive" />
+            <p className="text-base font-sans font-medium text-foreground">{lastResults.scoringError}</p>
+          </div>
+        </section>
+        <div className="pt-6">
+          <button
+            onClick={handleRetry}
+            className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110"
+          >
+            <Mic size={18} /> Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -166,9 +191,9 @@ export function ResultPanel({
 
         <section className="grid grid-cols-2 gap-3 md:gap-4">
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
-            <Pause size={20} className="mb-5 text-primary" />
-            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Pauses</p>
-            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{pauseCount}</p>
+            <VolumeX size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Silence</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{lastResults.totalSilenceSec ?? 0}s</p>
           </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <Mic size={20} className="mb-5 text-primary" />
@@ -289,7 +314,7 @@ export function ResultPanel({
           <button
             onClick={async () => {
               const shareTranscript = transcriptForCopy;
-              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nPause units: ${pauseCount}\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
+              const shareText = `I just completed Speaking Mode on No Pause 🎤\n\nSpeaking time: ${formatMMSS(lastResults.totalSpeakingTime)}\nSilence: ${lastResults.totalSilenceSec ?? 0}s\n\nTranscript:\n"${shareTranscript.slice(0, 100)}${shareTranscript.length > 100 ? '...' : ''}"\n\nTrain your speaking No Pause`;
               const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
               if (isMobile && navigator.share) {
                 try { await navigator.share({ text: shareText }); } catch (e) {

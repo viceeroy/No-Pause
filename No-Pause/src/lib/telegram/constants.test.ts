@@ -17,6 +17,7 @@ import {
 const sampleAnalysis: FlowAnalysis = {
   flowScore: 85,
   pauseCount: 2,
+  totalSilenceSec: 5,
   speakingTimeSec: 55,
   totalSessionTimeSec: 60,
   isCompleted: true,
@@ -88,10 +89,11 @@ describe('deep link URLs', () => {
 });
 
 describe('getSpeakingResultMessage', () => {
-  it('includes flow score and pause count', () => {
+  it('includes flow score and silence', () => {
     const msg = getSpeakingResultMessage({ analysis: sampleAnalysis });
     expect(msg).toContain('85');
-    expect(msg).toContain('2');
+    expect(msg).toContain('Silence:');
+    expect(msg).toContain('5s');
     expect(msg).toContain('Speaking Result');
   });
 

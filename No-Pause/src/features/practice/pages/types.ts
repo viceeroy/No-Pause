@@ -33,6 +33,8 @@ export interface SessionResult {
   isCompleted: boolean;
   statusNote?: string;
   saveFailed?: boolean;
+  scoringError?: string;
+  totalSilenceSec?: number;
 }
 
 export interface PracticeStateStore {

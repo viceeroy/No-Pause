@@ -494,7 +494,7 @@ export default function StatsPage({
                         )}
                       </div>
                       <p className="truncate text-xs font-sans text-muted-foreground">
-                        {formatDate(session.created_at)} | Silence {formatDuration(session.totalSilenceTime || 0)} - {session.hesitationCount || 0} pauses
+                        {formatDate(session.created_at)} | Silence {session.totalSilenceTime || 0}s
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2 text-right">
