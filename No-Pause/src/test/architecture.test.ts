@@ -130,36 +130,36 @@ function createRequest(input: {
 
 describe('speaking mode scoring architecture', () => {
   it.each([
-    { hesitations: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100, isCompleted: true },
-    { hesitations: 0, speakingTimeSec: 59, totalSessionTimeSec: 59, expected: 59, isCompleted: true },
-    { hesitations: 0, speakingTimeSec: 150, totalSessionTimeSec: 150, expected: 230, isCompleted: true },
-    { hesitations: 10, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 100, isCompleted: true },
+    { silenceSec: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100, isCompleted: true },
+    { silenceSec: 0, speakingTimeSec: 59, totalSessionTimeSec: 59, expected: 59, isCompleted: true },
+    { silenceSec: 0, speakingTimeSec: 150, totalSessionTimeSec: 150, expected: 230, isCompleted: true },
+    { silenceSec: 10, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 190, isCompleted: true },
     {
-      hesitations: 20,
+      silenceSec: 20,
       speakingTimeSec: 1,
       totalSessionTimeSec: 60,
       expected: 0,
       isCompleted: false,
       note: 'Session was too short to score. Speak for at least 5 seconds.',
     },
-    { hesitations: 0, speakingTimeSec: 300, totalSessionTimeSec: 300, expected: 500, isCompleted: true },
+    { silenceSec: 0, speakingTimeSec: 300, totalSessionTimeSec: 300, expected: 500, isCompleted: true },
     {
-      hesitations: 0,
+      silenceSec: 0,
       speakingTimeSec: 1,
       totalSessionTimeSec: 1,
       expected: 0,
       isCompleted: false,
       note: 'Session was too short to score. Speak for at least 5 seconds.',
     },
-    { hesitations: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 90, isCompleted: true },
-    { hesitations: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 70, isCompleted: true },
-    { hesitations: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 140, isCompleted: true },
-    { hesitations: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 31, isCompleted: true },
-    { hesitations: 2, speakingTimeSec: 125, totalSessionTimeSec: 300, expected: 185, isCompleted: true },
+    { silenceSec: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 99, isCompleted: true },
+    { silenceSec: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 97, isCompleted: true },
+    { silenceSec: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 194, isCompleted: true },
+    { silenceSec: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 31, isCompleted: true },
+    { silenceSec: 2, speakingTimeSec: 125, totalSessionTimeSec: 300, expected: 203, isCompleted: true },
   ])(
-    'scores $expected for $hesitations hesitations over $speakingTimeSec/$totalSessionTimeSec seconds',
-    ({ hesitations, speakingTimeSec, totalSessionTimeSec, expected, isCompleted, note }) => {
-      expect(calculateFlowScore(hesitations, { speakingTimeSec, totalSessionTimeSec })).toEqual({
+    'scores $expected for $silenceSec silence over $speakingTimeSec/$totalSessionTimeSec seconds',
+    ({ silenceSec, speakingTimeSec, totalSessionTimeSec, expected, isCompleted, note }) => {
+      expect(calculateFlowScore(silenceSec, { speakingTimeSec, totalSessionTimeSec })).toEqual({
         score: expected,
         isCompleted,
         ...(note ? { note } : {}),
@@ -182,13 +182,13 @@ describe('speaking mode scoring architecture', () => {
   });
 
   it('does not return negative scores', () => {
-    expect(calculateFlowScore(10, { speakingTimeSec: 5, totalSessionTimeSec: 60 })).toEqual({
+    expect(calculateFlowScore(50, { speakingTimeSec: 5, totalSessionTimeSec: 60 })).toEqual({
       score: 0,
       isCompleted: true,
     });
   });
 
-  it('passes analyzer speaking time, silence time, and pause count into web session scoring', () => {
+  it('passes word-timestamp-derived speaking time and silence into web session scoring', () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(10_000);
 
     const result = buildSessionResult({
@@ -206,13 +206,18 @@ describe('speaking mode scoring architecture', () => {
         avgVolume: 0.1,
         audioBlob: null,
         audioMimeType: 'audio/webm',
-        transcript: 'hello world',
+        transcript: 'hello world test',
       },
+      words: [
+        { word: 'hello', start: 0.0, end: 2.0 },
+        { word: 'world', start: 2.1, end: 4.0 },
+        { word: 'test', start: 4.1, end: 6.0 },
+      ],
     });
 
     expect(result.sessionResult).toMatchObject({
       totalSpeakingTime: 6,
-      totalSilenceTime: 2,
+      totalSilenceTime: 0,
       totalSessionTime: 6,
       hesitationCount: 0,
       flowScore: 6,
@@ -221,7 +226,7 @@ describe('speaking mode scoring architecture', () => {
     nowSpy.mockRestore();
   });
 
-  it('keeps short transcribed sessions at score 0 while allowing AI feedback to load', () => {
+  it('returns scoring error when word timestamps are insufficient', () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(8_000);
 
     const result = buildSessionResult({
@@ -241,13 +246,16 @@ describe('speaking mode scoring architecture', () => {
         audioMimeType: 'audio/webm',
         transcript: 'short attempt',
       },
+      words: [
+        { word: 'short', start: 0.0, end: 0.5 },
+        { word: 'attempt', start: 0.6, end: 1.0 },
+      ],
     });
 
     expect(result.sessionResult).toMatchObject({
       flowScore: 0,
-      totalSpeakingTime: 4,
       isCompleted: false,
-      analysisFeedbackLoading: true,
+      scoringError: "Couldn't score this session — please try again",
     });
 
     nowSpy.mockRestore();
@@ -530,6 +538,7 @@ describe('result message formatting architecture', () => {
     const analysis = {
       flowScore: 88,
       pauseCount: 2,
+      totalSilenceSec: 5,
       speakingTimeSec: 50,
       totalSessionTimeSec: 60,
       isCompleted: true,
@@ -549,7 +558,7 @@ describe('result message formatting architecture', () => {
     expect(result).toContain('Flow Score:</b> 88');
     expect(result).toContain('Attempt:</b> #3');
     expect(result).toContain('Speaking time:</b> 50s');
-    expect(result).toContain('Pauses:</b> 2');
+    expect(result).toContain('Silence:</b> 5s');
     expect(result).not.toContain('Transcript');
     expect(result).not.toContain('Session length');
     expect(result).not.toContain('Bonus');

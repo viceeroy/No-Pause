@@ -29,19 +29,19 @@ function debugScoreBreakdown(details: Record<string, unknown>) {
 }
 
 export function calculateFlowScore(
-  rawHesitationCount: number,
+  totalSilenceSeconds: number,
   options?: FlowScoreOptions,
 ): FlowScoreResult {
   const speakingTime = Math.max(0, Math.floor(options?.speakingTimeSec ?? 0));
   const mode = "speaking";
-  const hesitationCount = Math.max(0, Math.floor(rawHesitationCount ?? 0));
+  const silence = Math.max(0, Math.round(totalSilenceSeconds ?? 0));
   if (speakingTime < 5) {
     const note = "Session was too short to score. Speak for at least 5 seconds.";
 
     debugScoreBreakdown({
       mode,
       speakingTime: `${speakingTime}s`,
-      hesitationCount,
+      totalSilence: `${silence}s`,
       completed: false,
       finalScore: 0,
       note,
@@ -51,12 +51,12 @@ export function calculateFlowScore(
   }
 
   const completedSpeakingMinutes = Math.floor(speakingTime / 60);
-  const finalScore = Math.max(0, speakingTime + completedSpeakingMinutes * 40 - hesitationCount * 10);
+  const finalScore = Math.max(0, speakingTime + completedSpeakingMinutes * 40 - silence);
 
   debugScoreBreakdown({
     mode,
     speakingTime: `${speakingTime}s`,
-    hesitationCount,
+    totalSilence: `${silence}s`,
     completedSpeakingMinutes,
     completed: true,
     finalScore,

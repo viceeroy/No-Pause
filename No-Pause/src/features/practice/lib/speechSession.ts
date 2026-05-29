@@ -45,8 +45,6 @@ export interface SpeechSessionFinalStats {
 }
 
 export class SpeechSession {
-  private readonly startBufferMs = 2000;
-  private readonly endBufferMs = 1000;
   private speechOnThreshold = SPEECH_THRESHOLD;
   private speechOffThreshold = SPEECH_THRESHOLD * SPEECH_OFF_MULTIPLIER;
   private hesitationMinDuration: number;
@@ -93,7 +91,7 @@ export class SpeechSession {
       isCalibrating: this.isCalibrating,
       microPauseFilter: this.microPauseFilter,
       hesitationMinDuration: this.hesitationMinDuration,
-      startBufferMs: this.startBufferMs,
+      startBufferMs: 0,
     });
     this.state = result.state;
 
@@ -127,10 +125,10 @@ export class SpeechSession {
     const finalized = finalizeMicState(this.state, {
       now,
       recordingStartTime: this.recordingStartTime,
-      endBufferMs: this.endBufferMs,
+      endBufferMs: 0,
       microPauseFilter: this.microPauseFilter,
       hesitationMinDuration: this.hesitationMinDuration,
-      startBufferMs: this.startBufferMs,
+      startBufferMs: 0,
     });
     this.state = finalized.state;
 

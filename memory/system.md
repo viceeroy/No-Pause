@@ -82,6 +82,7 @@ features/
 lib/
   core/
     scoring.ts                  Flow Score source of truth (calculateFlowScore, getScoreLabel)
+    silence.ts                  Shared silence + speaking time from word timestamps (analyzeSilenceFromTimestamps)
     constants.ts                DEFAULT_PAUSE_THRESHOLD, SCORING_VERSION, thresholds, labels
     session.ts                  insertSession, updateStreak, missing-column fallback helpers
     queries.ts                  Session/streak reads, stats aggregation, buildPracticeStats
@@ -156,7 +157,7 @@ shared/
 3. `AudioCapture` samples Web Audio RMS, records chunks, and reports diagnostics.
 4. `SpeechSession` still tracks speech/silence via `micStateMachine`, but browser `SpeechRecognition` is disabled in `transcription.ts` (commented out, not deleted).
 5. After recording stops, the audio blob is always sent through `practiceApi.transcribeAudio()` → `/api/transcription` → Groq Whisper, which returns the transcript plus word-level timestamps (`{ word, start, end }`).
-6. `useScoring.buildSessionResult` computes `hesitationCount` from word timestamp gaps (`nextWord.start - previousWord.end >= 1.2s`), then runs `calculateFlowScore` and assembles `SessionResult`. If word timestamps are unavailable, it falls back to the RMS-derived `hesitationCount`; this now matches the Telegram bot approach in `voiceHandler.ts`.
+6. `useScoring.buildSessionResult` calls `analyzeSilenceFromTimestamps` (shared helper in `src/lib/core/silence.ts`) to compute `totalSilenceSec` and `speakingTimeSec` from word timestamp gaps (≥ 1.5s threshold), then runs `calculateFlowScore` and assembles `SessionResult`. If fewer than 3 word timestamps are available, scoring fails with an error ("Couldn't score this session — please try again"). No RMS fallback — Groq timestamps are the sole scoring input. This path is identical for web and Telegram.
 7. `useSession.saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
 8. If the transcript is missing post-session and `audioBlob` exists, `ResultPanel` can show a manual Transcribe button that triggers `useSession.requestTranscription()` → `practiceApi.transcribeAudio()` → `/api/transcription`.
 9. Optional AI feedback: `practiceApi.analyzeSpeech()` → `/api/feedback` → Groq → stored on session.
@@ -170,33 +171,39 @@ shared/
 4. Invalid or expired pending challenge state is deleted; bot replies without downloading audio.
 5. Voice file downloaded from Telegram; transcribed via Groq Whisper.
 6. Transcripts under 3 words (`getWordCount`) are rejected.
-7. Pause units calculated from inter-word timestamp gaps; `calculateFlowScore` scores them.
+7. `analyzeTranscript` calls `analyzeSilenceFromTimestamps` (same shared helper as web) to compute `totalSilenceSec` and `speakingTimeSec`; `calculateFlowScore` scores them.
 8. `insertSession` (source `telegram`) + `updateStreak`.
 9. AI feedback runs only when a challenge topic exists (`challenge.topic`); regular (no-challenge) sessions skip AI feedback and append a note prompting the user to pick a topic.
-10. Bot replies with Flow Score, pauses, speaking time, transcript, and optional AI feedback.
+10. Bot replies with Flow Score, silence, speaking time, transcript, and optional AI feedback.
 11. `replyWithAiFeedback` (on-demand "AI Feedback" button callback): sessions table has no topic column → always replies with the no-topic note, never calls Groq. Groq call block removed entirely.
 
 ---
 
 ## Flow Score Formula
 
-**Source of truth:** `src/lib/core/scoring.ts` — `calculateFlowScore(rawHesitationCount, options)`.
+**Source of truth:** `src/lib/core/scoring.ts` — `calculateFlowScore(totalSilenceSeconds, options)`.
+
+Silence detection: `src/lib/core/silence.ts` — `analyzeSilenceFromTimestamps(words, totalSessionTimeSec)`. Returns `totalSilenceSec` (rounded once at end), `speakingTimeSec` (Σ word durations), `gapCount`, and `gaps[]`. Used identically by web (`useScoring.ts`) and Telegram (`voiceHandler.ts`).
 
 ```
 speakingTime < 5 seconds  →  score = 0, isCompleted = false
 
 otherwise:
   completedSpeakingMinutes = floor(speakingTimeSec / 60)
-  score = max(0, speakingTimeSec + completedSpeakingMinutes * 40 - hesitationCount * 10)
+  score = max(0, speakingTimeSec + completedSpeakingMinutes * 40 - totalSilenceSeconds)
   isCompleted = true
 ```
+
+A gap between words counts as silence if ≥ `DEFAULT_PAUSE_THRESHOLD` (1.5s). Below 1.5s is ignored (normal speech rhythm). When a gap qualifies, its full duration counts. Leading silence (before first word) and trailing silence (after last word to end of session, clamped ≥ 0) are both included — the 3s countdown is the only grace. Total silence = sum of all qualifying gap durations, rounded once at end to nearest second. Penalty = −1 per second of total silence.
+
+Minimum 3 word timestamps required for scoring. Fewer → scoring error surfaced to user.
 
 **Labels:** `< 50` Needs Practice · `50–99` Getting There · `100–199` Good Flow · `200–299` Great Flow · `≥ 300` Perfect Flow.
 
 **Rules:**
 - Only `src/lib/core/scoring.ts` defines the formula. Never fork constants or formulas elsewhere.
-- `DEFAULT_PAUSE_THRESHOLD = 1.2s` (fixed; no user-adjustable difficulty).
-- Web: `hesitationCount` = audio-derived pause units. Telegram: `pauseCount` = word-gap pause units.
+- `DEFAULT_PAUSE_THRESHOLD = 1.5s` lives only in `src/lib/core/constants.ts`. No hardcoded literals.
+- Both web and Telegram derive `speakingTimeSec` and `totalSilenceSec` from Groq word timestamps via the same shared helper. No RMS-based scoring fallback.
 
 ---
 
@@ -210,13 +217,12 @@ The `finishing` state is set immediately when the user taps Finish, showing `Res
 
 | Parameter | Value |
 |-----------|-------|
-| Pause threshold | `DEFAULT_PAUSE_THRESHOLD = 1.2s` |
-| Micro-pause filter | 300 ms (silences shorter than this are ignored) |
+| Silence threshold | `DEFAULT_PAUSE_THRESHOLD = 1.5s` (in `constants.ts`) |
+| Micro-pause filter | 300 ms (RMS pipeline only, not used for scoring) |
 | Calibration window | 1.5 s |
-| Start buffer | 2 000 ms (excluded from hesitation counting) |
-| End buffer | 1 000 ms (excluded from hesitation counting) |
 
-- `SpeechSession` drives the per-frame RMS analysis via `micStateMachine.applyMicStateFrame`.
+- `SpeechSession` drives the per-frame RMS analysis via `micStateMachine.applyMicStateFrame`. The RMS pipeline still runs during recording but its output does **not** feed scoring — scoring is entirely timestamp-derived via `analyzeSilenceFromTimestamps`.
+- Start/end buffers removed — silence is measured first-word-to-last-word with symmetric edge detection (leading + trailing gaps included).
 - `TranscriptionController` uses browser Web Speech API first; Android skips this to avoid re-prompting for mic permission and goes straight to Groq fallback.
 - `RecordingPanel` does not show live pause count or preview score during recording. The RMS pipeline computes `hesitationCount` live via `SpeechSession`, but `onHesitation` is wired as an empty callback in `useRecording.ts`, so those events are computed but never surfaced in UI.
 - `AudioCapture.stop()` flips `isRunning` false immediately; repeated taps during the pending stop phase silently no-op.
@@ -263,7 +269,8 @@ Notes:
 
 ## Key Components
 
-- **`calculateFlowScore`** — `src/lib/core/scoring.ts` — single authoritative scoring function.
+- **`calculateFlowScore`** — `src/lib/core/scoring.ts` — single authoritative scoring function. First arg is `totalSilenceSeconds`.
+- **`analyzeSilenceFromTimestamps`** — `src/lib/core/silence.ts` — shared silence + speaking time computation from word timestamps. Used by both web and Telegram.
 - **`insertSession` / `updateStreak`** — `src/lib/core/session.ts` — shared persistence with missing-column fallbacks.
 - **`buildPracticeStats`** — `src/lib/core/queries.ts` — aggregates dashboard/stat values from raw session rows.
 - **`SpeechAnalyzer`** — `src/features/practice/lib/speechAnalyzer.ts` — top-level browser practice orchestrator.
@@ -283,7 +290,7 @@ Notes:
 - **`normalizeMode()` always returns `"speaking"`** — `src/lib/core/modes.ts`. Only one mode exists; the structure is a placeholder for potential future modes.
 - **`window.__nopauseExportLogs`** — debug hook in `ResultPanel.tsx`; visible only when `localStorage.getItem('debugLogs') === 'true'`.
 - **Browser SpeechRecognition disabled** — Browser `SpeechRecognition` is commented out in `transcription.ts` (not deleted) for easy rollback. Android no longer needs special transcription handling because browser SpeechRecognition is disabled for all platforms. Do not re-enable browser SpeechRecognition as primary without removing the Groq-primary path first.
-- **RMS pipeline still running** — `micStateMachine`, `speechSession`, and `audioCapture` still run during recording, but RMS-derived `hesitationCount` is no longer used for scoring when word timestamps are available. It can be removed in a future cleanup.
+- **RMS pipeline still running** — `micStateMachine`, `speechSession`, and `audioCapture` still run during recording, but RMS-derived data is no longer used for scoring at all. Scoring is entirely timestamp-derived via `analyzeSilenceFromTimestamps`. The RMS pipeline can be removed in a future cleanup.
 - **Legacy column fallback** — `practiceApi.ts` and `insertSession` retry with a smaller column set if `total_silence_time` or `analysis_feedback` columns are missing (schema migration safety net).
 - **Vercel root** — The Vercel project root is the repo root, not `No-Pause/`. Running `vercel deploy` from `No-Pause/` causes a doubled `No-Pause/No-Pause` path error.
 - **`APP_URL`, `SITE_URL`, and Google redirect URLs** are hardcoded and require code changes for non-production domains.

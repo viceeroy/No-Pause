@@ -6,49 +6,49 @@ describe('Flow Score calculation', () => {
     {
       durationSec: 60,
       speakingTimeSec: 60,
-      pauseCount: 0,
+      totalSilenceSec: 0,
       expectedScore: 100,
       expectedCompleted: true,
     },
     {
       durationSec: 60,
       speakingTimeSec: 60,
-      pauseCount: 3,
-      expectedScore: 70,
+      totalSilenceSec: 3,
+      expectedScore: 97,
       expectedCompleted: true,
     },
     {
       durationSec: 120,
       speakingTimeSec: 120,
-      pauseCount: 6,
-      expectedScore: 140,
+      totalSilenceSec: 6,
+      expectedScore: 194,
       expectedCompleted: true,
     },
     {
       durationSec: 300,
       speakingTimeSec: 125,
-      pauseCount: 2,
-      expectedScore: 185,
+      totalSilenceSec: 2,
+      expectedScore: 203,
       expectedCompleted: true,
     },
     {
       durationSec: 60,
       speakingTimeSec: 4,
-      pauseCount: 0,
+      totalSilenceSec: 0,
       expectedScore: 0,
       expectedCompleted: false,
     },
     {
       durationSec: 60,
       speakingTimeSec: 5,
-      pauseCount: 10,
+      totalSilenceSec: 10,
       expectedScore: 0,
       expectedCompleted: true,
     },
   ])(
-    'scores $expectedScore for duration=$durationSec speaking=$speakingTimeSec pauses=$pauseCount',
-    ({ durationSec, speakingTimeSec, pauseCount, expectedScore, expectedCompleted }) => {
-      const result = calculateFlowScore(pauseCount, {
+    'scores $expectedScore for duration=$durationSec speaking=$speakingTimeSec silence=$totalSilenceSec',
+    ({ durationSec, speakingTimeSec, totalSilenceSec, expectedScore, expectedCompleted }) => {
+      const result = calculateFlowScore(totalSilenceSec, {
         speakingTimeSec,
         totalSessionTimeSec: durationSec,
       });

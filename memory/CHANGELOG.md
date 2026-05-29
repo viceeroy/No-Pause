@@ -75,3 +75,20 @@ Append new entries here — append-only, never delete or edit old ones.
 **What changed:** `blendWithAiScore` removed. Previously, `scoreSpeechQuality` called Groq to score speech 0–100 on coherence/grammar/word choice and added that integer to the flow score. Was on-demand on web (triggered by "Get AI Feedback" button) but ran **automatically before `insertSession`** on Telegram, meaning Telegram sessions before 2026-05-24 may have inflated `flow_score` values in the DB. Related state fields `baseFlowScore`, `aiScore`, `aiScoreFeedback` also removed.
 
 **Live caveat** (also noted in system.md Notable Quirks): Telegram sessions saved before 2026-05-24 may carry inflated `flow_score`. Web sessions unaffected — the blend was on-demand and never written back to the DB.
+
+---
+
+## Silence-duration scoring replaces pause-count scoring (2026-05-29)
+
+**What changed:**
+
+- Flow Score formula: `score = speakingTime + completedMinutes×40 − totalSilenceSeconds` (was `− hesitationCount × 10`). Penalty is now −1 per second of total silence, not −10 per pause count.
+- Silence threshold: `DEFAULT_PAUSE_THRESHOLD` changed from 1.2s to 1.5s. Below 1.5s = normal speech rhythm, ignored.
+- New shared helper: `src/lib/core/silence.ts` — `analyzeSilenceFromTimestamps(words, totalSessionTimeSec)`. Computes `totalSilenceSec` and `speakingTimeSec` from Groq word timestamps. Used identically by web (`useScoring.ts`) and Telegram (`voiceHandler.ts`).
+- Web/Telegram parity: both platforms now derive `speakingTimeSec` and `totalSilenceSec` from the same shared path. Old divergence (web counted 1 per gap, Telegram counted `floor(gap/threshold)` units per gap) eliminated.
+- RMS removed from scoring: `useScoring.ts` no longer falls back to RMS-derived `hesitationCount`. If <3 word timestamps available, scoring fails with user-facing error instead of approximating.
+- Start/end buffers removed: the old 2000ms start buffer and 1000ms end buffer in `speechSession.ts`/`micStateMachine.ts` are set to 0. Silence is measured edge-to-edge (leading + trailing gaps included); the 3s countdown is the only grace.
+- Display relabeled: "Pauses: N" → "Silence: Xs" on web ResultPanel, share text, and Telegram replies.
+- DB: `total_silence_time` now written via `insertSession`. Legacy columns (`pauses`, `pause_count`, `hesitations_per_minute`, `hesitation_log`) still written with gap count for backward compat, no schema migration.
+
+**Files changed:** `silence.ts` (new), `constants.ts`, `scoring.ts`, `useScoring.ts`, `voiceHandler.ts`, `constants.ts` (telegram), `session.ts`, `ResultPanel.tsx`, `speechSession.ts`, `useRecording.ts`, `StatsPage.tsx`, `types.ts`, tests.
