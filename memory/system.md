@@ -2,6 +2,8 @@
 
 Single source of truth for AI agents picking up this project. Update this file whenever architecture, data flow, scoring, schema, env, or deployment assumptions change.
 
+> Refactoring history lives in `memory/CHANGELOG.md` (append-only).
+
 ---
 
 ## What the App Does
@@ -191,13 +193,10 @@ otherwise:
 
 **Labels:** `< 50` Needs Practice · `50–99` Getting There · `100–199` Good Flow · `200–299` Great Flow · `≥ 300` Perfect Flow.
 
-**`blendWithAiScore` removed 2026-05-24.** Previously, `scoreSpeechQuality` called Groq to score speech 0–100 on coherence/grammar/word choice and added that integer to the flow score. Was on-demand on web (triggered by "Get AI Feedback" button) but ran **automatically before `insertSession`** on Telegram, meaning Telegram sessions before 2026-05-24 may have inflated `flow_score` values in the DB. Related state fields `baseFlowScore`, `aiScore`, `aiScoreFeedback` also removed.
-
 **Rules:**
 - Only `src/lib/core/scoring.ts` defines the formula. Never fork constants or formulas elsewhere.
 - `DEFAULT_PAUSE_THRESHOLD = 1.2s` (fixed; no user-adjustable difficulty).
 - Web: `hesitationCount` = audio-derived pause units. Telegram: `pauseCount` = word-gap pause units.
-- Filler-word tracking was removed repo-wide on 2026-05-18; it plays no role in scoring, display, or persistence.
 
 ---
 
@@ -283,7 +282,7 @@ Notes:
 
 - **`normalizeMode()` always returns `"speaking"`** — `src/lib/core/modes.ts`. Only one mode exists; the structure is a placeholder for potential future modes.
 - **`window.__nopauseExportLogs`** — debug hook in `ResultPanel.tsx`; visible only when `localStorage.getItem('debugLogs') === 'true'`.
-- **Browser SpeechRecognition disabled** — Browser `SpeechRecognition` is commented out in `transcription.ts` (not deleted) for easy rollback. Android no longer needs special transcription handling because browser SpeechRecognition is disabled for all platforms.
+- **Browser SpeechRecognition disabled** — Browser `SpeechRecognition` is commented out in `transcription.ts` (not deleted) for easy rollback. Android no longer needs special transcription handling because browser SpeechRecognition is disabled for all platforms. Do not re-enable browser SpeechRecognition as primary without removing the Groq-primary path first.
 - **RMS pipeline still running** — `micStateMachine`, `speechSession`, and `audioCapture` still run during recording, but RMS-derived `hesitationCount` is no longer used for scoring when word timestamps are available. It can be removed in a future cleanup.
 - **Legacy column fallback** — `practiceApi.ts` and `insertSession` retry with a smaller column set if `total_silence_time` or `analysis_feedback` columns are missing (schema migration safety net).
 - **Vercel root** — The Vercel project root is the repo root, not `No-Pause/`. Running `vercel deploy` from `No-Pause/` causes a doubled `No-Pause/No-Pause` path error.
@@ -297,7 +296,7 @@ Notes:
 
 ## Deploy Workflow
 
-Run from the **repo root** (`/Users/viseeroy/Desktop/NoPause`):
+Run from the **repo root** (`/Users/viseeroy/Documents/GitHub/No-Pause`):
 
 ```bash
 git add -A && git commit -m "Deploy" && git push
@@ -306,64 +305,3 @@ cd .. && npx vercel deploy --prod --yes
 ```
 
 When the user says `deploy`, execute this immediately without confirmation.
-
----
-
-## Recent Refactoring
-
-The following cleanup items were completed in the most recent refactoring session. They are documented here so future agents understand the current consolidated state and do not re-introduce the old patterns.
-
-### #1 — Convex environment variables removed
-
-**What changed:** `No-Pause/.env.local` previously contained Convex credentials (`cautious-canary-504` deployment). Those variables have been removed.
-
-**Why:** Convex was never used in this codebase; all backend work goes through Supabase. The credentials were a leftover from an earlier architecture experiment.
-
-**Current state:** `.env.local` contains only Supabase and runtime variables. `.env.example` lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_SENTRY_DSN`.
-
----
-
-### #7 — `arrayBufferToBase64` consolidated
-
-**What changed:** Both `src/features/practice/hooks/useSession.ts` and `src/features/practice/lib/transcription.ts` had identical inline implementations of `arrayBufferToBase64`. Both were removed and replaced with an import from `src/shared/lib/utils.ts`.
-
-**Canonical location:** `src/shared/lib/utils.ts` — exported as `arrayBufferToBase64`.
-
-**Importers:** `useSession.ts` and `transcription.ts`.
-
-**Do not** re-introduce inline copies.
-
----
-
-### #8 — `getWordCount` unified
-
-**What changed:** `src/services/aiFeedback.ts` had a local private `getWordCount` function. It was removed and replaced with an import from `src/lib/core/utils.ts`, which already exported the same function for Telegram voice handling.
-
-**Canonical location:** `src/lib/core/utils.ts` — exported as `getWordCount`.
-
-**Importers:** `aiFeedback.ts`, `voiceHandler.ts`, `useSession.ts`, `useScoring.ts`.
-
-**Do not** re-introduce inline copies in any file.
-
----
-
-### #12 / #13 — `useScoring.ts` cleanup
-
-**What changed:**
-- `useScoring.ts` previously computed word count inline with a raw `split(/\s+/)` expression. That inline logic was replaced with `getWordCount` imported from `src/lib/core/utils.ts`.
-- `BuildSessionResultOutput.words` is now typed as `number | null` (was previously implicitly typed or inconsistently handled). Null is returned when the transcript is empty or absent.
-
-**Current shape of `useScoring.ts`:**
-- Imports: `calculateFlowScore` from `@/lib/core/scoring`, `getWordCount` from `@/lib/core/utils`, `AnalyzerResults`, `SessionResult`, `formatMMSS`.
-- Exports: `BuildSessionResultInput`, `BuildSessionResultOutput`, `buildSessionResult`, `useScoring`.
-- `words` field in output is `number | null`; also written to `sessionResult.wordCount`.
-
----
-
-### #14 — Groq-primary web transcription and timestamp-based scoring
-
-**What changed:** Browser SpeechRecognition disabled as primary transcription source. Groq Whisper is now called on every web session (was previously fallback only). Word timestamps from Groq are passed through practiceApi → transcription → useScoring. Hesitation count is now computed from word timestamp gaps (same method as Telegram bot in voiceHandler.ts). RMS pipeline still runs but its hesitationCount is only used as fallback when timestamps are unavailable. parseTranscribedWords and TranscribedWord type deduplicated into src/lib/core/utils.ts.
-
-**Files changed:** practiceApi.ts, transcription.ts, useScoring.ts, useSession.ts, speechAnalyzer.ts, speechTypes.ts, lib/core/utils.ts
-
-**Do not** re-enable browser SpeechRecognition as primary without removing the Groq-primary path first.
