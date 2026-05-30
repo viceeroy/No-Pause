@@ -69,6 +69,7 @@ export type TelegramSessionRecord = {
   flow_score: number | null;
   pauses: number | null;
   pause_count?: number | null;
+  total_silence_time?: number | null;
   speaking_time: number | null;
   duration: number | null;
   completed: boolean | null;
@@ -337,7 +338,8 @@ function isMissingSessionAnalysisColumnError(error: unknown): boolean {
   return (
     maybeError?.code === "PGRST204" ||
     maybeError?.code === "42703" ||
-    maybeError?.message?.includes("pause_count") === true
+    maybeError?.message?.includes("pause_count") === true ||
+    maybeError?.message?.includes("total_silence_time") === true
   );
 }
 
@@ -347,7 +349,7 @@ export async function getTelegramSession(input: {
 }): Promise<TelegramSessionRecord | null> {
   const { data, error } = await supabaseServer
     .from("sessions")
-    .select("id, transcript, flow_score, pauses, pause_count, speaking_time, duration, completed, hesitation_log")
+    .select("id, transcript, flow_score, pauses, pause_count, total_silence_time, speaking_time, duration, completed, hesitation_log")
     .eq("id", input.sessionId)
     .eq("user_id", input.userId)
     .maybeSingle();
@@ -377,11 +379,12 @@ export async function getTelegramSession(input: {
 export function getSessionAnalysis(session: TelegramSessionRecord): FlowAnalysis {
   const speakingTimeSec = Math.max(0, Math.round(Number(session.speaking_time ?? 0)));
   const totalSessionTimeSec = Math.max(speakingTimeSec, Math.round(Number(session.duration ?? speakingTimeSec)));
+  const totalSilenceSec = Math.max(0, Math.round(Number(session.total_silence_time ?? 0)));
 
   return {
     flowScore: Math.round(Number(session.flow_score ?? 0)),
     pauseCount: Math.round(Number(session.pause_count ?? session.pauses ?? 0)),
-    totalSilenceSec: 0,
+    totalSilenceSec,
     speakingTimeSec,
     totalSessionTimeSec,
     isCompleted: Boolean(session.completed),
