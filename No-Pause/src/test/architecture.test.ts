@@ -2,7 +2,7 @@ import { Readable } from 'stream';
 import type { IncomingMessage } from 'http';
 import { readFileSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
+import { applyBandBonus, calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
 import {
   buildPinnedRecentSessionSummaries,
   buildPracticeStats,
@@ -267,7 +267,11 @@ describe('speaking mode scoring architecture', () => {
 
     expect(recordingSource).toContain('if (transcriptUsable) {');
     expect(recordingSource).not.toContain('transcriptUsable && sessionResult.isCompleted');
-    expect(sessionSource).toContain('const bandPoints = input.flowScore > 0 ? result.band * 10 : 0;');
+    // Band bonus + its scorable-session guard are now centralized in core/scoring;
+    // useSession delegates to applyBandBonus instead of inlining the guard.
+    expect(sessionSource).toContain('const finalScore = applyBandBonus(input.flowScore, result.band);');
+    expect(applyBandBonus(0, 5)).toBe(0); // score-0 session: no band points added
+    expect(applyBandBonus(50, 5)).toBe(100); // scorable session: band applied
   });
 
   it.each([

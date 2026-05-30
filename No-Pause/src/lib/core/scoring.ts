@@ -65,6 +65,14 @@ export function calculateFlowScore(
   return { score: finalScore, isCompleted: true };
 }
 
+export function isScorableSession(flowScore: number): boolean {
+  return flowScore > 0;
+}
+
+export function applyBandBonus(baseScore: number, band: number): number {
+  return isScorableSession(baseScore) ? baseScore + band * 10 : baseScore;
+}
+
 export function getScoreLabel(score: number): string {
   if (score >= 300) return "Perfect Flow";
   if (score >= 200) return "Great Flow";

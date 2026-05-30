@@ -3,6 +3,7 @@ import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStrea
 import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
 import { getWordCount } from '@/lib/core/utils';
+import { applyBandBonus, isScorableSession } from '@/lib/core/scoring';
 import { toast } from '@/shared/components/ui/sonner';
 
 type UseSessionOptions = {
@@ -151,8 +152,8 @@ export function useSession({
         wordCount: input.wordCount,
       });
 
-      const bandPoints = input.flowScore > 0 ? result.band * 10 : 0;
-      const finalScore = input.flowScore + bandPoints;
+      const finalScore = applyBandBonus(input.flowScore, result.band);
+      const bandPoints = finalScore - input.flowScore;
 
       if (input.sessionId && userId) {
         updateSession({
@@ -237,7 +238,7 @@ export function useSession({
 
       const shouldAnalyze =
         !!topic &&
-        lastResults.flowScore > 0 &&
+        isScorableSession(lastResults.flowScore) &&
         transcript.trim().length > 0 &&
         transcript !== 'No speech detected.' &&
         !transcript.startsWith('Transcription failed');
@@ -252,8 +253,8 @@ export function useSession({
             speakingTime: lastResults.totalSpeakingTime,
             wordCount: words ?? undefined,
           });
-          const bandPoints = result.band * 10;
-          const finalScore = lastResults.flowScore + bandPoints;
+          const finalScore = applyBandBonus(lastResults.flowScore, result.band);
+          const bandPoints = finalScore - lastResults.flowScore;
           await updateSession({
             sessionId: lastResults.sessionId,
             userId,
