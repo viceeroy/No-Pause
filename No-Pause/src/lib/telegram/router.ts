@@ -255,35 +255,38 @@ export function createTelegramBot() {
 
   bot.action(new RegExp(`^${SEND_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
     await ctx.answerCbQuery();
+    const placeholderMsg = await ctx.reply("⏳ Sending result...");
     const telegramId = getTelegramId(ctx);
     console.log('[NoPause:challenge] callback', { action: 'send_challenge_result', telegram_id: telegramId, challenge_id: ctx.match?.[1] });
     if (!telegramId) {
       return;
     }
 
-    await sendFriendChallengeResult(ctx, telegramId);
+    await sendFriendChallengeResult(ctx, telegramId, placeholderMsg.message_id);
   });
 
   bot.action(new RegExp(`^${SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):([^:]+):(.+)$`), async (ctx) => {
     await ctx.answerCbQuery();
+    const placeholderMsg = await ctx.reply("⏳ Sending result...");
     const telegramId = getTelegramId(ctx);
     console.log('[NoPause:challenge] callback', { action: 'share_creator_challenge_result', telegram_id: telegramId, challenge_id: ctx.match?.[1] });
     if (!telegramId) {
       return;
     }
 
-    await shareCreatorChallengeResult(ctx, telegramId);
+    await shareCreatorChallengeResult(ctx, telegramId, placeholderMsg.message_id);
   });
 
   bot.action(new RegExp(`^${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {
     await ctx.answerCbQuery();
+    const placeholderMsg = await ctx.reply("⏳ Sending result...");
     const telegramId = getTelegramId(ctx);
     console.log('[NoPause:challenge] callback', { action: 'post_group_challenge_result', telegram_id: telegramId, challenge_id: ctx.match?.[1] });
     if (!telegramId) {
       return;
     }
 
-    await postGroupChallengeResultToGroup(ctx, telegramId);
+    await postGroupChallengeResultToGroup(ctx, telegramId, placeholderMsg.message_id);
   });
 
   bot.action(new RegExp(`^${GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX}(.+)$`), async (ctx) => {

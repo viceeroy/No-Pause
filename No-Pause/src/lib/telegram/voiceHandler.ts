@@ -718,6 +718,7 @@ export async function handleVoiceMessage(
 export async function sendFriendChallengeResult(
   ctx: Context & { match: RegExpExecArray },
   telegramId: number,
+  placeholderMsgId: number,
 ) {
   const challengeId = ctx.match[1];
   const sessionId = ctx.match[2];
@@ -744,7 +745,11 @@ export async function sendFriendChallengeResult(
       sessionId,
     });
     if (!shouldSend) {
-      await ctx.answerCbQuery("This result has already been sent.");
+      try {
+        await ctx.telegram.editMessageText(ctx.chat!.id, placeholderMsgId, undefined, "Already sent.");
+      } catch {
+        // edit failed silently — dup check already completed
+      }
       return;
     }
 
@@ -784,8 +789,12 @@ export async function sendFriendChallengeResult(
       });
     }
 
-    await ctx.answerCbQuery("Sent to the challenger.");
-    await ctx.reply("✅ Your result was sent to the challenger. Good luck!");
+    try {
+      await ctx.telegram.editMessageText(ctx.chat!.id, placeholderMsgId, undefined, "✅ Result sent!");
+      await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+    } catch {
+      // edit failed silently — send already completed
+    }
   } catch (error) {
     console.error("Telegram challenge result send failed", error);
     await ctx.answerCbQuery("I could not send that result right now.", { show_alert: true });
@@ -795,6 +804,7 @@ export async function sendFriendChallengeResult(
 export async function shareCreatorChallengeResult(
   ctx: Context & { match: RegExpExecArray },
   telegramId: number,
+  placeholderMsgId: number,
 ) {
   const challengeId = ctx.match[1];
   const sessionId = ctx.match[2];
@@ -827,7 +837,11 @@ export async function shareCreatorChallengeResult(
       sessionId,
     });
     if (!shouldSend) {
-      await ctx.answerCbQuery(MESSAGES.challengeCreatorShareAlreadySent);
+      try {
+        await ctx.telegram.editMessageText(ctx.chat!.id, placeholderMsgId, undefined, "Already sent.");
+      } catch {
+        // edit failed silently — dup check already completed
+      }
       return;
     }
 
@@ -839,8 +853,12 @@ export async function shareCreatorChallengeResult(
       parse_mode: "HTML",
     });
 
-    await ctx.answerCbQuery(MESSAGES.challengeCreatorShareSent);
-    await ctx.reply(MESSAGES.challengeCreatorShareConfirmation);
+    try {
+      await ctx.telegram.editMessageText(ctx.chat!.id, placeholderMsgId, undefined, "✅ Result sent!");
+      await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+    } catch {
+      // edit failed silently — send already completed
+    }
   } catch (error) {
     console.error("Telegram creator challenge result share failed", error);
     await ctx.answerCbQuery(MESSAGES.challengeCreatorShareError, { show_alert: true });
@@ -850,6 +868,7 @@ export async function shareCreatorChallengeResult(
 export async function postGroupChallengeResultToGroup(
   ctx: Context & { match: RegExpExecArray },
   telegramId: number,
+  placeholderMsgId: number,
 ) {
   const challengeId = ctx.match[1];
   const sessionId = ctx.match[2];
@@ -882,7 +901,12 @@ export async function postGroupChallengeResultToGroup(
       }),
       { parse_mode: "HTML" },
     );
-    await ctx.answerCbQuery("Sent to the group.");
+    try {
+      await ctx.telegram.editMessageText(ctx.chat!.id, placeholderMsgId, undefined, "✅ Result sent!");
+      await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+    } catch {
+      // edit failed silently — send already completed
+    }
   } catch (error) {
     console.error("Telegram group challenge result post failed", error);
     await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
