@@ -352,6 +352,43 @@ export async function getFriendChallengeSubmissionSessionId(input: {
   return typeof data?.session_id === "string" && data.session_id ? data.session_id : null;
 }
 
+export async function friendChallengeHasOtherParticipant(input: {
+  challengeId: string;
+  creatorTelegramId: number;
+  telegramId: number;
+}): Promise<boolean> {
+  // Friend challenges are 1-on-1: creator + exactly one friend. A slot is taken
+  // by another non-creator who either accepted (pending state row) or already
+  // submitted (attempt row). Either presence blocks a third person from joining.
+  const { count: pendingCount, error: pendingError } = await supabaseServer
+    .from("telegram_challenge_state")
+    .select("telegram_id", { count: "exact", head: true })
+    .eq("challenge_id", input.challengeId)
+    .neq("telegram_id", input.creatorTelegramId)
+    .neq("telegram_id", input.telegramId);
+
+  if (pendingError) {
+    throw pendingError;
+  }
+
+  if ((pendingCount ?? 0) > 0) {
+    return true;
+  }
+
+  const { count: attemptCount, error: attemptError } = await supabaseServer
+    .from("telegram_challenge_attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("challenge_id", input.challengeId)
+    .neq("telegram_id", input.creatorTelegramId)
+    .neq("telegram_id", input.telegramId);
+
+  if (attemptError) {
+    throw attemptError;
+  }
+
+  return (attemptCount ?? 0) > 0;
+}
+
 export async function getFriendChallengeParticipantTelegramId(input: {
   challengeId: string;
   creatorTelegramId: number;
@@ -539,6 +576,21 @@ export async function replyWithNewFriendChallenge(ctx: Context, telegramId: numb
       creatorTelegramId: telegramId,
     });
 
+    // Put the creator into challenge mode for their own challenge so their
+    // voice note is scored as the creator attempt — without this the owner has
+    // no pending state until the friend taps "Send Result", so any earlier
+    // recording falls through to a regular speaking session.
+    try {
+      await upsertPendingChallenge({
+        telegramId,
+        challengeId,
+        challengeType: "friend",
+        creatorUsername: formatTelegramDisplayName(ctx.from ?? null, telegramId),
+      });
+    } catch (error) {
+      console.error("Telegram creator pending challenge upsert failed", error);
+    }
+
     await ctx.reply(
       getFriendChallengeShareMessage({
         creatorName: formatTelegramDisplayName(ctx.from ?? null, telegramId),
@@ -593,6 +645,15 @@ export async function handleChallengeDeepLink(
 
     if (await hasSubmittedFriendChallenge({ challengeId: challenge.id, telegramId })) {
       await ctx.reply(getFriendChallengeAlreadyAcceptedMessage(challenge.topic), { parse_mode: "HTML" });
+      return true;
+    }
+
+    if (await friendChallengeHasOtherParticipant({
+      challengeId: challenge.id,
+      creatorTelegramId: Number(challenge.creator_telegram_id),
+      telegramId,
+    })) {
+      await ctx.reply(MESSAGES.friendChallengeFull, { ...replyKeyboard, parse_mode: "HTML" });
       return true;
     }
 

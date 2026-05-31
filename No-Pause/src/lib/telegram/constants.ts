@@ -565,7 +565,7 @@ export function getTelegramStatsMessage(input: {
   if (input.email) userLines.push(escapeTelegramHtml(input.email));
   const userPrefix = userLines.length > 0 ? `${userLines.join("\n")}\n\n` : "";
 
-  return `${userPrefix}NoPause helps you speak more fluently. Send a voice note, get a Flow Score — fewer pauses, higher score. Practice solo or challenge friends.
+  return `${userPrefix}NoPause helps you speak more fluently. Send a voice note, get a Flow Score — less dead air, higher score. Practice solo or challenge friends.
 
 📊 <b>Stats</b>
 🏆 Best: ${input.bestFlowScore}  •  📊 Avg: ${input.avgFlowScore}
@@ -609,6 +609,8 @@ export const MESSAGES = {
     "⚠️ That challenge no longer exists.\n\nI cleared the old challenge state. Ask for a fresh challenge link, then send a new voice note.",
   challengeLoadError:
     "⚠️ I could not load that challenge right now.\n\nPlease try again in a moment.",
+  friendChallengeFull:
+    "⚔️ <b>This challenge is full</b>\n\nFriend challenges are 1-on-1 — only the creator and one friend can join.\n\nAsk for a fresh challenge link to start your own.",
   challengeRestartError:
     "⚠️ I could not restart that challenge right now.\n\nPlease try again in a moment.",
   groupChallengeGone:
@@ -635,9 +637,9 @@ export const MESSAGES = {
   statsPrivate:
     "📊 Open @NoPauseAI_bot directly to view your stats.",
   speakPrivate:
-    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your fluency, pauses, and Flow Score.\n\nNeed an idea first?\n\n🌐 www.nopause.org",
+    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your speaking time, silence, and Flow Score.\n\nNeed an idea first?\n\n🌐 www.nopause.org",
   scoringInfo:
-    "🏆 <b>How scoring works</b>\n\nYou earn 1 point for every second you speak.\nYou also get 40 bonus points for every completed minute.\nEach pause subtracts 10 points.\n\nThe longer you speak without pausing, the higher your score.\n\n<b>Examples:</b>\n1 minute with no pauses = 100 points\n2 minutes with no pauses = 200 points\n2 minutes with 3 pauses = 170 points",
+    "🏆 <b>How scoring works</b>\n\nYou earn points for every second you spend speaking, plus a bonus each time you reach a full minute.\nSilence — the time you go quiet during the session — is subtracted.\n\nThe longer you speak with less dead air, the higher your score.\n\nRecord against a topic and request AI feedback for an extra bonus when your answer is strong and well-developed.",
   challengeInfo:
     "⚔️ <b>How challenges work</b>\n\nUse the Challenge button to challenge a friend.\nThey get a link to join.\nBoth of you submit a voice note.\nWhoever scores higher wins.\n\nIn groups, anyone can start a group challenge. Everyone gets the topic and can submit a voice note to compete.",
   statsInfo:
@@ -645,7 +647,7 @@ export const MESSAGES = {
   nopauseInfo:
     "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
   about:
-    "ℹ️ <b>About NoPause</b>\n\nNoPause helps you speak more fluently. Send a voice note and get a Flow Score — the longer you speak and the fewer pauses you make, the higher your score.\n\n🎤 <b>Practice</b>\nJust send a voice note anytime. Tap Speak for a quick reminder or Get Prompt for a topic idea.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTrack your streak, best score, and practice time.\n\n🌐 nopause.org",
+    "ℹ️ <b>About NoPause</b>\n\nNoPause helps you speak more fluently. Send a voice note and get a Flow Score — the longer you speak and the less dead air you leave, the higher your score.\n\n🎤 <b>Practice</b>\nJust send a voice note anytime. Tap Speak for a quick reminder or Get Prompt for a topic idea.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTrack your streak, best score, and practice time.\n\n🌐 nopause.org",
   aboutUserPrefix: (fullName?: string | null, email?: string | null): string => {
     const lines: string[] = [];
     if (fullName) lines.push(escapeTelegramHtml(fullName));
@@ -657,7 +659,7 @@ export const MESSAGES = {
   welcomeIdentify:
     "👋 I could not identify your Telegram account.",
   welcome:
-    "👋 Welcome to NoPause.\n\nConnect your account to track fluency, reduce pauses, and improve your Flow Score.",
+    "👋 Welcome to NoPause.\n\nConnect your account to track fluency, cut dead air, and improve your Flow Score.",
   welcomeBack:
     "👋 Your NoPause account is connected.\n\nSend a voice note whenever you are ready. Use /register to connect a different account.",
   register:
