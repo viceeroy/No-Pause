@@ -1,4 +1,4 @@
-import { SCORING_VERSION } from "./constants.js";
+import { SCORING_VERSION_BASE } from "./constants.js";
 
 type SupabaseQueryResult<T> = PromiseLike<{ data: T | null; error: unknown }>;
 
@@ -115,7 +115,7 @@ export function buildSessionInsertValues(input: InsertSessionInput) {
     hesitation_log: input.hesitationLog ?? null,
     transcript: input.transcript ?? null,
     analysis_feedback: input.analysisFeedback ?? null,
-    scoring_version: input.scoringVersion ?? SCORING_VERSION,
+    scoring_version: input.scoringVersion ?? SCORING_VERSION_BASE,
     source: input.source ?? "web",
     telegram_chat_id: input.telegramChatId ?? null,
     telegram_message_id: input.telegramMessageId ?? null,

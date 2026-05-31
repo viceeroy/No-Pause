@@ -1,6 +1,7 @@
 import type { Context } from "telegraf";
 import {
-  SCORING_VERSION,
+  SCORING_VERSION_BASE,
+  SCORING_VERSION_TG_BAND,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
 import { applyBandBonus, calculateFlowScore } from "../core/scoring.js";
@@ -262,6 +263,7 @@ async function insertTelegramSession(input: {
   telegramMessageId: number | null;
   flowScoreOverride?: number;
   analysisFeedback?: string | null;
+  scoringVersion: string;
 }) {
   const sessionId = await insertSession(sessionSupabase, {
     userId: input.userId,
@@ -269,7 +271,7 @@ async function insertTelegramSession(input: {
     transcript: input.transcript,
     flowScore: input.flowScoreOverride ?? input.analysis.flowScore,
     completed: input.analysis.isCompleted,
-    scoringVersion: SCORING_VERSION,
+    scoringVersion: input.scoringVersion,
     source: "telegram",
     duration: input.analysis.totalSessionTimeSec,
     speakingTime: input.analysis.speakingTimeSec,
@@ -513,6 +515,7 @@ export async function handleVoiceMessage(
     const sessionTopic = challenge?.topic ?? null;
     let aiFeedbackText: string | null = null;
     let finalScore = analysis.flowScore;
+    let bandApplied = false;
     if (sessionTopic) {
       try {
         const aiResult = await analyzePracticeSpeech({
@@ -524,6 +527,7 @@ export async function handleVoiceMessage(
           wordCount: getWordCount(transcript),
         });
         finalScore = applyBandBonus(analysis.flowScore, aiResult.band);
+        bandApplied = finalScore !== analysis.flowScore;
         aiFeedbackText = aiResult.feedback;
       } catch (error) {
         console.error("Telegram inline AI feedback failed", error);
@@ -542,6 +546,7 @@ export async function handleVoiceMessage(
         telegramMessageId,
         flowScoreOverride: finalScore,
         analysisFeedback: aiFeedbackText,
+        scoringVersion: bandApplied ? SCORING_VERSION_TG_BAND : SCORING_VERSION_BASE,
       });
       console.log('[NoPause:challenge] insertSession done', { telegram_id: telegramId, ms: Date.now() - t_insert, sessionId });
     } catch (error) {
