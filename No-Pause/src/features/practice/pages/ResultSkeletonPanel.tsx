@@ -1,4 +1,4 @@
-import { MessageSquare, Mic, Pause, TrendingUp } from 'lucide-react';
+import { MessageSquare, Mic, TrendingUp, VolumeX } from 'lucide-react';
 
 function SkeletonBlock({ className = '' }: { className?: string }) {
   return (
@@ -9,7 +9,7 @@ function SkeletonBlock({ className = '' }: { className?: string }) {
   );
 }
 
-function MetricSkeleton({ icon: Icon, label }: { icon: typeof Pause; label: string }) {
+function MetricSkeleton({ icon: Icon, label }: { icon: typeof VolumeX; label: string }) {
   return (
     <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
       <Icon size={20} className="mb-5 text-primary" />
@@ -49,7 +49,7 @@ export function ResultSkeletonPanel() {
         </section>
 
         <section className="grid grid-cols-2 gap-3 md:gap-4">
-          <MetricSkeleton icon={Pause} label="Pauses" />
+          <MetricSkeleton icon={VolumeX} label="Silence" />
           <MetricSkeleton icon={Mic} label="Speaking time" />
         </section>
 

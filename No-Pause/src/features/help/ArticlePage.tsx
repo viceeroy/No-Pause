@@ -58,10 +58,10 @@ function ScoreExampleSection({ content }: { content: ScoreExampleCard[] }) {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-sans font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Pauses
+                Silence
               </p>
               <p className="mt-1 text-sm font-serif font-medium text-foreground">
-                {card.pauseCount}
+                {card.silenceSec}s
               </p>
             </div>
           </div>

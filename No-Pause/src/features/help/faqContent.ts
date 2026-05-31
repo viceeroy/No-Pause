@@ -26,15 +26,15 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'Does NoPause save my voice recording?',
-    a: 'No. Your audio is processed to produce a transcript and detect pauses, then discarded. NoPause does not store your voice recordings. What gets saved to your account is the transcript text, your Flow Score, speaking time, silence time, and pause count. That\'s everything you see on the results screen — nothing more.',
+    a: 'No. Your audio is processed to produce a transcript and measure your speaking time and silence, then discarded. NoPause does not store your voice recordings. What gets saved to your account is the transcript text, your Flow Score, speaking time, and silence. That\'s everything you see on the results screen — nothing more.',
   },
   {
     q: 'Can I delete a session from my history?',
     a: 'Session deletion isn\'t available in the app right now. Your full history is visible on the Stats page, and every session is saved automatically after it completes. If you have a specific request about your data, reach out via the support channel and we can help manually.',
   },
   {
-    q: 'Why is my pause count high even though I spoke for a long time?',
-    a: 'Pause count and speaking time are separate measurements. You can speak for 3 minutes and still have a high pause count if you stopped frequently throughout. One thing that surprises people: a single very long silence counts as more than one pause. If you stop for several seconds, NoPause counts multiple pause units from that one gap. So one long freeze mid-sentence can add 2 or 3 to your pause count at once. Check your transcript to find where the long stops happened.',
+    q: 'Why is my silence high even though I spoke for a long time?',
+    a: 'Silence and speaking time are separate measurements. You can speak for 3 minutes and still rack up a lot of silence if you went quiet repeatedly throughout. The silence is the total of all those quiet stretches added together, so several mid-sentence freezes can add up to a surprisingly large number even in a long session. Check your transcript to find where the long stops happened.',
   },
   {
     q: 'Can I use NoPause without signing up?',
@@ -46,11 +46,11 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'How is NoPause different from just recording myself on my phone?',
-    a: 'Recording yourself manually gives you a file you have to listen back to yourself — which most people avoid. NoPause automatically measures how long you spoke, how many times you paused, and gives you a score without requiring you to review anything. Over time it builds a history so you can see whether you\'re improving without keeping track yourself. The feedback loop is automatic, which makes it easier to practice consistently.',
+    a: 'Recording yourself manually gives you a file you have to listen back to yourself — which most people avoid. NoPause automatically measures how long you spoke, how much silence crept in, and gives you a score without requiring you to review anything. Over time it builds a history so you can see whether you\'re improving without keeping track yourself. The feedback loop is automatic, which makes it easier to practice consistently.',
   },
   {
     q: 'Can I speak in a language other than English?',
-    a: 'Yes. The transcription system supports many languages — it detects the language you\'re speaking automatically. The scoring is based purely on timing and pauses, not on the words themselves, so it works the same regardless of language. The prompts in the app are in English, but you can ignore them and speak in any language you want.',
+    a: 'Yes. The transcription system supports many languages — it detects the language you\'re speaking automatically. The Flow Score is based purely on your speaking time and silence, not on the words themselves, so it works the same regardless of language. The prompts in the app are in English, but you can ignore them and speak in any language you want.',
   },
   {
     q: 'Why does the app keep asking for microphone permission?',
@@ -58,7 +58,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'What does the AI feedback do?',
-    a: 'After a session, you can request AI feedback on your transcript. It reads what you said and gives you a short coaching note — things like where your argument was strong, where you lost structure, or patterns it noticed in how you speak. It\'s optional and generated on demand, not automatically. It appears below your transcript on the results screen. It\'s useful for getting a qualitative read on top of the quantitative score.',
+    a: 'When you record against a topic prompt, you can request AI feedback on your transcript. It reads what you said and gives you a short coaching note — where your argument was strong, where you lost structure, or patterns it noticed in how you speak. It also judges how well-developed your answer was and adds a bonus to your Flow Score for a strong, substantive response. It\'s optional and generated on demand, and appears below your transcript on the results screen.',
   },
   {
     q: 'How do Telegram challenges work?',

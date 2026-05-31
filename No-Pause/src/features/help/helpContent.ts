@@ -2,7 +2,7 @@ export type ScoreExampleCard = {
   label: string;
   flowScore: number;
   speakingTime: string;
-  pauseCount: number;
+  silenceSec: number;
 };
 
 export type HelpSection =
@@ -52,7 +52,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'Your results page has three numbers worth understanding. Flow Score captures how continuously you spoke — higher means fewer long stops broke your momentum. Speaking time is how long your voice was actually active. Pause count is how many times you stopped for longer than a natural breath.',
+          'Your results page has three numbers worth understanding. Flow Score captures how continuously you spoke — higher means less dead air broke your momentum. Speaking time is how long your voice was actually active. Silence is the total time your voice went quiet during the session — the gaps add up and pull the score down.',
       },
       {
         type: 'score-example',
@@ -61,13 +61,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
             label: 'A typical first session',
             flowScore: 65,
             speakingTime: '1:15',
-            pauseCount: 5,
+            silenceSec: 50,
           },
           {
             label: 'After a week of practice',
             flowScore: 130,
             speakingTime: '1:50',
-            pauseCount: 2,
+            silenceSec: 20,
           },
         ],
       },
@@ -82,26 +82,31 @@ export const HELP_ARTICLES: HelpArticle[] = [
     slug: 'understanding-flow-score',
     icon: '📈',
     title: 'Understanding Your Flow Score',
-    summary: 'The longer you speak without long stops, the higher your score.',
+    summary: 'The longer you speak with less dead air, the higher your score.',
     sections: [
       {
         type: 'text',
         content:
-          'Flow Score is a single number that captures how smoothly your session moved. The more time you spend actually speaking, the higher it climbs. The more long stops you have, the lower it ends up.',
+          'Flow Score is a single number that captures how smoothly your session moved. The more time you spend actually speaking, the higher it climbs. The more silence piles up between your words, the lower it ends up.',
       },
       {
         type: 'callout',
         content: [
-          { label: 'Each second of speaking', value: '+1 point' },
-          { label: 'Each full minute spoken', value: '+40 bonus' },
-          { label: 'Each long pause', value: '−10 points' },
+          { label: 'Time spent speaking', value: 'Raises your score' },
+          { label: 'Each full minute spoken', value: 'Bonus boost' },
+          { label: 'Silence during the session', value: 'Lowers your score' },
           { label: 'Minimum score', value: '0' },
         ],
       },
       {
         type: 'text',
         content:
-          'You can think of it this way — every second you spend speaking adds to your score, and the bonus for each full minute rewards you for keeping momentum going. Every long pause subtracts. Short, natural breaths between words do not count against you — only the longer unplanned stops do.',
+          'You can think of it this way — every moment you spend speaking adds to your score, and reaching each full minute rewards you for keeping momentum going. The total silence in your session is subtracted. Short, natural breaths between words barely register — it is the longer quiet stretches that add up against you.',
+      },
+      {
+        type: 'text',
+        content:
+          'There is also a bonus on top. When you record against a topic prompt, you can request AI feedback on what you said — and a strong, well-developed answer adds extra points to your Flow Score. Speaking smoothly gets you the base score; speaking with substance pushes it higher.',
       },
       {
         type: 'score-example',
@@ -110,20 +115,20 @@ export const HELP_ARTICLES: HelpArticle[] = [
             label: 'A confident session',
             flowScore: 186,
             speakingTime: '2:06',
-            pauseCount: 2,
+            silenceSec: 20,
           },
           {
             label: 'A hesitant session',
             flowScore: 42,
             speakingTime: '1:32',
-            pauseCount: 9,
+            silenceSec: 90,
           },
         ],
       },
       {
         type: 'text',
         content:
-          'Notice how the confident session has a much higher Flow Score even though the speaking time is only a little longer. The difference is in the pause count — fewer interruptions means more momentum, and the full-minute bonus kicks in twice instead of once.',
+          'Notice how the confident session has a much higher Flow Score even though the speaking time is only a little longer. The difference is the silence — far less dead air means more momentum, and the full-minute bonus kicks in twice instead of once.',
       },
       {
         type: 'tip',
@@ -135,44 +140,44 @@ export const HELP_ARTICLES: HelpArticle[] = [
   {
     slug: 'what-counts-as-a-pause',
     icon: '⏸️',
-    title: 'What Counts as a Pause',
-    summary: 'Small natural gaps are fine — only longer stops affect your score.',
+    title: 'What Counts as Silence',
+    summary: 'Small natural gaps barely matter — it is the longer quiet stretches that add up.',
     sections: [
       {
         type: 'text',
         content:
-          'NoPause is designed to ignore the tiny gaps that happen in normal speech. The little breath between words, the half-beat before a new sentence — none of those count against you.',
+          'NoPause measures the silence in your session — the time your voice is not active. The tiny gaps that happen in normal speech, like the breath between words or the half-beat before a new sentence, are so short they barely move your score.',
       },
       {
         type: 'callout',
         content: [
-          { label: 'Natural breath between words', value: 'Not counted' },
-          { label: 'Filled pause (um, uh)', value: 'Not counted' },
-          { label: 'Long unplanned stop', value: 'Counted' },
-          { label: 'Pause threshold', value: '1.2 seconds' },
+          { label: 'Natural breath between words', value: 'Barely counts' },
+          { label: 'Filled sound (um, uh)', value: 'Counts as speaking' },
+          { label: 'Long quiet stretch', value: 'Adds up against you' },
+          { label: 'What lowers your score', value: 'Total silence' },
         ],
       },
       {
         type: 'text',
         content:
-          'Only stops longer than 1.2 seconds register as pauses. These are the moments when you lose your train of thought, get stuck searching for a word, or trail off without finishing the sentence. Those are the ones that affect your score.',
+          'The longer you go quiet, the more it adds up. These are the moments when you lose your train of thought, get stuck searching for a word, or trail off without finishing the sentence. The total time spent silent is what pulls your score down — a few short gaps cost almost nothing, but long freezes add up fast.',
       },
       {
         type: 'pause-visual',
         content: {
           caption:
-            'The green bars are speaking. The white gaps between them are silence — short ones are normal, long ones are counted pauses.',
+            'The green bars are speaking. The white gaps between them are silence — short ones cost almost nothing, long ones add up against your score.',
         },
       },
       {
         type: 'text',
         content:
-          'Short stumbles between words also do not hurt your score. If you say something twice, restart a sentence, or trip over a phrase, that is normal speech — not a pause.',
+          'Short stumbles between words do not hurt your score. If you say something twice, restart a sentence, or trip over a phrase while still making sound, that is counted as speaking — not silence.',
       },
       {
         type: 'tip',
         content:
-          'Do not try to eliminate every pause. Just work on avoiding the long, unplanned ones that break your momentum.',
+          'Do not try to eliminate every gap. Just work on cutting the long, quiet stretches that break your momentum.',
       },
     ],
   },
@@ -194,13 +199,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
             label: 'A hesitant first session',
             flowScore: 20,
             speakingTime: '1:00',
-            pauseCount: 8,
+            silenceSec: 80,
           },
           {
             label: 'Two weeks later',
             flowScore: 115,
             speakingTime: '1:45',
-            pauseCount: 3,
+            silenceSec: 30,
           },
         ],
       },
@@ -217,7 +222,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'After each session, look at your pause count alongside the score. The score tells you the final result — the pause count tells you where the friction was. If your score dropped but your speaking time held steady, you had more stops, not less content.',
+          'After each session, look at your silence alongside the score. The score tells you the final result — the silence tells you where the friction was. If your score dropped but your speaking time held steady, you spent more time quiet, not less time talking.',
       },
       {
         type: 'tip',
@@ -249,7 +254,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'The dashboard shows your recent session history so you can see the pattern over time. Over a few weeks, look for a trend toward higher Flow Scores and lower pause counts rather than judging any individual session. One bad day surrounded by good ones is noise — a week of declining scores is a signal.',
+          'The dashboard shows your recent session history so you can see the pattern over time. Over a few weeks, look for a trend toward higher Flow Scores and less silence rather than judging any individual session. One bad day surrounded by good ones is noise — a week of declining scores is a signal.',
       },
       {
         type: 'text',
@@ -286,7 +291,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'To run a session, just send any voice note to the bot. NoPause processes the audio and replies with a scored result — the same Flow Score, speaking time, and pause count you get from a web session.',
+          'To run a session, just send any voice note to the bot. NoPause processes the audio and replies with a scored result — the same Flow Score, speaking time, and silence you get from a web session.',
       },
       {
         type: 'text',
@@ -430,7 +435,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'A practical routine the day before: open NoPause, pick a prompt from the Argue or Opinion category, and do two sessions back to back. Do not aim for a high score — aim to get comfortable hearing your own voice under mild pressure. Review your pause count after each one. The goal is to notice where you stop, not to be perfect.',
+          'A practical routine the day before: open NoPause, pick a prompt from the Argue or Opinion category, and do two sessions back to back. Do not aim for a high score — aim to get comfortable hearing your own voice under mild pressure. Review your silence after each one. The goal is to notice where you go quiet, not to be perfect.',
       },
       {
         type: 'score-example',
@@ -439,13 +444,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
             label: 'A warm-up session',
             flowScore: 60,
             speakingTime: '1:20',
-            pauseCount: 6,
+            silenceSec: 60,
           },
           {
             label: 'After two sessions',
             flowScore: 120,
             speakingTime: '1:50',
-            pauseCount: 3,
+            silenceSec: 30,
           },
         ],
       },

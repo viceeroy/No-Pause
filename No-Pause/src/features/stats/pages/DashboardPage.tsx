@@ -190,7 +190,7 @@ export default function DashboardPage() {
             </div>
             <h3 className="mb-3 text-3xl font-serif font-medium text-foreground md:text-4xl">Start with your voice</h3>
             <p className="max-w-md text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-              Speak freely — we'll track your flow and pinpoint every pause.
+              Speak freely — we'll track your flow and pinpoint every silence.
             </p>
             <div className="mt-7 hidden items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-sans font-bold text-primary-foreground shadow-soft md:inline-flex">
               <Mic size={16} aria-hidden="true" /> Start Speaking

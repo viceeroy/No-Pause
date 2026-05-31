@@ -1,5 +1,9 @@
 # Changelog
 
+## May 31, 2026
+
+Updated all user-facing help, FAQ, and Telegram copy to match the silence-based Flow Score. The score now subtracts total silence time (not a count of pauses), and copy was reworded to describe this in plain language rather than stating formulas. The "What Counts as a Pause" article is reframed around silence, the Flow Score article now also explains the AI-feedback bonus for strong topic answers, example cards show silence instead of pause count, and the results skeleton now shows a Silence placeholder to match the live results screen. Telegram scoring/about/welcome messages no longer reference pause counts.
+
 ## May 22, 2026
 
 Polished the mobile dashboard and stats experience. The homepage header now keeps the No Pause logo, install button, and avatar from crowding each other on small screens, while the prompt cards keep a clear horizontal-scroll peek on phones and tablets.

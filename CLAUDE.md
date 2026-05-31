@@ -58,8 +58,8 @@ Locate these before touching anything. Wrong import = RLS bypass or browser cras
 
 ## Hard Rules
 
-- **Flow Score is frozen:** `score = speakingTimeSec + floor(speakingTimeSec/60)*40 - hesitationCount*10`, floor 0. Never alter, rename, or approximate differently.
-- **Pause threshold is fixed at 1.2s.** Not a user setting.
+- **Flow Score is frozen:** `score = max(0, speakingTimeSec + floor(speakingTimeSec/60)*40 - round(totalSilenceSeconds))`, requires ≥5s speaking (else score 0, not completed). Subtracts total silence **seconds**, not a pause count. Source of truth: `src/lib/core/scoring.ts` (`calculateFlowScore`). AI content bonus added separately via `applyBandBonus` (`+band*10` when score > 0). Never alter, rename, or approximate differently.
+- **Silence threshold is fixed at 1.5s** (`DEFAULT_PAUSE_THRESHOLD`). Word-timestamp gaps ≥1.5s count as silence; shorter gaps ignored. Not a user setting.
 - **Mode is always `'speaking'`.** Normalize legacy `free_speaking` on write, never store it.
 - **RLS always.** `supabaseServer` is server-only — never import in frontend files.
 - **Stay in scope.** Only modify lines related to the task. Flag other issues, don't fix them silently.
