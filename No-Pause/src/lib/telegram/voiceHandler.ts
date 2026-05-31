@@ -55,6 +55,28 @@ import {
   MESSAGES,
 } from "./constants.js";
 
+const TELEGRAM_DEBUG = process.env.NOPAUSE_DEBUG_TELEGRAM === "true";
+function debugLog(...args: unknown[]) {
+  if (TELEGRAM_DEBUG) console.log(...args);
+}
+
+async function sendResult(
+  ctx: Context,
+  opts: {
+    text: string;
+    keyboard: Record<string, any>;
+    logTemplate: string;
+    tTotal: number;
+    telegramChatId: number | null;
+    telegramId: number;
+  }
+): Promise<void> {
+  const t_reply = Date.now();
+  await ctx.reply(opts.text, { ...opts.keyboard, parse_mode: "HTML" });
+  debugLog('[NoPause:challenge] bot reply sent', { template: opts.logTemplate, chat_id: opts.telegramChatId, ms: Date.now() - t_reply });
+  debugLog('[NoPause:challenge] handler done', { telegram_id: opts.telegramId, ms: Date.now() - opts.tTotal });
+}
+
 const sessionSupabase = supabaseServer as unknown as SupabaseLike;
 const MAX_TELEGRAM_VOICE_DURATION_SECONDS = 300;
 const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS = 10_000;
