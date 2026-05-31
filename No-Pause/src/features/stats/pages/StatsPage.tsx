@@ -143,7 +143,8 @@ type StatsPageProps = {
 type TelegramChallengeStats = {
   friendChallenges: number;
   groupChallenges: number;
-  wins: number;
+  friendWins: number;
+  groupWins: number;
 } | null;
 
 export default function StatsPage({
@@ -237,11 +238,12 @@ export default function StatsPage({
 
       const telegramId = Number(connection.telegram_id);
       if (!Number.isFinite(telegramId)) {
-        setTelegramChallengeStats(null);
+        console.error("[NoPause] telegramId resolution failed — telegram_connections lookup returned null");
+        setTelegramChallengeStats({ friendChallenges: 0, groupChallenges: 0, friendWins: 0, groupWins: 0 });
         return;
       }
 
-      const [challengeCounts, wins] = await Promise.all([
+      const [challengeCounts, winsByType] = await Promise.all([
         getTelegramChallengeCounts(telegramId, supabase),
         getTelegramChallengeWins(telegramId, supabase),
       ]);
@@ -249,7 +251,7 @@ export default function StatsPage({
       if (!isCancelled) {
         setTelegramChallengeStats({
           ...challengeCounts,
-          wins,
+          ...winsByType,
         });
       }
     }
@@ -408,13 +410,13 @@ export default function StatsPage({
             </span>
           </div>
           {telegramChallengeStats && (
-            <div className="mt-4 grid grid-cols-3 gap-2 md:gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-2 md:gap-3">
               <div className="rounded-[16px] border border-border bg-surface-elevated p-3 text-left">
                 <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-muted-foreground">
                   Friend Challenges
                 </p>
                 <p className="mt-3 text-2xl font-serif font-medium leading-none text-foreground">
-                  {telegramChallengeStats.friendChallenges}
+                  {telegramChallengeStats.friendChallenges} / {telegramChallengeStats.friendWins}
                 </p>
               </div>
               <div className="rounded-[16px] border border-border bg-surface-elevated p-3 text-left">
@@ -422,15 +424,7 @@ export default function StatsPage({
                   Group Challenges
                 </p>
                 <p className="mt-3 text-2xl font-serif font-medium leading-none text-foreground">
-                  {telegramChallengeStats.groupChallenges}
-                </p>
-              </div>
-              <div className="rounded-[16px] border border-amber-300/60 bg-amber-50 p-3 text-left dark:border-amber-400/40 dark:bg-amber-950/30">
-                <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-amber-700 dark:text-amber-300">
-                  1st Place
-                </p>
-                <p className="mt-3 text-2xl font-serif font-medium leading-none text-amber-600 dark:text-amber-300">
-                  🥇 {telegramChallengeStats.wins}
+                  {telegramChallengeStats.groupChallenges} / {telegramChallengeStats.groupWins}
                 </p>
               </div>
             </div>
