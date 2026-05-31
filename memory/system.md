@@ -83,7 +83,7 @@ lib/
   core/
     scoring.ts                  Flow Score source of truth (calculateFlowScore, getScoreLabel)
     silence.ts                  Shared silence + speaking time from word timestamps (analyzeSilenceFromTimestamps)
-    constants.ts                DEFAULT_PAUSE_THRESHOLD, SCORING_VERSION, thresholds, labels
+    constants.ts                DEFAULT_PAUSE_THRESHOLD, SCORING_VERSION_BASE, SCORING_VERSION_TG_BAND, thresholds, labels
     session.ts                  insertSession, updateStreak, missing-column fallback helpers
     queries.ts                  Session/streak reads, stats aggregation, buildPracticeStats
     modes.ts                    normalizeMode (always returns "speaking"), PracticeMode
@@ -161,7 +161,7 @@ shared/
 7. `useSession.saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
 8. If the transcript is missing post-session and `audioBlob` exists, `ResultPanel` can show a manual Transcribe button that triggers `useSession.requestTranscription()` → `practiceApi.transcribeAudio()` → `/api/transcription`.
 9. Optional AI feedback: `practiceApi.analyzeSpeech()` → `/api/feedback` → Groq → stored on session.
-10. Stats pages read via `getPracticeStats` / `buildPracticeStats`.
+10. Stats pages read via `getPracticeStats` / `buildPracticeStats`. The RPC excludes `tg-band-1.0` and `tg-legacy` versions from averages and bests via an `is_comparable` flag (null/unknown treated as comparable). Total counts, practice time, and streaks still span all sessions, and `recentSessions` includes all rows with their `scoringVersion`. For silence, the RPC prefers the stored `total_silence_time` and falls back to derived `duration − speaking_time` only when it is NULL (pre-S6 rows).
 
 ### Telegram Voice / Challenge
 
@@ -174,7 +174,7 @@ shared/
 7. `analyzeTranscript` calls `analyzeSilenceFromTimestamps` (same shared helper as web) to compute `totalSilenceSec` and `speakingTimeSec`; `calculateFlowScore` scores them. If a challenge topic exists, `analyzePracticeSpeech` runs and `applyBandBonus(baseScore, band)` adds `band * 10` to produce `finalScore` (only when `baseScore > 0`).
 8. `insertTelegramSession` stores `finalScore` (band-adjusted when applicable) as `flow_score`; `updateStreak` follows.
 9. AI feedback runs only when a challenge topic exists (`challenge.topic`); regular (no-challenge) sessions skip AI feedback and append a note prompting the user to pick a topic.
-10. Bot replies with Flow Score, silence, speaking time, transcript, and optional AI feedback.
+10. Bot replies with Flow Score, silence, speaking time, transcript, and optional AI feedback. Result replies go through a shared `sendResult` helper (reply + timing logs). Verbose progress logs throughout `handleVoiceMessage` are gated behind `NOPAUSE_DEBUG_TELEGRAM` via `debugLog`.
 11. `replyWithAiFeedback` (on-demand "AI Feedback" button callback): sessions table has no topic column → always replies with the no-topic note, never calls Groq. Groq call block removed entirely.
 
 ---
@@ -247,10 +247,11 @@ The `finishing` state is set immediately when the user taps Finish, showing `Res
 | `public.telegram_challenge_attempts` | `id`, `challenge_id`, `telegram_id`, `session_id`, `created_at` |
 
 Notes:
-- `insertSession` / query helpers include fallbacks for deployments missing newer columns like `pause_count` or `total_silence_time`.
+- `total_silence_time` (integer, nullable) now exists on `sessions`. New sessions persist the measured (timestamp-derived) silence; pre-S6 rows are NULL. `get_practice_stats` coalesces the stored value with the derived `duration − speaking_time` fallback for NULL/old rows.
+- `insertSession` / query helpers include fallbacks for deployments missing newer columns. The stripped/checked set is `pause_count`, `hesitations_per_minute`, `telegram_chat_id`, `telegram_message_id` (see Notable Quirks → Legacy column fallback). `total_silence_time` and `analysis_feedback` are no longer in this set.
 - Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not appear.
 - Base `sessions`/`streaks` schema and RLS policies are not fully represented in repo migrations.
-- `scoring_version` column exists but has no defined versioning scheme yet (S3 pending); code currently assigns only "1.0". See Notable Quirks → Scoring cohorts.
+- `scoring_version` column: Holds one of three values (`base-1.0`, `tg-band-1.0`, `tg-legacy`), with a DB default of `base-1.0`. See Notable Quirks → Scoring cohorts.
 
 ---
 
@@ -268,6 +269,7 @@ Notes:
 | `TELEGRAM_WEBHOOK_SECRET` | Server only | Telegram webhook secret header |
 | `NOPAUSE_INTERNAL_API_TOKEN` | Server only | Internal Telegram-to-API auth |
 | `NOPAUSE_API_URL` / `NOPAUSE_INTERNAL_API_URL` / `VERCEL_URL` | Server only | Routing |
+| `NOPAUSE_DEBUG_TELEGRAM` | Server only | When `"true"`, enables verbose Telegram voice-handler debug logging via `debugLog`; silent otherwise |
 
 **Never add `VITE_GROQ_API_KEY`** — provider keys are server-only.
 
@@ -300,17 +302,18 @@ Notes:
 - **`window.__nopauseExportLogs`** — debug hook in `ResultPanel.tsx`; visible only when `localStorage.getItem('debugLogs') === 'true'`.
 - **Browser SpeechRecognition disabled** — Browser `SpeechRecognition` is commented out in `transcription.ts` (not deleted) for easy rollback. Android no longer needs special transcription handling because browser SpeechRecognition is disabled for all platforms. Do not re-enable browser SpeechRecognition as primary without removing the Groq-primary path first.
 - **RMS pipeline still running** — `micStateMachine`, `speechSession`, and `audioCapture` still run during recording, but RMS-derived data is no longer used for scoring at all. Scoring is entirely timestamp-derived via `analyzeSilenceFromTimestamps`. The RMS pipeline can be removed in a future cleanup.
-- **Legacy column fallback** — `practiceApi.ts` and `insertSession` retry with a smaller column set if `total_silence_time` or `analysis_feedback` columns are missing (schema migration safety net).
+- **Legacy column fallback** — `isMissingSessionAnalysisColumnError` (`session.ts`) detects a missing-column error via Postgres codes `PGRST204`/`42703` or a message mentioning `pause_count`, `hesitations_per_minute`, `telegram_chat_id`, or `telegram_message_id`. On a hit, `buildLegacySessionInsertValues` strips exactly those four columns for the retry insert, and `practiceApi.ts` re-queries with a smaller select (it reuses the same predicate — no separate column list of its own). `total_silence_time` and `analysis_feedback` are **not** in the strip set: `total_silence_time` was removed once the column shipped (S6), and `analysis_feedback` was never in it.
 - **Vercel root** — The Vercel project root is the repo root, not `No-Pause/`. Running `vercel deploy` from `No-Pause/` causes a doubled `No-Pause/No-Pause` path error.
 - **`APP_URL`, `SITE_URL`, and Google redirect URLs** are hardcoded and require code changes for non-production domains.
 - **`src/lib/core/prompts.ts`** must not be removed; Telegram prompt/challenge behavior depends on it.
 - **Service worker** (`sw.js`) uses stale-while-revalidate for core assets, network-first for navigation.
 - **Filler tracking** was removed repo-wide on 2026-05-18. Any memory or code reference to `filler_count`, `fillerCount`, `generateFillerCount`, or `fillerWordCount` is historical only.
 - **Telegram voice duration cap** — `MAX_TELEGRAM_VOICE_DURATION_SECONDS = 300` (5 min) enforced in `voiceHandler.ts` before download. Messages over this limit are rejected with a reply.
-- **Scoring cohorts (behavioral)** — The database contains two distinct scoring cohorts based on submission date:
-  - Pre-2026-05-24: `blendWithAiScore` (AI speech quality 0–100 added to flow score) ran before `insertSession` on the bot, so Telegram sessions saved before that date may have higher `flow_score` values than the formula alone would produce (web sessions are unaffected as their blend was on-demand and never saved back to the DB).
-  - Post-2026-05-24: `applyBandBonus` (`band × 10`) is applied for topic challenges only (gated by `isScorableSession` / `baseScore > 0`). Sessions without a topic skip this entirely.
-- **scoring_version column** — Present in `public.sessions` but not yet populated with a defined versioning scheme (pending the S3 migration). The codebase currently only assigns the literal `"1.0"` (from `SCORING_VERSION` in `src/lib/core/constants.ts`).
+- **Scoring cohorts (versioned in DB)** — The `scoring_version` column classifies sessions into three schemes:
+  - `base-1.0` — pure `calculateFlowScore` output; comparable. Written for all web sessions and Telegram sessions with no band bonus. DB column default.
+  - `tg-band-1.0` — Telegram challenge session where `applyBandBonus` ran; `flow_score` includes `band×10`. Not comparable to base.
+  - `tg-legacy` — historical pre-2026-05-24 Telegram (blend-era). Never written by current code; backfill-only.
+  Note the backfill boundary: pre-2026-05-24 Telegram → `tg-legacy`; post-2026-05-24 Telegram with a topic-bearing challenge → `tg-band-1.0`; everything else → `base-1.0`.
 
 ---
 
