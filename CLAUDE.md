@@ -104,14 +104,17 @@ system.md needs update: [yes/no — which section]
 
 ## Obsidian Vault Logging
 
+Vault: `/Users/viseeroy/Desktop/viseeroy/No Pause/`. Source only from codebase + `memory/system.md` — no invented facts. No theme/styling content. Link notes with `[[wikilinks]]`. Never touch the founder's `Thoughts/` folder.
+
 After completing any significant task or feature:
 
-1. Update `CHANGELOG.md` in the project root
-2. Save a new file to `/Users/viseeroy/Desktop/NoPause.sd/Changelog/`
-   - Filename: `YYYY-MM-DD-short-description.md`
-   - Content: what changed, why, what's next (max 20 lines)
+1. Update `CHANGELOG.md` in the project root.
+2. Update the vault `Changes/` folder — **one note per day**, `YYYY-MM-DD.md`, summarized for humans, date at the bottom. If several changes land the same day, fold them into that day's single note.
 
-For system/architecture updates only (stack changes, major refactors):
-- Append to `/Users/viseeroy/Desktop/NoPause.sd/Decisions/system.md` — new entries at top with date
-- Do not create new files in Decisions/
-- Skip for small fixes and minor tweaks
+For new/changed features or architecture:
+- `About/` — one note per feature group, named with the actual codebase name (≤4 words), human + technical.
+- `Architecture/` — mermaid diagrams (System Overview, Web/Telegram flows, Scoring Pipeline, Data Model, Source Layout).
+- `Rules/` — strict invariants only.
+- Skip vault updates for small fixes and minor tweaks.
+
+For system/architecture updates (stack changes, major refactors), also append to `memory/system.md` — new entries at top with date.
