@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Clock, Shuffle } from 'lucide-react';
+import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
 
@@ -159,51 +159,6 @@ export function SetupCountdownPanel({
                       >
                         {i === 0 ? 'Speak freely' : slide}
                       </p>
-
-                      {i === 0 && (
-                        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setTimerMenuOpen(!timerMenuOpen)}
-                              className={cn(pillBase, selectedTimerSeconds > 0 ? pillActive : pillIdle)}
-                            >
-                              <Clock size={15} className="text-primary shrink-0" />
-                              {timerLabel}
-                            </button>
-                            {timerMenuOpen && (
-                              <div className="absolute bottom-full left-1/2 z-50 mb-2 w-36 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
-                                {timerOptions.map((option) => (
-                                  <button
-                                    key={option.seconds}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedTimerSeconds(option.seconds);
-                                      setTimerMenuOpen(false);
-                                    }}
-                                    className={cn(
-                                      'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
-                                      selectedTimerSeconds === option.seconds
-                                        ? 'bg-primary/15 text-foreground'
-                                        : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
-                                    )}
-                                  >
-                                    {option.label}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setRandomMode(!randomMode)}
-                            className={cn(pillBase, randomMode ? pillActive : pillIdle)}
-                          >
-                            <Shuffle size={15} className="shrink-0 text-primary" />
-                            Random
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -211,6 +166,58 @@ export function SetupCountdownPanel({
             </div>
 
             <div className="flex w-full flex-col items-center gap-4 pb-2 pt-6 md:pt-0 md:pb-0">
+              {/* Fixed control row — stays put while the carousel prompt changes. */}
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+                    className={cn(pillBase, selectedTimerSeconds > 0 ? pillActive : pillIdle)}
+                  >
+                    <Clock size={15} className="text-primary shrink-0" />
+                    {timerLabel}
+                  </button>
+                  {timerMenuOpen && (
+                    <div className="absolute bottom-full left-1/2 z-50 mb-2 w-36 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
+                      {timerOptions.map((option) => (
+                        <button
+                          key={option.seconds}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTimerSeconds(option.seconds);
+                            setTimerMenuOpen(false);
+                          }}
+                          className={cn(
+                            'w-full rounded-xl px-3 py-2 text-left text-xs font-sans font-semibold transition-colors',
+                            selectedTimerSeconds === option.seconds
+                              ? 'bg-primary/15 text-foreground'
+                              : 'text-muted-foreground hover:bg-surface-card hover:text-foreground'
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={slides.length < 2}
+                  onClick={() => setActiveIndex(activeIndex > 0 ? 0 : 1)}
+                  className={cn(pillBase, activeIndex > 0 ? pillActive : pillIdle, 'disabled:cursor-not-allowed disabled:opacity-50')}
+                >
+                  <ListChecks size={15} className="shrink-0 text-primary" />
+                  Prompts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRandomMode(!randomMode)}
+                  className={cn(pillBase, randomMode ? pillActive : pillIdle)}
+                >
+                  <Shuffle size={15} className="shrink-0 text-primary" />
+                  Random
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={handleStartClick}

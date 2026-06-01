@@ -2,6 +2,10 @@
 
 ## June 1, 2026
 
+Moved the practice setup controls out of the swiping carousel into a fixed row below the prompt card. The old "Prompts" pill — removed during the carousel rewrite — is restored, so the control row is again **No timer · Prompts · Random**, and it no longer rides the deck or disappears on prompt cards. "Prompts" now jumps the carousel to the first prompt card (and back to "Speak freely" when already on a prompt); it is disabled when no prompts exist. "No timer" (duration dropdown) and "Random" toggle behave as before. The buttons stay put while you swipe between prompts. Merged the carousel branch into `main` as part of this fix.
+
+## June 1, 2026
+
 Replaced the practice setup screen's single card + button row with a horizontal swipeable card carousel. Card 0 is "Speak freely"; cards 1…N each show one prompt from `opinionPrompts` (capped at the first 20). Touch swipe and mouse drag both work, cards snap on release, and the deck is clamped at both ends. On first render the deck does a one-time nudge — shifting ~30px left to reveal card 1's edge, then snapping back. The "No timer" duration control and a new "Random" toggle now live on Card 0 only; the old "Prompts" pill (which navigated to `/prompts`) is gone. "Start Speaking" sits below the carousel: Card 0 starts free-speaking, Card 0 + Random starts a random prompt, and any prompt card starts that prompt. Selection is wired into the existing `topicPrompt` flow unchanged — no scoring, session, or save logic touched. Implemented with native pointer events, no new dependencies.
 
 ## May 31, 2026
