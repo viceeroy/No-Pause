@@ -1,5 +1,9 @@
 # Changelog
 
+## June 1, 2026
+
+Replaced the practice setup screen's single card + button row with a horizontal swipeable card carousel. Card 0 is "Speak freely"; cards 1…N each show one prompt from `opinionPrompts` (capped at the first 20). Touch swipe and mouse drag both work, cards snap on release, and the deck is clamped at both ends. On first render the deck does a one-time nudge — shifting ~30px left to reveal card 1's edge, then snapping back. The "No timer" duration control and a new "Random" toggle now live on Card 0 only; the old "Prompts" pill (which navigated to `/prompts`) is gone. "Start Speaking" sits below the carousel: Card 0 starts free-speaking, Card 0 + Random starts a random prompt, and any prompt card starts that prompt. Selection is wired into the existing `topicPrompt` flow unchanged — no scoring, session, or save logic touched. Implemented with native pointer events, no new dependencies.
+
 ## May 31, 2026
 
 Updated all user-facing help, FAQ, and Telegram copy to match the silence-based Flow Score. The score now subtracts total silence time (not a count of pauses), and copy was reworded to describe this in plain language rather than stating formulas. The "What Counts as a Pause" article is reframed around silence, the Flow Score article now also explains the AI-feedback bonus for strong topic answers, example cards show silence instead of pause count, and the results skeleton now shows a Silence placeholder to match the live results screen. Telegram scoring/about/welcome messages no longer reference pause counts.

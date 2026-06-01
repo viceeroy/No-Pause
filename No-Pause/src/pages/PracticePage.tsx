@@ -10,12 +10,13 @@ import {
 } from '@/shared/components/ui/dialog';
 import { cn } from '@/shared/lib/utils';
 import { SetupCountdownPanel } from '@/features/practice/pages/SetupCountdownPanel';
+import type { StartSelection } from '@/features/practice/pages/SetupCountdownPanel';
 import { RecordingPanel } from '@/features/practice/pages/RecordingPanel';
 import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { ResultSkeletonPanel } from '@/features/practice/pages/ResultSkeletonPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
-import { getRandomPrompt } from '@/lib/core/prompts';
+import { getRandomPrompt, opinionPrompts } from '@/lib/core/prompts';
 import { formatDuration } from '@/lib/core/time';
 
 const timerOptions = [
@@ -74,11 +75,7 @@ export default function PracticePage() {
   };
 
   const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';
-  const promptSource: 'prompts' | 'random' | null = promptTextParam
-    ? 'prompts'
-    : state.topicPrompt?.category === 'SPEAKING_PRACTICE'
-      ? 'random'
-      : null;
+  const carouselPrompts = useMemo(() => opinionPrompts.slice(0, 20), []);
   const timerLabel = useMemo(
     () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
     [selectedTimerSeconds],
@@ -114,12 +111,15 @@ export default function PracticePage() {
     });
   };
 
-  const handleOpenPrompts = () => {
-    navigate('/prompts');
-  };
-
-  const handleRandomPrompt = () => {
-    applyPrompt(getRandomPrompt(promptText || undefined));
+  const handleStartWithSelection = (selection: StartSelection) => {
+    if (selection.type === 'free') {
+      state.setTopicPrompt(null);
+    } else if (selection.type === 'random') {
+      applyPrompt(getRandomPrompt(promptText || undefined));
+    } else {
+      applyPrompt(selection.text);
+    }
+    void recording.handleStart();
   };
 
   return (
@@ -169,10 +169,8 @@ export default function PracticePage() {
           setSelectedTimerSeconds={setSelectedTimerSeconds}
           timerOptions={timerOptions}
           promptText={promptText}
-          promptSource={promptSource}
-          handleOpenPrompts={handleOpenPrompts}
-          handleRandomPrompt={handleRandomPrompt}
-          handleStart={() => recording.handleStart()}
+          prompts={carouselPrompts}
+          onStart={handleStartWithSelection}
           countdown={state.countdown}
         />
       )}
