@@ -47,6 +47,32 @@ Write 2–4 sentences of feedback. Be direct and specific — quote the transcri
 Respond only in this JSON format:
 {"band": <1-9>, "feedback": "<your feedback here>"}`;
 
+const FREE_SPEECH_SYSTEM_PROMPT = `You are a speech coach giving feedback on a freely-spoken response (no assigned topic).
+
+You will receive:
+- TRANSCRIPT: what they said
+- STATS: speaking time, word count, pause count
+
+Evaluate the transcript on exactly these 3 criteria, judging the speech on its own merit:
+
+1. IDEA DEVELOPMENT — did they expand their points with reasoning, or just state them once?
+2. SUPPORTING DETAILS — did they use examples, specifics, or evidence?
+3. LOGICAL CONNECTION — do sentences and ideas link together in a coherent thread?
+
+Assign a band 1–9:
+- 1–2: incoherent or disconnected; ideas barely formed
+- 3–4: shallow; ideas stated, not developed; few or no supporting details
+- 5–6: some development and at least one supporting detail; ideas mostly connect
+- 7–8: well-developed; clear logical thread; good use of specifics
+- 9: exceptionally tight; strong reasoning and details throughout
+
+Be strict. Default to a lower band unless evidence is clearly present in the transcript. A response that says little of substance is a 3, not a 5.
+
+Write 2–4 sentences of feedback. Be direct and specific — quote the transcript when pointing out strengths or weaknesses. No generic praise.
+
+Respond only in this JSON format:
+{"band": <1-9>, "feedback": "<your feedback here>"}`;
+
 function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
   try {
     const parsed = JSON.parse(raw);
@@ -68,14 +94,13 @@ function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
 }
 
 const buildPracticeFeedbackUserMessage = (input: {
-  topic: string;
+  topic?: string;
   transcript: string;
   hesitationCount: number;
   speakingTime: number;
   wordCount: number;
 }) =>
-  `TOPIC: ${input.topic}
-TRANSCRIPT: ${input.transcript}
+  `${input.topic ? `TOPIC: ${input.topic}\n` : ""}TRANSCRIPT: ${input.transcript}
 STATS: speaking time ${input.speakingTime}s, word count ${input.wordCount}, pause count ${input.hesitationCount}`;
 
 export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): Promise<AiFeedbackResult> {
@@ -85,7 +110,8 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
       throw new Error("Transcript is empty");
     }
 
-    const topic = input.topic?.trim() || "Not specified";
+    const topic = input.topic?.trim();
+    const hasTopic = !!topic;
     const hesitationCount = input.hesitationCount ?? 0;
     const speakingTime = input.speakingTime ?? 0;
     const wordCount = input.wordCount ?? 0;
@@ -95,7 +121,7 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
       hesitationCount,
       speakingTime,
       wordCount,
-      hasTopic: !!input.topic,
+      hasTopic,
     });
 
     const raw = await getAIFeedback(
@@ -106,7 +132,7 @@ export async function analyzePracticeSpeech(input: AnalyzePracticeSpeechInput): 
         speakingTime,
         wordCount,
       }),
-      FEEDBACK_SYSTEM_PROMPT,
+      hasTopic ? FEEDBACK_SYSTEM_PROMPT : FREE_SPEECH_SYSTEM_PROMPT,
     );
     const result = parseAiFeedbackResponse(raw);
 

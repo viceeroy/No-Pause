@@ -4,6 +4,7 @@ import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
 import { getWordCount } from '@/lib/core/utils';
 import { applyBandBonus, isScorableSession } from '@/lib/core/scoring';
+import { SCORING_VERSION_FREE_SPEECH_BAND } from '@/lib/core/constants';
 import { toast } from '@/shared/components/ui/sonner';
 
 type UseSessionOptions = {
@@ -134,18 +135,10 @@ export function useSession({
   }, [userEmail, userId, retrySave]);
 
   const requestFeedback = useCallback(async (input: RequestFeedbackInput) => {
-    if (!topic) {
-      setLastResults((prev) => {
-        if (!prev) return prev;
-        return { ...prev, analysisFeedbackLoading: false };
-      });
-      return;
-    }
-
     try {
       const result = await analyzeSpeech({
         transcript: input.transcript,
-        topic,
+        topic: topic ?? undefined,
         flowScore: input.flowScore,
         hesitationCount: input.hesitationCount,
         speakingTime: input.speakingTime,
@@ -161,6 +154,8 @@ export function useSession({
           userId,
           analysisFeedback: result.feedback,
           flowScore: finalScore,
+          // Free-speech band sessions use a 3-criterion rubric — tag for cohort separation.
+          ...(!topic && bandPoints > 0 ? { scoringVersion: SCORING_VERSION_FREE_SPEECH_BAND } : {}),
         }).catch(console.error);
       }
 
@@ -237,7 +232,6 @@ export function useSession({
       });
 
       const shouldAnalyze =
-        !!topic &&
         isScorableSession(lastResults.flowScore) &&
         transcript.trim().length > 0 &&
         transcript !== 'No speech detected.' &&
@@ -247,7 +241,7 @@ export function useSession({
         try {
           const result = await analyzeSpeech({
             transcript,
-            topic,
+            topic: topic ?? undefined,
             flowScore: lastResults.flowScore,
             hesitationCount: lastResults.hesitationCount,
             speakingTime: lastResults.totalSpeakingTime,
@@ -260,6 +254,8 @@ export function useSession({
             userId,
             analysisFeedback: result.feedback,
             flowScore: finalScore,
+            // Free-speech band sessions use a 3-criterion rubric — tag for cohort separation.
+            ...(!topic && bandPoints > 0 ? { scoringVersion: SCORING_VERSION_FREE_SPEECH_BAND } : {}),
           });
           setLastResults((prev) => {
             if (!prev) return prev;

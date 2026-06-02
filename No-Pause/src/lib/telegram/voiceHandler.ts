@@ -2,6 +2,7 @@ import type { Context } from "telegraf";
 import {
   SCORING_VERSION_BASE,
   SCORING_VERSION_TG_BAND,
+  SCORING_VERSION_FREE_SPEECH_BAND,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
 import { applyBandBonus, calculateFlowScore } from "../core/scoring.js";
@@ -528,22 +529,20 @@ export async function handleVoiceMessage(
     let aiFeedbackText: string | null = null;
     let finalScore = analysis.flowScore;
     let bandApplied = false;
-    if (sessionTopic) {
-      try {
-        const aiResult = await analyzePracticeSpeech({
-          transcript,
-          topic: sessionTopic,
-          hesitationCount: analysis.pauseCount,
-          speakingTime: analysis.speakingTimeSec,
-          flowScore: analysis.flowScore,
-          wordCount: getWordCount(transcript),
-        });
-        finalScore = applyBandBonus(analysis.flowScore, aiResult.band);
-        bandApplied = finalScore !== analysis.flowScore;
-        aiFeedbackText = aiResult.feedback;
-      } catch (error) {
-        console.error("Telegram inline AI feedback failed", error);
-      }
+    try {
+      const aiResult = await analyzePracticeSpeech({
+        transcript,
+        topic: sessionTopic ?? undefined,
+        hesitationCount: analysis.pauseCount,
+        speakingTime: analysis.speakingTimeSec,
+        flowScore: analysis.flowScore,
+        wordCount: getWordCount(transcript),
+      });
+      finalScore = applyBandBonus(analysis.flowScore, aiResult.band);
+      bandApplied = finalScore !== analysis.flowScore;
+      aiFeedbackText = aiResult.feedback;
+    } catch (error) {
+      console.error("Telegram inline AI feedback failed", error);
     }
 
     let sessionId: string;
@@ -558,7 +557,9 @@ export async function handleVoiceMessage(
         telegramMessageId,
         flowScoreOverride: finalScore,
         analysisFeedback: aiFeedbackText,
-        scoringVersion: bandApplied ? SCORING_VERSION_TG_BAND : SCORING_VERSION_BASE,
+        scoringVersion: bandApplied
+          ? (sessionTopic ? SCORING_VERSION_TG_BAND : SCORING_VERSION_FREE_SPEECH_BAND)
+          : SCORING_VERSION_BASE,
       });
       debugLog('[NoPause:challenge] insertSession done', { telegram_id: telegramId, ms: Date.now() - t_insert, sessionId });
     } catch (error) {
@@ -693,11 +694,8 @@ export async function handleVoiceMessage(
       return;
     }
 
-    const noTopicNote = !sessionTopic
-      ? "\n\n💡 Pick a topic to get AI feedback and a higher flow score — use the button below to grab a prompt"
-      : "";
     await sendResult(ctx, {
-      text: getSpeakingResultMessage({ analysis: displayAnalysis, transcript }) + feedbackSuffix + noTopicNote,
+      text: getSpeakingResultMessage({ analysis: displayAnalysis, transcript }) + feedbackSuffix,
       keyboard: getSessionActions(String(sessionId)),
       logTemplate: 'speaking_result',
       tTotal: t_total,

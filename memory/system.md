@@ -104,7 +104,7 @@ services/
   supabase.ts                   Browser Supabase anon client
   supabaseServer.ts             Server Supabase service-role client (server-only)
   groq.ts                       Groq Whisper transcription + chat completions (server-only)
-  aiFeedback.ts                 analyzePracticeSpeech — requires topic; new FEEDBACK_SYSTEM_PROMPT evaluates 4 topic-relative criteria (relevance, development, details, logic), band 1–9; user message includes TOPIC/TRANSCRIPT/STATS; topic-gated at 3 layers: ResultPanel (UI), useSession (requestFeedback early-return + requestTranscription shouldAnalyze gate), api/feedback.ts (400 if topic missing) (server-only)
+  aiFeedback.ts                 analyzePracticeSpeech — picks rubric by hasTopic. Prompted: FEEDBACK_SYSTEM_PROMPT, 4 topic-relative criteria (relevance, development, details, logic). Free-speech (no topic): FREE_SPEECH_SYSTEM_PROMPT, 3 criteria (development, details, logic — no relevance). Both band 1–9; user message includes TOPIC line only when a topic is present. The 3 former topic gates are removed (ResultPanel UI, useSession requestFeedback/requestTranscription, api/feedback.ts) — feedback now runs on every scorable session, prompt or not (server-only)
   apiQuota.ts                   API quota enforcement via Supabase RPC
 
 providers/
@@ -161,7 +161,7 @@ shared/
 7. `useSession.saveSession` writes to `sessions`; `updateStreak` writes to `streaks`.
 8. If the transcript is missing post-session and `audioBlob` exists, `ResultPanel` can show a manual Transcribe button that triggers `useSession.requestTranscription()` → `practiceApi.transcribeAudio()` → `/api/transcription`.
 9. Optional AI feedback: `practiceApi.analyzeSpeech()` → `/api/feedback` → Groq → stored on session.
-10. Stats pages read via `getPracticeStats` / `buildPracticeStats`. The RPC excludes `tg-band-1.0` and `tg-legacy` versions from averages and bests via an `is_comparable` flag (null/unknown treated as comparable). Total counts, practice time, and streaks still span all sessions, and `recentSessions` includes all rows with their `scoringVersion`. For silence, the RPC prefers the stored `total_silence_time` and falls back to derived `duration − speaking_time` only when it is NULL (pre-S6 rows).
+10. Stats pages read via `getPracticeStats` / `buildPracticeStats`. The RPC excludes `tg-band-1.0`, `tg-legacy`, and `free-speech-band-1.0` versions from averages and bests via an `is_comparable` flag (null/unknown treated as comparable). Total counts, practice time, and streaks still span all sessions, and `recentSessions` includes all rows with their `scoringVersion`. For silence, the RPC prefers the stored `total_silence_time` and falls back to derived `duration − speaking_time` only when it is NULL (pre-S6 rows).
 
 ### Telegram Voice / Challenge
 
@@ -171,11 +171,11 @@ shared/
 4. Invalid or expired pending challenge state is deleted; bot replies without downloading audio.
 5. Voice file downloaded from Telegram; transcribed via Groq Whisper.
 6. Transcripts under 3 words (`getWordCount`) are rejected.
-7. `analyzeTranscript` calls `analyzeSilenceFromTimestamps` (same shared helper as web) to compute `totalSilenceSec` and `speakingTimeSec`; `calculateFlowScore` scores them. If a challenge topic exists, `analyzePracticeSpeech` runs and `applyBandBonus(baseScore, band)` adds `band * 10` to produce `finalScore` (only when `baseScore > 0`).
-8. `insertTelegramSession` stores `finalScore` (band-adjusted when applicable) as `flow_score`; `updateStreak` follows.
-9. AI feedback runs only when a challenge topic exists (`challenge.topic`); regular (no-challenge) sessions skip AI feedback and append a note prompting the user to pick a topic.
+7. `analyzeTranscript` calls `analyzeSilenceFromTimestamps` (same shared helper as web) to compute `totalSilenceSec` and `speakingTimeSec`; `calculateFlowScore` scores them. `analyzePracticeSpeech` runs for both prompted and topic-less sessions (passes `topic: sessionTopic ?? undefined`), and `applyBandBonus(baseScore, band)` adds `band * 10` to produce `finalScore` (only when `baseScore > 0`).
+8. `insertTelegramSession` stores `finalScore` (band-adjusted when applicable) as `flow_score`; `scoring_version` = `tg-band-1.0` (prompted band), `free-speech-band-1.0` (topic-less band), else `base-1.0`; `updateStreak` follows.
+9. AI feedback runs for every scorable session: prompted sessions use the 4-criterion rubric, free-speech sessions use the 3-criterion rubric. No "pick a topic" nudge on the inline result.
 10. Bot replies with Flow Score, silence, speaking time, transcript, and optional AI feedback. Result replies go through a shared `sendResult` helper (reply + timing logs). Verbose progress logs throughout `handleVoiceMessage` are gated behind `NOPAUSE_DEBUG_TELEGRAM` via `debugLog`.
-11. `replyWithAiFeedback` (on-demand "AI Feedback" button callback): sessions table has no topic column → always replies with the no-topic note, never calls Groq. Groq call block removed entirely.
+11. `replyWithAiFeedback` (on-demand "AI Feedback" button callback): sessions table has no topic column → always replies with the no-topic note, never calls Groq. Groq call block removed entirely. (Inline free-speech feedback in step 9 is what surfaces feedback for topic-less sessions; this on-demand handler stays a no-op stub by design.)
 
 ---
 
@@ -197,7 +197,7 @@ otherwise:
 
 The sub-5s case returns score 0 inside calculateFlowScore, but the session is still scored and persisted normally — the 5s floor does not skip saving. The band bonus is gated separately by isScorableSession(baseScore > 0), not by the 5s floor.
 
-**Telegram challenge band bonus (current, post-2026-05-24):** When a Telegram voice is submitted under a challenge with a topic, `analyzePracticeSpeech` returns a `band` (1–9). `applyBandBonus(baseScore, band)` then adds `band * 10` to the score — gated by `isScorableSession(baseScore)` (`baseScore > 0`), not by the 5s speaking floor directly. The adjusted score is what `insertTelegramSession` stores. Regular (no-topic) sessions skip this step entirely.
+**Band bonus (current, post-2026-06-02):** Every scorable session (web + Telegram, prompted or free-speech) runs `analyzePracticeSpeech`, which returns a `band` (1–9). `applyBandBonus(baseScore, band)` then adds `band * 10` — gated by `isScorableSession(baseScore)` (`baseScore > 0`), not by the 5s floor directly. Free-speech (no-topic) sessions receive the bonus too, but use the 3-criterion rubric, so they are tagged `scoring_version = free-speech-band-1.0` (web: via `updateSession` after feedback; Telegram: via `insertTelegramSession`) and excluded from comparable stats alongside `tg-band-1.0`/`tg-legacy` in the `get_practice_stats` RPC `is_comparable` set. Prompted sessions keep their existing `scoring_version` (`tg-band-1.0` for Telegram, `base-1.0` for web).
 
 A gap between words counts as silence if ≥ `DEFAULT_PAUSE_THRESHOLD` (1.5s). Below 1.5s is ignored (normal speech rhythm). When a gap qualifies, its full duration counts. Leading silence (before first word) and trailing silence (after last word to end of session, clamped ≥ 0) are each included only when they exceed the 1.5s threshold — same gate as inter-word gaps. The 3s countdown is the only grace. Total silence = sum of all qualifying gap durations, rounded once at end to nearest second. Penalty = −1 per second of total silence.
 

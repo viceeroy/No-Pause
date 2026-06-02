@@ -191,6 +191,7 @@ type UpdateSessionInput = {
   transcript?: string | null;
   analysisFeedback?: string | null;
   flowScore?: number | null;
+  scoringVersion?: string;
 };
 
 export async function saveSession(input: SaveSessionInput): Promise<string | null> {
@@ -220,6 +221,7 @@ export async function updateSession(input: UpdateSessionInput): Promise<void> {
   if (input.words !== undefined) updates.words = input.words;
   if (input.analysisFeedback !== undefined) updates.analysis_feedback = input.analysisFeedback;
   if (input.flowScore !== undefined) updates.flow_score = input.flowScore;
+  if (input.scoringVersion !== undefined) updates.scoring_version = input.scoringVersion;
   if (Object.keys(updates).length === 0) return;
 
   const { error } = await browserSupabase
