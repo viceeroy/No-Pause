@@ -51,7 +51,7 @@ export function calculateFlowScore(
   }
 
   const completedSpeakingMinutes = Math.floor(speakingTime / 60);
-  const finalScore = Math.max(0, speakingTime + completedSpeakingMinutes * 40 - silence);
+  const finalScore = Math.max(0, speakingTime + completedSpeakingMinutes * 20 - silence);
 
   debugScoreBreakdown({
     mode,

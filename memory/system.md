@@ -6,6 +6,14 @@ Single source of truth for AI agents picking up this project. Update this file w
 
 ---
 
+**2026-06-03:** **Flow Score formula changed** — per-completed-minute bonus halved from `*40` to `*20`. Now `score = max(0, speakingTimeSec + floor(speakingTimeSec/60)*20 - round(totalSilenceSeconds))` in `calculateFlowScore` (`src/lib/core/scoring.ts`). Applies to both web and Telegram (shared fn). AI band bonus (`applyBandBonus`, `+band*10`) unchanged. CLAUDE.md frozen-rule text updated to match. Results UI: web ResultPanel now shows a 3-card metric row — **Pauses / Silence / Speaking time** (Pauses uses `pauseCount`, was dropped after silence-seconds refactor); minute bonus shown as `+N bonus` on the Speaking time card; AI band bonus labelled "AI feedback bonus" beside the green `+N`. Telegram result message (`formatResultFields`, `constants.ts`) dropped the "Session length" line and added a "Pauses: N" line; its minute "Bonus" line now reflects `*20`.
+
+---
+
+**2026-06-03:** Added `public.get_telegram_challenge_stats()` RPC (SECURITY DEFINER) for web Stats page. Resolves caller's `telegram_id` from `auth.uid()` and returns `{friendChallenges, groupChallenges, friendWins, groupWins}`. Replaces RLS-blocked browser query (`getTelegramChallengeCounts` / `getTelegramChallengeWins` still used by Telegram bot via service role). Web StatsPage.tsx calls `supabase.rpc('get_telegram_challenge_stats')`. Returns `null` when user has no Telegram connection (card hides). Migration: `20260602010000_get_telegram_challenge_stats_rpc.sql`.
+
+---
+
 ## What the App Does
 
 NoPause is a speech-fluency trainer. Users record themselves speaking, the app measures pauses and hesitations in real time using browser audio analysis, then shows a **Flow Score** with a transcript and optional AI coaching feedback. A Telegram bot accepts voice notes and scores them through the same pipeline.

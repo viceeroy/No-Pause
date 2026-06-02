@@ -58,7 +58,7 @@ Locate these before touching anything. Wrong import = RLS bypass or browser cras
 
 ## Hard Rules
 
-- **Flow Score is frozen:** `score = max(0, speakingTimeSec + floor(speakingTimeSec/60)*40 - round(totalSilenceSeconds))`, requires ≥5s speaking (else score 0, not completed). Subtracts total silence **seconds**, not a pause count. Source of truth: `src/lib/core/scoring.ts` (`calculateFlowScore`). AI content bonus added separately via `applyBandBonus` (`+band*10` when score > 0). Never alter, rename, or approximate differently.
+- **Flow Score is frozen:** `score = max(0, speakingTimeSec + floor(speakingTimeSec/60)*20 - round(totalSilenceSeconds))`, requires ≥5s speaking (else score 0, not completed). Subtracts total silence **seconds**, not a pause count. Source of truth: `src/lib/core/scoring.ts` (`calculateFlowScore`). AI content bonus added separately via `applyBandBonus` (`+band*10` when score > 0). Never alter, rename, or approximate differently.
 - **Silence threshold is fixed at 1.5s** (`DEFAULT_PAUSE_THRESHOLD`). Word-timestamp gaps ≥1.5s count as silence; shorter gaps ignored. Not a user setting.
 - **Mode is always `'speaking'`.** Normalize legacy `free_speaking` on write, never store it.
 - **RLS always.** `supabaseServer` is server-only — never import in frontend files.
@@ -108,8 +108,7 @@ Vault: `/Users/viseeroy/Desktop/viseeroy/No Pause/`. Source only from codebase +
 
 After completing any significant task or feature:
 
-1. Update `CHANGELOG.md` in the project root.
-2. Update the vault `Changes/` folder — **one note per day**, `YYYY-MM-DD.md`, summarized for humans, date at the bottom. If several changes land the same day, fold them into that day's single note.
+1. Update the vault `Changes/` folder — descriptive file names (≤5 words), includes **Agent Reference** section with file paths and technical details.
 
 For new/changed features or architecture:
 - `About/` — one note per feature group, named with the actual codebase name (≤4 words), human + technical.

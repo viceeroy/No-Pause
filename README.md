@@ -111,7 +111,6 @@ No-Pause/
 Full system reference — stack topology, data flows, Flow Score formula, database schema, API routes, Telegram architecture, environment variables, and coding invariants — lives in [`memory/MEMORY.md`](./No-Pause/memory/MEMORY.md).
 
 - [`No-Pause/INDEX.md`](./No-Pause/INDEX.md) - file/module index.
-- [`CHANGELOG.md`](./CHANGELOG.md) - project history.
 
 ## Privacy & Architecture
 

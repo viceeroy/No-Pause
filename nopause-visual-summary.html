@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoPause — Speech Fluency Trainer · Visual Summary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f5f0;
+      --panel: #ffffff;
+      --line: #e9e3d6;
+      --line-soft: #f0ebdf;
+      --text: #1f2533;
+      --text-2: #3a4256;
+      --muted: #7c7a72;
+      --ink: #14171e;
+      --primary: #2f6f5e;
+      --primary-dark: #1f4e42;
+      --primary-soft: rgba(47, 111, 94, 0.08);
+      --accent: #c97b3f;
+      --accent-soft: rgba(201, 123, 63, 0.1);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: 'Outfit', -apple-system, 'PingFang SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(47, 111, 94, .05) 0%, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(201, 123, 63, .05) 0%, transparent 45%);
+      background-attachment: fixed;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 28px 96px; }
+    * { text-wrap: pretty; }
+
+    /* Hero */
+    header.hero {
+      padding: 48px 44px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #f9f6ee, #efece6);
+      border: 1px solid var(--line);
+      margin-bottom: 64px;
+      box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 6px 24px -16px rgba(20,23,30,.12);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+    .hero-tag .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--primary);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    header.hero h1 {
+      font-family: 'DM Serif Display', 'Source Han Serif SC', Georgia, serif;
+      font-size: 54px;
+      font-weight: 400;
+      line-height: 1.05;
+      margin: 0 0 18px;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    header.hero h1 .accent { color: var(--primary); font-style: italic; }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-2);
+      max-width: 720px;
+      margin: 0 0 24px;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+    .hero-meta .sep { color: var(--line); }
+
+    /* Section headings */
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 30px;
+      font-weight: 400;
+      margin: 72px 0 28px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      letter-spacing: -0.005em;
+    }
+    h2 .sec-num {
+      width: 38px; height: 38px; border-radius: 10px;
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h2 .icon { color: var(--primary); }
+    .sec-lead {
+      color: var(--text-2);
+      max-width: 760px;
+      margin-bottom: 28px;
+      font-size: 16px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 4px 14px -10px rgba(20,23,30,.08);
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--ink);
+      margin: 0 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title .num {
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .card-body { color: var(--text-2); font-size: 14.5px; }
+    .card-body code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: var(--line-soft);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: var(--primary-dark);
+    }
+
+    /* Pipeline */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      position: relative;
+    }
+    .pipe-step {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px 18px;
+      position: relative;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .pipe-step:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -18px rgba(20,23,30,.18);
+    }
+    .pipe-step .step-n {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .pipe-step .step-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .pipe-step h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      color: var(--ink);
+    }
+    .pipe-step p {
+      font-size: 13px;
+      color: var(--text-2);
+      margin: 0;
+      line-height: 1.55;
+    }
+    @media (max-width: 880px) {
+      .pipeline { grid-template-columns: 1fr; }
+    }
+
+    /* Formula box */
+    .formula {
+      background: linear-gradient(135deg, #1f4e42, #16382f);
+      color: #e8f0ec;
+      border-radius: 18px;
+      padding: 36px 32px;
+      margin: 12px 0 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .formula::before {
+      content: "";
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(201,123,63,0.18), transparent 70%);
+      pointer-events: none;
+    }
+    .formula-label {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(232,240,236,0.55);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 18px;
+    }
+    .formula-eq {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      line-height: 1.8;
+      color: #fff;
+      position: relative;
+    }
+    .formula-eq .op { color: var(--accent); }
+    .formula-eq .var { color: #b8d8cd; }
+    .formula-eq .note { color: rgba(232,240,236,0.5); font-size: 13px; }
+
+    /* Worked example */
+    .example {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+    .example-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px 24px;
+    }
+    .example-card h4 {
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 14px;
+      font-weight: 600;
+    }
+    .input-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--line);
+      font-size: 14px;
+    }
+    .input-row:last-child { border-bottom: 0; }
+    .input-row .key { color: var(--text-2); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+    .input-row .val { font-weight: 600; color: var(--ink); font-family: 'JetBrains Mono', monospace; }
+    .result-big {
+      font-family: 'DM Serif Display', serif;
+      font-size: 64px;
+      line-height: 1;
+      color: var(--primary);
+      margin: 8px 0 4px;
+    }
+    .result-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+    .scale-legend {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .scale-chip {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+    .sc-1 { background: #f0ebdf; color: #6b6557; }
+    .sc-2 { background: #e3dcc9; color: #5e5946; }
+    .sc-3 { background: #c8d8c9; color: #2f5e3f; }
+    .sc-4 { background: #a4c5a8; color: #1f4e2c; }
+    .sc-5 { background: #2f6f5e; color: #fff; }
+    @media (max-width: 880px) {
+      .example { grid-template-columns: 1fr; }
+    }
+
+    /* Threshold table */
+    .threshold {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px 24px;
+      align-items: center;
+      padding: 16px 0;
+    }
+    .threshold .k {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--primary-dark);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .threshold .v {
+      color: var(--text-2);
+      font-size: 14.5px;
+    }
+    .threshold .v strong { color: var(--ink); }
+
+    /* Architecture layers */
+    .arch {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 8px 0;
+      overflow: hidden;
+    }
+    .arch-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      align-items: center;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .arch-row:last-child { border-bottom: 0; }
+    .arch-tier {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .arch-blocks {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .arch-block {
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .arch-block .desc-mini {
+      color: var(--text-2);
+      font-weight: 400;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+    .arch-block.accent {
+      background: var(--accent-soft);
+      color: #8a5024;
+    }
+
+    /* Two doors */
+    .doors {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .door {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+    .door-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .door h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+    .door ul {
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+      font-size: 14px;
+      color: var(--text-2);
+    }
+    .door li {
+      padding: 6px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .door li svg {
+      flex-shrink: 0;
+      margin-top: 5px;
+      color: var(--primary);
+    }
+    .door-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    @media (max-width: 880px) {
+      .doors { grid-template-columns: 1fr; }
+    }
+
+    /* Privacy callout */
+    .privacy {
+      background: var(--primary-soft);
+      border: 1px solid rgba(47,111,94,0.2);
+      border-left: 4px solid var(--primary);
+      border-radius: 12px;
+      padding: 22px 26px;
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+    .privacy .icon-wrap {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .privacy h3 {
+      font-size: 16px;
+      margin: 0 0 4px;
+      color: var(--ink);
+    }
+    .privacy p {
+      margin: 0;
+      color: var(--text-2);
+      font-size: 14.5px;
+    }
+
+    /* File map */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      transition: transform .15s;
+    }
+    .file-row:hover { transform: translateX(2px); }
+    .file-row .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      margin-top: 7px;
+    }
+    .file-row .file {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      color: var(--primary-dark);
+      font-weight: 500;
+      word-break: break-all;
+    }
+    .file-row .file-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-top: 2px;
+    }
+    @media (max-width: 760px) {
+      .file-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 80px;
+      padding-top: 32px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    footer a { color: var(--primary); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-tag"><span class="dot"></span>Live · nopause.org</div>
+    <h1>NoPause — speak more, <span class="accent">pause less.</span></h1>
+    <p class="hero-sub">A privacy-first speech fluency PWA that listens to you in the browser, measures hesitation pauses, and gives you a single number — the <strong>Flow Score</strong> — to track progress over time. The same scoring engine also runs as a Telegram bot for voice-note practice on the go.</p>
+    <div class="hero-meta">
+      <span>React + Vite + TS</span>
+      <span class="sep">/</span>
+      <span>Supabase + Groq</span>
+      <span class="sep">/</span>
+      <span>Vercel serverless</span>
+      <span class="sep">/</span>
+      <span>Telegram (Telegraf)</span>
+      <span class="sep">/</span>
+      <span>PWA</span>
+    </div>
+  </header>
+
+  <!-- 01 — Pipeline -->
+  <h2><span class="sec-num">01</span><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2"/><path d="M20 12h2"/><path d="M12 2v2"/><path d="M12 20v2"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8"/></svg></span>How a Session Flows</h2>
+  <p class="sec-lead">Each practice session runs the same four-stage pipeline — whether you record in the browser or send a Telegram voice note. The only difference is which client triggers it.</p>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="step-n">step · 01</div>
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/><path d="M8 21h8"/></svg></div>
+      <h3>Capture audio</h3>
+      <p>Microphone streams into the browser via Web Audio API. Live analysis happens locally — nothing is uploaded mid-session.</p>
+    </div>
+    <div class="pipe-step">
+      <div class="step-n">step · 02</div>
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+      <h3>Transcribe</h3>
+      <p>Audio blob is sent to <code>/api/transcription</code> → Groq Whisper, returning the transcript plus word-level timestamps.</p>
+    </div>
+    <div class="pipe-step">
+      <div class="step-n">step · 03</div>
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></div>
+      <h3>Score</h3>
+      <p>Gap analysis on word timestamps feeds the Flow Score formula. The shared silence helper runs identically on web and Telegram.</p>
+    </div>
+    <div class="pipe-step">
+      <div class="step-n">step · 04</div>
+      <div class="step-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg></div>
+      <h3>Coach (optional)</h3>
+      <p>When a topic was set, Groq LLM grades the response on a 1–9 band and returns AI feedback. Otherwise the result is shown without coaching.</p>
+    </div>
+  </div>
+
+  <!-- 02 — Flow Score formula -->
+  <h2><span class="sec-num">02</span><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>The Flow Score Formula</h2>
+  <p class="sec-lead">A single frozen formula in <code>src/lib/core/scoring.ts</code>. The same source of truth runs on web and Telegram — never forked, never approximated. Three inputs, one output.</p>
+
+  <div class="formula">
+    <div class="formula-label">// src/lib/core/scoring.ts · calculateFlowScore</div>
+    <div class="formula-eq">
+      <span class="var">speakingTime</span> = floor(<span class="var">speakingTimeSec</span>)<br>
+      <span class="note">// sub-5s speaking = no score (session not completed)</span><br>
+      <span class="var">completedMinutes</span> = floor(<span class="var">speakingTime</span> <span class="op">/</span> 60)<br>
+      <span class="var">score</span> = max(0, <span class="var">speakingTime</span> <span class="op">+</span> <span class="var">completedMinutes</span> <span class="op">×</span> 40 <span class="op">−</span> <span class="var">totalSilenceSec</span>)
+    </div>
+  </div>
+
+  <div class="example">
+    <div class="example-card">
+      <h4>Worked example</h4>
+      <div class="input-row">
+        <span class="key">speakingTime</span>
+        <span class="val">90 sec</span>
+      </div>
+      <div class="input-row">
+        <span class="key">completedMinutes</span>
+        <span class="val">1 (90 ÷ 60)</span>
+      </div>
+      <div class="input-row">
+        <span class="key">totalSilence</span>
+        <span class="val">30 sec</span>
+      </div>
+      <div class="input-row" style="margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; border-bottom: 0;">
+        <span class="key">score</span>
+        <span class="val">90 + 1·40 − 30 = 100</span>
+      </div>
+    </div>
+    <div class="example-card" style="background: linear-gradient(135deg, #f9f6ee, #efece6);">
+      <h4>Result</h4>
+      <div class="result-big">100</div>
+      <span class="result-label">Good Flow</span>
+      <div class="scale-legend">
+        <span class="scale-chip sc-1">&lt;50 Needs</span>
+        <span class="scale-chip sc-2">50–99 Getting</span>
+        <span class="scale-chip sc-3">100–199 Good</span>
+        <span class="scale-chip sc-4">200–299 Great</span>
+        <span class="scale-chip sc-5">≥300 Perfect</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 8px;">
+    <div class="threshold">
+      <span class="k">1.5s</span>
+      <span class="v"><strong>Silence threshold</strong> — gaps between words ≥ 1.5s count as silence; shorter gaps are normal speech rhythm. Fixed in <code>src/lib/core/constants.ts</code>. Not a user setting.</span>
+    </div>
+    <div class="threshold" style="border-top: 1px dashed var(--line);">
+      <span class="k">≥ 5s</span>
+      <span class="v"><strong>Speaking floor</strong> — sessions shorter than 5 seconds return <code>score = 0</code> with <code>isCompleted = false</code>. The session is still saved, but does not count toward streaks.</span>
+    </div>
+    <div class="threshold" style="border-top: 1px dashed var(--line);">
+      <span class="k">band · 10</span>
+      <span class="v"><strong>AI bonus (Telegram only)</strong> — when a challenge has a topic, Groq returns a 1–9 band. <code>applyBandBonus(baseScore, band)</code> adds <code>band × 10</code> on top of the base score.</span>
+    </div>
+  </div>
+
+  <!-- 03 — Two doors -->
+  <h2><span class="sec-num">03</span><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span>Two Front Doors, One Pipeline</h2>
+  <p class="sec-lead">Users can practice in the PWA or in Telegram. Both clients hit the same shared scoring and silence helpers — no fork.</p>
+
+  <div class="doors">
+    <div class="door">
+      <div class="door-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Web PWA
+      </div>
+      <h3>In-browser practice</h3>
+      <ul>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Live Web Audio analysis during recording</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Real-time silence detection (RMS pipeline, disabled for scoring)</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 3s countdown before recording starts</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Optional prompts from <span class="door-code">/prompts</span></li>
+      </ul>
+    </div>
+    <div class="door">
+      <div class="door-tag" style="color: #2a85b8;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Telegram bot
+      </div>
+      <h3>Voice notes on the go</h3>
+      <ul>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Bot: <span class="door-code">@NoPauseAI_bot</span> via Telegraf webhook</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Account linking via <span class="door-code">/connect?tg=&lt;id&gt;</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 5-minute voice cap, shared Flow Score</li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Friend / group challenges with leaderboard</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 04 — Architecture -->
+  <h2><span class="sec-num">04</span><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>Architecture Layers</h2>
+  <p class="sec-lead">Stacked from client to storage. The web app and Telegram bot converge at the shared <code>core/</code> layer where scoring, silence analysis, and session persistence live.</p>
+
+  <div class="arch">
+    <div class="arch-row">
+      <span class="arch-tier">Clients</span>
+      <div class="arch-blocks">
+        <span class="arch-block">React PWA <span class="desc-mini">/practice, /stats</span></span>
+        <span class="arch-block">Telegram bot <span class="desc-mini">@NoPauseAI_bot</span></span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <span class="arch-tier">Serverless API</span>
+      <div class="arch-blocks">
+        <span class="arch-block">/api/transcription</span>
+        <span class="arch-block">/api/feedback</span>
+        <span class="arch-block">/api/telegram/webhook</span>
+        <span class="arch-block">/api/telegram/connect</span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <span class="arch-tier">AI</span>
+      <div class="arch-blocks">
+        <span class="arch-block accent">Groq Whisper <span class="desc-mini">word-level timestamps</span></span>
+        <span class="arch-block accent">Groq LLaMA <span class="desc-mini">1–9 band coaching</span></span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <span class="arch-tier">Shared core</span>
+      <div class="arch-blocks">
+        <span class="arch-block">scoring.ts <span class="desc-mini">frozen formula</span></span>
+        <span class="arch-block">silence.ts <span class="desc-mini">timestamp gaps</span></span>
+        <span class="arch-block">session.ts</span>
+        <span class="arch-block">prompts.ts</span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <span class="arch-tier">Data + Auth</span>
+      <div class="arch-blocks">
+        <span class="arch-block">Supabase Postgres <span class="desc-mini">RLS enforced</span></span>
+        <span class="arch-block">Supabase Auth <span class="desc-mini">Google OAuth, PKCE</span></span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <span class="arch-tier">Hosting</span>
+      <div class="arch-blocks">
+        <span class="arch-block">Vercel <span class="desc-mini">repo-root deploy</span></span>
+        <span class="arch-block">Sentry</span>
+        <span class="arch-block">Vercel Analytics</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 — Privacy -->
+  <h2><span class="sec-num">05</span><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>Privacy by Construction</h2>
+  <p class="sec-lead">Live analysis stays in the browser tab. Raw audio is never streamed to servers during a session — it only leaves the device when the user explicitly stops recording, and only to produce a transcript.</p>
+
+  <div class="privacy">
+    <div class="icon-wrap">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </div>
+    <div>
+      <h3>AudioContext, not MediaStream uploads</h3>
+      <p>Web Audio's <code>AudioContext</code> + <code>AnalyserNode</code> handle silence detection locally. Backend features (transcription, AI feedback, Telegram voice) process audio only when explicitly triggered, with per-user daily quotas via a Supabase RPC.</p>
+    </div>
+  </div>
+
+  <!-- 06 — Sacred files -->
+  <h2><span class="sec-num">06</span><span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>Sacred Files</h2>
+  <p class="sec-lead">Eight files hold the system together. Touching any of them without reading <code>memory/system.md</code> first is how regressions happen.</p>
+
+  <div class="file-grid">
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/lib/core/scoring.ts</div>
+        <div class="file-desc">Flow Score formula — single source of truth.</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/lib/core/silence.ts</div>
+        <div class="file-desc">Shared silence + speaking time from word timestamps.</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/features/practice/lib/speechAnalyzer.ts</div>
+        <div class="file-desc">Browser practice orchestrator (audio state machine).</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/lib/practiceApi.ts</div>
+        <div class="file-desc">Browser-facing facade for sessions, streaks, stats.</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/services/supabase.ts</div>
+        <div class="file-desc">Anon-key client with RLS — safe in browser.</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/services/supabaseServer.ts</div>
+        <div class="file-desc">Service-role client — server only, never in frontend.</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/providers/AuthContext.tsx</div>
+        <div class="file-desc">Auth state used by almost every feature.</div>
+      </div>
+    </div>
+    <div class="file-row">
+      <span class="dot"></span>
+      <div>
+        <div class="file">src/lib/telegram/{router,voiceHandler}.ts</div>
+        <div class="file-desc">Bot command routing and voice processing.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>NoPause · <a href="https://nopause.org" target="_blank" rel="noopener">nopause.org</a> · solo founder project</div>
+    <div>Visual summary generated from <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">CLAUDE.md</code> + <code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">memory/system.md</code></div>
+  </footer>
+
+</div>
+</body>
+</html>

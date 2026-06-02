@@ -3,7 +3,6 @@
 Pointer file for Codex and other agents. Do not duplicate detail here.
 
 - **Source of truth:** `memory/system.md` (stack, schema, source layout, data flow, scoring, env, routes).
-- **History:** `memory/CHANGELOG.md` (refactoring log, append-only).
 - **Coding rules:** `CLAUDE.md`.
 
 ## Hard Rules
@@ -12,4 +11,4 @@ Pointer file for Codex and other agents. Do not duplicate detail here.
 - Flow Score formula lives **only** in `src/lib/core/scoring.ts` — never fork, rename, or approximate it elsewhere.
 - Provider keys (Groq, Supabase service role) are **server-only** — never `VITE_`-prefixed, never imported in frontend.
 - Do **not** re-enable browser SpeechRecognition as primary without first removing the Groq-primary path.
-- After any architecture / data-flow / schema / scoring / env / Telegram change: update `memory/system.md` and append to `memory/CHANGELOG.md`.
+- After any architecture / data-flow / schema / scoring / env / Telegram change: update `memory/system.md` and vault `Changes/` folder (Obsidian).

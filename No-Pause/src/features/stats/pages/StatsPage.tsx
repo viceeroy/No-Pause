@@ -10,7 +10,6 @@ import {
   type WeeklyActivityDay,
   type WeeklyStatsComparison,
 } from '@/lib/practiceApi';
-import { getTelegramChallengeCounts, getTelegramChallengeWins } from '@/lib/core/queries';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
 import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
@@ -222,38 +221,26 @@ export default function StatsPage({
         return;
       }
 
-      const { data: connection, error } = await supabase
-        .from('telegram_connections')
-        .select('telegram_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // RLS hides telegram_challenge_attempts/challenges from the browser client,
+      // so counts are computed server-side by a SECURITY DEFINER RPC that resolves
+      // the caller's telegram_id from auth.uid().
+      const { data, error } = await supabase.rpc('get_telegram_challenge_stats');
 
       if (isCancelled) return;
 
-      if (error || !connection?.telegram_id) {
-        if (error) console.error('Failed to load Telegram connection:', error);
+      if (error || !data) {
+        if (error) console.error('Failed to load Telegram challenge stats:', error);
         setTelegramChallengeStats(null);
         return;
       }
 
-      const telegramId = Number(connection.telegram_id);
-      if (!Number.isFinite(telegramId)) {
-        console.error("[NoPause] telegramId resolution failed — telegram_connections lookup returned null");
-        setTelegramChallengeStats({ friendChallenges: 0, groupChallenges: 0, friendWins: 0, groupWins: 0 });
-        return;
-      }
-
-      const [challengeCounts, winsByType] = await Promise.all([
-        getTelegramChallengeCounts(telegramId, supabase),
-        getTelegramChallengeWins(telegramId, supabase),
-      ]);
-
-      if (!isCancelled) {
-        setTelegramChallengeStats({
-          ...challengeCounts,
-          ...winsByType,
-        });
-      }
+      const stats = data as Record<string, unknown>;
+      setTelegramChallengeStats({
+        friendChallenges: Number(stats.friendChallenges) || 0,
+        groupChallenges: Number(stats.groupChallenges) || 0,
+        friendWins: Number(stats.friendWins) || 0,
+        groupWins: Number(stats.groupWins) || 0,
+      });
     }
 
     void loadTelegramChallengeStats().catch((error) => {

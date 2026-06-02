@@ -7,4 +7,4 @@ After completing any change that affects architecture, file responsibilities, fu
 
 1. Open memory/system.md
 2. Locate the relevant current-state section and update it to reflect the current state
-3. Append new refactoring entries to memory/CHANGELOG.md — append-only, never delete or edit old entries
+3. Add entry to Obsidian vault `Changes/` folder with descriptive name (≤5 words) + Agent Reference section

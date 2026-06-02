@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, VolumeX, Share2, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, Pause, VolumeX, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
 import type { SessionResult } from './types';
@@ -106,6 +106,7 @@ export function ResultPanel({
   const speakingTime = Math.max(0, lastResults.totalSpeakingTime || 0);
   const sessionLength = Math.max(0, lastResults.totalSessionTime || 0);
   const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
+  const minuteBonus = Math.floor(speakingTime / 60) * 20;
   const coachingNote = getCoachingNote();
   const statusNote = speakingTime < 5
     ? 'Session too short to score.'
@@ -168,6 +169,9 @@ export function ResultPanel({
                   </span>
                 )}
               </div>
+              {lastResults.bandPoints != null && lastResults.bandPoints > 0 && (
+                <p className="mt-1 text-[11px] font-sans text-green-400/70">AI feedback bonus</p>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <span className="font-sans text-base font-semibold tabular-nums text-muted-foreground md:text-lg">
@@ -187,7 +191,12 @@ export function ResultPanel({
 
         </section>
 
-        <section className="grid grid-cols-2 gap-3 md:gap-4">
+        <section className="grid grid-cols-3 gap-3 md:gap-4">
+          <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+            <Pause size={20} className="mb-5 text-primary" />
+            <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Pauses</p>
+            <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">{pauseCount}</p>
+          </article>
           <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
             <VolumeX size={20} className="mb-5 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Silence</p>
@@ -199,6 +208,9 @@ export function ResultPanel({
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
               {renderDurationText(speakingTime)}
             </p>
+            {minuteBonus > 0 && (
+              <p className="mt-1 text-[11px] font-sans text-green-400">+{minuteBonus} bonus</p>
+            )}
           </article>
         </section>
 

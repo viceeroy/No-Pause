@@ -236,7 +236,7 @@ function formatResultFields(input: {
   maxLength?: number;
 }): string {
   const completedMinutes = Math.floor(Math.max(0, input.analysis.speakingTimeSec || 0) / 60);
-  const bonus = completedMinutes * 40;
+  const bonus = completedMinutes * 20;
   const transcript = input.transcript?.trim();
   const label = (text: string) => (input.html ? `<b>${text}</b>` : text);
   const fieldsWithFeedback = [
@@ -244,7 +244,7 @@ function formatResultFields(input: {
     ...(bonus > 0 ? [`🥇 ${label("Bonus:")} +${bonus}`] : []),
     "",
     `⏱ ${label("Speaking time:")} ${formatTelegramSpeakingTimeBreakdown(input.analysis.speakingTimeSec, input.analysis.totalSessionTimeSec)}`,
-    `🕒 ${label("Session length:")} ${formatTelegramResultDuration(input.analysis.totalSessionTimeSec)}`,
+    `⏸ ${label("Pauses:")} ${input.analysis.pauseCount}`,
     `🔇 ${label("Silence:")} ${input.analysis.totalSilenceSec}s`,
   ].join("\n");
 
