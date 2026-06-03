@@ -6,6 +6,10 @@ Single source of truth for AI agents picking up this project. Update this file w
 
 ---
 
+**2026-06-03:** **PostHog analytics added (EU region).** `posthog-js` installed. Init in `src/main.tsx` via `src/services/posthog.ts` (EU host `https://eu.i.posthog.com`, `person_profiles: 'identified_only'`). User identified/reset on auth state change in `AuthContext.tsx`. Key events: `session_completed` (mode, duration_s, flow_score, words, completed, pause_count) fired in `useSession.ts` after successful save; `ai_feedback_received` (band, band_points, flow_score_before, flow_score_after, has_topic) fired after AI analysis. Env var: `VITE_POSTHOG_KEY` (must be set in Vercel before build — Vite bakes it at compile time). Project ID: 192820, EU Cloud. PR #3 merged to main. Vercel Analytics + Speed Insights still active alongside PostHog.
+
+---
+
 **2026-06-03:** **Flow Score formula changed** — per-completed-minute bonus halved from `*40` to `*20`. Now `score = max(0, speakingTimeSec + floor(speakingTimeSec/60)*20 - round(totalSilenceSeconds))` in `calculateFlowScore` (`src/lib/core/scoring.ts`). Applies to both web and Telegram (shared fn). AI band bonus (`applyBandBonus`, `+band*10`) unchanged. CLAUDE.md frozen-rule text updated to match. Results UI: web ResultPanel now shows a 3-card metric row — **Pauses / Silence / Speaking time** (Pauses uses `pauseCount`, was dropped after silence-seconds refactor); minute bonus shown as `+N bonus` on the Speaking time card; AI band bonus labelled "AI feedback bonus" beside the green `+N`. Telegram result message (`formatResultFields`, `constants.ts`) dropped the "Session length" line and added a "Pauses: N" line; its minute "Bonus" line now reflects `*20`.
 
 ---
@@ -33,7 +37,7 @@ Live at **https://nopause.org**.
 | Telegram bot | Telegraf via Vercel serverless webhook |
 | Deployment | Vercel (project root at repo root, not at `No-Pause/`) |
 | Error tracking | Sentry (`src/instrument.ts`, loaded first in `main.tsx`) |
-| Analytics | Vercel Analytics + Speed Insights |
+| Analytics | Vercel Analytics + Speed Insights + PostHog (EU, project 192820) |
 | PWA | `sw.js`, cache name `nopause-shell-v2` |
 
 The deployable app lives under `No-Pause/`. The Vercel project is rooted at the repository root (one level up), so **`npx vercel deploy --prod --yes` must be run from the repo root**, never from `No-Pause/`.

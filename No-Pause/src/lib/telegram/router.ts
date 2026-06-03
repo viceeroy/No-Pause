@@ -6,6 +6,7 @@ import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
+  ABOUT_LABEL,
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
   CHANGE_PROMPT_ACTION,
   changePromptKeyboard,
@@ -242,6 +243,11 @@ export function createTelegramBot() {
     if (!telegramId) return;
 
     await replyWithStatus(ctx, telegramId);
+  });
+
+  bot.hears(ABOUT_LABEL, async (ctx) => {
+    if (isGroupChat(ctx)) return;
+    await ctx.reply(MESSAGES.about, { ...replyKeyboard, parse_mode: "HTML" });
   });
 
   bot.action(new RegExp(`^${CHANGE_GROUP_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {

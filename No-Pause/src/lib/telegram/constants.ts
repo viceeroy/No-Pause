@@ -65,7 +65,7 @@ export type FlowAnalysis = {
 
 export const replyKeyboard = Markup.keyboard([
   [SPEAK_LABEL, CHALLENGE_LABEL],
-  [MY_STATS_LABEL],
+  [MY_STATS_LABEL, ABOUT_LABEL],
 ]).resize();
 
 export const speakPromptKeyboard = Markup.inlineKeyboard([
@@ -638,7 +638,7 @@ export const MESSAGES = {
   nopauseInfo:
     "👥 <b>Using No Pause in groups</b>\n\nAdd No Pause to a group.\nUse the Challenge button to start a group challenge.\nEveryone in the group gets the topic and can submit a voice note.\nResults are shared in the group.",
   about:
-    "ℹ️ <b>About NoPause</b>\n\nNoPause helps you speak more fluently. Send a voice note and get a Flow Score — the longer you speak and the less dead air you leave, the higher your score.\n\n🎤 <b>Practice</b>\nJust send a voice note anytime. Tap Speak for a quick reminder or Get Prompt for a topic idea.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTrack your streak, best score, and practice time.\n\n🌐 nopause.org",
+    "ℹ️ <b>About NoPause</b>\n\nNoPause helps you speak more fluently. Send a voice note and get a Flow Score — the longer you speak and the less dead air you leave, the higher your score.\n\n🎤 <b>Practice</b>\nJust send a voice note anytime. Tap Speak for a quick reminder or Get Prompt for a topic idea.\n\n⚔️ <b>Challenges</b>\nChallenge a friend or start a group challenge. Compete on the same topic.\n\n📈 <b>Stats</b>\nTrack your streak, best score, and practice time.\n\n🔐 <b>Account</b>\nUse /register to connect or switch your NoPause account.\n\n🌐 nopause.org",
   aboutUserPrefix: (fullName?: string | null, email?: string | null): string => {
     const lines: string[] = [];
     if (fullName) lines.push(escapeTelegramHtml(fullName));
