@@ -6,7 +6,6 @@ import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
-  AI_FEEDBACK_ACTION_PREFIX,
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
   CHANGE_PROMPT_ACTION,
   changePromptKeyboard,
@@ -43,12 +42,10 @@ import {
   getTelegramUsername,
   handleVoiceMessage,
   isGroupChat,
-  replyWithAiFeedback,
   replyWithConnectPrompt,
   shareCreatorChallengeResult,
   sendFriendChallengeResult,
   postGroupChallengeResultToGroup,
-  TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE,
 } from "./voiceHandler.js";
 
 function getStartPayload(ctx: Context): string {
@@ -347,40 +344,6 @@ export function createTelegramBot() {
       username: getTelegramUsername(ctx),
     });
     await retryGroupChallenge(ctx, telegramId, getTelegramUsername(ctx));
-  });
-
-  bot.action(new RegExp(`^${AI_FEEDBACK_ACTION_PREFIX}(.+)$`), async (ctx) => {
-    console.log('[NoPause:challenge] callback', { action: 'ai_feedback', telegram_id: getTelegramId(ctx), session_id: ctx.match?.[1] });
-    try {
-      ctx.telegram.webhookReply = false;
-      await ctx.answerCbQuery();
-      console.log("Telegram AI feedback callback received", {
-        callbackData: "data" in ctx.callbackQuery ? ctx.callbackQuery.data : undefined,
-        sessionId: ctx.match?.[1],
-        chatId: ctx.chat?.id,
-        chatType: ctx.chat?.type,
-        fromId: ctx.from?.id,
-      });
-      const telegramId = getTelegramId(ctx);
-
-      if (!telegramId) {
-        await ctx.reply(MESSAGES.feedbackIdentifyError, { parse_mode: "HTML" });
-        return;
-      }
-
-      console.log("Telegram AI feedback handler dispatching", {
-        telegramId,
-        sessionId: ctx.match?.[1],
-      });
-      await replyWithAiFeedback(ctx, telegramId);
-    } catch (error) {
-      console.error("Telegram AI feedback callback failed", {
-        message: error instanceof Error ? error.message : String(error),
-        sessionId: ctx.match?.[1],
-        fromId: ctx.from?.id,
-      });
-      await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
-    }
   });
 
   bot.on("voice", async (ctx) => {

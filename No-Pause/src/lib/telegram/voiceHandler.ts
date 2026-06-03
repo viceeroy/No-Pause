@@ -80,12 +80,6 @@ async function sendResult(
 
 const sessionSupabase = supabaseServer as unknown as SupabaseLike;
 const MAX_TELEGRAM_VOICE_DURATION_SECONDS = 300;
-const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS = 10_000;
-const TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS = 30_000;
-export const TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE =
-  "AI feedback is temporarily unavailable. Please try again in a moment.";
-const TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR = "Telegram AI feedback Supabase call timed out";
-const aiFeedbackSessionDebounce = new Map<string, number>();
 
 export type TelegramSessionRecord = {
   id: string;
@@ -199,42 +193,6 @@ function analyzeTranscript(
     isCompleted: scoreResult.isCompleted,
     pauseLog,
   };
-}
-
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
-}
-
-function isTelegramAiFeedbackSupabaseTimeout(error: unknown): boolean {
-  return error instanceof Error && error.message === TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR;
-}
-
-function claimAiFeedbackSession(sessionId: string): boolean {
-  const now = Date.now();
-  for (const [trackedSessionId, lastCallbackAt] of aiFeedbackSessionDebounce) {
-    if (now - lastCallbackAt >= TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS) {
-      aiFeedbackSessionDebounce.delete(trackedSessionId);
-    }
-  }
-
-  const lastCallbackAt = aiFeedbackSessionDebounce.get(sessionId);
-  if (lastCallbackAt !== undefined && now - lastCallbackAt < TELEGRAM_AI_FEEDBACK_DEBOUNCE_MS) {
-    return false;
-  }
-
-  aiFeedbackSessionDebounce.set(sessionId, now);
-  return true;
 }
 
 async function downloadTelegramVoice(fileId: string): Promise<ArrayBuffer> {
@@ -908,52 +866,5 @@ export async function postGroupChallengeResultToGroup(
   } catch (error) {
     console.error("Telegram group challenge result post failed", error);
     await ctx.answerCbQuery("I could not post to the group right now.", { show_alert: true });
-  }
-}
-
-export async function replyWithAiFeedback(
-  ctx: Context & { match: RegExpExecArray },
-  telegramId: number,
-) {
-  const sessionId = ctx.match[1];
-  if (!claimAiFeedbackSession(sessionId)) {
-    return;
-  }
-
-  debugLog("Telegram AI feedback handler entered", {
-    telegramId,
-    sessionId,
-  });
-
-  try {
-    const userId = await withTimeout(
-      resolveTelegramUser(telegramId),
-      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
-      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
-    );
-    if (!userId) {
-      await replyWithConnectPrompt(ctx, telegramId);
-      return;
-    }
-
-    const session = await withTimeout(
-      getTelegramSession({ userId, sessionId }),
-      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_MS,
-      TELEGRAM_AI_FEEDBACK_SUPABASE_TIMEOUT_ERROR,
-    );
-    if (!session || !session.transcript?.trim()) {
-      await ctx.reply(MESSAGES.feedbackTranscriptMissing, { parse_mode: "HTML" });
-      return;
-    }
-
-    // Sessions table has no topic column — no topic available, matches gate in useSession.ts and api/feedback.ts
-    await ctx.reply("💡 Pick a topic to get AI feedback and a higher flow score — use the button below to grab a prompt");
-  } catch (error) {
-    if (isTelegramAiFeedbackSupabaseTimeout(error)) {
-      await ctx.reply(TELEGRAM_AI_FEEDBACK_TEMPORARILY_UNAVAILABLE_MESSAGE);
-      return;
-    }
-    console.error("Telegram AI feedback failed", error);
-    await ctx.reply(MESSAGES.feedbackError, { parse_mode: "HTML" });
   }
 }

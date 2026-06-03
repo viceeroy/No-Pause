@@ -19,7 +19,6 @@ export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX = "ccr:";
 export const TRY_GROUP_CHALLENGE_ACTION_PREFIX = "tg:";
 export const TRY_AGAIN_ACTION = "try_again:speaking";
-export const AI_FEEDBACK_ACTION_PREFIX = "ai_feedback:";
 export const GROUP_CHALLENGE_LEADERBOARD_ACTION_PREFIX = "gcl:";
 export const GROUP_CHALLENGE_STATUS_PREFIX = "group_pending";
 const TELEGRAM_SAFE_MESSAGE_LENGTH = 4000;
@@ -316,7 +315,6 @@ export function getGroupChallengeResultActions(input: {
     [
       Markup.button.callback("📤 Send to Group", `${POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX}${input.challengeId}:${input.sessionId}`),
     ],
-    [Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${input.sessionId}`)],
     [Markup.button.callback("🔁 Try Again", `${TRY_GROUP_CHALLENGE_ACTION_PREFIX}${input.challengeId}`)],
   ]);
 }
@@ -505,7 +503,6 @@ ${rows.join("\n\n")}`;
 
 export function getSessionActions(sessionId: string) {
   return Markup.inlineKeyboard([
-    [Markup.button.callback("🤖 AI Feedback", `${AI_FEEDBACK_ACTION_PREFIX}${sessionId}`)],
     [Markup.button.callback("🔁 Try Again", TRY_AGAIN_ACTION)],
     [Markup.button.url("📊 View on NoPause", SITE_URL)],
   ]);
@@ -622,12 +619,6 @@ export const MESSAGES = {
   unusableTranscript: "⚠️ Couldn't hear anything clearly.\n\nPlease speak louder and try again.",
   analysisError:
     "⚠️ I hit an issue analyzing that voice note.\n\nPlease try again in a moment.",
-  feedbackIdentifyError:
-    "⚠️ I could not identify your Telegram account.",
-  feedbackTranscriptMissing:
-    "⚠️ I could not find the transcript for that session.\n\nSend a new voice note and try again.",
-  feedbackError:
-    "⚠️ I could not generate feedback right now.\n\nPlease try again in a moment.",
   forwardedVoice:
     "🎤 Please record a fresh voice note directly in this chat, not forwarded from somewhere else.",
   voiceTooLong:

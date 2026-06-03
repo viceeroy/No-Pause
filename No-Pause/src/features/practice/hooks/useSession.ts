@@ -6,6 +6,7 @@ import { getWordCount } from '@/lib/core/utils';
 import { applyBandBonus, isScorableSession } from '@/lib/core/scoring';
 import { SCORING_VERSION_FREE_SPEECH_BAND } from '@/lib/core/constants';
 import { toast } from '@/shared/components/ui/sonner';
+import { trackEvent } from '@/services/posthog';
 
 type UseSessionOptions = {
   lastResults: SessionResult | null;
@@ -121,6 +122,15 @@ export function useSession({
       return { sessionId: null, saveFailed: true };
     }
 
+    trackEvent('session_completed', {
+      mode: normalizedMode,
+      duration_s: duration,
+      flow_score: sessionResult.flowScore,
+      words,
+      completed,
+      pause_count: sessionResult.pauseCount ?? sessionResult.hesitationCount,
+    });
+
     try {
       await updateStreak({
         userId,
@@ -147,6 +157,14 @@ export function useSession({
 
       const finalScore = applyBandBonus(input.flowScore, result.band);
       const bandPoints = finalScore - input.flowScore;
+
+      trackEvent('ai_feedback_received', {
+        band: result.band,
+        band_points: bandPoints,
+        flow_score_before: input.flowScore,
+        flow_score_after: finalScore,
+        has_topic: !!topic,
+      });
 
       if (input.sessionId && userId) {
         updateSession({
