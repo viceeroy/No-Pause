@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/services/supabase";
+import { identifyUser, resetUser } from "@/services/posthog";
 
 type AuthContextValue = {
   isLoading: boolean;
@@ -48,9 +49,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       setIsLoading(false);
+      if (nextSession?.user) {
+        identifyUser(nextSession.user.id, nextSession.user.email);
+      } else if (event === 'SIGNED_OUT') {
+        resetUser();
+      }
     });
 
     return () => {
