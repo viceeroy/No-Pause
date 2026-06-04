@@ -76,10 +76,6 @@ export const changePromptKeyboard = Markup.inlineKeyboard([
   Markup.button.callback("🔄 Change Prompt", CHANGE_PROMPT_ACTION),
 ]);
 
-export const groupTryAgainKeyboard = Markup.inlineKeyboard([
-  Markup.button.callback("🔁 Try Again", TRY_AGAIN_ACTION),
-]);
-
 export function getGroupChallengeDeepLink(challengeId: string): string {
   return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=group_${encodeURIComponent(challengeId)}`;
 }

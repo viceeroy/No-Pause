@@ -52,7 +52,6 @@ import {
   getGroupShareResultMessage,
   getSessionActions,
   getSpeakingResultMessage,
-  groupTryAgainKeyboard,
   MESSAGES,
 } from "./constants.js";
 
@@ -377,8 +376,6 @@ export async function handleVoiceMessage(
   telegramId: number,
 ) {
   const t_total = Date.now();
-  const groupChat = isGroupChat(ctx);
-  const username = getTelegramUsername(ctx);
   let userId: string | null;
   try {
     userId = await resolveTelegramUser(telegramId);
@@ -410,7 +407,7 @@ export async function handleVoiceMessage(
   let pendingChallenge: Awaited<ReturnType<typeof getPendingChallenge>> = null;
   let challenge: Awaited<ReturnType<typeof getFriendChallenge>> = null;
   try {
-    pendingChallenge = groupChat ? null : await getPendingChallenge(telegramId);
+    pendingChallenge = await getPendingChallenge(telegramId);
     challenge = pendingChallenge ? await getFriendChallenge(pendingChallenge.challenge_id) : null;
     debugLog('[NoPause:challenge] pending challenge lookup', { telegram_id: telegramId, challenge_id: pendingChallenge?.challenge_id ?? null });
     if (pendingChallenge && !challenge) {
@@ -540,18 +537,6 @@ export async function handleVoiceMessage(
     const feedbackSuffix = aiFeedbackText
       ? `\n\n🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(aiFeedbackText)}`
       : "";
-
-    if (groupChat) {
-      await sendResult(ctx, {
-        text: getSpeakingResultMessage({ speaker: username, analysis: displayAnalysis, transcript }) + feedbackSuffix,
-        keyboard: groupTryAgainKeyboard,
-        logTemplate: 'group_speaking_result',
-        tTotal: t_total,
-        telegramChatId,
-        telegramId,
-      });
-      return;
-    }
 
     if (pendingChallenge?.challenge_type === "friend" && challenge) {
       try {

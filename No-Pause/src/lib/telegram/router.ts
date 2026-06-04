@@ -347,6 +347,10 @@ export function createTelegramBot() {
   });
 
   bot.on("voice", async (ctx) => {
+    // Bot ignores voice notes sent in group chats. Challenge attempts happen
+    // only in the bot DM after the user taps Speak and starts the bot there.
+    if (isGroupChat(ctx)) return;
+
     const telegramId = getTelegramId(ctx);
     if (!telegramId) return;
 
