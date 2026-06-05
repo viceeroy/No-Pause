@@ -19,9 +19,18 @@ export function isUsableTranscript(transcript: string): boolean {
   return getWordCount(transcript) >= 3;
 }
 
+const NON_ENGLISH_FEEDBACK =
+  "Please speak in English to get a score and feedback. Your transcript is shown above.";
+
+const LANGUAGE_GATE = `FIRST check the language. If the TRANSCRIPT is not predominantly in English, ignore all criteria below and respond exactly with:
+{"band": 0, "feedback": ""}
+Otherwise, evaluate as follows.
+
+`;
+
 const FEEDBACK_SYSTEM_PROMPT = `You are a speech coach giving feedback on a spoken response to a specific topic.
 
-You will receive:
+${LANGUAGE_GATE}You will receive:
 - TOPIC: the prompt the user was given
 - TRANSCRIPT: what they said
 - STATS: speaking time, word count, pause count
@@ -49,7 +58,7 @@ Respond only in this JSON format:
 
 const FREE_SPEECH_SYSTEM_PROMPT = `You are a speech coach giving feedback on a freely-spoken response (no assigned topic).
 
-You will receive:
+${LANGUAGE_GATE}You will receive:
 - TRANSCRIPT: what they said
 - STATS: speaking time, word count, pause count
 
@@ -81,10 +90,14 @@ function parseAiFeedbackResponse(raw: string): AiFeedbackResult {
       parsed !== null &&
       typeof parsed.band === "number" &&
       Number.isInteger(parsed.band) &&
-      parsed.band >= 1 &&
+      parsed.band >= 0 &&
       parsed.band <= 9 &&
       typeof parsed.feedback === "string"
     ) {
+      // Band 0 = non-English transcript. Override with deterministic note.
+      if (parsed.band === 0) {
+        return { band: 0, feedback: NON_ENGLISH_FEEDBACK };
+      }
       return { band: parsed.band, feedback: parsed.feedback };
     }
   } catch {

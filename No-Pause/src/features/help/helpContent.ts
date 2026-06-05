@@ -248,7 +248,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           { label: 'Sessions needed per day', value: '1' },
           { label: 'Streak resets when', value: 'You miss a day' },
           { label: 'What to watch', value: 'Trend, not peaks' },
-          { label: 'Minimum session length', value: '60 seconds' },
+          { label: 'Minimum speaking time', value: '5 seconds' },
         ],
       },
       {
@@ -264,7 +264,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'tip',
         content:
-          'A short 60-second session still counts toward your streak. Consistency matters more than duration.',
+          'A short session still counts toward your streak as long as you speak for at least 5 seconds. Consistency matters more than duration.',
       },
     ],
   },

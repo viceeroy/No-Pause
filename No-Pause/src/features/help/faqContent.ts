@@ -10,7 +10,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'Why is my transcript wrong or empty?',
-    a: 'Transcription is done automatically after each session. On most browsers it uses your device\'s built-in speech recognition, with a fallback to a server-side system when that fails. Accuracy depends on your microphone quality, background noise, and accent. If your transcript is consistently wrong, try recording in a quieter environment or using a headset. Android devices skip the browser speech recognition step entirely and go straight to the server fallback, which is generally more accurate.',
+    a: 'Transcription runs automatically after each session using a server-side system. Accuracy depends on your microphone quality, background noise, and accent. If your transcript is consistently wrong, try recording in a quieter environment or using a headset. An empty transcript usually means no audio was captured — check that your microphone is working and your browser has permission to use it.',
   },
   {
     q: 'My microphone isn\'t working — what do I do?',
@@ -50,7 +50,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'Can I speak in a language other than English?',
-    a: 'Yes. The transcription system supports many languages — it detects the language you\'re speaking automatically. The Flow Score is based purely on your speaking time and silence, not on the words themselves, so it works the same regardless of language. The prompts in the app are in English, but you can ignore them and speak in any language you want.',
+    a: 'Partially. Your audio is transcribed and your base Flow Score — speaking time minus silence — is calculated regardless of language. However, the AI feedback and the score bonus that comes with it only work for English. If you speak another language, you\'ll still see your transcript and base score, but the AI coaching section will ask you to speak in English instead of giving feedback.',
   },
   {
     q: 'Why does the app keep asking for microphone permission?',
@@ -58,7 +58,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: 'What does the AI feedback do?',
-    a: 'When you record against a topic prompt, you can request AI feedback on your transcript. It reads what you said and gives you a short coaching note — where your argument was strong, where you lost structure, or patterns it noticed in how you speak. It also judges how well-developed your answer was and adds a bonus to your Flow Score for a strong, substantive response. It\'s optional and generated on demand, and appears below your transcript on the results screen.',
+    a: 'After each session, NoPause automatically reads your transcript and gives you a short coaching note — where your argument was strong, where you lost structure, or how well your ideas connected. It also adds a bonus to your Flow Score for a strong, substantive response. AI feedback works for both topic-based and free-speech sessions. It only works for English — if you spoke another language, the feedback section will prompt you to switch to English instead.',
   },
   {
     q: 'How do Telegram challenges work?',
