@@ -78,6 +78,15 @@ export const promptCategories: PromptCategory[] = [
 
 export const opinionPrompts = promptCategories.flatMap((category) => category.prompts);
 
+export function getShuffledPrompts(n: number): string[] {
+  const arr = [...opinionPrompts];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, n);
+}
+
 export function getRandomPrompt(excludeLast?: string): string {
   if (opinionPrompts.length <= 1) {
     return opinionPrompts[0] ?? 'Talk about something you care about.';

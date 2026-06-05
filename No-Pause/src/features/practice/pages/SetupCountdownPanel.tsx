@@ -5,7 +5,6 @@ import type { PracticeState } from './types';
 
 export type StartSelection =
   | { type: 'free' }
-  | { type: 'random' }
   | { type: 'prompt'; text: string };
 
 type SetupCountdownPanelProps = {
@@ -22,6 +21,7 @@ type SetupCountdownPanelProps = {
   promptText: string;
   prompts: string[];
   onStart: (selection: StartSelection) => void;
+  onOpenPrompts: () => void;
   countdown: number;
 };
 
@@ -45,13 +45,13 @@ export function SetupCountdownPanel({
   promptText,
   prompts,
   onStart,
+  onOpenPrompts,
   countdown,
 }: SetupCountdownPanelProps) {
   // Card 0 = free speak, cards 1…N = one prompt each.
   const slides = useMemo(() => ['__free__', ...prompts], [prompts]);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [randomMode, setRandomMode] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [nudgeOffset, setNudgeOffset] = useState(0);
@@ -93,12 +93,19 @@ export function SetupCountdownPanel({
     setDragOffset(0);
   };
 
-  const handleStartClick = () => {
-    if (activeIndex === 0) {
-      onStart(randomMode ? { type: 'random' } : { type: 'free' });
-    } else {
-      onStart({ type: 'prompt', text: slides[activeIndex] });
+  const showRandomPrompt = () => {
+    const promptCount = slides.length - 1;
+    if (promptCount < 1) return;
+    let next = 1 + Math.floor(Math.random() * promptCount);
+    if (promptCount > 1 && next === activeIndex) {
+      next = next === slides.length - 1 ? 1 : next + 1;
     }
+    setActiveIndex(next);
+  };
+
+  const handleStartClick = () => {
+    if (activeIndex === 0) onStart({ type: 'free' });
+    else onStart({ type: 'prompt', text: slides[activeIndex] });
   };
 
   return (
@@ -202,17 +209,17 @@ export function SetupCountdownPanel({
                 </div>
                 <button
                   type="button"
-                  disabled={slides.length < 2}
-                  onClick={() => setActiveIndex(activeIndex > 0 ? 0 : 1)}
-                  className={cn(pillBase, activeIndex > 0 ? pillActive : pillIdle, 'disabled:cursor-not-allowed disabled:opacity-50')}
+                  onClick={onOpenPrompts}
+                  className={cn(pillBase, activeIndex > 0 ? pillActive : pillIdle)}
                 >
                   <ListChecks size={15} className="shrink-0 text-primary" />
                   Prompts
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRandomMode(!randomMode)}
-                  className={cn(pillBase, randomMode ? pillActive : pillIdle)}
+                  disabled={slides.length < 2}
+                  onClick={showRandomPrompt}
+                  className={cn(pillBase, pillIdle, 'disabled:cursor-not-allowed disabled:opacity-50')}
                 >
                   <Shuffle size={15} className="shrink-0 text-primary" />
                   Random

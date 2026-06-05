@@ -22,6 +22,29 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const PRODUCTION_ORIGIN = "https://nopause.org";
 
+// Dev-only auth bypass. Lets local previews reach auth-gated routes without
+// Google OAuth. Active ONLY in `vite` dev builds AND when the flag is set, so
+// it can never run in a production bundle.
+const DEV_FAKE_AUTH =
+  import.meta.env.DEV && import.meta.env.VITE_DEV_FAKE_AUTH === "1";
+
+const FAKE_SESSION = {
+  access_token: "dev-fake-access-token",
+  refresh_token: "dev-fake-refresh-token",
+  expires_in: 3600,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  token_type: "bearer",
+  user: {
+    id: "00000000-0000-0000-0000-000000000000",
+    aud: "authenticated",
+    role: "authenticated",
+    email: "dev@nopause.local",
+    app_metadata: { provider: "google", providers: ["google"] },
+    user_metadata: { full_name: "Dev User", name: "Dev User" },
+    created_at: new Date(0).toISOString(),
+  },
+} as unknown as Session;
+
 const getAuthCallbackUrl = (nextPath?: string) => {
   const origin = typeof window !== "undefined" ? window.location.origin : PRODUCTION_ORIGIN;
   const url = new URL("/auth/callback", origin);
@@ -32,10 +55,14 @@ const getAuthCallbackUrl = (nextPath?: string) => {
 };
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(
+    DEV_FAKE_AUTH ? FAKE_SESSION : null,
+  );
+  const [isLoading, setIsLoading] = useState(!DEV_FAKE_AUTH);
 
   useEffect(() => {
+    if (DEV_FAKE_AUTH) return;
+
     let isMounted = true;
 
     void supabase.auth.getSession().then(({ data, error }) => {

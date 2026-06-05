@@ -16,7 +16,7 @@ import { ResultPanel } from '@/features/practice/pages/ResultPanel';
 import { ResultSkeletonPanel } from '@/features/practice/pages/ResultSkeletonPanel';
 import { usePracticeState } from '@/features/practice/pages/usePracticeState';
 import { useRecordingController } from '@/features/practice/pages/useRecordingController';
-import { getRandomPrompt, opinionPrompts } from '@/lib/core/prompts';
+import { getShuffledPrompts } from '@/lib/core/prompts';
 import { formatDuration } from '@/lib/core/time';
 
 const timerOptions = [
@@ -75,7 +75,7 @@ export default function PracticePage() {
   };
 
   const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';
-  const carouselPrompts = useMemo(() => opinionPrompts.slice(0, 20), []);
+  const carouselPrompts = useMemo(() => getShuffledPrompts(20), []);
   const timerLabel = useMemo(
     () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
     [selectedTimerSeconds],
@@ -114,8 +114,6 @@ export default function PracticePage() {
   const handleStartWithSelection = (selection: StartSelection) => {
     if (selection.type === 'free') {
       state.setTopicPrompt(null);
-    } else if (selection.type === 'random') {
-      applyPrompt(getRandomPrompt(promptText || undefined));
     } else {
       applyPrompt(selection.text);
     }
@@ -171,6 +169,7 @@ export default function PracticePage() {
           promptText={promptText}
           prompts={carouselPrompts}
           onStart={handleStartWithSelection}
+          onOpenPrompts={() => navigate('/prompts')}
           countdown={state.countdown}
         />
       )}

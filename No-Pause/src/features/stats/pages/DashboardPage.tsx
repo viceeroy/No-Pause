@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Download, TrendingUp, Clock, Flame, CircleHelp, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
@@ -6,7 +6,7 @@ import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
 import { getPracticeStats, type PracticeStats } from '@/lib/practiceApi';
 import { formatPracticeTotalDuration } from '@/lib/core/time';
-import { opinionPrompts } from '@/lib/core/prompts';
+import { getShuffledPrompts } from '@/lib/core/prompts';
 import {
   Dialog,
   DialogContent,
@@ -15,8 +15,6 @@ import {
   DialogDescription,
 } from '@/shared/components/ui/dialog';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/shared/components/ui/tooltip';
-
-const dashboardPrompts = opinionPrompts.slice(0, 10);
 
 const emptyStats: PracticeStats = {
   scoredSessions: 0,
@@ -41,6 +39,7 @@ export default function DashboardPage() {
   const { isIos, isAndroid, isDesktop, isAndroidChrome, isInstallEligible, isInstalled } = useInstallPlatform();
   const isMountedRef = useRef(false);
   const requestIdRef = useRef(0);
+  const dashboardPrompts = useMemo(() => getShuffledPrompts(10), []);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -153,9 +152,12 @@ export default function DashboardPage() {
 
         <div className="mb-4 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 2xl:grid-cols-3">
           {metricCards.map(({ label, value, icon: Icon, valueClassName }) => (
-            <article
+            <button
               key={label}
-              className="flex min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 shadow-card md:min-h-[124px] md:p-5"
+              type="button"
+              onClick={() => navigate('/stats')}
+              aria-label={`Open stats — ${label}`}
+              className="flex min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:min-h-[124px] md:p-5"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-sans font-bold leading-snug text-muted-foreground">{label}</p>
@@ -164,9 +166,14 @@ export default function DashboardPage() {
               <p className={`text-3xl font-serif font-medium leading-none md:text-4xl ${valueClassName}`}>
                 {value}
               </p>
-            </article>
+            </button>
           ))}
-          <article className="hidden min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 shadow-card md:min-h-[124px] md:p-5 2xl:flex">
+          <button
+            type="button"
+            onClick={() => navigate('/stats')}
+            aria-label="Open stats — Streak"
+            className="hidden min-h-[116px] flex-col justify-between rounded-[20px] border border-border bg-surface-card p-4 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:min-h-[124px] md:p-5 2xl:flex"
+          >
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-sans font-bold leading-snug text-muted-foreground">Streak</p>
               <Flame size={18} className="shrink-0 text-primary" />
@@ -174,7 +181,7 @@ export default function DashboardPage() {
             <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
               {statsLoading ? '...' : `${stats.currentStreak}d`}
             </p>
-          </article>
+          </button>
         </div>
 
         <div className="flex flex-1 flex-col">
