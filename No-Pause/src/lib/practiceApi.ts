@@ -20,6 +20,7 @@ import {
 } from "./core/queries";
 import { supabase as browserSupabase } from "@/services/supabase";
 import { parseTranscribedWords, type TranscribedWord } from "@/lib/core/utils";
+import type { PromptCategory } from "@/lib/core/prompts";
 
 export type { PracticeStats, SessionRecord, WeeklyActivityDay, WeeklyStatsComparison } from "./core/queries";
 
@@ -165,6 +166,44 @@ export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<
     feedback: String(body.feedback ?? ""),
     band: Number.isInteger(band) && band >= 1 && band <= 9 ? band : 5,
   };
+}
+
+function coercePromptList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim());
+}
+
+export async function generatePrompts(
+  categoryId: PromptCategory["id"],
+  count?: number,
+): Promise<string[]> {
+  const response = await fetch("/api/generate-prompts", {
+    method: "POST",
+    headers: {
+      ...(await getAuthHeaders()),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ categoryId, ...(count ? { count } : {}) }),
+  });
+  const body = await readEndpointJson<{ prompts?: unknown }>(response);
+  return coercePromptList(body.prompts);
+}
+
+export async function fetchUserGeneratedPrompts(
+  categoryId: PromptCategory["id"],
+): Promise<string[]> {
+  const { data, error } = await browserSupabase
+    .from("user_prompts")
+    .select("generated")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load generated prompts", error);
+    return [];
+  }
+
+  const generated = (data?.generated ?? {}) as Record<string, unknown>;
+  return coercePromptList(generated[categoryId]);
 }
 
 type SaveSessionInput = {

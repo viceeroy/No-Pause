@@ -526,6 +526,7 @@ export async function handleVoiceMessage(
             telegramMessageId,
             sessionId: existingSessionId,
           });
+          if (pendingChallenge) await deletePendingChallenge(telegramId);
           return;
         }
       }
@@ -548,8 +549,6 @@ export async function handleVoiceMessage(
       } catch (error) {
         console.error("Telegram friend challenge submission marker failed", error);
       }
-
-      await deletePendingChallenge(telegramId);
 
       if (Number(challenge.creator_telegram_id) === telegramId) {
         try {
@@ -586,6 +585,7 @@ export async function handleVoiceMessage(
           telegramChatId,
           telegramId,
         });
+        await deletePendingChallenge(telegramId);
         return;
       }
 
@@ -603,6 +603,7 @@ export async function handleVoiceMessage(
         telegramChatId,
         telegramId,
       });
+      await deletePendingChallenge(telegramId);
       return;
     }
 
@@ -613,8 +614,6 @@ export async function handleVoiceMessage(
         telegramId,
         sessionId: String(sessionId),
       });
-      await deletePendingChallenge(telegramId);
-
       await sendResult(ctx, {
         text: getChallengeResultMessage({
           title: "Group Challenge Result",
@@ -634,6 +633,7 @@ export async function handleVoiceMessage(
         telegramChatId,
         telegramId,
       });
+      await deletePendingChallenge(telegramId);
       return;
     }
 

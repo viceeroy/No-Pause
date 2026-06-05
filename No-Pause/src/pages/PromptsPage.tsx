@@ -1,15 +1,62 @@
-import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ChevronLeft, Loader2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { promptCategories } from '@/lib/core/prompts';
+import { promptCategories, type PromptCategory } from '@/lib/core/prompts';
+import { fetchUserGeneratedPrompts, generatePrompts } from '@/lib/practiceApi';
+import { useAuth } from '@/providers/AuthContext';
+
+type CategoryId = PromptCategory['id'];
 
 export default function PromptsPage() {
   const navigate = useNavigate();
-  const [activeCategoryId, setActiveCategoryId] = useState(promptCategories[0]?.id ?? 'argue');
+  const { user } = useAuth();
+  const [activeCategoryId, setActiveCategoryId] = useState<CategoryId>(promptCategories[0]?.id ?? 'argue');
   const activeCategory = promptCategories.find((category) => category.id === activeCategoryId) ?? promptCategories[0];
+
+  const [generatedByCategory, setGeneratedByCategory] = useState<Partial<Record<CategoryId, string[]>>>({});
+  const [loadingCategory, setLoadingCategory] = useState<CategoryId | null>(null);
+  const [errorByCategory, setErrorByCategory] = useState<Partial<Record<CategoryId, string>>>({});
+
+  const generatedPrompts = generatedByCategory[activeCategoryId] ?? [];
+  const isLoading = loadingCategory === activeCategoryId;
+  const error = errorByCategory[activeCategoryId];
+
+  useEffect(() => {
+    if (!user) return;
+    if (generatedByCategory[activeCategoryId] !== undefined) return;
+
+    let cancelled = false;
+    void fetchUserGeneratedPrompts(activeCategoryId).then((prompts) => {
+      if (cancelled) return;
+      setGeneratedByCategory((prev) => ({ ...prev, [activeCategoryId]: prompts }));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, activeCategoryId, generatedByCategory]);
 
   const openPrompt = (prompt: string) => {
     navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`);
+  };
+
+  const handleGenerate = async () => {
+    const categoryId = activeCategoryId;
+    setLoadingCategory(categoryId);
+    setErrorByCategory((prev) => ({ ...prev, [categoryId]: undefined }));
+
+    try {
+      const newPrompts = await generatePrompts(categoryId);
+      setGeneratedByCategory((prev) => ({
+        ...prev,
+        [categoryId]: [...(prev[categoryId] ?? []), ...newPrompts],
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not generate prompts. Please try again.';
+      setErrorByCategory((prev) => ({ ...prev, [categoryId]: message }));
+    } finally {
+      setLoadingCategory((current) => (current === categoryId ? null : current));
+    }
   };
 
   return (
@@ -56,20 +103,40 @@ export default function PromptsPage() {
 
         {activeCategory && (
           <section aria-labelledby={`${activeCategory.id}-prompts-heading`}>
-            <div className="mb-4 border-b border-border pb-4">
-              <h2
-                id={`${activeCategory.id}-prompts-heading`}
-                className="text-2xl font-serif font-medium text-foreground md:text-3xl"
-              >
-                {activeCategory.label}
-              </h2>
-              <p className="mt-1 max-w-xl text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-                {activeCategory.description}
-              </p>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+              <div>
+                <h2
+                  id={`${activeCategory.id}-prompts-heading`}
+                  className="text-2xl font-serif font-medium text-foreground md:text-3xl"
+                >
+                  {activeCategory.label}
+                </h2>
+                <p className="mt-1 max-w-xl text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
+                  {activeCategory.description}
+                </p>
+              </div>
+
+              {user && (
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={isLoading}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/45 bg-surface-elevated px-5 text-sm font-sans font-bold text-foreground shadow-card transition-colors btn-press hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {isLoading ? 'Generating…' : 'Generate new prompts'}
+                </button>
+              )}
             </div>
 
+            {error && (
+              <p className="mb-4 text-sm font-sans text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
-              {activeCategory.prompts.map((prompt) => (
+              {[...activeCategory.prompts, ...generatedPrompts].map((prompt) => (
                 <button
                   key={prompt}
                   type="button"

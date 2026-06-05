@@ -1,9 +1,10 @@
 import { supabaseServer } from "./supabaseServer.js";
 
-export type ApiUsageKind = "transcription" | "feedback";
+export type ApiUsageKind = "transcription" | "feedback" | "prompts";
 
 export const DAILY_TRANSCRIPTION_LIMIT = 20;
 export const DAILY_FEEDBACK_LIMIT = 20;
+export const DAILY_PROMPTS_LIMIT = 20;
 
 export class ApiQuotaExceededError extends Error {
   constructor(public readonly kind: ApiUsageKind) {
@@ -17,9 +18,15 @@ export function isApiQuotaExceededError(error: unknown): error is ApiQuotaExceed
 }
 
 export function getQuotaExceededMessage(kind: ApiUsageKind): string {
-  return kind === "transcription"
-    ? "Daily transcription limit reached. Try again tomorrow."
-    : "Daily feedback limit reached. Try again tomorrow.";
+  switch (kind) {
+    case "transcription":
+      return "Daily transcription limit reached. Try again tomorrow.";
+    case "prompts":
+      return "Daily prompt generation limit reached. Try again tomorrow.";
+    case "feedback":
+    default:
+      return "Daily feedback limit reached. Try again tomorrow.";
+  }
 }
 
 export async function consumeApiQuota(input: {

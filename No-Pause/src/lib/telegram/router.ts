@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
-import { getRandomPrompt } from "../core/prompts.js";
+import { pickPromptForUser } from "../../services/userPrompts.js";
 import { getTelegramChallengeCounts, getTelegramPracticeStats } from "../core/queries.js";
 import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
@@ -67,8 +67,20 @@ function wasNoPauseAddedToGroup(ctx: Context): boolean {
   );
 }
 
+async function resolveUserIdForPrompt(ctx: Context): Promise<string | null> {
+  const telegramId = getTelegramId(ctx);
+  if (!telegramId) return null;
+  try {
+    return await resolveTelegramUser(telegramId);
+  } catch (error) {
+    console.error("Telegram user lookup failed for prompt", error);
+    return null;
+  }
+}
+
 async function replyWithPrompt(ctx: Context) {
-  const prompt = getRandomPrompt();
+  const userId = await resolveUserIdForPrompt(ctx);
+  const prompt = await pickPromptForUser(userId);
 
   const formattedMessage = isGroupChat(ctx)
     ? `💬 <b>Prompt</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`
@@ -293,7 +305,8 @@ export function createTelegramBot() {
   });
 
   bot.action(CHANGE_PROMPT_ACTION, async (ctx) => {
-    const prompt = getRandomPrompt();
+    const userId = await resolveUserIdForPrompt(ctx);
+    const prompt = await pickPromptForUser(userId);
 
     await ctx.answerCbQuery();
     const message = isGroupChat(ctx)

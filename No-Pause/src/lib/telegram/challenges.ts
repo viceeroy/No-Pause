@@ -1,5 +1,5 @@
 import type { Context } from "telegraf";
-import { getRandomPrompt } from "../core/prompts.js";
+import { pickPromptForUser } from "../../services/userPrompts.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
@@ -565,8 +565,18 @@ export async function updateFriendChallengeCreatorScore(challengeId: string, sco
   }
 }
 
+async function pickChallengeTopic(telegramId: number, excludeLast?: string): Promise<string> {
+  let userId: string | null = null;
+  try {
+    userId = await resolveTelegramUser(telegramId);
+  } catch (error) {
+    console.error("Telegram user lookup failed for challenge topic", error);
+  }
+  return pickPromptForUser(userId, excludeLast);
+}
+
 export async function replyWithNewFriendChallenge(ctx: Context, telegramId: number) {
-  const topic = getRandomPrompt();
+  const topic = await pickChallengeTopic(telegramId);
   const challengeId = createChallengeId();
 
   try {
@@ -761,7 +771,7 @@ export async function handleGroupChallengeDeepLink(
 }
 
 export async function replyWithNewGroupChallenge(ctx: Context, groupId: number, creatorTelegramId: number) {
-  const prompt = getRandomPrompt();
+  const prompt = await pickChallengeTopic(creatorTelegramId);
   const challengeId = createChallengeId();
 
   try {
@@ -804,7 +814,7 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
       return;
     }
 
-    const prompt = getRandomPrompt(challenge.topic);
+    const prompt = await pickChallengeTopic(creatorTelegramId, challenge.topic);
     await updateChallengeTopic(challengeId, prompt);
 
     await ctx.answerCbQuery();

@@ -193,3 +193,104 @@ export async function getAIFeedback(transcript: string, systemPrompt?: string): 
     throw error;
   }
 }
+
+export type GenerateCategoryPromptsInput = {
+  label: string;
+  description: string;
+  existing: string[];
+  count: number;
+};
+
+function parseGeneratedPrompts(content: unknown, existing: string[], count: number): string[] {
+  const raw = String(content ?? "").trim();
+  if (!raw) {
+    throw new Error("Groq returned empty prompt content");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    // Model sometimes wraps JSON in prose/code fences; extract the first object.
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error("Groq prompt response was not valid JSON");
+    }
+    parsed = JSON.parse(match[0]);
+  }
+
+  const list = (parsed as { prompts?: unknown })?.prompts;
+  if (!Array.isArray(list)) {
+    throw new Error("Groq prompt response missing prompts array");
+  }
+
+  const seen = new Set(existing.map((prompt) => prompt.trim().toLowerCase()));
+  const result: string[] = [];
+  for (const item of list) {
+    const prompt = typeof item === "string" ? item.trim() : "";
+    if (!prompt) continue;
+    const key = prompt.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(prompt);
+    if (result.length >= count) break;
+  }
+
+  if (result.length === 0) {
+    throw new Error("Groq produced no usable prompts");
+  }
+
+  return result;
+}
+
+export async function generateCategoryPrompts(input: GenerateCategoryPromptsInput): Promise<string[]> {
+  const { label, description, existing, count } = input;
+
+  const systemPrompt = [
+    "You generate speaking-practice prompts for a speech fluency app.",
+    `The current category is "${label}": ${description}`,
+    "Study the existing prompts the user provides as style examples, then write brand-new prompts that match their tone, length, structure, and difficulty.",
+    "Each prompt must be a single self-contained sentence suitable for a 1 to 3 minute spoken response.",
+    "Do not repeat or lightly reword the existing prompts. Do not number them or add commentary.",
+    'Respond with strict JSON only, in the exact shape {"prompts": ["...", "..."]}.',
+  ].join(" ");
+
+  const userMessage = [
+    `Generate ${count} new "${label}" prompts.`,
+    "Existing prompts (match this style, do not duplicate):",
+    ...existing.map((prompt) => `- ${prompt}`),
+  ].join("\n");
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+  let response: Response;
+
+  try {
+    response = await fetch(GROQ_CHAT_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getGroqApiKey()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Groq prompt generation failed: ${response.status} ${errorText.slice(0, 200)}`);
+  }
+
+  const data = (await response.json()) as GroqChatCompletionResponse;
+  return parseGeneratedPrompts(data?.choices?.[0]?.message?.content, existing, count);
+}
