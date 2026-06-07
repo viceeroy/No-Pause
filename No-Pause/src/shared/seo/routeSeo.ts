@@ -65,6 +65,18 @@ export const getRouteSeoConfig = (pathname: string): RouteSeoConfig => {
     };
   }
 
+  if (pathname === "/prompts") {
+    const title = "Practice Prompts | No Pause";
+    const description =
+      "Browse speaking prompts across debate, storytelling, and opinion styles. Pick a prompt and start a focused 1–3 minute fluency session.";
+    return {
+      title,
+      description,
+      canonicalPath: "/prompts",
+      structuredData: buildWebPageSchema(title, description, "/prompts"),
+    };
+  }
+
   if (pathname === "/stats" || pathname === "/history") {
     const title = "Fluency Stats & Progress | No Pause";
     const description =

@@ -124,7 +124,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-dvh bg-surface-base px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 md:px-12 md:pb-16 md:pt-8 lg:px-20">
+    <div className="min-h-dvh bg-surface-base px-5 pb-8 pt-5 md:px-12 md:pb-16 md:pt-8 lg:px-20">
       <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-6xl flex-col">
         <div className="mb-4 flex items-center justify-between gap-4 md:mb-6">
           <div className="min-w-0 text-left">
@@ -262,15 +262,6 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface-base/95 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
-          <button
-            type="button"
-            onClick={handleCardClick}
-            className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-primary px-6 text-base font-sans font-black text-primary-foreground shadow-soft btn-press"
-          >
-            <Mic size={20} /> Start Speaking
-          </button>
-        </div>
       </div>
       <Dialog open={showInstallHelp} onOpenChange={setShowInstallHelp}>
         <DialogContent className="max-w-md gap-0 overflow-hidden rounded-[20px] border-border bg-surface-card p-0">
