@@ -8,3 +8,6 @@ args = [
     "-y",
     "@modelcontextprotocol/server-sequential-thinking",
 ]
+
+[mcp_servers.higgsfield]
+url = "https://mcp.higgsfield.ai/mcp"

@@ -123,9 +123,14 @@ async function readEndpointJson<T>(response: Response): Promise<T> {
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data } = await browserSupabase.auth.getSession();
-  const token = data.session?.access_token;
-  // Guest (no active session): signal the API to skip auth + quota.
-  return token ? { Authorization: `Bearer ${token}` } : { "X-NoPause-Guest": "true" };
+  const session = data.session;
+  const token = session?.access_token;
+  // A stale session (invalid refresh token) can leave an expired access_token
+  // in storage. Sending it as Bearer gets a 401 from the server instead of
+  // falling through to guest mode, so only attach a token that is still valid.
+  const isValid = Boolean(token) && (session?.expires_at ?? 0) * 1000 > Date.now();
+  // Guest (no valid session): signal the API to skip auth + quota.
+  return isValid ? { Authorization: `Bearer ${token}` } : { "X-NoPause-Guest": "true" };
 }
 
 export async function transcribeAudio(input: Base64TranscriptionInput): Promise<TranscriptionResult> {
