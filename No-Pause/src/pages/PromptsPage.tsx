@@ -72,9 +72,6 @@ export default function PromptsPage() {
 
         <header className="mb-8 text-left">
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Prompts</h1>
-          <p className="max-w-2xl text-sm font-sans leading-relaxed text-muted-foreground md:text-base">
-            Choose a speaking style, then start a 1 to 3 minute session with a focused prompt.
-          </p>
         </header>
 
         <div className="mb-8 -mx-5 overflow-x-auto px-5 pb-1 scrollbar-hidden md:mx-0 md:px-0">

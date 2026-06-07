@@ -31,7 +31,7 @@ const emptyStats: PracticeStats = {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [stats, setStats] = useState<PracticeStats>(emptyStats);
   const [statsLoading, setStatsLoading] = useState(true);
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
@@ -49,6 +49,12 @@ export default function DashboardPage() {
   }, []);
 
   const loadStats = useCallback(async () => {
+    // Guests have no stored sessions — skip DB fetches, show empty values.
+    if (isGuest) {
+      setStats(emptyStats);
+      setStatsLoading(false);
+      return;
+    }
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setStatsLoading(true);
@@ -62,7 +68,7 @@ export default function DashboardPage() {
     } finally {
       if (isMountedRef.current && requestId === requestIdRef.current) setStatsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, isGuest]);
 
   useEffect(() => {
     void loadStats();
@@ -144,7 +150,7 @@ export default function DashboardPage() {
               {avatarUrl ? (
                 <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
               ) : (
-                <span>{initials}</span>
+                <span>{isGuest ? 'NP' : initials}</span>
               )}
             </button>
           </div>
@@ -188,7 +194,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={handleCardClick}
-            className="group flex min-h-[332px] flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card p-7 text-center shadow-card transition-all btn-press hover:bg-surface-elevated md:min-h-[420px] md:p-12"
+            className="group flex flex-1 min-h-[332px] flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card p-7 text-center shadow-card transition-all btn-press hover:bg-surface-elevated md:min-h-[420px] md:p-12"
           >
             <div className="relative mb-8 flex h-44 w-44 items-center justify-center md:h-56 md:w-56">
               <div className="dashboard-mic-ping absolute inset-0 rounded-full border-2 border-primary/55" />

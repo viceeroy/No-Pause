@@ -182,13 +182,9 @@ const AuthAwareRoutes = () => {
       <Route
         path="/*"
         element={
-          session ? (
-            <div className="relative min-h-screen bg-background overflow-x-hidden">
-              <AppRoutes />
-            </div>
-          ) : (
-            <Navigate to="/auth" replace />
-          )
+          <div className="relative min-h-screen bg-background overflow-x-hidden">
+            <AppRoutes />
+          </div>
         }
       />
     </Routes>

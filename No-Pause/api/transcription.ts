@@ -137,7 +137,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const auth = await requireAuthenticatedUser(req);
+    const isGuest = req.headers["x-nopause-guest"] === "true";
+
+    const auth = isGuest
+      ? ({ authenticated: true, internal: false, userId: null } as AuthResult)
+      : await requireAuthenticatedUser(req);
     if (!auth.authenticated) {
       sendJson(res, 401, { error: "Authorization token is required" });
       return;

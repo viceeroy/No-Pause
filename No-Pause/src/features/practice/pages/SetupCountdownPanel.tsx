@@ -49,9 +49,15 @@ export function SetupCountdownPanel({
   countdown,
 }: SetupCountdownPanelProps) {
   // Card 0 = free speak, cards 1…N = one prompt each.
-  const slides = useMemo(() => ['__free__', ...prompts], [prompts]);
+  // A picked prompt (from /prompts) arrives via promptText — surface it as the first prompt card.
+  const slides = useMemo(() => {
+    const ordered = promptText
+      ? [promptText, ...prompts.filter((p) => p !== promptText)]
+      : prompts;
+    return ['__free__', ...ordered];
+  }, [prompts, promptText]);
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(promptText ? 1 : 0);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [nudgeOffset, setNudgeOffset] = useState(0);

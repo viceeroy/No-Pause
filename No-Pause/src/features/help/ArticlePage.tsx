@@ -1,9 +1,23 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, type LucideIcon } from 'lucide-react';
 import {
   getArticleBySlug,
   type HelpSection,
   type ScoreExampleCard,
 } from './helpContent';
+
+const SLUG_ICONS: Record<string, LucideIcon> = {
+  'how-a-session-works': Mic,
+  'understanding-flow-score': TrendingUp,
+  'what-counts-as-a-pause': VolumeX,
+  'how-to-improve': Zap,
+  'streaks-and-progress': Flame,
+  'telegram-practice': Send,
+  'privacy-and-data': Shield,
+  'why-speaking-feels-hard': Brain,
+  'why-practice-works': RefreshCw,
+  'before-your-interview-or-presentation': Target,
+};
 
 function TextSection({ content }: { content: string }) {
   return (
@@ -171,10 +185,10 @@ export default function ArticlePage() {
 
         <header className="mt-6">
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-3xl"
+            className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-elevated"
             aria-hidden="true"
           >
-            {article.icon}
+            {(() => { const Icon = SLUG_ICONS[article.slug]; return Icon ? <Icon size={28} className="text-primary" /> : null; })()}
           </span>
           <h1 className="mt-4 text-3xl font-serif font-medium text-foreground break-words">
             {article.title}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogIn, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
 import { supabase } from '@/services/supabase';
 import {
   getPracticeStats,
@@ -103,11 +103,10 @@ function WeeklyActivityRow({
   loading: boolean;
 }) {
   return (
-    <article className="col-span-2 rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
+    <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-sans font-semibold text-muted-foreground">Weekly activity</p>
-          <p className="mt-1 text-sm font-sans text-muted-foreground">Completed sessions this week</p>
         </div>
       </div>
       <div className="grid grid-cols-7 gap-1.5 md:gap-2">
@@ -152,7 +151,7 @@ export default function StatsPage({
   showEmptyStateAction = true,
 }: StatsPageProps) {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuest } = useAuth();
   const [limit, setLimit] = useState(50);
   const [stats, setStats] = useState<PracticeStats>({
     scoredSessions: 0,
@@ -182,6 +181,11 @@ export default function StatsPage({
   }, []);
 
   const loadStats = useCallback(async () => {
+    // Guests have no stored sessions — skip DB fetches, show empty values.
+    if (isGuest) {
+      setStatsLoading(false);
+      return;
+    }
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setStatsLoading(true);
@@ -206,7 +210,7 @@ export default function StatsPage({
     } finally {
       if (isMountedRef.current && requestId === requestIdRef.current) setStatsLoading(false);
     }
-  }, [limit, user?.id]);
+  }, [limit, user?.id, isGuest]);
 
   useEffect(() => {
     void loadStats();
@@ -283,9 +287,29 @@ export default function StatsPage({
 
         <header className="mb-8 text-left">
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Stats</h1>
-          <p className="text-base font-sans text-muted-foreground">Speaking progress</p>
         </header>
 
+        {isGuest ? (
+          <section className="mb-6 flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:gap-4 md:p-6">
+            <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-muted-foreground shadow-card md:h-16 md:w-16">
+                <span>NP</span>
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="text-sm font-sans text-muted-foreground">
+                  Login to track your progress and view your stats
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/auth')}
+              className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-sm font-sans font-bold text-primary-foreground shadow-soft btn-press hover:brightness-110"
+            >
+              Login
+            </button>
+          </section>
+        ) : (
         <section className="mb-6 flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:gap-4 md:p-6">
           <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-primary shadow-card md:h-16 md:w-16">
@@ -321,13 +345,14 @@ export default function StatsPage({
             <TooltipContent side="left">Sign out</TooltipContent>
           </Tooltip>
         </section>
+        )}
 
         <section className="mb-6 rounded-[28px] border border-border bg-surface-card p-6 shadow-card md:p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <p className="mb-2 text-sm font-sans font-bold text-muted-foreground">Weekly best score</p>
               <p className="font-serif text-6xl font-medium leading-none text-primary md:text-7xl">
-                {statsLoading ? '...' : weeklyBestScore}
+                {isGuest ? '—' : (statsLoading ? '...' : weeklyBestScore)}
               </p>
             </div>
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-primary">
@@ -335,7 +360,7 @@ export default function StatsPage({
             </span>
           </div>
           <p className="mb-4 text-sm font-sans text-muted-foreground">
-            {statsLoading ? 'Loading scored sessions...' : `${weeklyStats.currentWeek.sessionCount} sessions this week`}
+            {isGuest ? '—' : (statsLoading ? 'Loading scored sessions...' : `${weeklyStats.currentWeek.sessionCount} sessions this week`)}
           </p>
           {!statsLoading && weeklyScoreTrend !== null && (
             <p className={`text-sm font-sans font-bold ${weeklyScoreTrend >= 0 ? 'text-green-600' : 'text-destructive'}`}>
@@ -344,36 +369,39 @@ export default function StatsPage({
           )}
         </section>
 
+        <section className="mb-6">
+          <WeeklyActivityRow days={weeklyActivity} loading={statsLoading} />
+        </section>
+
         <section className="mb-6 grid grid-cols-2 gap-3 md:gap-4">
           <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
             <BarChart3 size={20} className="mb-6 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Avg score</p>
             <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
-              {statsLoading ? '...' : weeklyStats.currentWeek.avgFlowScore}
+              {isGuest ? '—' : (statsLoading ? '...' : weeklyStats.currentWeek.avgFlowScore)}
             </p>
           </article>
           <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
             <Flame size={20} className="mb-6 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Current streak</p>
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
-              {statsLoading ? '...' : `${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}`}
+              {isGuest ? '—' : (statsLoading ? '...' : `${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}`)}
             </p>
           </article>
           <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
             <TrendingUp size={20} className="mb-6 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Sessions</p>
             <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
-              {statsLoading ? '...' : formatCompactCount(stats.totalSessions)}
+              {isGuest ? '—' : (statsLoading ? '...' : formatCompactCount(stats.totalSessions))}
             </p>
           </article>
           <article className="min-h-[132px] rounded-[22px] border border-border bg-surface-card p-5 shadow-card md:min-h-[148px] md:p-6">
             <Clock size={20} className="mb-6 text-primary" />
             <p className="mb-2 text-xs font-sans font-semibold text-muted-foreground">Practice time</p>
             <p className="text-3xl font-serif font-medium leading-none text-foreground md:text-4xl">
-              {statsLoading ? '...' : formatStatsPracticeTime(stats.totalPracticeTime)}
+              {isGuest ? '—' : (statsLoading ? '...' : formatStatsPracticeTime(stats.totalPracticeTime))}
             </p>
           </article>
-          <WeeklyActivityRow days={weeklyActivity} loading={statsLoading} />
         </section>
 
         <a
@@ -396,26 +424,6 @@ export default function StatsPage({
               <ArrowUpRight size={16} />
             </span>
           </div>
-          {telegramChallengeStats && (
-            <div className="mt-4 grid grid-cols-2 gap-2 md:gap-3">
-              <div className="rounded-[16px] border border-border bg-surface-elevated p-3 text-left">
-                <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-muted-foreground">
-                  Friend Challenges
-                </p>
-                <p className="mt-3 text-2xl font-serif font-medium leading-none text-foreground">
-                  {telegramChallengeStats.friendChallenges} / {telegramChallengeStats.friendWins}
-                </p>
-              </div>
-              <div className="rounded-[16px] border border-border bg-surface-elevated p-3 text-left">
-                <p className="text-[10px] font-sans font-bold uppercase leading-snug tracking-[0.08em] text-muted-foreground">
-                  Group Challenges
-                </p>
-                <p className="mt-3 text-2xl font-serif font-medium leading-none text-foreground">
-                  {telegramChallengeStats.groupChallenges} / {telegramChallengeStats.groupWins}
-                </p>
-              </div>
-            </div>
-          )}
         </a>
 
         {statsError && (

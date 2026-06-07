@@ -124,7 +124,8 @@ async function readEndpointJson<T>(response: Response): Promise<T> {
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data } = await browserSupabase.auth.getSession();
   const token = data.session?.access_token;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  // Guest (no active session): signal the API to skip auth + quota.
+  return token ? { Authorization: `Bearer ${token}` } : { "X-NoPause-Guest": "true" };
 }
 
 export async function transcribeAudio(input: Base64TranscriptionInput): Promise<TranscriptionResult> {

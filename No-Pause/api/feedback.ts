@@ -65,8 +65,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    const userId = await requireAuthenticatedUser(req);
-    if (!userId) {
+    const isGuest = req.headers["x-nopause-guest"] === "true";
+
+    const userId = isGuest ? null : await requireAuthenticatedUser(req);
+    if (!isGuest && !userId) {
       sendJson(res, 401, { error: "Authorization token is required" });
       return;
     }
@@ -78,11 +80,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    await consumeApiQuota({
-      userId,
-      kind: "feedback",
-      limit: DAILY_FEEDBACK_LIMIT,
-    });
+    if (userId) {
+      await consumeApiQuota({
+        userId,
+        kind: "feedback",
+        limit: DAILY_FEEDBACK_LIMIT,
+      });
+    }
 
     const result = await analyzePracticeSpeech(input);
     sendJson(res, 200, { feedback: result.feedback, band: result.band });

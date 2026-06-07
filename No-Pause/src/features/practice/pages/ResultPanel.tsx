@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, Pause, VolumeX, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
+import { useAuth } from '@/providers/AuthContext';
 import type { SessionResult } from './types';
 import { formatMMSS } from './time';
 
@@ -28,6 +29,7 @@ export function ResultPanel({
   setCopied,
 }: ResultPanelProps) {
   const navigate = useNavigate();
+  const { isGuest } = useAuth();
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [copiedTranscript, setCopiedTranscript] = useState(false);
   const [displayedScore, setDisplayedScore] = useState(lastResults.flowScore);
@@ -188,6 +190,9 @@ export function ResultPanel({
           {speakingTime < 5 && (
             <p className="mt-1 text-xs font-sans text-muted-foreground/60">Speak for at least 5 seconds to receive a Flow Score.</p>
           )}
+          {isGuest && (
+            <p className="mt-3 text-xs font-sans text-muted-foreground/70">Login to save your progress</p>
+          )}
 
         </section>
 
@@ -301,6 +306,24 @@ export function ResultPanel({
           </button>
         )}
 
+        {isGuest ? (
+          <div className="grid gap-3 pt-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => navigate('/auth')}
+              className="flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110"
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="min-h-[56px] rounded-full border border-border bg-surface-card px-8 text-base font-sans font-black text-foreground btn-press hover:bg-surface-elevated"
+            >
+              Home
+            </button>
+          </div>
+        ) : (
         <div className="grid gap-3 pt-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <button
             onClick={handleRetry}
@@ -356,6 +379,7 @@ export function ResultPanel({
             Home
           </button>
         </div>
+        )}
       </div>
     </div>
   );

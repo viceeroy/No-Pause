@@ -14,6 +14,7 @@ type AuthContextValue = {
   isLoading: boolean;
   session: Session | null;
   user: User | null;
+  isGuest: boolean;
   signInWithGoogle: (returnTo?: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -97,6 +98,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoading,
       session,
       user: session?.user ?? null,
+      isGuest: (session?.user ?? null) === null,
       signInWithGoogle: async (returnTo?: string) => {
         const nextPath = returnTo?.startsWith("/") ? returnTo : null;
         const redirectTo = getAuthCallbackUrl(nextPath ?? undefined);

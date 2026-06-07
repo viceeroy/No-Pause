@@ -1,5 +1,19 @@
 import { useNavigate } from 'react-router-dom';
+import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, type LucideIcon } from 'lucide-react';
 import { HELP_ARTICLES } from '@/features/help/helpContent';
+
+const SLUG_ICONS: Record<string, LucideIcon> = {
+  'how-a-session-works': Mic,
+  'understanding-flow-score': TrendingUp,
+  'what-counts-as-a-pause': VolumeX,
+  'how-to-improve': Zap,
+  'streaks-and-progress': Flame,
+  'telegram-practice': Send,
+  'privacy-and-data': Shield,
+  'why-speaking-feels-hard': Brain,
+  'why-practice-works': RefreshCw,
+  'before-your-interview-or-presentation': Target,
+};
 import { FAQ_ITEMS } from '@/features/help/faqContent';
 import {
   Accordion,
@@ -23,9 +37,6 @@ export default function HelpPage() {
         </button>
         <header className="mb-8">
           <h1 className="text-3xl font-serif font-medium text-foreground">Help</h1>
-          <p className="mt-2 text-base font-sans text-muted-foreground">
-            Short guides for getting the most out of NoPause.
-          </p>
         </header>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -37,10 +48,10 @@ export default function HelpPage() {
               className="flex min-h-[160px] flex-col justify-between rounded-[22px] border border-border bg-surface-card p-5 shadow-card cursor-pointer transition-colors btn-press hover:bg-surface-elevated text-left min-w-0"
             >
               <span
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface-elevated text-xl"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface-elevated"
                 aria-hidden="true"
               >
-                {article.icon}
+                {(() => { const Icon = SLUG_ICONS[article.slug]; return Icon ? <Icon size={20} className="text-primary" /> : null; })()}
               </span>
               <div>
                 <h2 className="text-base font-serif font-medium text-foreground break-words">

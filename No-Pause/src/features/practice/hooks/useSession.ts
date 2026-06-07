@@ -7,6 +7,7 @@ import { applyBandBonus, isScorableSession } from '@/lib/core/scoring';
 import { SCORING_VERSION_FREE_SPEECH_BAND } from '@/lib/core/constants';
 import { toast } from '@/shared/components/ui/sonner';
 import { trackEvent } from '@/services/posthog';
+import { useAuth } from '@/providers/AuthContext';
 
 type UseSessionOptions = {
   lastResults: SessionResult | null;
@@ -51,6 +52,7 @@ export function useSession({
   userId,
   topic,
 }: UseSessionOptions) {
+  const { isGuest } = useAuth();
   const pendingSaveRef = useRef<SaveFinishedSessionInput | null>(null);
 
   const retrySave = useCallback(async () => {
@@ -94,6 +96,11 @@ export function useSession({
     sessionResult,
     words,
   }: SaveFinishedSessionInput): Promise<SaveSessionResult> => {
+    // Guests never write to the DB — scoring/result display continue upstream.
+    if (isGuest) {
+      return { sessionId: null, saveFailed: false };
+    }
+
     let sessionId: string | null = null;
     try {
       sessionId = await saveSession({
@@ -142,7 +149,7 @@ export function useSession({
     }
 
     return { sessionId, saveFailed: false };
-  }, [userEmail, userId, retrySave]);
+  }, [userEmail, userId, retrySave, isGuest]);
 
   const requestFeedback = useCallback(async (input: RequestFeedbackInput) => {
     try {
