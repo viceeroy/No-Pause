@@ -65,12 +65,12 @@ export default function PromptsPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="-ml-2 mb-8 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
+          className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
         >
           <ChevronLeft size={16} /> Back
         </button>
 
-        <header className="mb-8 text-left">
+        <header className="mb-6 text-left">
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Prompts</h1>
         </header>
 
@@ -86,7 +86,7 @@ export default function PromptsPage() {
                   onClick={() => setActiveCategoryId(category.id)}
                   className={`inline-flex min-h-11 min-w-[96px] items-center justify-center rounded-full border px-5 text-sm font-sans font-bold transition-colors btn-press ${
                     isActive
-                      ? 'border-primary/45 bg-surface-elevated text-foreground shadow-card'
+                      ? 'border-primary bg-surface-card text-primary shadow-card'
                       : 'border-border bg-surface-card text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
                   }`}
                   aria-pressed={isActive}

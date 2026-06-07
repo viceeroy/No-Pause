@@ -31,11 +31,11 @@ export default function HelpPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mb-6 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+          className="mb-4 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
         >
           ← Back
         </button>
-        <header className="mb-8">
+        <header className="mb-6">
           <h1 className="text-3xl font-serif font-medium text-foreground">Help</h1>
         </header>
 
@@ -77,7 +77,7 @@ export default function HelpPage() {
                 value={`faq-${index}`}
                 className="rounded-[18px] border border-border bg-surface-card px-5 shadow-card"
               >
-                <AccordionTrigger className="text-sm font-sans font-semibold text-foreground hover:no-underline py-4">
+                <AccordionTrigger className="text-sm font-sans font-semibold text-foreground hover:no-underline py-4 text-left">
                   {item.q}
                 </AccordionTrigger>
                 <AccordionContent className="text-sm font-sans leading-relaxed text-muted-foreground pb-4">

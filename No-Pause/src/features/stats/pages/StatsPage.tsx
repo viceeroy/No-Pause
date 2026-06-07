@@ -280,12 +280,12 @@ export default function StatsPage({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="-ml-2 mb-8 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
+          className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
         >
           <ChevronLeft size={16} /> Back
         </button>
 
-        <header className="mb-8 text-left">
+        <header className="mb-6 text-left">
           <h1 className="mb-2 text-4xl font-serif font-medium text-foreground md:text-5xl">Stats</h1>
         </header>
 
