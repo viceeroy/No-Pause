@@ -64,7 +64,9 @@ Rules:
 - No gaps in transcript + high pace: score 85–100.
 
 Respond ONLY in this JSON format:
-{"score": <0-100>, "feedback": "<5-6 sentences>"}`;
+{"score": <0-100>, "feedback": "<5-6 sentences>"}
+
+CRITICAL: The feedback value is a JSON string. Use single quotes when quoting the transcript — never double quotes inside the feedback string. Double quotes break the JSON.`;
 
 const EPSILON = 0.05;
 
