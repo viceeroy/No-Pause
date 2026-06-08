@@ -3,7 +3,7 @@ import {
   SCORING_VERSION_FLOW_2,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
-import { calculateDurationBonus, calculateFlowScore, calculateTotalScore } from "../core/scoring.js";
+import { calculateDurationBonus, calculateFlowScore, calculateTotalScore, getDurationFactor } from "../core/scoring.js";
 import { analyzeSilenceFromTimestamps } from "../core/silence.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
@@ -496,7 +496,9 @@ export async function handleVoiceMessage(
         pauseCount: analysis.pauseCount,
         wordCount: getWordCount(transcript),
       });
-      finalScore = calculateTotalScore(analysis.flowScore, aiResult.score, durationBonus);
+      const durationFactor = getDurationFactor(analysis.speakingTimeSec);
+      const adjustedAiScore = Math.round(aiResult.score * durationFactor);
+      finalScore = calculateTotalScore(analysis.flowScore, adjustedAiScore, durationBonus);
       aiFeedbackText = aiResult.feedback;
     } catch (error) {
       console.error("Telegram inline AI feedback failed", error);

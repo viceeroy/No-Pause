@@ -37,6 +37,10 @@ function debugScoreBreakdown(details: Record<string, unknown>) {
   }
 }
 
+export function getDurationFactor(speakingTimeSec: number): number {
+  return Math.min(Math.sqrt(Math.max(0, speakingTimeSec) / 120), 1.0);
+}
+
 export function calculateFlowScore(input: FlowScoreInput): FlowScoreResult {
   const speakingTime = Math.max(0, input.speakingTime ?? 0);
   const totalSessionTime = Math.max(0, input.totalSessionTime ?? 0);
@@ -50,8 +54,9 @@ export function calculateFlowScore(input: FlowScoreInput): FlowScoreResult {
   }
 
   const continuityRatio = cleanSpeakingTime / totalSessionTime;
+  const durationFactor = getDurationFactor(speakingTime);
   const pausePenalty = Math.round((pauseCount / (speakingTime / 60)) * 2);
-  const score = clamp(Math.round(continuityRatio * 100) - pausePenalty, 0, FLOW_SCORE_MAX);
+  const score = clamp(Math.round(continuityRatio * 100 * durationFactor) - pausePenalty, 0, FLOW_SCORE_MAX);
 
   debugScoreBreakdown({
     cleanSpeakingTime,

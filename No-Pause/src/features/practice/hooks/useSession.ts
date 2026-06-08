@@ -3,7 +3,7 @@ import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStrea
 import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
 import { getWordCount, type TranscribedWord } from '@/lib/core/utils';
-import { calculateTotalScore } from '@/lib/core/scoring';
+import { calculateTotalScore, getDurationFactor } from '@/lib/core/scoring';
 import { analyzeSilenceFromTimestamps, type SilenceGap } from '@/lib/core/silence';
 import { SCORING_VERSION_FLOW_2 } from '@/lib/core/constants';
 import { toast } from '@/shared/components/ui/sonner';
@@ -168,7 +168,9 @@ export function useSession({
         wordCount: input.wordCount ?? 0,
       });
 
-      const totalScore = calculateTotalScore(input.flowScoreBase, result.score, input.durationBonus);
+      const durationFactor = getDurationFactor(input.speakingTime);
+      const adjustedAiScore = Math.round(result.score * durationFactor);
+      const totalScore = calculateTotalScore(input.flowScoreBase, adjustedAiScore, input.durationBonus);
       const bonusPoints = totalScore - input.flowScoreBase;
 
       trackEvent('ai_feedback_received', {
@@ -282,7 +284,9 @@ export function useSession({
             pauseCount: analysis.gapCount,
             wordCount: words ?? 0,
           });
-          const totalScore = calculateTotalScore(flowScoreBase, result.score, durationBonus);
+          const durationFactor = getDurationFactor(lastResults.totalSpeakingTime);
+          const adjustedAiScore = Math.round(result.score * durationFactor);
+          const totalScore = calculateTotalScore(flowScoreBase, adjustedAiScore, durationBonus);
           const bonusPoints = totalScore - flowScoreBase;
           await updateSession({
             sessionId: lastResults.sessionId,
