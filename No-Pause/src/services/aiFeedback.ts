@@ -52,7 +52,8 @@ Write 5–6 sentences covering exactly these five things in order:
 
 5. BONUS EXPLANATION — explain the fluency score in one sentence.
    Tie it directly to what you observed: what earned points, what cost points.
-   Example: "You scored 71/100 because your clause linking was strong but two mid-thought
+   Scores are rounded to the nearest 5 (e.g. 70, 75, 80) — reference the actual rounded number.
+   Example: "You scored 70/100 because your clause linking was strong but two mid-thought
    freezes broke the rhythm — fixing those is worth more than speaking longer."
 
 Rules:

@@ -84,7 +84,9 @@ export function calculateTotalScore(
   const flow = clamp(Math.round(flowScore ?? 0), 0, FLOW_SCORE_MAX);
   const ai = clamp(Math.round(aiScore ?? 0), 0, AI_SCORE_MAX);
   const bonus = clamp(Math.round(durationBonus ?? 0), 0, DURATION_BONUS_MAX);
-  return Math.min(flow + ai + bonus, TOTAL_SCORE_MAX);
+  const raw = flow + ai + bonus;
+  const capped = Math.min(raw, TOTAL_SCORE_MAX);
+  return Math.round(capped / 5) * 5;
 }
 
 export function getScoreLabel(score: number): string {
