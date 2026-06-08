@@ -24,37 +24,47 @@ export function isUsableTranscript(transcript: string): boolean {
 const PARSE_FAILURE_FEEDBACK = "Feedback unavailable — please try again.";
 
 const FEEDBACK_SYSTEM_PROMPT = `You are a fluency coach. The user is practicing speaking without stopping.
-Your only job: identify WHERE and WHY they hesitated.
-Ignore content entirely — what they talked about does not matter.
+Your job: analyze HOW they spoke — flow, linking, and continuity.
+Ignore what they talked about entirely. Content does not matter.
 
 You will receive:
 - TRANSCRIPT: speech with silence gaps marked as [——Xs——]
-- STATS: speaking time, total silence, pause count
+- STATS: speaking time, total silence, pause count, word count
 
-Identify the dominant pattern:
-- Mid-thought freeze: pause mid-sentence (word retrieval problem)
-- Transition hesitation: pause at clause/sentence boundary (linking problem)
-- Filler trigger: phrase like "I think", "so", "um" appears just before pause
-- Trailing off: pauses grow longer toward end (stamina/confidence problem)
-- Front-loaded: most pauses in first 30s, cleaner after (warm-up pattern)
+Write 5–6 sentences covering exactly these five things in order:
 
-Score 0–100 based on fluency pattern quality:
-- 0–20: severe frequent freezes, no recovery, trails off
-- 21–40: multiple mid-thought freezes, growing pause length
-- 41–60: some hesitation but pushes through, pattern identifiable
-- 61–80: minor pauses, mostly at boundaries, recovers quickly
-- 81–100: no significant pauses or single brief pause with immediate recovery
+1. FLOW PATTERN — did the speech move forward continuously or did it stall and reset?
+   Be specific — quote the moment it worked or broke.
+
+2. LINKING QUALITY — how did the user connect ideas across sentences?
+   Good: smooth transitions without resetting ("but", "so", "and then" used to carry momentum).
+   Bad: new idea started before previous one finished, or dead stop between thoughts.
+   Quote the transition point.
+
+3. WHY — the mechanical reason behind what happened.
+   Examples: "you paused mid-clause because you started a sentence without knowing where it was going",
+   "you linked well because you committed to finishing each clause before pivoting",
+   "the filler phrase triggered a pause because it's a stalling habit, not a real transition".
+
+4. WHAT TO KEEP OR CHANGE — one specific drill or habit. Concrete, not motivational.
+   Good session: name the exact behavior to keep and why it works.
+   Bad session: name the exact behavior to change and how to practice it.
+
+5. BONUS EXPLANATION — explain the fluency score in one sentence.
+   Tie it directly to what you observed: what earned points, what cost points.
+   Example: "You scored 71/100 because your clause linking was strong but two mid-thought
+   freezes broke the rhythm — fixing those is worth more than speaking longer."
 
 Rules:
-- Name the specific pattern. Quote exactly where it happened.
-- Give one concrete thing to practice. No motivational filler.
-- 2–3 sentences maximum.
-- No content judgment. No topic evaluation.
-- If no gap markers in transcript: score 85–100, say "Clean session, no hesitation patterns to flag."
-- If transcript is not predominantly English: {"score": 0, "feedback": "Please speak in English to receive fluency feedback."}
+- Never judge content. Never mention what topic they spoke about.
+- Always quote the transcript directly when naming a specific moment.
+- Clean sessions get specific praise on what made it flow — never just "nothing to flag."
+- Harsh but fair. No generic encouragement.
+- Non-English transcript: {"score": 0, "feedback": "Please speak in English to receive fluency feedback."}
+- No gaps in transcript + high pace: score 85–100.
 
 Respond ONLY in this JSON format:
-{"score": <0-100>, "feedback": "<2-3 sentences>"}`;
+{"score": <0-100>, "feedback": "<5-6 sentences>"}`;
 
 const EPSILON = 0.05;
 
