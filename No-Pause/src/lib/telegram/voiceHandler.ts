@@ -1,11 +1,9 @@
 import type { Context } from "telegraf";
 import {
-  SCORING_VERSION_BASE,
-  SCORING_VERSION_TG_BAND,
-  SCORING_VERSION_FREE_SPEECH_BAND,
+  SCORING_VERSION_FLOW_2,
   TELEGRAM_MIN_DURATION,
 } from "../core/constants.js";
-import { applyBandBonus, calculateFlowScore } from "../core/scoring.js";
+import { calculateDurationBonus, calculateFlowScore, calculateTotalScore } from "../core/scoring.js";
 import { analyzeSilenceFromTimestamps } from "../core/silence.js";
 import { formatLocalDate, insertSession, updateStreak, type SupabaseLike } from "../core/session.js";
 import { escapeTelegramHtml, getWordCount } from "../core/utils.js";
@@ -170,11 +168,13 @@ function analyzeTranscript(
 ): FlowAnalysis {
   const analysis = analyzeSilenceFromTimestamps(words, totalSessionTimeSec);
   const { speakingTimeSec, totalSilenceSec, gapCount, gaps } = analysis;
+  const cleanSpeakingTime = totalSessionTimeSec - totalSilenceSec;
 
-  const scoreResult = calculateFlowScore(totalSilenceSec, {
-    speakingTimeSec,
-    totalSessionTimeSec,
-    hasSpeechEvidence: transcript.trim().length > 0 || words.length > 0,
+  const scoreResult = calculateFlowScore({
+    cleanSpeakingTime,
+    totalSessionTime: totalSessionTimeSec,
+    speakingTime: speakingTimeSec,
+    pauseCount: gapCount,
   });
 
   const pauseLog = gaps.map((gap) => ({
@@ -191,6 +191,7 @@ function analyzeTranscript(
     totalSessionTimeSec,
     isCompleted: scoreResult.isCompleted,
     pauseLog,
+    gaps,
   };
 }
 
@@ -361,6 +362,8 @@ export function getSessionAnalysis(session: TelegramSessionRecord): FlowAnalysis
     totalSessionTimeSec,
     isCompleted: Boolean(session.completed),
     pauseLog: Array.isArray(session.hesitation_log) ? session.hesitation_log : [],
+    // Re-display of a stored session; never feeds the AI (which needs real gaps).
+    gaps: [],
   };
 }
 
@@ -480,21 +483,20 @@ export async function handleVoiceMessage(
     );
     debugLog('[NoPause:challenge] silence calc', { telegram_id: telegramId, totalSilenceSec: analysis.totalSilenceSec, gapCount: analysis.pauseCount, speakingTime: analysis.speakingTimeSec, flowScore: analysis.flowScore });
 
-    const sessionTopic = challenge?.topic ?? null;
+    const durationBonus = calculateDurationBonus(analysis.speakingTimeSec);
     let aiFeedbackText: string | null = null;
     let finalScore = analysis.flowScore;
-    let bandApplied = false;
     try {
       const aiResult = await analyzePracticeSpeech({
         transcript,
-        topic: sessionTopic ?? undefined,
-        hesitationCount: analysis.pauseCount,
-        speakingTime: analysis.speakingTimeSec,
-        flowScore: analysis.flowScore,
+        words: transcription.words,
+        gaps: analysis.gaps ?? [],
+        speakingTimeSec: analysis.speakingTimeSec,
+        totalSilenceSec: analysis.totalSilenceSec,
+        pauseCount: analysis.pauseCount,
         wordCount: getWordCount(transcript),
       });
-      finalScore = applyBandBonus(analysis.flowScore, aiResult.band);
-      bandApplied = finalScore !== analysis.flowScore;
+      finalScore = calculateTotalScore(analysis.flowScore, aiResult.score, durationBonus);
       aiFeedbackText = aiResult.feedback;
     } catch (error) {
       console.error("Telegram inline AI feedback failed", error);
@@ -512,9 +514,7 @@ export async function handleVoiceMessage(
         telegramMessageId,
         flowScoreOverride: finalScore,
         analysisFeedback: aiFeedbackText,
-        scoringVersion: bandApplied
-          ? (sessionTopic ? SCORING_VERSION_TG_BAND : SCORING_VERSION_FREE_SPEECH_BAND)
-          : SCORING_VERSION_BASE,
+        scoringVersion: SCORING_VERSION_FLOW_2,
       });
       debugLog('[NoPause:challenge] insertSession done', { telegram_id: telegramId, ms: Date.now() - t_insert, sessionId });
     } catch (error) {

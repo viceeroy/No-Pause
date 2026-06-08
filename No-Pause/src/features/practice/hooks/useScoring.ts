@@ -1,4 +1,4 @@
-import { calculateFlowScore } from '@/lib/core/scoring';
+import { calculateDurationBonus, calculateFlowScore } from '@/lib/core/scoring';
 import { analyzeSilenceFromTimestamps } from '@/lib/core/silence';
 import type { AnalyzerResults } from '@/features/practice/lib/speechAnalyzer';
 import type { SessionResult } from '@/features/practice/pages/types';
@@ -107,28 +107,23 @@ export function buildSessionResult({
 
   const totalSessionTimeSec = Math.max(1, duration);
   const analysis = analyzeSilenceFromTimestamps(timestampWords, totalSessionTimeSec);
-  const { speakingTimeSec, totalSilenceSec, gapCount } = analysis;
+  const { speakingTimeSec, totalSilenceSec, gapCount, gaps } = analysis;
+  const cleanSpeakingTime = totalSessionTimeSec - totalSilenceSec;
 
-  const transcriptHasSpeech = Boolean(
-    transcript &&
-      transcript !== 'No speech detected.' &&
-      transcript.trim().length > 0,
-  );
-  const hasSpeechEvidence = transcriptHasSpeech || speakingTimeSec > 0;
   const words = transcript && transcript.trim().length > 0
     ? getWordCount(transcript)
     : null;
 
   const scoreInput = {
-    totalSilenceSec,
-    speakingTimeSec,
-    totalSessionTimeSec,
-    hasSpeechEvidence,
+    cleanSpeakingTime,
+    totalSessionTime: totalSessionTimeSec,
+    speakingTime: speakingTimeSec,
+    pauseCount: gapCount,
   };
   if (IS_DEV) {
     console.info('[NoPause][WebSessionScoring]', {
       scoreInput,
-      gapCount,
+      totalSilenceSec,
       duration,
       timestampWordCount: timestampWords.length,
     });
@@ -141,14 +136,11 @@ export function buildSessionResult({
     !transcript.startsWith('Transcription failed'),
   );
 
-  const scoreResult = calculateFlowScore(totalSilenceSec, {
-    speakingTimeSec,
-    totalSessionTimeSec,
-    hasSpeechEvidence,
-  });
+  const scoreResult = calculateFlowScore(scoreInput);
   const completed = scoreResult.isCompleted;
   const flowScore = scoreResult.score;
   const safeFlowScore = Number.isFinite(flowScore) ? flowScore : 0;
+  const durationBonus = calculateDurationBonus(speakingTimeSec);
 
   let statusNote: string | undefined;
   if (!scoreResult.isCompleted) {
@@ -182,6 +174,10 @@ export function buildSessionResult({
       wordCount: words,
       statusNote,
       totalSilenceSec,
+      flowScoreBase: safeFlowScore,
+      durationBonus,
+      gaps,
+      transcribedWords: timestampWords,
     },
   };
 }

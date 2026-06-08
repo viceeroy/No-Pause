@@ -2,7 +2,7 @@ import { Readable } from 'stream';
 import type { IncomingMessage } from 'http';
 import { readFileSync } from 'fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyBandBonus, calculateFlowScore, getScoreLabel } from '@/lib/core/scoring';
+import { calculateFlowScore, calculateTotalScore, getScoreLabel } from '@/lib/core/scoring';
 import {
   buildPinnedRecentSessionSummaries,
   buildPracticeStats,
@@ -130,59 +130,23 @@ function createRequest(input: {
 
 describe('speaking mode scoring architecture', () => {
   it.each([
-    { silenceSec: 0, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 100, isCompleted: true },
-    { silenceSec: 0, speakingTimeSec: 59, totalSessionTimeSec: 59, expected: 59, isCompleted: true },
-    { silenceSec: 0, speakingTimeSec: 150, totalSessionTimeSec: 150, expected: 230, isCompleted: true },
-    { silenceSec: 10, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 190, isCompleted: true },
-    {
-      silenceSec: 20,
-      speakingTimeSec: 1,
-      totalSessionTimeSec: 60,
-      expected: 0,
-      isCompleted: false,
-      note: 'Session was too short to score. Speak for at least 5 seconds.',
-    },
-    { silenceSec: 0, speakingTimeSec: 300, totalSessionTimeSec: 300, expected: 500, isCompleted: true },
-    {
-      silenceSec: 0,
-      speakingTimeSec: 1,
-      totalSessionTimeSec: 1,
-      expected: 0,
-      isCompleted: false,
-      note: 'Session was too short to score. Speak for at least 5 seconds.',
-    },
-    { silenceSec: 1, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 99, isCompleted: true },
-    { silenceSec: 3, speakingTimeSec: 60, totalSessionTimeSec: 60, expected: 97, isCompleted: true },
-    { silenceSec: 6, speakingTimeSec: 120, totalSessionTimeSec: 120, expected: 194, isCompleted: true },
-    { silenceSec: 0, speakingTimeSec: 31, totalSessionTimeSec: 60, expected: 31, isCompleted: true },
-    { silenceSec: 2, speakingTimeSec: 125, totalSessionTimeSec: 300, expected: 203, isCompleted: true },
+    { cleanSpeakingTime: 60, totalSessionTime: 60, speakingTime: 60, pauseCount: 0, expected: 100, isCompleted: true },
+    { cleanSpeakingTime: 54, totalSessionTime: 60, speakingTime: 54, pauseCount: 0, expected: 90, isCompleted: true },
+    { cleanSpeakingTime: 60, totalSessionTime: 60, speakingTime: 60, pauseCount: 3, expected: 94, isCompleted: true },
+    { cleanSpeakingTime: 4, totalSessionTime: 10, speakingTime: 4, pauseCount: 0, expected: 40, isCompleted: false },
+    { cleanSpeakingTime: 0, totalSessionTime: 60, speakingTime: 0, pauseCount: 0, expected: 0, isCompleted: false },
   ])(
-    'scores $expected for $silenceSec silence over $speakingTimeSec/$totalSessionTimeSec seconds',
-    ({ silenceSec, speakingTimeSec, totalSessionTimeSec, expected, isCompleted, note }) => {
-      expect(calculateFlowScore(silenceSec, { speakingTimeSec, totalSessionTimeSec })).toEqual({
+    'flow score $expected for clean=$cleanSpeakingTime total=$totalSessionTime speaking=$speakingTime pauses=$pauseCount',
+    ({ cleanSpeakingTime, totalSessionTime, speakingTime, pauseCount, expected, isCompleted }) => {
+      expect(calculateFlowScore({ cleanSpeakingTime, totalSessionTime, speakingTime, pauseCount })).toEqual({
         score: expected,
         isCompleted,
-        ...(note ? { note } : {}),
       });
     },
   );
 
-  it('scores sessions under 60 seconds from speaking time', () => {
-    expect(calculateFlowScore(0, { speakingTimeSec: 59, totalSessionTimeSec: 59 })).toEqual({
-      score: 59,
-      isCompleted: true,
-    });
-  });
-
-  it('scores sessions under 50% speaking ratio from speaking time', () => {
-    expect(calculateFlowScore(0, { speakingTimeSec: 29, totalSessionTimeSec: 60 })).toEqual({
-      score: 29,
-      isCompleted: true,
-    });
-  });
-
-  it('does not return negative scores', () => {
-    expect(calculateFlowScore(50, { speakingTimeSec: 5, totalSessionTimeSec: 60 })).toEqual({
+  it('clamps heavy pause penalty to zero', () => {
+    expect(calculateFlowScore({ cleanSpeakingTime: 10, totalSessionTime: 60, speakingTime: 10, pauseCount: 10 })).toEqual({
       score: 0,
       isCompleted: true,
     });
@@ -220,7 +184,7 @@ describe('speaking mode scoring architecture', () => {
       totalSilenceTime: 0,
       totalSessionTime: 6,
       hesitationCount: 0,
-      flowScore: 6,
+      flowScore: 100,
     });
 
     nowSpy.mockRestore();
@@ -261,28 +225,30 @@ describe('speaking mode scoring architecture', () => {
     nowSpy.mockRestore();
   });
 
-  it('routes short transcribed sessions through feedback without adding band points to Flow Score', () => {
+  it('routes transcribed sessions through feedback and folds AI score into the total via calculateTotalScore', () => {
     const recordingSource = readFileSync(`${process.cwd()}/src/features/practice/hooks/useRecording.ts`, 'utf8');
     const sessionSource = readFileSync(`${process.cwd()}/src/features/practice/hooks/useSession.ts`, 'utf8');
 
     expect(recordingSource).toContain('if (transcriptUsable) {');
     expect(recordingSource).not.toContain('transcriptUsable && sessionResult.isCompleted');
-    // Band bonus + its scorable-session guard are now centralized in core/scoring;
-    // useSession delegates to applyBandBonus instead of inlining the guard.
-    expect(sessionSource).toContain('const finalScore = applyBandBonus(input.flowScore, result.band);');
-    expect(applyBandBonus(0, 5)).toBe(0); // score-0 session: no band points added
-    expect(applyBandBonus(50, 5)).toBe(100); // scorable session: band applied
+    // AI score is added to the flow-only base + duration bonus via calculateTotalScore.
+    expect(sessionSource).toContain('calculateTotalScore(input.flowScoreBase, result.score, input.durationBonus)');
+    expect(sessionSource).not.toContain('applyBandBonus');
+    expect(calculateTotalScore(50, 30, 10)).toBe(90);
+    expect(calculateTotalScore(100, 100, 30)).toBe(230);
   });
 
   it.each([
-    { score: 300, label: 'Perfect Flow' },
-    { score: 299, label: 'Great Flow' },
+    { score: 230, label: 'Perfect Flow' },
+    { score: 201, label: 'Perfect Flow' },
     { score: 200, label: 'Great Flow' },
-    { score: 199, label: 'Good Flow' },
-    { score: 100, label: 'Good Flow' },
-    { score: 99, label: 'Getting There' },
-    { score: 50, label: 'Getting There' },
-    { score: 49, label: 'Needs Practice' },
+    { score: 151, label: 'Great Flow' },
+    { score: 150, label: 'Good Flow' },
+    { score: 101, label: 'Good Flow' },
+    { score: 100, label: 'Getting There' },
+    { score: 51, label: 'Getting There' },
+    { score: 50, label: 'Needs Practice' },
+    { score: 0, label: 'Needs Practice' },
   ])('labels score $score as $label', ({ score, label }) => {
     expect(getScoreLabel(score)).toBe(label);
   });
@@ -1435,7 +1401,7 @@ describe('HTTP header ASCII normalization', () => {
     process.env.TELEGRAM_BOT_TOKEN = 'bot-token';
     process.env.GROQ_API_KEY = 'groq-key';
 
-    const analyzePracticeSpeech = vi.fn(async () => ({ band: 7, feedback: 'Feedback' }));
+    const analyzePracticeSpeech = vi.fn(async () => ({ score: 70, feedback: 'Feedback' }));
     vi.doMock('@/services/aiFeedback', () => ({
       analyzePracticeSpeech,
       isUsableTranscript: vi.fn((text: string) => text.trim().split(/\s+/).length >= 3),
@@ -1578,13 +1544,15 @@ describe('HTTP header ASCII normalization', () => {
     });
     expect(replies.some(([message]) => message.includes('Speaking Result') && message.includes('Pauses'))).toBe(true);
     expect(replies.some(([message]) => message.includes('AI Feedback'))).toBe(true);
-    expect(analyzePracticeSpeech).toHaveBeenCalledWith({
-      transcript: 'hello world again',
-      hesitationCount: 1,
-      speakingTime: 3,
-      flowScore: 0,
-      wordCount: 3,
-    });
+    expect(analyzePracticeSpeech).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcript: 'hello world again',
+        speakingTimeSec: 3,
+        wordCount: 3,
+        words: expect.any(Array),
+        gaps: expect.any(Array),
+      }),
+    );
     expect(upsertedStreaks).toHaveLength(1);
   });
 

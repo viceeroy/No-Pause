@@ -2,9 +2,10 @@ import { useCallback, useRef, type Dispatch, type SetStateAction } from 'react';
 import { analyzeSpeech, saveSession, transcribeAudio, updateSession, updateStreak } from '@/lib/practiceApi';
 import type { SessionResult } from '@/features/practice/pages/types';
 import { arrayBufferToBase64 } from '@/shared/lib/utils';
-import { getWordCount } from '@/lib/core/utils';
-import { applyBandBonus, isScorableSession } from '@/lib/core/scoring';
-import { SCORING_VERSION_FREE_SPEECH_BAND } from '@/lib/core/constants';
+import { getWordCount, type TranscribedWord } from '@/lib/core/utils';
+import { calculateTotalScore } from '@/lib/core/scoring';
+import { analyzeSilenceFromTimestamps, type SilenceGap } from '@/lib/core/silence';
+import { SCORING_VERSION_FLOW_2 } from '@/lib/core/constants';
 import { toast } from '@/shared/components/ui/sonner';
 import { trackEvent } from '@/services/posthog';
 import { useAuth } from '@/providers/AuthContext';
@@ -32,10 +33,14 @@ export type SaveSessionResult = {
 
 export type RequestFeedbackInput = {
   sessionId?: string | null;
-  flowScore: number;
   transcript: string;
-  hesitationCount: number;
+  words: TranscribedWord[];
+  gaps: SilenceGap[];
+  totalSilenceSec: number;
+  pauseCount: number;
   speakingTime: number;
+  durationBonus: number;
+  flowScoreBase: number;
   wordCount?: number;
 };
 
@@ -155,22 +160,22 @@ export function useSession({
     try {
       const result = await analyzeSpeech({
         transcript: input.transcript,
-        topic: topic ?? undefined,
-        flowScore: input.flowScore,
-        hesitationCount: input.hesitationCount,
-        speakingTime: input.speakingTime,
-        wordCount: input.wordCount,
+        words: input.words,
+        gaps: input.gaps,
+        speakingTimeSec: input.speakingTime,
+        totalSilenceSec: input.totalSilenceSec,
+        pauseCount: input.pauseCount,
+        wordCount: input.wordCount ?? 0,
       });
 
-      const finalScore = applyBandBonus(input.flowScore, result.band);
-      const bandPoints = finalScore - input.flowScore;
+      const totalScore = calculateTotalScore(input.flowScoreBase, result.score, input.durationBonus);
+      const bonusPoints = totalScore - input.flowScoreBase;
 
       trackEvent('ai_feedback_received', {
-        band: result.band,
-        band_points: bandPoints,
-        flow_score_before: input.flowScore,
-        flow_score_after: finalScore,
-        has_topic: !!topic,
+        ai_score: result.score,
+        bonus_points: bonusPoints,
+        flow_score_before: input.flowScoreBase,
+        flow_score_after: totalScore,
       });
 
       if (input.sessionId && userId) {
@@ -178,9 +183,8 @@ export function useSession({
           sessionId: input.sessionId,
           userId,
           analysisFeedback: result.feedback,
-          flowScore: finalScore,
-          // Free-speech band sessions use a 3-criterion rubric — tag for cohort separation.
-          ...(!topic && bandPoints > 0 ? { scoringVersion: SCORING_VERSION_FREE_SPEECH_BAND } : {}),
+          flowScore: totalScore,
+          scoringVersion: SCORING_VERSION_FLOW_2,
         }).catch(console.error);
       }
 
@@ -188,8 +192,8 @@ export function useSession({
         if (!prev) return prev;
         return {
           ...prev,
-          flowScore: finalScore,
-          bandPoints,
+          flowScore: totalScore,
+          bonusPoints,
           analysisFeedback: result.feedback,
           analysisFeedbackLoading: false,
         };
@@ -256,31 +260,36 @@ export function useSession({
         };
       });
 
+      const flowScoreBase = lastResults.flowScoreBase ?? lastResults.flowScore;
       const shouldAnalyze =
-        isScorableSession(lastResults.flowScore) &&
+        flowScoreBase > 0 &&
         transcript.trim().length > 0 &&
         transcript !== 'No speech detected.' &&
         !transcript.startsWith('Transcription failed');
 
       if (shouldAnalyze) {
         try {
+          // Recompute gaps from the fresh transcription so the marked transcript
+          // matches the displayed text. The flow score itself is unchanged.
+          const analysis = analyzeSilenceFromTimestamps(transcribedWords, lastResults.totalSessionTime);
+          const durationBonus = lastResults.durationBonus ?? 0;
           const result = await analyzeSpeech({
             transcript,
-            topic: topic ?? undefined,
-            flowScore: lastResults.flowScore,
-            hesitationCount: lastResults.hesitationCount,
-            speakingTime: lastResults.totalSpeakingTime,
-            wordCount: words ?? undefined,
+            words: transcribedWords,
+            gaps: analysis.gaps,
+            speakingTimeSec: lastResults.totalSpeakingTime,
+            totalSilenceSec: analysis.totalSilenceSec,
+            pauseCount: analysis.gapCount,
+            wordCount: words ?? 0,
           });
-          const finalScore = applyBandBonus(lastResults.flowScore, result.band);
-          const bandPoints = finalScore - lastResults.flowScore;
+          const totalScore = calculateTotalScore(flowScoreBase, result.score, durationBonus);
+          const bonusPoints = totalScore - flowScoreBase;
           await updateSession({
             sessionId: lastResults.sessionId,
             userId,
             analysisFeedback: result.feedback,
-            flowScore: finalScore,
-            // Free-speech band sessions use a 3-criterion rubric — tag for cohort separation.
-            ...(!topic && bandPoints > 0 ? { scoringVersion: SCORING_VERSION_FREE_SPEECH_BAND } : {}),
+            flowScore: totalScore,
+            scoringVersion: SCORING_VERSION_FLOW_2,
           });
           setLastResults((prev) => {
             if (!prev) return prev;
@@ -288,8 +297,8 @@ export function useSession({
               ...prev,
               analysisFeedback: result.feedback,
               analysisFeedbackLoading: false,
-              flowScore: finalScore,
-              bandPoints,
+              flowScore: totalScore,
+              bonusPoints,
             };
           });
         } catch (error) {

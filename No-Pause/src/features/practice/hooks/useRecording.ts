@@ -211,10 +211,14 @@ export function useRecording({
       if (transcriptUsable) {
         void requestFeedback({
           sessionId,
-          flowScore: sessionResult.flowScore,
           transcript: t,
-          hesitationCount: sessionResult.hesitationCount,
+          words: sessionResult.transcribedWords ?? [],
+          gaps: sessionResult.gaps ?? [],
+          totalSilenceSec: sessionResult.totalSilenceSec ?? sessionResult.totalSilenceTime,
+          pauseCount: sessionResult.pauseCount ?? sessionResult.hesitationCount,
           speakingTime: sessionResult.totalSpeakingTime,
+          durationBonus: sessionResult.durationBonus ?? 0,
+          flowScoreBase: sessionResult.flowScoreBase ?? sessionResult.flowScore,
           wordCount: sessionResult.wordCount ?? undefined,
         });
       }

@@ -36,14 +36,14 @@ export function ResultPanel({
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (!lastResults.bandPoints) {
+    if (!lastResults.bonusPoints) {
       setDisplayedScore(lastResults.flowScore);
       return;
     }
     if (hasAnimated.current) return;
     hasAnimated.current = true;
 
-    const baseScore = lastResults.flowScore - lastResults.bandPoints;
+    const baseScore = lastResults.flowScore - lastResults.bonusPoints;
     const finalScore = lastResults.flowScore;
     const duration = 800;
     const startTime = performance.now();
@@ -61,7 +61,7 @@ export function ResultPanel({
 
     frameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameId);
-  }, [lastResults.bandPoints, lastResults.flowScore]);
+  }, [lastResults.bonusPoints, lastResults.flowScore]);
   const copyText = async (text: string, onCopied: (copied: boolean) => void) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -108,7 +108,6 @@ export function ResultPanel({
   const speakingTime = Math.max(0, lastResults.totalSpeakingTime || 0);
   const sessionLength = Math.max(0, lastResults.totalSessionTime || 0);
   const pauseCount = Math.max(0, Math.round(Number(lastResults.pauseCount ?? lastResults.hesitationCount ?? 0)));
-  const minuteBonus = Math.floor(speakingTime / 60) * 20;
   const coachingNote = getCoachingNote();
   const statusNote = speakingTime < 5
     ? 'Session too short to score.'
@@ -165,13 +164,13 @@ export function ResultPanel({
               <p className="mb-2 text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">Flow Score</p>
               <div className="flex items-baseline gap-3">
                 <p className="font-serif text-7xl font-medium leading-none text-primary md:text-8xl">{displayedScore}</p>
-                {lastResults.bandPoints != null && lastResults.bandPoints > 0 && (
+                {lastResults.bonusPoints != null && lastResults.bonusPoints > 0 && (
                   <span className="font-sans text-2xl font-bold text-green-400 md:text-3xl">
-                    +{lastResults.bandPoints}
+                    +{lastResults.bonusPoints}
                   </span>
                 )}
               </div>
-              {lastResults.bandPoints != null && lastResults.bandPoints > 0 && (
+              {lastResults.bonusPoints != null && lastResults.bonusPoints > 0 && (
                 <p className="mt-1 text-[11px] font-sans text-green-400/70">AI feedback bonus</p>
               )}
             </div>
@@ -213,9 +212,6 @@ export function ResultPanel({
             <p className="text-2xl font-serif font-medium text-foreground md:text-3xl">
               {renderDurationText(speakingTime)}
             </p>
-            {minuteBonus > 0 && (
-              <p className="mt-1 text-[11px] font-sans text-green-400">+{minuteBonus} bonus</p>
-            )}
           </article>
         </section>
 

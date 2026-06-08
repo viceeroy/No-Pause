@@ -133,9 +133,11 @@ export class SpeechSession {
     this.state = finalized.state;
 
     const totalRecordingTime = now - this.recordingStartTime;
-    const flowScore = calculateFlowScore(finalized.filteredHesitationCount, {
-      speakingTimeSec: Math.round(this.state.totalSpeakingTimeMs / 1000),
-      totalSessionTimeSec: Math.round(totalRecordingTime / 1000),
+    const flowScore = calculateFlowScore({
+      cleanSpeakingTime: Math.round((totalRecordingTime - this.state.totalSilenceTimeMs) / 1000),
+      totalSessionTime: Math.round(totalRecordingTime / 1000),
+      speakingTime: Math.round(this.state.totalSpeakingTimeMs / 1000),
+      pauseCount: finalized.filteredHesitationCount,
     });
     debugLog('[NoSpeech] 🏁 Analysis complete:', JSON.stringify({
       totalDuration: `${Math.round(totalRecordingTime / 1000)}s (${totalRecordingTime}ms)`,

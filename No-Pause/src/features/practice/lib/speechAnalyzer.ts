@@ -6,11 +6,6 @@ import {
 } from './transcription';
 import type { AnalyzerDiagnosticsSnapshot } from './analyzer/diagnostics';
 import type { AnalyzerResults, AudioDataPayload } from './speechTypes';
-import {
-  calculateFlowScore,
-  type FlowScoreOptions,
-  type FlowScoreResult,
-} from '@/lib/core/scoring';
 
 const WEBM_AUDIO_MIME_TYPE = 'audio/webm';
 
@@ -111,10 +106,6 @@ export class AudioAnalyzer {
     this.capture.destroy();
     this.stream = null;
     this.session = null;
-  }
-
-  static calculateFlowScore(hesitationCount: number, options?: FlowScoreOptions): FlowScoreResult {
-    return calculateFlowScore(hesitationCount, options);
   }
 
   hasAudioSignal(): boolean {

@@ -139,7 +139,7 @@ export async function transcribeAudioWithGroq(
   };
 }
 
-export async function getAIFeedback(transcript: string, systemPrompt?: string): Promise<string> {
+export async function getAIFeedback(transcript: string, systemPrompt?: string, temperature?: number): Promise<string> {
   try {
     const trimmed = transcript.trim();
     if (!trimmed) {
@@ -171,6 +171,7 @@ export async function getAIFeedback(transcript: string, systemPrompt?: string): 
               content: trimmed,
             },
           ],
+          ...(temperature !== undefined ? { temperature } : {}),
         }),
         signal: controller.signal,
       });

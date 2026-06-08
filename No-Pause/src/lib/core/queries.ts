@@ -73,6 +73,7 @@ export type WeeklyActivityDay = {
   label: "Mo" | "Tu" | "We" | "Th" | "Fr" | "Sa" | "Su";
   dateKey: string;
   completed: boolean;
+  bestScore: number | null;
 };
 
 type SupabaseRpcLike = {
@@ -624,26 +625,43 @@ export function buildWeeklyStatsComparison(
 }
 
 export function buildWeeklyActivityDays(
-  sessions: Array<Pick<SessionRecord, "created_at">>,
+  sessions: Array<Pick<SessionRecord, "created_at"> & { flow_score?: number | null; completed?: boolean | null }>,
   now = new Date(),
 ): WeeklyActivityDay[] {
   const labels: WeeklyActivityDay["label"][] = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
   const startOfWeek = getStartOfCurrentWeek(now);
   const todayKey = getLocalDateKey(now);
-  const completedDateKeys = new Set(
-    sessions
-      .map((session) => getLocalDateKey(new Date(session.created_at)))
-      .filter((dateKey) => dateKey >= getLocalDateKey(startOfWeek) && dateKey <= todayKey),
-  );
+  const weekStartKey = getLocalDateKey(startOfWeek);
+
+  const byDate = new Map<string, { completed: boolean; bestScore: number | null }>();
+  for (const session of sessions) {
+    const dateKey = getLocalDateKey(new Date(session.created_at));
+    if (dateKey < weekStartKey || dateKey > todayKey) continue;
+    const existing = byDate.get(dateKey);
+    const score = typeof session.flow_score === "number" ? session.flow_score : null;
+    const isCompleted = session.completed !== false;
+    if (!existing) {
+      byDate.set(dateKey, { completed: isCompleted, bestScore: score });
+    } else {
+      byDate.set(dateKey, {
+        completed: existing.completed || isCompleted,
+        bestScore: score !== null && (existing.bestScore === null || score > existing.bestScore)
+          ? score
+          : existing.bestScore,
+      });
+    }
+  }
 
   return labels.map((label, index) => {
     const date = new Date(startOfWeek);
     date.setDate(startOfWeek.getDate() + index);
     const dateKey = getLocalDateKey(date);
+    const entry = byDate.get(dateKey);
     return {
       label,
       dateKey,
-      completed: completedDateKeys.has(dateKey),
+      completed: entry?.completed ?? false,
+      bestScore: entry?.bestScore ?? null,
     };
   });
 }

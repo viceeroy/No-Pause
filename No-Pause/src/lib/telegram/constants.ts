@@ -1,6 +1,7 @@
 import { Markup } from "telegraf";
 import { APP_URL } from "../core/constants.js";
 import { escapeTelegramHtml } from "../core/utils.js";
+import type { SilenceGap } from "../core/silence.js";
 
 export const SITE_URL = APP_URL;
 export const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
@@ -61,6 +62,7 @@ export type FlowAnalysis = {
   totalSessionTimeSec: number;
   isCompleted: boolean;
   pauseLog: Array<{ timestamp: number; duration: number; units: number }>;
+  gaps?: SilenceGap[];
 };
 
 export const replyKeyboard = Markup.keyboard([

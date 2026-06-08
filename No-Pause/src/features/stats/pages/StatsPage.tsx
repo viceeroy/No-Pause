@@ -41,6 +41,7 @@ function createEmptyWeeklyActivity(): WeeklyActivityDay[] {
     label: label as WeeklyActivityDay['label'],
     dateKey: '',
     completed: false,
+    bestScore: null,
   }));
 }
 
@@ -102,28 +103,41 @@ function WeeklyActivityRow({
   days: WeeklyActivityDay[];
   loading: boolean;
 }) {
+  const MAX_HEIGHT = 80;
+  const MIN_BAR = 6;
+  const scores = days.map((d) => d.bestScore ?? 0);
+  const maxScore = Math.max(...scores, 1);
+  const peakIndex = scores.indexOf(Math.max(...scores));
+
   return (
     <article className="rounded-[22px] border border-border bg-surface-card p-4 shadow-card md:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-sans font-semibold text-muted-foreground">Weekly activity</p>
-        </div>
+        <p className="text-xs font-sans font-semibold text-muted-foreground">Weekly activity</p>
       </div>
-      <div className="grid grid-cols-7 gap-1.5 md:gap-2">
+      <div className="grid grid-cols-7 gap-1.5 md:gap-2" style={{ alignItems: 'end' }}>
         {days.map((day, index) => {
-          const completed = !loading && day.completed;
+          const score = !loading ? (day.bestScore ?? null) : null;
+          const hasSession = !loading && day.completed;
+          const barH = hasSession && score !== null
+            ? Math.max(MIN_BAR, Math.round((score / maxScore) * MAX_HEIGHT))
+            : MIN_BAR;
+          const isPeak = !loading && hasSession && index === peakIndex && score !== null && score > 0;
+
           return (
-            <div key={`${day.label}-${index}`} className="flex flex-col items-center gap-2">
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-sans font-black transition-colors min-[481px]:h-9 min-[481px]:w-9 min-[481px]:text-xs md:h-10 md:w-10 ${
-                  completed
-                    ? 'border-primary bg-primary text-primary-foreground shadow-soft'
-                    : 'border-border bg-surface-elevated text-muted-foreground'
-                } ${loading ? 'animate-pulse' : ''}`}
-                aria-label={`${day.label}: ${completed ? 'completed' : 'not completed'}`}
-              >
-                {day.label}
+            <div key={`${day.label}-${index}`} className="flex flex-col items-center gap-1">
+              {/* score label — only on peak bar */}
+              <span className={`text-[11px] font-sans font-black text-primary transition-opacity ${isPeak ? 'opacity-100' : 'opacity-0'}`}
+                aria-hidden={!isPeak}>
+                {isPeak ? score : ''}
               </span>
+              <div
+                className={`w-full rounded-t-sm transition-all ${
+                  hasSession ? 'bg-primary' : 'bg-surface-elevated'
+                } ${loading ? 'animate-pulse' : ''}`}
+                style={{ height: `${barH}px` }}
+                aria-label={`${day.label}: ${score !== null ? score : 'no session'}`}
+              />
+              <span className="text-[11px] font-sans font-semibold text-muted-foreground">{day.label}</span>
             </div>
           );
         })}

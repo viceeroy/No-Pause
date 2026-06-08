@@ -3,16 +3,25 @@ export {
   DEFAULT_PAUSE_THRESHOLD_MS,
 } from "./constants.js";
 
-export interface FlowScoreOptions {
-  speakingTimeSec?: number;
-  totalSessionTimeSec?: number;
-  hasSpeechEvidence?: boolean;
+export interface FlowScoreInput {
+  cleanSpeakingTime: number;
+  totalSessionTime: number;
+  speakingTime: number;
+  pauseCount: number;
 }
 
 export interface FlowScoreResult {
   score: number;
   isCompleted: boolean;
-  note?: string;
+}
+
+const FLOW_SCORE_MAX = 100;
+const AI_SCORE_MAX = 100;
+const DURATION_BONUS_MAX = 30;
+const TOTAL_SCORE_MAX = 230;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 function debugScoreBreakdown(details: Record<string, unknown>) {
@@ -24,59 +33,59 @@ function debugScoreBreakdown(details: Record<string, unknown>) {
   const isTest = Boolean(viteEnv?.VITEST) || viteEnv?.MODE === "test";
 
   if (isDev && !isTest) {
-    console.debug("[NoSpeech] SCORE BREAKDOWN:", details);
+    console.debug("[NoPause] SCORE BREAKDOWN:", details);
   }
 }
 
-export function calculateFlowScore(
-  totalSilenceSeconds: number,
-  options?: FlowScoreOptions,
-): FlowScoreResult {
-  const speakingTime = Math.max(0, Math.floor(options?.speakingTimeSec ?? 0));
-  const mode = "speaking";
-  const silence = Math.max(0, Math.round(totalSilenceSeconds ?? 0));
-  if (speakingTime < 5) {
-    const note = "Session was too short to score. Speak for at least 5 seconds.";
+export function calculateFlowScore(input: FlowScoreInput): FlowScoreResult {
+  const speakingTime = Math.max(0, input.speakingTime ?? 0);
+  const totalSessionTime = Math.max(0, input.totalSessionTime ?? 0);
+  const cleanSpeakingTime = Math.max(0, input.cleanSpeakingTime ?? 0);
+  const pauseCount = Math.max(0, input.pauseCount ?? 0);
+  const isCompleted = speakingTime >= 5;
 
-    debugScoreBreakdown({
-      mode,
-      speakingTime: `${speakingTime}s`,
-      totalSilence: `${silence}s`,
-      completed: false,
-      finalScore: 0,
-      note,
-    });
-
-    return { score: 0, isCompleted: false, note };
+  if (speakingTime <= 0 || totalSessionTime <= 0) {
+    debugScoreBreakdown({ speakingTime, totalSessionTime, finalScore: 0, isCompleted });
+    return { score: 0, isCompleted };
   }
 
-  const completedSpeakingMinutes = Math.floor(speakingTime / 60);
-  const finalScore = Math.max(0, speakingTime + completedSpeakingMinutes * 20 - silence);
+  const continuityRatio = cleanSpeakingTime / totalSessionTime;
+  const pausePenalty = Math.round((pauseCount / (speakingTime / 60)) * 2);
+  const score = clamp(Math.round(continuityRatio * 100) - pausePenalty, 0, FLOW_SCORE_MAX);
 
   debugScoreBreakdown({
-    mode,
-    speakingTime: `${speakingTime}s`,
-    totalSilence: `${silence}s`,
-    completedSpeakingMinutes,
-    completed: true,
-    finalScore,
+    cleanSpeakingTime,
+    totalSessionTime,
+    speakingTime,
+    pauseCount,
+    continuityRatio,
+    pausePenalty,
+    finalScore: score,
+    isCompleted,
   });
 
-  return { score: finalScore, isCompleted: true };
+  return { score, isCompleted };
 }
 
-export function isScorableSession(flowScore: number): boolean {
-  return flowScore > 0;
+export function calculateDurationBonus(speakingTimeSec: number): number {
+  return clamp(Math.round((speakingTimeSec ?? 0) / 10), 0, DURATION_BONUS_MAX);
 }
 
-export function applyBandBonus(baseScore: number, band: number): number {
-  return isScorableSession(baseScore) ? baseScore + band * 10 : baseScore;
+export function calculateTotalScore(
+  flowScore: number,
+  aiScore: number,
+  durationBonus: number,
+): number {
+  const flow = clamp(Math.round(flowScore ?? 0), 0, FLOW_SCORE_MAX);
+  const ai = clamp(Math.round(aiScore ?? 0), 0, AI_SCORE_MAX);
+  const bonus = clamp(Math.round(durationBonus ?? 0), 0, DURATION_BONUS_MAX);
+  return Math.min(flow + ai + bonus, TOTAL_SCORE_MAX);
 }
 
 export function getScoreLabel(score: number): string {
-  if (score >= 300) return "Perfect Flow";
-  if (score >= 200) return "Great Flow";
-  if (score >= 100) return "Good Flow";
-  if (score >= 50) return "Getting There";
+  if (score >= 201) return "Perfect Flow";
+  if (score >= 151) return "Great Flow";
+  if (score >= 101) return "Good Flow";
+  if (score >= 51) return "Getting There";
   return "Needs Practice";
 }

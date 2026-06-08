@@ -20,6 +20,7 @@ import {
 } from "./core/queries";
 import { supabase as browserSupabase } from "@/services/supabase";
 import { parseTranscribedWords, type TranscribedWord } from "@/lib/core/utils";
+import type { SilenceGap } from "@/lib/core/silence";
 import type { PromptCategory } from "@/lib/core/prompts";
 
 export type { PracticeStats, SessionRecord, WeeklyActivityDay, WeeklyStatsComparison } from "./core/queries";
@@ -77,11 +78,12 @@ export type TranscriptionResult = {
 
 export type AnalyzePracticeSpeechInput = {
   transcript: string;
-  topic?: string;
-  flowScore?: number;
-  hesitationCount?: number;
-  speakingTime?: number;
-  wordCount?: number;
+  words: TranscribedWord[];
+  gaps: SilenceGap[];
+  speakingTimeSec: number;
+  totalSilenceSec: number;
+  pauseCount: number;
+  wordCount: number;
 };
 
 function base64ToBlob(base64: string, mimeType: string): Blob {
@@ -154,7 +156,7 @@ export async function transcribeAudio(input: Base64TranscriptionInput): Promise<
 
 export type FeedbackResult = {
   feedback: string;
-  band: number;
+  score: number;
 };
 
 export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<FeedbackResult> {
@@ -166,11 +168,11 @@ export async function analyzeSpeech(input: AnalyzePracticeSpeechInput): Promise<
     },
     body: JSON.stringify(input),
   });
-  const body = await readEndpointJson<{ feedback?: unknown; band?: unknown }>(response);
-  const band = Number(body.band);
+  const body = await readEndpointJson<{ feedback?: unknown; score?: unknown }>(response);
+  const score = Number(body.score);
   return {
     feedback: String(body.feedback ?? ""),
-    band: Number.isInteger(band) && band >= 1 && band <= 9 ? band : 5,
+    score: Number.isInteger(score) && score >= 0 && score <= 100 ? score : 0,
   };
 }
 
@@ -410,7 +412,7 @@ export async function getWeeklyActivityDays(userId: string | null): Promise<Week
 
   const { data, error } = await browserSupabase
     .from("sessions")
-    .select("created_at")
+    .select("created_at, flow_score, completed")
     .eq("user_id", userId)
     .eq("completed", true)
     .gte("created_at", queryStart.toISOString())
@@ -418,7 +420,7 @@ export async function getWeeklyActivityDays(userId: string | null): Promise<Week
 
   if (error) throw error;
 
-  return buildWeeklyActivityDays((data ?? []) as Array<Pick<SessionRecord, "created_at">>, now);
+  return buildWeeklyActivityDays((data ?? []) as Array<Pick<SessionRecord, "created_at"> & { flow_score?: number | null; completed?: boolean | null }>, now);
 }
 
 export async function getWeeklyStatsComparison(userId: string | null): Promise<WeeklyStatsComparison> {

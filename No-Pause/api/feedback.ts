@@ -7,6 +7,24 @@ import {
   isApiQuotaExceededError,
 } from "../src/services/apiQuota.js";
 import { analyzePracticeSpeech, type AnalyzePracticeSpeechInput } from "../src/services/aiFeedback.js";
+import { parseTranscribedWords } from "../src/lib/core/utils.js";
+import type { SilenceGap } from "../src/lib/core/silence.js";
+
+function parseGaps(value: unknown): SilenceGap[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const maybe = entry as { startSec?: unknown; durationSec?: unknown };
+    const startSec = Number(maybe.startSec);
+    const durationSec = Number(maybe.durationSec);
+    if (!Number.isFinite(startSec) || !Number.isFinite(durationSec)) return [];
+    return [{ startSec, durationSec }];
+  });
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
 
 async function readJsonBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
@@ -30,15 +48,14 @@ function getFeedbackInput(body: Record<string, unknown>): AnalyzePracticeSpeechI
     return null;
   }
 
-  const topic = typeof body.topic === "string" ? body.topic.trim() : "";
-
   return {
     transcript,
-    topic: topic || undefined,
-    flowScore: Number.isFinite(Number(body.flowScore)) ? Number(body.flowScore) : undefined,
-    hesitationCount: Number.isFinite(Number(body.hesitationCount)) ? Number(body.hesitationCount) : undefined,
-    speakingTime: Number.isFinite(Number(body.speakingTime)) ? Number(body.speakingTime) : undefined,
-    wordCount: Number.isFinite(Number(body.wordCount)) ? Number(body.wordCount) : undefined,
+    words: parseTranscribedWords(body.words),
+    gaps: parseGaps(body.gaps),
+    speakingTimeSec: toFiniteNumber(body.speakingTimeSec),
+    totalSilenceSec: toFiniteNumber(body.totalSilenceSec),
+    pauseCount: toFiniteNumber(body.pauseCount),
+    wordCount: toFiniteNumber(body.wordCount),
   };
 }
 
@@ -89,7 +106,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     const result = await analyzePracticeSpeech(input);
-    sendJson(res, 200, { feedback: result.feedback, band: result.band });
+    sendJson(res, 200, { feedback: result.feedback, score: result.score });
   } catch (error) {
     if (isApiQuotaExceededError(error)) {
       sendJson(res, 429, { error: getQuotaExceededMessage(error.kind) });

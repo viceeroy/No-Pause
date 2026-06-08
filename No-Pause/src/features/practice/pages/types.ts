@@ -1,5 +1,7 @@
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
 import type { Dispatch, SetStateAction } from 'react';
+import type { SilenceGap } from '@/lib/core/silence';
+import type { TranscribedWord } from '@/lib/core/utils';
 
 export type PracticeState = 'setup' | 'countdown' | 'recording' | 'finishing' | 'done';
 
@@ -26,7 +28,7 @@ export interface SessionResult {
   analysisFeedback?: string;
   analysisFeedbackLoading?: boolean;
   analysisFeedbackError?: string;
-  bandPoints?: number;
+  bonusPoints?: number;
   transcriptionLoading?: boolean;
   transcriptionError?: string;
   wordCount: number | null;
@@ -35,6 +37,10 @@ export interface SessionResult {
   saveFailed?: boolean;
   scoringError?: string;
   totalSilenceSec?: number;
+  flowScoreBase?: number;
+  durationBonus?: number;
+  gaps?: SilenceGap[];
+  transcribedWords?: TranscribedWord[];
 }
 
 export interface PracticeStateStore {
