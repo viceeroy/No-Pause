@@ -6,6 +6,31 @@ Single source of truth for AI agents picking up this project. Update this file w
 
 ---
 
+**2026-06-10:** **Live Supabase audit + fixes (project `nuwdjopbvxpfeaxfirot`).** Audit report: `Desktop/NoPause.sd/Audits/2026-06-10-supabase-audit.md`. Applied via MCP `apply_migration`, mirrored as repo files under `No-Pause/supabase/migrations/`:
+- **`user_prompts` table now LIVE.** Repo migration `20260605000000_add_user_prompts.sql` had never been applied to prod — the AI-prompts feature (`/api/generate-prompts`, Telegram `pickPromptForUser`) was dead. Applied as migration `add_user_prompts`.
+- **`api_usage_daily_kind_check` widened** to `('transcription','feedback','prompts')` (was 2-kind; `consume_api_usage_daily` already accepted `'prompts'` but the table CHECK rejected the insert). Repo: `20260610120000_widen_api_usage_kind_check.sql`. **Prompts feature is now fully live in prod** (frontend was already deployed).
+- **`get_telegram_challenge_stats` no longer anon-callable.** Default PUBLIC execute grant removed; re-granted to `authenticated` + `service_role` only. (`REVOKE FROM anon` alone was insufficient — anon inherits PUBLIC.) Repo: `20260610120001` (partial) + `20260610120002_revoke_anon_rpc_from_public.sql`. All 3 RPCs now `{authenticated, service_role}`, anon=false.
+- **Duplicate index dropped.** `sessions_user_id_created_at_idx` (identical to `sessions_user_created_at_idx`, both `(user_id, created_at DESC)`). sessions now has 3 indexes.
+- **RLS policies initplan-wrapped.** All policies using bare `auth.uid()`/`auth.role()` rewritten to `(select auth.…)` per Supabase lint 0003 (per-row re-eval → once). `sessions`/`streaks` were already wrapped (untouched). `telegram_connections` kept USING-only (no WITH CHECK). Repo: `20260610120001_audit_perf_and_grant_fixes.sql`.
+- **`user_prompts_service_role` scoped `TO service_role`** to clear `multiple_permissive_policies` (lint 0006, 18 warns) — the `FOR ALL` policy overlapped the 3 own per-action policies on every role. Repo: `20260610120003_scope_user_prompts_service_role.sql`.
+- **Data cleanup (one-time).** Deleted 36 stale unreferenced pending challenges (>30d, no attempts/state/friend_result_sends refs) + 3 stale `telegram_challenge_state` rows (>7d). FK `telegram_challenge_state_challenge_id_fkey` is ON DELETE CASCADE.
+- **Disaster-recovery baseline added.** `No-Pause/supabase/schema/baseline_schema.sql` (NOT in `migrations/`) captures full live schema (9 tables, indexes, policies, 3 RPCs, grants) post-fix. **This file IS the disaster-recovery path — the ONLY artifact that rebuilds the DB from zero.** The dated `migrations/` chain CANNOT rebuild from empty: base `sessions`/`streaks` tables are created by NO migration (existed only in live DB), and the chain's first file `20260507133131` FKs to `public.challenges`, created only in CLI-invisible `migrations/_legacy/`. So the chain throws on the first file against an empty DB; it is incremental history that assumes the live base. Baseline lives in `schema/` (outside `migrations/`) so the CLI won't auto-run it alongside the chain — apply manually via psql on rebuild. 6 unversioned `add_*.sql` files moved to `migrations/_legacy/` (untrackable by CLI — no timestamp prefix).
+- Remaining advisors (all intentional/IGNORE): 3 authenticated SECURITY DEFINER RPC notices (by design), leaked-password disabled (Google-OAuth-only, no password flow), 2 unindexed-FK INFO on tiny tables.
+- **Live public tables (9):** sessions, streaks, telegram_connections, challenges, telegram_challenge_state, telegram_challenge_attempts, **api_usage_daily**, **telegram_friend_result_sends**, **user_prompts** (last 3 were missing from the Database Tables section below — now noted here).
+
+---
+
+**2026-06-10:** **Duration factor, AI score scaling, total rounding, expanded AI prompt.**
+- `getDurationFactor(speakingTimeSec)` exported from `src/lib/core/scoring.ts` — `Math.min(Math.sqrt(speakingTimeSec / 120), 1.0)`. Short sessions (<120s) receive a sub-1.0 multiplier; sessions ≥120s get full weight.
+- `calculateFlowScore` now applies `durationFactor` internally: `score = clamp(round(continuityRatio * 100 * durationFactor) − pausePenalty, 0, 100)`.
+- `calculateTotalScore` rounds total to nearest 5: `Math.round(capped / 5) * 5` (e.g. 198→200, 43→45). The old per-component clamping via `clamp()` was removed — raw sum → cap → round.
+- AI score scaled by `getDurationFactor(speakingTimeSec)` before `calculateTotalScore` at both call sites: `useSession.requestFeedback` (uses `input.speakingTime`) and `useSession.requestTranscription` (uses `lastResults.totalSpeakingTime`). Same scaling in `voiceHandler.handleVoiceMessage` (uses `analysis.speakingTimeSec`).
+- `FEEDBACK_SYSTEM_PROMPT` expanded to 5-part coaching structure (flow pattern, linking quality, why, drill/habit, score explanation) producing 5–6 sentences. Quotes transcript directly. Single quotes required for in-feedback transcript quotes to prevent JSON parse failures.
+- `has_topic` field removed from PostHog `ai_feedback_received` event in `useSession.ts`.
+- `createEmptyWeeklyActivity()` in `StatsPage.tsx` now includes `bestScore: null` (fixes pre-existing tsc error from `WeeklyActivityDay.bestScore` being required).
+
+---
+
 **2026-06-08:** **Flow Score 2.0 — full scoring replacement (web + Telegram).** Headline score is now a **0–230 total** = `flowScore (0–100)` + `aiScore (0–100)` + `durationBonus (0–30)`. `src/lib/core/scoring.ts` rewritten: `calculateFlowScore({ cleanSpeakingTime, totalSessionTime, speakingTime, pauseCount })` → `{score,isCompleted}` where `continuityRatio = cleanSpeakingTime/totalSessionTime`, `pausePenalty = round((pauseCount/(speakingTime/60))*2)`, `score = clamp(round(continuityRatio*100) − pausePenalty, 0, 100)`, `isCompleted = speakingTime ≥ 5` (`cleanSpeakingTime = totalSessionTime − totalSilenceSec`). New `calculateDurationBonus(speakingTimeSec) = clamp(round(/10),0,30)` and `calculateTotalScore(flow,ai,duration) = min(sum,230)`. **`applyBandBonus` + `isScorableSession` deleted.** AI role changed: `aiFeedback.ts` no longer grades content/topic (no band 1–9). It receives the transcript with silence gaps marked inline as `[——Xs——]` (built by new `buildMarkedTranscript(transcript, words, gaps)`) plus stats, and returns `{score: 0–100, feedback}` from a single fluency-pattern prompt (temperature 0). `getAIFeedback` (groq.ts) gained a `temperature?` param. Input/return types: `AnalyzePracticeSpeechInput { transcript, words, gaps, speakingTimeSec, totalSilenceSec, pauseCount, wordCount }`; `AiFeedbackResult { score, feedback }`. `POST /api/feedback` body now takes `words/gaps/totalSilenceSec/...`, returns `{score, feedback}`. **Web flow:** `useScoring.buildSessionResult` now keeps `gaps` + `transcribedWords` + `flowScoreBase` + `durationBonus` on `SessionResult`; `useRecording.stopRecording` threads them into `useSession.requestFeedback`, which calls `analyzeSpeech`, computes `calculateTotalScore`, writes `flow_score = totalScore` + `scoring_version = flow-2.0`, and surfaces `bonusPoints` (renamed from `bandPoints`) in `ResultPanel`. Manual `requestTranscription` recomputes gaps from its fresh words. **Telegram:** `voiceHandler.analyzeTranscript` uses the new formula and carries `gaps` in `FlowAnalysis`; `handleVoiceMessage` drops `topic` from the AI call, computes `totalScore`, stores it in `flow_score` with `scoring_version = flow-2.0`. `getSessionAnalysis` (DB re-display only, never feeds AI) sets `gaps: []`. All new sessions tagged `flow-2.0`; old rows + old `scoring_version` constants untouched. PostHog `ai_feedback_received` now emits `ai_score`/`bonus_points` (was `band`/`band_points`). Parse-failure fallback in `aiFeedback` is `{score:0, feedback:"Feedback unavailable — please try again."}` (no phantom bonus). Labels rescaled (see Flow Score Formula). `src/lib/core/silence.ts` and DB migrations unchanged.
 
 ---
@@ -14,7 +39,7 @@ Single source of truth for AI agents picking up this project. Update this file w
 
 ---
 
-**2026-06-03:** **PostHog analytics added (EU region).** `posthog-js` installed. Init in `src/main.tsx` via `src/services/posthog.ts` (EU host `https://eu.i.posthog.com`, `person_profiles: 'identified_only'`). User identified/reset on auth state change in `AuthContext.tsx`. Key events: `session_completed` (mode, duration_s, flow_score, words, completed, pause_count) fired in `useSession.ts` after successful save; `ai_feedback_received` (band, band_points, flow_score_before, flow_score_after, has_topic) fired after AI analysis. Env var: `VITE_POSTHOG_KEY` (must be set in Vercel before build — Vite bakes it at compile time). Project ID: 192820, EU Cloud. PR #3 merged to main. Vercel Analytics + Speed Insights still active alongside PostHog.
+**2026-06-03:** **PostHog analytics added (EU region).** `posthog-js` installed. Init in `src/main.tsx` via `src/services/posthog.ts` (EU host `https://eu.i.posthog.com`, `person_profiles: 'identified_only'`). User identified/reset on auth state change in `AuthContext.tsx`. Key events: `session_completed` (mode, duration_s, flow_score, words, completed, pause_count) fired in `useSession.ts` after successful save; `ai_feedback_received` (ai_score, bonus_points, flow_score_before, flow_score_after) fired after AI analysis. (`band`, `band_points`, `has_topic` removed 2026-06-08/10.) Env var: `VITE_POSTHOG_KEY` (must be set in Vercel before build — Vite bakes it at compile time). Project ID: 192820, EU Cloud. PR #3 merged to main. Vercel Analytics + Speed Insights still active alongside PostHog.
 
 ---
 
@@ -201,27 +226,30 @@ shared/
 
 ## Flow Score Formula
 
-**Flow Score 2.0 (current, 2026-06-08).** Headline score = `flowScore + aiScore + durationBonus`, capped at **230**.
+**Flow Score 2.0 (current, updated 2026-06-10).** Headline score = `flowScore + adjustedAiScore + durationBonus`, rounded to nearest 5, capped at **230**.
 
-**Source of truth:** `src/lib/core/scoring.ts` — `calculateFlowScore({ cleanSpeakingTime, totalSessionTime, speakingTime, pauseCount })`, `calculateDurationBonus(speakingTimeSec)`, `calculateTotalScore(flowScore, aiScore, durationBonus)`, `getScoreLabel(score)`.
+**Source of truth:** `src/lib/core/scoring.ts` — `calculateFlowScore(...)`, `getDurationFactor(speakingTimeSec)`, `calculateDurationBonus(speakingTimeSec)`, `calculateTotalScore(flowScore, aiScore, durationBonus)`, `getScoreLabel(score)`.
 
 Silence detection: `src/lib/core/silence.ts` — `analyzeSilenceFromTimestamps(words, totalSessionTimeSec)`. Returns `totalSilenceSec` (rounded once at end), `speakingTimeSec` (Σ word durations), `gapCount`, and `gaps[]`. Used identically by web (`useScoring.ts`) and Telegram (`voiceHandler.ts`). `cleanSpeakingTime = totalSessionTimeSec − totalSilenceSec`.
 
 ```
+durationFactor           = min(sqrt(speakingTimeSec / 120), 1.0)   ← 1.0 at ≥120s, scales down below
+
 flow score (0–100):
   guard: speakingTime ≤ 0 OR totalSessionTime ≤ 0  →  score = 0, isCompleted = false
   continuityRatio = cleanSpeakingTime / totalSessionTime
   pausePenalty    = round((pauseCount / (speakingTime / 60)) * 2)
-  score           = clamp(round(continuityRatio * 100) − pausePenalty, 0, 100)
+  score           = clamp(round(continuityRatio * 100 * durationFactor) − pausePenalty, 0, 100)
   isCompleted     = speakingTime ≥ 5     ← computed independently of score
 
-durationBonus (0–30) = clamp(round(speakingTimeSec / 10), 0, 30)
-total (≤230)         = min(flowScore + aiScore + durationBonus, 230)
+adjustedAiScore (0–100) = round(aiResult.score * durationFactor)   ← applied at call sites, not inside aiFeedback.ts
+durationBonus (0–30)    = clamp(round(speakingTimeSec / 10), 0, 30)
+total (0–230, ×5)       = round(min(flowScore + adjustedAiScore + durationBonus, 230) / 5) * 5
 ```
 
 `isCompleted` is separate from `score`: a sub-5s session can still produce a non-zero flow score but is marked not-completed. Sessions are persisted regardless.
 
-**AI score (replaces the old 1–9 band).** Every scorable session (web + Telegram) runs `analyzePracticeSpeech` (`src/services/aiFeedback.ts`), which **ignores content/topic** and analyzes fluency only. It is given the transcript with silence gaps marked inline as `[——Xs——]` (built by `buildMarkedTranscript(transcript, words, gaps)`, gap durations rounded to 1 decimal) plus STATS (speaking time, total silence, pause count), via one `FEEDBACK_SYSTEM_PROMPT` at **temperature 0**, and returns `{score: 0–100, feedback}`. Non-English → `{score:0, feedback:"Please speak in English…"}`; JSON parse failure → `{score:0, feedback:"Feedback unavailable — please try again."}`. The AI score is folded in via `calculateTotalScore`; the result is written to `flow_score` and tagged `scoring_version = flow-2.0` (web: `updateSession` after feedback; Telegram: `insertTelegramSession`). Web surfaces the post-AI delta as `bonusPoints` (= aiScore + durationBonus) in `ResultPanel`.
+**AI score (replaces the old 1–9 band).** Every scorable session (web + Telegram) runs `analyzePracticeSpeech` (`src/services/aiFeedback.ts`), which **ignores content/topic** and analyzes fluency only. It is given the transcript with silence gaps marked inline as `[——Xs——]` (built by `buildMarkedTranscript(transcript, words, gaps)`, gap durations rounded to 1 decimal) plus STATS (speaking time, total silence, pause count, word count), via one `FEEDBACK_SYSTEM_PROMPT` at **temperature 0**, and returns `{score: 0–100, feedback}`. The prompt produces 5–6 sentences covering flow pattern, linking quality, mechanical why, drill/habit, and score explanation — always quotes transcript directly using single quotes. Non-English → `{score:0, feedback:"Please speak in English…"}`; JSON parse failure → `{score:0, feedback:"Feedback unavailable — please try again."}`. The AI score is scaled by `getDurationFactor` at the call site before `calculateTotalScore`; result written to `flow_score` tagged `scoring_version = flow-2.0`. Web surfaces the post-AI delta as `bonusPoints` (= adjustedAiScore + durationBonus) in `ResultPanel`.
 
 A gap between words counts as silence if ≥ `DEFAULT_PAUSE_THRESHOLD` (1.5s). Below 1.5s is ignored (normal speech rhythm). When a gap qualifies, its full duration counts. Leading silence (before first word) and trailing silence (after last word to end of session, clamped ≥ 0) are each included only when they exceed the 1.5s threshold — same gate as inter-word gaps. The 3s countdown is the only grace. Total silence = sum of all qualifying gap durations, rounded once at end.
 
@@ -276,7 +304,7 @@ Notes:
 - `insertSession` / query helpers include fallbacks for deployments missing newer columns. The stripped/checked set is `pause_count`, `hesitations_per_minute`, `telegram_chat_id`, `telegram_message_id` (see Notable Quirks → Legacy column fallback). `total_silence_time` and `analysis_feedback` are no longer in this set.
 - Telegram stats filter by `sessions.source = 'telegram'`; older rows without source may not appear.
 - Base `sessions`/`streaks` schema and RLS policies are not fully represented in repo migrations.
-- `scoring_version` column: Holds one of three values (`base-1.0`, `tg-band-1.0`, `tg-legacy`), with a DB default of `base-1.0`. See Notable Quirks → Scoring cohorts.
+- `scoring_version` column: DB default is `base-1.0` (unchanged), but all live code writes `flow-2.0`. Historical values: `base-1.0`, `tg-band-1.0`, `free-speech-band-1.0`, `tg-legacy`. See Notable Quirks → Scoring cohorts.
 
 ---
 
@@ -302,8 +330,9 @@ Notes:
 
 ## Key Components
 
-- **`calculateFlowScore({ cleanSpeakingTime, totalSessionTime, speakingTime, pauseCount })`** — `src/lib/core/scoring.ts` — authoritative flow score (0–100), continuity-based. Object arg (not positional).
-- **`calculateDurationBonus(speakingTimeSec)`** / **`calculateTotalScore(flow, ai, duration)`** — `src/lib/core/scoring.ts` — duration bonus (0–30) and the capped 0–230 total. (`applyBandBonus`/`isScorableSession` removed 2026-06-08.)
+- **`calculateFlowScore({ cleanSpeakingTime, totalSessionTime, speakingTime, pauseCount })`** — `src/lib/core/scoring.ts` — authoritative flow score (0–100), continuity-based with `durationFactor` applied. Object arg (not positional).
+- **`getDurationFactor(speakingTimeSec)`** — `src/lib/core/scoring.ts` — `min(sqrt(speakingTimeSec/120), 1.0)`. Full weight at ≥120s; sub-1.0 for shorter sessions. Applied inside `calculateFlowScore` and at AI score call sites.
+- **`calculateDurationBonus(speakingTimeSec)`** / **`calculateTotalScore(flow, ai, duration)`** — `src/lib/core/scoring.ts` — duration bonus (0–30) and the 0–230 total rounded to nearest 5. (`applyBandBonus`/`isScorableSession` removed 2026-06-08.)
 - **`buildMarkedTranscript(transcript, words, gaps)`** — `src/services/aiFeedback.ts` — inserts `[——Xs——]` gap markers into the transcript for the fluency-analysis prompt.
 - **`isUsableTranscript(transcript)`** — `src/services/aiFeedback.ts` — returns `getWordCount(transcript) >= 3`. Telegram transcript gate.
 - **`analyzeSilenceFromTimestamps`** — `src/lib/core/silence.ts` — shared silence + speaking time computation from word timestamps. Used by both web and Telegram.
