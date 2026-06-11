@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, Loader2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { promptCategories, type PromptCategory } from '@/lib/core/prompts';
@@ -16,6 +16,10 @@ export default function PromptsPage() {
   const [generatedByCategory, setGeneratedByCategory] = useState<Partial<Record<CategoryId, string[]>>>({});
   const [loadingCategory, setLoadingCategory] = useState<CategoryId | null>(null);
   const [errorByCategory, setErrorByCategory] = useState<Partial<Record<CategoryId, string>>>({});
+  // Categories whose persisted prompts have been loaded into state. Kept in a
+  // ref (not state) so the load-on-visit effect doesn't need generatedByCategory
+  // in its deps — state writes from handleGenerate can't retrigger it.
+  const loadedCategoriesRef = useRef<Set<CategoryId>>(new Set());
 
   const generatedPrompts = generatedByCategory[activeCategoryId] ?? [];
   const isLoading = loadingCategory === activeCategoryId;
@@ -23,18 +27,19 @@ export default function PromptsPage() {
 
   useEffect(() => {
     if (!user) return;
-    if (generatedByCategory[activeCategoryId] !== undefined) return;
+    if (loadedCategoriesRef.current.has(activeCategoryId)) return;
 
     let cancelled = false;
     void fetchUserGeneratedPrompts(activeCategoryId).then((prompts) => {
       if (cancelled) return;
+      loadedCategoriesRef.current.add(activeCategoryId);
       setGeneratedByCategory((prev) => ({ ...prev, [activeCategoryId]: prompts }));
     });
 
     return () => {
       cancelled = true;
     };
-  }, [user, activeCategoryId, generatedByCategory]);
+  }, [user, activeCategoryId]);
 
   const openPrompt = (prompt: string) => {
     navigate(`/practice?prompt_text=${encodeURIComponent(prompt)}`);
@@ -46,10 +51,15 @@ export default function PromptsPage() {
     setErrorByCategory((prev) => ({ ...prev, [categoryId]: undefined }));
 
     try {
-      const newPrompts = await generatePrompts(categoryId);
+      await generatePrompts(categoryId);
+      // Re-read the persisted row so the rendered list always reflects what's
+      // in the DB (server already appended the new prompts). Avoids the mount
+      // effect's stale fetch clobbering an optimistic in-memory append.
+      const persisted = await fetchUserGeneratedPrompts(categoryId);
+      loadedCategoriesRef.current.add(categoryId);
       setGeneratedByCategory((prev) => ({
         ...prev,
-        [categoryId]: [...(prev[categoryId] ?? []), ...newPrompts],
+        [categoryId]: persisted,
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not generate prompts. Please try again.';
