@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, type LucideIcon } from 'lucide-react';
+import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, Megaphone, type LucideIcon } from 'lucide-react';
 import { HELP_ARTICLES } from '@/features/help/helpContent';
 
 const SLUG_ICONS: Record<string, LucideIcon> = {
+  'what-is-nopause': Megaphone,
   'how-a-session-works': Mic,
   'understanding-flow-score': TrendingUp,
   'what-counts-as-a-pause': VolumeX,

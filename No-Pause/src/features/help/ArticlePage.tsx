@@ -1,12 +1,14 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, type LucideIcon } from 'lucide-react';
+import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, Megaphone, ExternalLink, type LucideIcon } from 'lucide-react';
 import {
   getArticleBySlug,
   type HelpSection,
   type ScoreExampleCard,
+  type ReferenceLink,
 } from './helpContent';
 
 const SLUG_ICONS: Record<string, LucideIcon> = {
+  'what-is-nopause': Megaphone,
   'how-a-session-works': Mic,
   'understanding-flow-score': TrendingUp,
   'what-counts-as-a-pause': VolumeX,
@@ -146,6 +148,35 @@ function TipSection({ content }: { content: string }) {
   );
 }
 
+function ReferencesSection({ content }: { content: ReferenceLink[] }) {
+  return (
+    <div className="rounded-[22px] border border-border bg-surface-card p-5 shadow-card">
+      <p className="text-xs font-sans font-black uppercase tracking-[0.14em] text-muted-foreground">
+        Sources
+      </p>
+      <ul className="mt-3 space-y-3">
+        {content.map((ref) => (
+          <li key={ref.url}>
+            <a
+              href={ref.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-start gap-2 text-sm font-sans text-primary underline underline-offset-4 break-words hover:text-foreground transition-colors"
+            >
+              <ExternalLink
+                size={14}
+                className="mt-0.5 shrink-0 opacity-70 group-hover:opacity-100"
+                aria-hidden="true"
+              />
+              <span className="break-words">{ref.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function renderSection(section: HelpSection, index: number) {
   switch (section.type) {
     case 'text':
@@ -158,6 +189,8 @@ function renderSection(section: HelpSection, index: number) {
       return <PauseVisualSection key={index} content={section.content} />;
     case 'tip':
       return <TipSection key={index} content={section.content} />;
+    case 'references':
+      return <ReferencesSection key={index} content={section.content} />;
     default:
       return null;
   }

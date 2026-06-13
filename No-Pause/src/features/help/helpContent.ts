@@ -5,12 +5,18 @@ export type ScoreExampleCard = {
   silenceSec: number;
 };
 
+export type ReferenceLink = {
+  label: string;
+  url: string;
+};
+
 export type HelpSection =
   | { type: 'text'; content: string }
   | { type: 'callout'; content: { label: string; value: string }[] }
   | { type: 'score-example'; content: ScoreExampleCard[] }
   | { type: 'pause-visual'; content: { caption?: string } }
-  | { type: 'tip'; content: string };
+  | { type: 'tip'; content: string }
+  | { type: 'references'; content: ReferenceLink[] };
 
 export type HelpArticle = {
   slug: string;
@@ -21,6 +27,48 @@ export type HelpArticle = {
 };
 
 export const HELP_ARTICLES: HelpArticle[] = [
+  {
+    slug: 'what-is-nopause',
+    icon: '📣',
+    title: 'What NoPause Is',
+    summary: 'A fitness tracker for spoken English fluency — record, get a score, build a daily habit.',
+    sections: [
+      {
+        type: 'text',
+        content:
+          'NoPause is a solo speaking-practice app. You record yourself talking, get an instant fluency score, and build a daily habit around beating yesterday\'s number. There is no tutor, no conversation partner, and nothing to schedule — you show up, speak, and see how smoothly it came out.',
+      },
+      {
+        type: 'text',
+        content:
+          'The simplest way to picture it: a fitness tracker for spoken English. A running app measures your pace; NoPause measures how continuously you speak. It does one thing on purpose — it does not teach grammar, drill vocabulary, or run a live AI conversation. It measures your speaking flow and turns that into a habit you can keep.',
+      },
+      {
+        type: 'callout',
+        content: [
+          { label: 'What it measures', value: 'Speaking flow' },
+          { label: 'A session', value: '60–90 seconds' },
+          { label: 'After each session', value: 'Score + transcript + AI note' },
+          { label: 'Works on', value: 'Web, mobile, Telegram' },
+        ],
+      },
+      {
+        type: 'text',
+        content:
+          'The problem it solves is the one most learners actually have. Plenty of people read and write English well but freeze the moment they have to speak. The gap is not vocabulary — it is the habit of speaking continuously without stopping to second-guess every word. Low-stakes, repeatable, private practice is what closes that gap, and that is the whole point of NoPause.',
+      },
+      {
+        type: 'text',
+        content:
+          'How a day looks: open the app and tap record, a short prompt appears, you speak for about a minute, and you get back a Flow Score, a transcript of what you said, and a short AI note on where you hesitated. Do it again tomorrow. Over weeks the number trends up and speaking starts to feel automatic.',
+      },
+      {
+        type: 'tip',
+        content:
+          'You do not need a streak-perfect record or a high score to benefit. The only thing that matters is showing up most days and watching the trend, not any single session.',
+      },
+    ],
+  },
   {
     slug: 'how-a-session-works',
     icon: '🎙️',
@@ -375,12 +423,34 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
+          'This is not a vague feeling — it is measurable. In second-language research, higher speaking anxiety reliably predicts more frequent and longer pauses, more filled hesitations (um, uh), and a slower speaking rate, even when the speaker\'s grammar and vocabulary are strong. The anxiety is not a sign you lack the words. It is interfering with your ability to get the words out smoothly.',
+      },
+      {
+        type: 'text',
+        content:
           'The good news is that anxiety in speaking responds directly to practice. The more familiar the act of speaking feels, the less your brain flags it as a threat. You do not need to eliminate nervousness — you need to lower the threshold at which it kicks in. That is exactly what repeated short sessions do.',
       },
       {
         type: 'tip',
         content:
           'The goal is not to feel fearless. It is to keep speaking even when you feel nervous. That is what NoPause sessions train.',
+      },
+      {
+        type: 'references',
+        content: [
+          {
+            label: 'Glossophobia — prevalence of public-speaking fear (Wikipedia)',
+            url: 'https://en.wikipedia.org/wiki/Glossophobia',
+          },
+          {
+            label: 'Anxiety and breakdown fluency — Frontiers in Psychology (2022)',
+            url: 'https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2022.968946/full',
+          },
+          {
+            label: 'Language anxiety and L2 speech fluency — Journal of Multilingual and Multicultural Development (2024)',
+            url: 'https://www.tandfonline.com/doi/full/10.1080/01434632.2024.2387149',
+          },
+        ],
       },
     ],
   },
@@ -412,12 +482,34 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'On spacing: practicing the same topic immediately again improves your speed, while spacing sessions out by days reduces filled pauses and hesitations more. Both matter. That is why NoPause tracks streaks — daily sessions give you the repetition rate where real reduction in hesitation happens, not just speed.',
+          'On spacing: practicing the same topic immediately again improves your speed, while spacing sessions out by days reduces filled pauses and hesitations more. Both matter. That is why NoPause tracks streaks — daily sessions give you the repetition rate where real reduction in hesitation happens, not just speed. The spacing effect is one of the most robust findings in learning research: studying the same material across separated sessions produces substantially better retention than massing it into one block.',
+      },
+      {
+        type: 'text',
+        content:
+          'There is also a reason NoPause measures pauses specifically. Listeners do not judge fluency evenly across everything you do. Research on perceived fluency finds that how often and how long you pause weighs heavily on whether you sound fluent, while restarts and self-corrections matter far less — filled pauses can even buy you time without sounding like dead air. Cutting long silences is the highest-leverage thing you can train, which is exactly what the Flow Score rewards.',
       },
       {
         type: 'tip',
         content:
           'Five minutes every day beats thirty minutes once a week. Your brain needs repetition across days, not just within one session.',
+      },
+      {
+        type: 'references',
+        content: [
+          {
+            label: 'The spacing effect — distributed vs massed practice (Wikipedia)',
+            url: 'https://en.wikipedia.org/wiki/Spacing_effect',
+          },
+          {
+            label: 'AI-powered EFL mobile speaking practice — Humanities & Social Sciences Communications / Nature (2025)',
+            url: 'https://www.nature.com/articles/s41599-025-04688-0',
+          },
+          {
+            label: 'Pausing behaviour in L2 academic presentations — Language Teaching Research / SAGE (2024)',
+            url: 'https://journals.sagepub.com/doi/10.1177/13621688241233718',
+          },
+        ],
       },
     ],
   },
@@ -463,6 +555,19 @@ export const HELP_ARTICLES: HelpArticle[] = [
         type: 'tip',
         content:
           'Your voice needs reps before it feels natural. Three NoPause sessions the day before a presentation is worth more than an hour of re-reading your notes.',
+      },
+      {
+        type: 'references',
+        content: [
+          {
+            label: 'Anxiety and breakdown fluency — Frontiers in Psychology (2022)',
+            url: 'https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2022.968946/full',
+          },
+          {
+            label: 'Pausing behaviour in L2 academic presentations — Language Teaching Research / SAGE (2024)',
+            url: 'https://journals.sagepub.com/doi/10.1177/13621688241233718',
+          },
+        ],
       },
     ],
   },
