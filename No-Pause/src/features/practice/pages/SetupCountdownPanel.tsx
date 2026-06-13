@@ -63,6 +63,7 @@ export function SetupCountdownPanel({
   const [nudgeOffset, setNudgeOffset] = useState(0);
   const startXRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wheelCooldownRef = useRef(false);
 
   // One-time nudge: shift deck slightly left to reveal card 1's edge, then snap back.
   useEffect(() => {
@@ -78,8 +79,24 @@ export function SetupCountdownPanel({
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     // Let toggle buttons receive their click; don't hijack as a drag.
     if ((e.target as HTMLElement).closest('button')) return;
+    // Capture pointer so drag keeps tracking even if cursor leaves the container.
+    e.currentTarget.setPointerCapture(e.pointerId);
     setDragging(true);
     startXRef.current = e.clientX;
+  };
+
+  // Trackpad two-finger horizontal swipe: fire on first threshold-crossing
+  // event, then cooldown 400ms. No trailing debounce — avoids perceived lag.
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaX) < 30) return;
+    if (wheelCooldownRef.current) return;
+    wheelCooldownRef.current = true;
+    setActiveIndex((i) =>
+      e.deltaX > 0 ? Math.min(i + 1, slides.length - 1) : Math.max(i - 1, 0)
+    );
+    setTimeout(() => {
+      wheelCooldownRef.current = false;
+    }, 400);
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -144,12 +161,16 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
-              className="w-full overflow-hidden"
+              className={cn(
+                'w-full overflow-hidden select-none',
+                dragging ? 'cursor-grabbing' : 'cursor-grab'
+              )}
               style={{ touchAction: 'pan-y' }}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
+              onWheel={onWheel}
             >
               <div
                 className="flex"
@@ -159,7 +180,7 @@ export function SetupCountdownPanel({
                 }}
               >
                 {slides.map((slide, i) => (
-                  <div key={i} className="w-full shrink-0 px-1">
+                  <div key={i} className="w-full shrink-0 select-none px-1">
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
                       <p

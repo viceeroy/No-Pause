@@ -136,7 +136,8 @@ const AuthAwareRoutes = () => {
   }
 
   return (
-    <Routes>
+    <div className="app-safe-area relative min-h-screen bg-background overflow-x-hidden">
+      <Routes>
       <Route
         path="/auth/callback"
         element={<AuthCallbackPage />}
@@ -179,15 +180,9 @@ const AuthAwareRoutes = () => {
         path="/sessions"
         element={<Sessions />}
       />
-      <Route
-        path="/*"
-        element={
-          <div className="app-safe-area relative min-h-screen bg-background overflow-x-hidden">
-            <AppRoutes />
-          </div>
-        }
-      />
-    </Routes>
+      <Route path="/*" element={<AppRoutes />} />
+      </Routes>
+    </div>
   );
 };
 
