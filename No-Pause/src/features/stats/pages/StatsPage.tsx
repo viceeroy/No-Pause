@@ -328,7 +328,7 @@ export default function StatsPage({
           <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-primary shadow-card md:h-16 md:w-16">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                <img src={avatarUrl} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <span>{initials}</span>
               )}

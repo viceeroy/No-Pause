@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Download, TrendingUp, Clock, Flame, CircleHelp, type LucideIcon } from 'lucide-react';
+import { Mic, Download, TrendingUp, Clock, Flame, CircleHelp, ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
 import { usePWAInstall } from '@/providers/PWAInstallContext';
 import { useInstallPlatform } from '@/shared/hooks/useInstallPlatform';
 import { useAuth } from '@/providers/AuthContext';
@@ -32,6 +32,13 @@ const emptyStats: PracticeStats = {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isGuest } = useAuth();
+  const promptsScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollPrompts = (direction: -1 | 1) => {
+    const el = promptsScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: 'smooth' });
+  };
   const [stats, setStats] = useState<PracticeStats>(emptyStats);
   const [statsLoading, setStatsLoading] = useState(true);
   const { deferredPrompt, isInstallable, triggerInstall } = usePWAInstall();
@@ -148,7 +155,7 @@ export default function DashboardPage() {
               aria-label="Open stats"
             >
               {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                <img src={avatarUrl} alt="" width={44} height={44} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <span>{isGuest ? 'NP' : initials}</span>
               )}
@@ -242,7 +249,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="relative">
-            <div className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden min-[769px]:mx-0 min-[769px]:px-0">
+            <div ref={promptsScrollRef} className="-mx-5 overflow-x-auto px-5 pb-2 scrollbar-hidden min-[769px]:mx-0 min-[769px]:px-0">
               <div className="flex w-max gap-3">
                 {dashboardPrompts.map((prompt) => (
                   <button
@@ -259,6 +266,22 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="pointer-events-none absolute inset-y-0 -right-5 w-16 bg-gradient-to-r from-transparent to-[var(--background-base)] min-[769px]:right-0 min-[769px]:w-20" />
+            <button
+              type="button"
+              onClick={() => scrollPrompts(-1)}
+              aria-label="Previous prompts"
+              className="absolute left-1 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface-elevated/95 text-foreground shadow-card backdrop-blur transition-colors btn-press hover:bg-surface-interactive min-[769px]:flex"
+            >
+              <ChevronLeft size={18} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollPrompts(1)}
+              aria-label="Next prompts"
+              className="absolute right-1 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface-elevated/95 text-foreground shadow-card backdrop-blur transition-colors btn-press hover:bg-surface-interactive min-[769px]:flex"
+            >
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
           </div>
         </section>
 

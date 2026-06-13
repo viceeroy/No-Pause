@@ -136,7 +136,7 @@ export function SetupCountdownPanel({
 
       <div
         className={cn(
-          'transition-all duration-500 flex-1 flex flex-col justify-start min-h-0',
+          'transition-[opacity,transform,filter] duration-300 ease-out flex-1 flex flex-col justify-start min-h-0',
           state === 'countdown' && 'opacity-30 scale-95 blur-[2px]'
         )}
       >

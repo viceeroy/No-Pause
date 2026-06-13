@@ -182,7 +182,7 @@ const AuthAwareRoutes = () => {
       <Route
         path="/*"
         element={
-          <div className="relative min-h-screen bg-background overflow-x-hidden">
+          <div className="app-safe-area relative min-h-screen bg-background overflow-x-hidden">
             <AppRoutes />
           </div>
         }
