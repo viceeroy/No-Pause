@@ -103,10 +103,7 @@ function WeeklyActivityRow({
   days: WeeklyActivityDay[];
   loading: boolean;
 }) {
-  const MAX_HEIGHT = 80;
-  const MIN_BAR = 6;
   const scores = days.map((d) => d.bestScore ?? 0);
-  const maxScore = Math.max(...scores, 1);
   const peakIndex = scores.indexOf(Math.max(...scores));
 
   return (
@@ -114,27 +111,23 @@ function WeeklyActivityRow({
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-xs font-sans font-semibold text-muted-foreground">Weekly activity</p>
       </div>
-      <div className="grid grid-cols-7 gap-1.5 md:gap-2" style={{ alignItems: 'end' }}>
+      <div className="grid grid-cols-7 items-end gap-1.5 md:gap-2">
         {days.map((day, index) => {
           const score = !loading ? (day.bestScore ?? null) : null;
           const hasSession = !loading && day.completed;
-          const barH = hasSession && score !== null
-            ? Math.max(MIN_BAR, Math.round((score / maxScore) * MAX_HEIGHT))
-            : MIN_BAR;
           const isPeak = !loading && hasSession && index === peakIndex && score !== null && score > 0;
 
           return (
             <div key={`${day.label}-${index}`} className="flex flex-col items-center gap-1">
-              {/* score label — only on peak bar */}
+              {/* score label — only on best day */}
               <span className={`text-[11px] font-sans font-black text-primary transition-opacity ${isPeak ? 'opacity-100' : 'opacity-0'}`}
                 aria-hidden={!isPeak}>
                 {isPeak ? score : ''}
               </span>
               <div
-                className={`w-full rounded-t-sm transition-all ${
+                className={`h-9 w-full rounded-lg transition-colors ${
                   hasSession ? 'bg-primary' : 'bg-surface-elevated'
                 } ${loading ? 'animate-pulse' : ''}`}
-                style={{ height: `${barH}px` }}
                 aria-label={`${day.label}: ${score !== null ? score : 'no session'}`}
               />
               <span className="text-[11px] font-sans font-semibold text-muted-foreground">{day.label}</span>
@@ -328,7 +321,7 @@ export default function StatsPage({
           <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-elevated text-sm font-sans font-bold text-primary shadow-card md:h-16 md:w-16">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                <img src={avatarUrl} alt="" width={56} height={56} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <span>{initials}</span>
               )}

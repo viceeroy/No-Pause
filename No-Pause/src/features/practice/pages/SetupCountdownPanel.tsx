@@ -63,6 +63,10 @@ export function SetupCountdownPanel({
   const [nudgeOffset, setNudgeOffset] = useState(0);
   const startXRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef(0);
+  const wheelLockRef = useRef(false);
+  const wheelAccumRef = useRef(0);
+  const wheelQuietRef = useRef<ReturnType<typeof setTimeout>>();
 
   // One-time nudge: shift deck slightly left to reveal card 1's edge, then snap back.
   useEffect(() => {
@@ -75,28 +79,83 @@ export function SetupCountdownPanel({
     };
   }, [slides.length]);
 
+  // Detacher for the active drag's window listeners (set on pointerdown).
+  const detachDragRef = useRef<(() => void) | null>(null);
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     // Let toggle buttons receive their click; don't hijack as a drag.
     if ((e.target as HTMLElement).closest('button')) return;
-    setDragging(true);
     startXRef.current = e.clientX;
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
-    setDragOffset(e.clientX - startXRef.current);
-  };
-
-  const onPointerUp = () => {
-    if (!dragging) return;
-    setDragging(false);
-    const width = containerRef.current?.offsetWidth ?? 1;
-    const threshold = Math.min(60, width * 0.2);
-    let next = activeIndex;
-    if (dragOffset <= -threshold) next = Math.min(activeIndex + 1, slides.length - 1);
-    else if (dragOffset >= threshold) next = Math.max(activeIndex - 1, 0);
-    setActiveIndex(next);
+    dragOffsetRef.current = 0;
     setDragOffset(0);
+    setDragging(true);
+
+    // Attach move/up on window SYNCHRONOUSLY (no render gap) so a fast flick's
+    // pointerup is never missed — that race is what glued the card to the cursor.
+    const onMove = (ev: PointerEvent) => {
+      const offset = ev.clientX - startXRef.current;
+      dragOffsetRef.current = offset;
+      setDragOffset(offset);
+    };
+    const onUp = () => {
+      const width = containerRef.current?.offsetWidth ?? 1;
+      const threshold = Math.min(60, width * 0.2);
+      const offset = dragOffsetRef.current;
+      setActiveIndex((idx) => {
+        if (offset <= -threshold) return Math.min(idx + 1, slides.length - 1);
+        if (offset >= threshold) return Math.max(idx - 1, 0);
+        return idx;
+      });
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+      setDragging(false);
+      detachDragRef.current?.();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    detachDragRef.current = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      detachDragRef.current = null;
+    };
+  };
+
+  // Safety: drop any dangling drag listeners / timers on unmount.
+  useEffect(
+    () => () => {
+      detachDragRef.current?.();
+      clearTimeout(wheelQuietRef.current);
+    },
+    []
+  );
+
+  // Trackpad two-finger horizontal swipe. Trackpads emit many small deltaX
+  // events per swipe — plus an inertial momentum tail after the fingers lift.
+  // Accumulate until threshold, fire ONCE, then lock until the wheel stream
+  // goes quiet (150ms gap = gesture truly ended). The momentum tail keeps
+  // resetting the quiet timer, so one physical swipe = one card (no double-skip).
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical intent
+    // Any horizontal wheel event (incl. momentum) defers the unlock.
+    clearTimeout(wheelQuietRef.current);
+    wheelQuietRef.current = setTimeout(() => {
+      wheelLockRef.current = false;
+      wheelAccumRef.current = 0;
+    }, 150);
+    if (wheelLockRef.current) return; // absorbing momentum after a nav
+    if (Math.sign(e.deltaX) !== Math.sign(wheelAccumRef.current)) {
+      wheelAccumRef.current = 0;
+    }
+    wheelAccumRef.current += e.deltaX;
+    if (Math.abs(wheelAccumRef.current) < 40) return;
+    const dir = wheelAccumRef.current > 0 ? 1 : -1;
+    wheelAccumRef.current = 0;
+    wheelLockRef.current = true;
+    setActiveIndex((i) =>
+      dir > 0 ? Math.min(i + 1, slides.length - 1) : Math.max(i - 1, 0)
+    );
   };
 
   const showRandomPrompt = () => {
@@ -136,7 +195,7 @@ export function SetupCountdownPanel({
 
       <div
         className={cn(
-          'transition-all duration-500 flex-1 flex flex-col justify-start min-h-0',
+          'transition-[opacity,transform,filter] duration-300 ease-out flex-1 flex flex-col justify-start min-h-0',
           state === 'countdown' && 'opacity-30 scale-95 blur-[2px]'
         )}
       >
@@ -144,12 +203,13 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
-              className="w-full overflow-hidden"
-              style={{ touchAction: 'pan-y' }}
+              className={cn(
+                'w-full overflow-hidden select-none',
+                dragging ? 'cursor-grabbing' : 'cursor-grab'
+              )}
+              style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerUp}
+              onWheel={onWheel}
             >
               <div
                 className="flex"
@@ -159,7 +219,7 @@ export function SetupCountdownPanel({
                 }}
               >
                 {slides.map((slide, i) => (
-                  <div key={i} className="w-full shrink-0 px-1">
+                  <div key={i} className="w-full shrink-0 select-none px-1">
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
                       <p
