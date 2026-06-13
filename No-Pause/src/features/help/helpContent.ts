@@ -92,8 +92,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'callout',
         content: [
-          { label: 'Time spent speaking', value: 'Raises your score' },
-          { label: 'Each full minute spoken', value: 'Bonus boost' },
+          { label: 'Speaking more than pausing', value: 'Raises your score' },
+          { label: 'Longer speaking time', value: 'Bonus points' },
           { label: 'Silence during the session', value: 'Lowers your score' },
           { label: 'Minimum score', value: '0' },
         ],
@@ -101,7 +101,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'You can think of it this way — every moment you spend speaking adds to your score, and reaching each full minute rewards you for keeping momentum going. The total silence in your session is subtracted. Short, natural breaths between words barely register — it is the longer quiet stretches that add up against you.',
+          'You can think of it this way — the more of your session is real speaking rather than silence, the higher the base score climbs, and speaking for longer adds a bonus on top. Long quiet stretches drag it down because they break that continuity. Short, natural breaths between words barely register — it is the longer quiet stretches that add up against you.',
       },
       {
         type: 'text',
@@ -128,7 +128,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'Notice how the confident session has a much higher Flow Score even though the speaking time is only a little longer. The difference is the silence — far less dead air means more momentum, and the full-minute bonus kicks in twice instead of once.',
+          'Notice how the confident session has a much higher Flow Score even though the speaking time is only a little longer. The difference is the silence — far less dead air means a much higher share of the session was real speaking, and the longer duration earns a bigger bonus on top.',
       },
       {
         type: 'tip',
@@ -277,7 +277,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'You can practice from Telegram by connecting your account once from the settings page. After that, the NoPause bot (@NoPauseAI_bot) is ready whenever you want a quick session — no need to open the app.',
+          'You can practice from Telegram by connecting your account once. Open the NoPause bot (@NoPauseAI_bot), send /start, and follow the link it gives you to sign in and link your account. After that, the bot is ready whenever you want a quick session — no need to open the app.',
       },
       {
         type: 'callout',
@@ -285,7 +285,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           { label: 'Start a session', value: 'Send a voice note' },
           { label: 'Get your score', value: 'Automatic reply' },
           { label: 'Join a challenge', value: 'Accept a link from a friend' },
-          { label: 'Disconnect', value: 'Settings page' },
+          { label: 'Switch account', value: 'Send /register' },
         ],
       },
       {
@@ -327,7 +327,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           { label: 'Mic access', value: 'Recording only' },
           { label: 'Background listening', value: 'Never' },
           { label: 'Session data saved', value: 'Your account' },
-          { label: 'Telegram link', value: 'Optional, removable' },
+          { label: 'Telegram link', value: 'Optional' },
         ],
       },
       {
@@ -338,7 +338,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         type: 'text',
         content:
-          'If you connect Telegram, your bot account is linked to your NoPause account so those sessions appear together. The link is one-time and you can disconnect it from settings whenever you want — after disconnecting, the bot will not accept voice notes from your account.',
+          'If you connect Telegram, your bot account is linked to your NoPause account so those sessions appear together. Linking is optional — you only connect if you want to practice from the bot, and you can re-link or switch to a different account at any time by sending /register to the bot.',
       },
       {
         type: 'tip',

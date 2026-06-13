@@ -103,10 +103,7 @@ function WeeklyActivityRow({
   days: WeeklyActivityDay[];
   loading: boolean;
 }) {
-  const MAX_HEIGHT = 80;
-  const MIN_BAR = 6;
   const scores = days.map((d) => d.bestScore ?? 0);
-  const maxScore = Math.max(...scores, 1);
   const peakIndex = scores.indexOf(Math.max(...scores));
 
   return (
@@ -114,27 +111,23 @@ function WeeklyActivityRow({
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-xs font-sans font-semibold text-muted-foreground">Weekly activity</p>
       </div>
-      <div className="grid grid-cols-7 gap-1.5 md:gap-2" style={{ alignItems: 'end' }}>
+      <div className="grid grid-cols-7 items-end gap-1.5 md:gap-2">
         {days.map((day, index) => {
           const score = !loading ? (day.bestScore ?? null) : null;
           const hasSession = !loading && day.completed;
-          const barH = hasSession && score !== null
-            ? Math.max(MIN_BAR, Math.round((score / maxScore) * MAX_HEIGHT))
-            : MIN_BAR;
           const isPeak = !loading && hasSession && index === peakIndex && score !== null && score > 0;
 
           return (
             <div key={`${day.label}-${index}`} className="flex flex-col items-center gap-1">
-              {/* score label — only on peak bar */}
+              {/* score label — only on best day */}
               <span className={`text-[11px] font-sans font-black text-primary transition-opacity ${isPeak ? 'opacity-100' : 'opacity-0'}`}
                 aria-hidden={!isPeak}>
                 {isPeak ? score : ''}
               </span>
               <div
-                className={`w-full rounded-t-sm transition-all ${
+                className={`h-9 w-full rounded-lg transition-colors ${
                   hasSession ? 'bg-primary' : 'bg-surface-elevated'
                 } ${loading ? 'animate-pulse' : ''}`}
-                style={{ height: `${barH}px` }}
                 aria-label={`${day.label}: ${score !== null ? score : 'no session'}`}
               />
               <span className="text-[11px] font-sans font-semibold text-muted-foreground">{day.label}</span>
