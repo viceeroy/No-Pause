@@ -3,9 +3,11 @@ import { pickPromptForUser } from "../../services/userPrompts.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
+  getAutoFriendChallengeNotification,
   getChallengeShareActions,
   getChallengesTableMissingMessage,
   getConnectAccountKeyboard,
+  getFriendChallengeAcceptedNotice,
   getFriendChallengeAlreadyAcceptedMessage,
   getFriendChallengeReceivedMessage,
   getFriendChallengeShareMessage,
@@ -612,7 +614,6 @@ export async function replyWithNewFriendChallenge(ctx: Context, telegramId: numb
         parse_mode: "HTML",
       },
     );
-    await ctx.reply(MESSAGES.challengeForwardHint);
   } catch (error) {
     console.error("Telegram challenge creation failed", error);
     if (isMissingChallengesTableError(error)) {
@@ -699,6 +700,67 @@ export async function handleChallengeDeepLink(
       getFriendChallengeReceivedMessage({ creatorUsername, topic: challenge.topic, challengeId: challenge.id }),
       { parse_mode: "HTML" },
     );
+
+    const creatorTelegramId = Number(challenge.creator_telegram_id);
+    const creatorHasScore = challenge.creator_score !== null && challenge.creator_score !== undefined;
+
+    // (a) Notify owner that a friend accepted — scoped to THIS challenge.
+    try {
+      await ctx.telegram.sendMessage(
+        creatorTelegramId,
+        getFriendChallengeAcceptedNotice({
+          friendUsername: formatTelegramDisplayName(ctx.from ?? null, telegramId),
+          topic: challenge.topic,
+          creatorHasScore,
+        }),
+        { parse_mode: "HTML" },
+      );
+    } catch (error) {
+      console.error("Telegram friend-accepted owner notice failed", error);
+    }
+
+    // (b) If owner already recorded, auto-send the friend the owner's stored result.
+    if (creatorHasScore) {
+      try {
+        const creatorUserId = await resolveTelegramUser(creatorTelegramId);
+        const creatorSessionId = await getFriendChallengeSubmissionSessionId({
+          challengeId: challenge.id,            // STRICT challenge scope
+          telegramId: creatorTelegramId,
+        });
+        if (creatorUserId && creatorSessionId) {
+          const { getTelegramSession, getSessionAnalysis } = await import("./voiceHandler.js");
+          const session = await getTelegramSession({ userId: creatorUserId, sessionId: creatorSessionId });
+          if (session) {
+            const attemptCount = await getGroupChallengeAttemptCount({
+              challengeId: challenge.id,
+              telegramId: creatorTelegramId,
+            });
+            // session_id-unique dedup: owner's result reaches the friend at most once.
+            const shouldSend = await claimFriendChallengeResultSend({
+              challengeId: challenge.id,
+              telegramId: creatorTelegramId,
+              sessionId: creatorSessionId,
+            });
+            if (shouldSend) {
+              await ctx.telegram.sendMessage(
+                telegramId,                       // the joining friend
+                getAutoFriendChallengeNotification({
+                  fromUsername: creatorUsername,
+                  topic: challenge.topic,
+                  analysis: getSessionAnalysis(session),
+                  attemptCount,
+                  otherScore: null,               // friend hasn't recorded → "send a voice note" suffix
+                }),
+                { parse_mode: "HTML" },
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Telegram pre-join creator result delivery failed", error);
+      }
+    }
+
     return true;
   } catch (error) {
     console.error("Telegram challenge deep link failed", error);
@@ -824,6 +886,44 @@ export async function changeGroupChallengeTopic(ctx: Context & { match: RegExpEx
     });
   } catch (error) {
     console.error("Telegram group topic change failed", error);
+    await ctx.answerCbQuery("I could not update this challenge right now.", { show_alert: true });
+  }
+}
+
+export async function changeFriendChallengeTopic(ctx: Context & { match: RegExpExecArray }) {
+  const challengeId = ctx.match[1];
+  try {
+    const challenge = await getFriendChallenge(challengeId);
+    if (!challenge) {
+      await ctx.answerCbQuery("I could not update this challenge right now.");
+      return;
+    }
+
+    const creatorTelegramId = Number(challenge.creator_telegram_id);
+    if (!Number.isFinite(creatorTelegramId) || ctx.from?.id !== creatorTelegramId) {
+      await ctx.answerCbQuery("🔒 Only the person who started this challenge can change the prompt.", {
+        show_alert: true,
+      });
+      return;
+    }
+
+    const topic = await pickChallengeTopic(creatorTelegramId, challenge.topic);
+    await updateChallengeTopic(challengeId, topic);
+
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(
+      getFriendChallengeShareMessage({
+        creatorName: formatTelegramDisplayName(ctx.from ?? null, creatorTelegramId),
+        topic,
+        challengeId,
+      }),
+      {
+        ...getChallengeShareActions(challengeId, true),
+        parse_mode: "HTML",
+      },
+    );
+  } catch (error) {
+    console.error("Telegram friend topic change failed", error);
     await ctx.answerCbQuery("I could not update this challenge right now.", { show_alert: true });
   }
 }

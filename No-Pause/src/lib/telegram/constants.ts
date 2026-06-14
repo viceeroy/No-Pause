@@ -15,6 +15,7 @@ export const ABOUT_LABEL = "ℹ️ About";
 export const GET_PROMPT_ACTION = "get_prompt";
 export const CHANGE_PROMPT_ACTION = "change_prompt";
 export const CHANGE_GROUP_TOPIC_ACTION_PREFIX = "cg:";
+export const CHANGE_FRIEND_TOPIC_ACTION_PREFIX = "cf:";
 export const POST_GROUP_CHALLENGE_RESULT_ACTION_PREFIX = "pgr:";
 export const SEND_CHALLENGE_RESULT_ACTION_PREFIX = "scr:";
 export const SHARE_CREATOR_CHALLENGE_RESULT_ACTION_PREFIX = "ccr:";
@@ -165,7 +166,9 @@ export function getFriendChallengeShareMessage(input: { creatorName: string; top
 💬 <b>Topic</b>
 ${escapeTelegramHtml(input.topic)}
 
-Say anything — just speak your mind! 🎤`;
+Say anything — just speak your mind! 🎤
+
+👆 Tap the link below to accept this challenge!`;
 }
 
 export function getFriendChallengeReceivedMessage(input: { creatorUsername: string; topic: string; challengeId: string }): string {
@@ -180,6 +183,19 @@ ${escapeTelegramHtml(input.topic)}
 Say anything — just speak your mind!
 
 <a href="${challengeLink}">${challengeLink}</a>`;
+}
+
+export function getFriendChallengeAcceptedNotice(input: {
+  friendUsername: string;
+  topic: string;
+  creatorHasScore: boolean;
+}): string {
+  const friend = escapeTelegramHtml(input.friendUsername.trim().replace(/^@+/, "") || "Someone");
+  const topic = escapeTelegramHtml(input.topic);
+  const tail = input.creatorHasScore
+    ? "🏁 You've already recorded — waiting for their result."
+    : "🎤 Send your voice note when you're ready.";
+  return `✅ <b>Challenge accepted!</b>\n\n👤 <b>${friend}</b> accepted your challenge.\n\n💬 <b>Topic</b>\n${topic}\n\n${tail}`;
 }
 
 export function getFriendChallengeAlreadyAcceptedMessage(topic: string): string {
@@ -323,11 +339,16 @@ function getChallengeShareUrl(challengeId: string): string {
 }
 
 export function getChallengeShareActions(challengeId: string, createdByViewer = false) {
+  if (createdByViewer) {
+    return Markup.inlineKeyboard([
+      [Markup.button.url("📤 Share Challenge", getChallengeShareUrl(challengeId))],
+      [Markup.button.callback("🔄 Change Prompt", `${CHANGE_FRIEND_TOPIC_ACTION_PREFIX}${challengeId}`)],
+    ]);
+  }
+
   return Markup.inlineKeyboard([
     [
-      createdByViewer
-        ? Markup.button.url("📤 Share Challenge", getChallengeShareUrl(challengeId))
-        : Markup.button.url("🎤 Accept Challenge", getChallengeDeepLink(challengeId)),
+      Markup.button.url("🎤 Accept Challenge", getChallengeDeepLink(challengeId)),
     ],
   ]);
 }
@@ -424,6 +445,27 @@ export function getChallengeCreatorNotification(input: {
   })}${suffix}`;
 }
 
+export function getAutoFriendChallengeNotification(input: {
+  fromUsername: string;
+  topic: string;
+  analysis: FlowAnalysis;
+  attemptCount: number;
+  otherScore: number | null;
+}): string {
+  const from = escapeTelegramHtml(input.fromUsername);
+  const topic = escapeTelegramHtml(input.topic);
+  const prefix = `⚔️ <b>Challenge Result</b>\n\n👤 <b>${from}</b>\n\n💬 <b>Topic:</b>\n${topic}\n\n🔁 <b>Attempt:</b> #${input.attemptCount}\n\n`;
+  const suffix =
+    input.otherScore != null
+      ? `\n\n🏆 <b>Your score:</b> ${input.otherScore}`
+      : "\n\n🎤 Send a voice note when you are ready.";
+  return `${prefix}${formatResultFields({
+    analysis: input.analysis,
+    html: true,
+    maxLength: TELEGRAM_SAFE_MESSAGE_LENGTH - prefix.length - suffix.length,
+  })}${suffix}`;
+}
+
 export function getConnectUrl(telegramId: number, options?: { challengeId?: string; challengeType?: "friend" | "group" }): string {
   const params = new URLSearchParams({ tg: String(telegramId) });
   if (options?.challengeId) {
@@ -477,12 +519,12 @@ export function getGroupChallengeLeaderboardMessage(input: {
 
   if (input.entries.length === 0) {
     return `🏆✨ <b>Challenge Leaderboard</b> ✨🏆
+${status}
 
 💬 <b>Topic:</b>
-${topic}${status}
+${topic}
 
-🎤 No scores yet.
-Be the first to jump in and set the pace.`;
+🎤 Be the first to speak and set the pace!`;
   }
 
   const rows = input.entries.map((entry) => {
@@ -492,9 +534,10 @@ Be the first to jump in and set the pace.`;
   });
 
   return `🏆✨ <b>Challenge Leaderboard</b> ✨🏆
+${status}
 
 💬 <b>Topic:</b>
-${topic}${status}
+${topic}
 
 ${rows.join("\n\n")}`;
 }
@@ -570,9 +613,7 @@ export function getTelegramStatsMessage(input: {
 👥 Friend challenges: ${input.friendChallenges}
 🏆 Group challenges: ${input.groupChallenges}
 
-🌍 nopause.org
-
-/register`;
+🌍 nopause.org`;
 }
 
 export const MESSAGES = {
@@ -624,11 +665,11 @@ export const MESSAGES = {
   voiceTooLong:
     "🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.",
   challengeForwardHint:
-    "👆 Forward the message above to your friends so they can accept your challenge!\n\n🌐 www.nopause.org",
+    "👆 Forward the message above to your friends so they can accept your challenge!",
   statsPrivate:
     "📊 Open @NoPauseAI_bot directly to view your stats.",
   speakPrivate:
-    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your speaking time, silence, and Flow Score.\n\nNeed an idea first?\n\n🌐 www.nopause.org",
+    "🎤 <b>Speak freely</b>\n\nYou can talk about anything. Send a voice note whenever you are ready and NoPause will score your speaking time, silence, and Flow Score.\n\nNeed an idea first?",
   scoringInfo:
     "🏆 <b>How scoring works</b>\n\nYou earn points for every second you spend speaking, plus a bonus each time you reach a full minute.\nSilence — the time you go quiet during the session — is subtracted.\n\nThe longer you speak with less dead air, the higher your score.\n\nRecord against a topic and request AI feedback for an extra bonus when your answer is strong and well-developed.",
   challengeInfo:

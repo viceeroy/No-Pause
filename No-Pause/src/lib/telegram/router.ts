@@ -6,6 +6,7 @@ import { escapeTelegramHtml } from "../core/utils.js";
 import { resolveTelegramUser } from "../core/user.js";
 import { supabaseServer } from "../../services/supabaseServer.js";
 import {
+  CHANGE_FRIEND_TOPIC_ACTION_PREFIX,
   CHANGE_GROUP_TOPIC_ACTION_PREFIX,
   CHANGE_PROMPT_ACTION,
   changePromptKeyboard,
@@ -28,6 +29,7 @@ import {
   TRY_GROUP_CHALLENGE_ACTION_PREFIX,
 } from "./constants.js";
 import {
+  changeFriendChallengeTopic,
   changeGroupChallengeTopic,
   handleChallengeDeepLink,
   handleGroupChallengeDeepLink,
@@ -260,6 +262,11 @@ export function createTelegramBot() {
     await ctx.answerCbQuery();
     console.log('[NoPause:challenge] callback', { action: 'change_group_topic', telegram_id: getTelegramId(ctx), challenge_id: ctx.match?.[1] });
     await changeGroupChallengeTopic(ctx);
+  });
+
+  bot.action(new RegExp(`^${CHANGE_FRIEND_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {
+    console.log('[NoPause:challenge] callback', { action: 'change_friend_topic', telegram_id: getTelegramId(ctx), challenge_id: ctx.match?.[1] });
+    await changeFriendChallengeTopic(ctx);
   });
 
   bot.action(new RegExp(`^${SEND_CHALLENGE_RESULT_ACTION_PREFIX}([^:]+):(.+)$`), async (ctx) => {

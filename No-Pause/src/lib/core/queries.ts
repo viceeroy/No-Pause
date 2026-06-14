@@ -289,13 +289,18 @@ export async function getTelegramChallengeCounts(
       return { friendChallenges: 0, groupChallenges: 0 };
     }
 
+    const seenChallengeIds = new Set<string>();
     let friendChallenges = 0;
     let groupChallenges = 0;
 
     for (const attempt of data ?? []) {
+      const challengeId = (attempt as Record<string, unknown>).challenge_id as string | null;
+      if (!challengeId || seenChallengeIds.has(challengeId)) continue;
+      seenChallengeIds.add(challengeId);
+
       const challenges = (attempt as Record<string, unknown>).challenges as { status: string } | null;
       if (challenges === null || challenges === undefined) {
-        console.warn("[NoPause] getTelegramChallengeCounts: challenges FK null for attempt", (attempt as Record<string, unknown>).challenge_id);
+        console.warn("[NoPause] getTelegramChallengeCounts: challenges FK null for attempt", challengeId);
         continue;
       }
       if (challenges.status?.startsWith("group_pending")) {

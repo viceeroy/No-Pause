@@ -39,13 +39,13 @@ import {
 } from "./challenges.js";
 import {
   FlowAnalysis,
+  getAutoFriendChallengeNotification,
   getChallengeCreatorNotification,
   getChallengeResultMessage,
   getChallengesTableMissingMessage,
   getConnectAccountKeyboard,
   getCreatorChallengeResultActions,
   getCreatorChallengeSharedResultMessage,
-  getFriendChallengeResultActions,
   getGroupChallengeResultActions,
   getGroupShareResultMessage,
   getSessionActions,
@@ -154,6 +154,19 @@ function isMissingTelegramMessageIdColumnError(error: unknown): boolean {
 
 function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === "23505";
+}
+
+// Empty / too-short audio makes Groq (or our own guards) throw before we reach
+// the isUsableTranscript check. Treat these as "couldn't hear" rather than the
+// generic analysis error — same intent as an unusable transcript.
+function isUnhearableAudioError(error: unknown): boolean {
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    message.includes("audio payload is empty") ||
+    message.includes("empty audio buffer") ||
+    message.includes("too short") ||
+    message.includes("no speech")
+  );
 }
 
 async function transcribeAudio(audioBuffer: ArrayBuffer) {
@@ -573,15 +586,39 @@ export async function handleVoiceMessage(
           console.error("Telegram friend challenge participant lookup failed", error);
         }
 
+        // Auto-notify friend with creator's result (no transcript/feedback)
+        if (friendTelegramId) {
+          try {
+            const creatorAttemptCount = await getGroupChallengeAttemptCount({
+              challengeId: challenge.id,
+              telegramId,
+            });
+            const shouldSend = await claimFriendChallengeResultSend({
+              challengeId: challenge.id,
+              telegramId,
+              sessionId: String(sessionId),
+            });
+            if (shouldSend) {
+              await ctx.telegram.sendMessage(
+                friendTelegramId,
+                getAutoFriendChallengeNotification({
+                  fromUsername: getTelegramUsername(ctx),
+                  topic: challenge.topic,
+                  analysis: displayAnalysis,
+                  attemptCount: creatorAttemptCount,
+                  otherScore: null,
+                }),
+                { parse_mode: "HTML" },
+              );
+            }
+          } catch (error) {
+            console.error("Auto friend challenge notification to friend failed", error);
+          }
+        }
+
         await sendResult(ctx, {
           text: getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix,
-          keyboard: friendTelegramId
-            ? getCreatorChallengeResultActions({
-                challengeId: challenge.id,
-                sessionId: String(sessionId),
-                friendTelegramId,
-              })
-            : {},
+          keyboard: {},
           logTemplate: 'friend_challenge_creator_result',
           tTotal: t_total,
           telegramChatId,
@@ -592,14 +629,47 @@ export async function handleVoiceMessage(
       }
 
       const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
+      const creatorTelegramId = Number(challenge.creator_telegram_id);
+
+      // Auto-notify creator with participant's result (no transcript/feedback)
+      try {
+        const participantAttemptCount = await getGroupChallengeAttemptCount({
+          challengeId: challenge.id,
+          telegramId,
+        });
+        const shouldSend = await claimFriendChallengeResultSend({
+          challengeId: challenge.id,
+          telegramId,
+          sessionId: String(sessionId),
+        });
+        if (shouldSend) {
+          await ctx.telegram.sendMessage(
+            creatorTelegramId,
+            getAutoFriendChallengeNotification({
+              fromUsername: getTelegramUsername(ctx),
+              topic: challenge.topic,
+              analysis: displayAnalysis,
+              attemptCount: participantAttemptCount,
+              otherScore: challenge.creator_score,
+            }),
+            { parse_mode: "HTML" },
+          );
+          if (challenge.creator_score === null || challenge.creator_score === undefined) {
+            await upsertPendingChallenge({
+              telegramId: creatorTelegramId,
+              challengeId: challenge.id,
+              challengeType: "friend",
+              creatorUsername,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Auto friend challenge notification to creator failed", error);
+      }
 
       await sendResult(ctx, {
         text: getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix,
-        keyboard: getFriendChallengeResultActions({
-          creatorUsername,
-          challengeId: challenge.id,
-          sessionId: String(sessionId),
-        }),
+        keyboard: {},
         logTemplate: 'friend_challenge_participant_result',
         tTotal: t_total,
         telegramChatId,
@@ -651,6 +721,10 @@ export async function handleVoiceMessage(
     debugLog('[NoPause:challenge] handler done', { telegram_id: telegramId, ms: Date.now() - t_total, error: true });
     if (isApiQuotaExceededError(error)) {
       await ctx.reply(getQuotaExceededMessage(error.kind));
+      return;
+    }
+    if (isUnhearableAudioError(error)) {
+      await ctx.reply(MESSAGES.unusableTranscript);
       return;
     }
     console.error("Telegram voice handling failed", error);
