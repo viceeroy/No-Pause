@@ -51,6 +51,7 @@ import {
   getSessionActions,
   getSpeakingResultMessage,
   MESSAGES,
+  VOICE_COOLDOWN_MS,
 } from "./constants.js";
 
 const TELEGRAM_DEBUG = process.env.NOPAUSE_DEBUG_TELEGRAM === "true";
@@ -461,6 +462,30 @@ export async function handleVoiceMessage(
     });
     debugLog('[NoPause:challenge] duplicate message guard hit', { telegram_id: telegramId, telegram_message_id: telegramMessageId, processed_session_id: processedSessionId });
     return;
+  }
+
+  // Cooldown: reject a new voice note if this user submitted one < 10s ago.
+  // Protects the Groq bill from rapid spam and blocks innocent double-taps
+  // before any paid work. Fail-open: a lookup error must not block a real user.
+  try {
+    const { data: lastSession } = await supabaseServer
+      .from("sessions")
+      .select("created_at")
+      .eq("user_id", userId)
+      .eq("source", "telegram")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastSession?.created_at) {
+      const elapsedMs = Date.now() - new Date(lastSession.created_at).getTime();
+      if (elapsedMs < VOICE_COOLDOWN_MS) {
+        await ctx.reply(MESSAGES.voiceCooldown, { parse_mode: "HTML" });
+        return;
+      }
+    }
+  } catch (error) {
+    debugLog("[NoPause:challenge] cooldown lookup failed (fail-open)", { telegram_id: telegramId, error });
   }
 
   try {
