@@ -379,7 +379,13 @@ export function createTelegramBot() {
 
   bot.catch((error, ctx) => {
     console.error("Telegram bot error", error);
-    ctx.reply(MESSAGES.analysisError, { parse_mode: "HTML" }).catch(() => undefined);
+    // Only surface a user-facing error in private chats. In groups this
+    // catch-all would otherwise spam the voice-analysis error for unrelated
+    // failures (e.g. stale callback-query taps on old inline buttons), which
+    // is both the wrong message and visible to everyone in the group.
+    if (ctx.chat?.type === "private") {
+      ctx.reply(MESSAGES.analysisError, { parse_mode: "HTML" }).catch(() => undefined);
+    }
   });
 
   return bot;
