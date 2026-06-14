@@ -59,20 +59,81 @@ function debugLog(...args: unknown[]) {
   if (TELEGRAM_DEBUG) console.log(...args);
 }
 
-async function sendResult(
+function feedbackSuffixFor(feedback: string | null): string {
+  return feedback ? `\n\n🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(feedback)}` : "";
+}
+
+// Send the deterministic result immediately (raw Flow Score, no AI feedback),
+// then run the slow LLM call and edit the same message to the final score +
+// feedback once it returns. Decouples perceived latency from Groq congestion.
+// AI failure stays non-fatal: the first message simply remains as-is.
+async function sendStreamingResult(
   ctx: Context,
   opts: {
-    text: string;
+    buildText: (analysis: FlowAnalysis, feedbackSuffix: string) => string;
     keyboard: Record<string, any>;
+    runAi: () => Promise<{ finalScore: number; feedback: string | null }>;
+    preAiAnalysis: FlowAnalysis;
+    sessionId: string;
+    userId: string;
+    onFinal?: (result: {
+      finalScore: number;
+      feedback: string | null;
+      displayAnalysis: FlowAnalysis;
+    }) => Promise<void>;
     logTemplate: string;
     tTotal: number;
     telegramChatId: number | null;
     telegramId: number;
-  }
+  },
 ): Promise<void> {
   const t_reply = Date.now();
-  await ctx.reply(opts.text, { ...opts.keyboard, parse_mode: "HTML" });
-  debugLog('[NoPause:challenge] bot reply sent', { template: opts.logTemplate, chat_id: opts.telegramChatId, ms: Date.now() - t_reply });
+  const sent = await ctx.reply(opts.buildText(opts.preAiAnalysis, ""), {
+    ...opts.keyboard,
+    parse_mode: "HTML",
+  });
+  debugLog('[NoPause:challenge] bot reply sent (pre-AI)', { template: opts.logTemplate, chat_id: opts.telegramChatId, ms: Date.now() - t_reply });
+
+  const { finalScore, feedback } = await opts.runAi();
+  const displayAnalysis = { ...opts.preAiAnalysis, flowScore: finalScore };
+
+  // When AI failed it returns the raw score + no feedback — the first message
+  // is already correct, so skip the DB write and the no-op edit (the latter
+  // would otherwise trigger Telegram's "message is not modified" error).
+  const aiChangedResult = feedback !== null || finalScore !== opts.preAiAnalysis.flowScore;
+
+  if (aiChangedResult) {
+    // Persist final score + feedback (non-fatal; user already has a result).
+    try {
+      await updateTelegramSessionScore({
+        userId: opts.userId,
+        sessionId: opts.sessionId,
+        flowScore: finalScore,
+        analysisFeedback: feedback,
+      });
+    } catch (error) {
+      console.error("Telegram session score update failed", error);
+    }
+
+    // Edit the sent message to the final score + AI feedback (non-fatal: the
+    // message may have been deleted between send and edit).
+    try {
+      await ctx.telegram.editMessageText(
+        sent.chat.id,
+        sent.message_id,
+        undefined,
+        opts.buildText(displayAnalysis, feedbackSuffixFor(feedback)),
+        { ...opts.keyboard, parse_mode: "HTML" },
+      );
+    } catch (error) {
+      debugLog('[NoPause:challenge] result edit failed', { template: opts.logTemplate, error: String(error) });
+    }
+  }
+
+  if (opts.onFinal) {
+    await opts.onFinal({ finalScore, feedback, displayAnalysis });
+  }
+
   debugLog('[NoPause:challenge] handler done', { telegram_id: opts.telegramId, ms: Date.now() - opts.tTotal });
 }
 
@@ -281,6 +342,23 @@ async function insertTelegramSession(input: {
     throw new Error("Session insert returned no ID");
   }
   return sessionId;
+}
+
+async function updateTelegramSessionScore(input: {
+  userId: string;
+  sessionId: string;
+  flowScore: number;
+  analysisFeedback: string | null;
+}): Promise<void> {
+  const { error } = await supabaseServer
+    .from("sessions")
+    .update({ flow_score: input.flowScore, analysis_feedback: input.analysisFeedback })
+    .eq("id", input.sessionId)
+    .eq("user_id", input.userId);
+
+  if (error) {
+    throw error;
+  }
 }
 
 async function getProcessedTelegramSessionId(input: {
@@ -522,26 +600,11 @@ export async function handleVoiceMessage(
     debugLog('[NoPause:challenge] silence calc', { telegram_id: telegramId, totalSilenceSec: analysis.totalSilenceSec, gapCount: analysis.pauseCount, speakingTime: analysis.speakingTimeSec, flowScore: analysis.flowScore });
 
     const durationBonus = calculateDurationBonus(analysis.speakingTimeSec);
-    let aiFeedbackText: string | null = null;
-    let finalScore = analysis.flowScore;
-    try {
-      const aiResult = await analyzePracticeSpeech({
-        transcript,
-        words: transcription.words,
-        gaps: analysis.gaps ?? [],
-        speakingTimeSec: analysis.speakingTimeSec,
-        totalSilenceSec: analysis.totalSilenceSec,
-        pauseCount: analysis.pauseCount,
-        wordCount: getWordCount(transcript),
-      });
-      const durationFactor = getDurationFactor(analysis.speakingTimeSec);
-      const adjustedAiScore = Math.round(aiResult.score * durationFactor);
-      finalScore = calculateTotalScore(analysis.flowScore, adjustedAiScore, durationBonus);
-      aiFeedbackText = aiResult.feedback;
-    } catch (error) {
-      console.error("Telegram inline AI feedback failed", error);
-    }
 
+    // Insert immediately with the raw Flow Score and no feedback. The insert
+    // remains the single dup guard (unique-violation), and lets us send the
+    // deterministic result before the slow LLM call. The score + feedback are
+    // updated in place once analyzePracticeSpeech returns (see runAiFeedback).
     let sessionId: string;
     const t_insert = Date.now();
     debugLog('[NoPause:challenge] insertSession start', { telegram_id: telegramId });
@@ -552,8 +615,8 @@ export async function handleVoiceMessage(
         analysis,
         telegramChatId,
         telegramMessageId,
-        flowScoreOverride: finalScore,
-        analysisFeedback: aiFeedbackText,
+        flowScoreOverride: analysis.flowScore,
+        analysisFeedback: null,
         scoringVersion: SCORING_VERSION_FLOW_2,
       });
       debugLog('[NoPause:challenge] insertSession done', { telegram_id: telegramId, ms: Date.now() - t_insert, sessionId });
@@ -574,15 +637,38 @@ export async function handleVoiceMessage(
       throw error;
     }
 
-    const displayAnalysis = { ...analysis, flowScore: finalScore };
-    const feedbackSuffix = aiFeedbackText
-      ? `\n\n🤖 <b>AI Feedback</b>\n\n${escapeTelegramHtml(aiFeedbackText)}`
-      : "";
+    // Runs the slow Groq LLM call. Non-fatal: on failure returns the raw Flow
+    // Score and no feedback, so the already-sent first message just stands.
+    const runAiFeedback = async (): Promise<{ finalScore: number; feedback: string | null }> => {
+      try {
+        const aiResult = await analyzePracticeSpeech({
+          transcript,
+          words: transcription.words,
+          gaps: analysis.gaps ?? [],
+          speakingTimeSec: analysis.speakingTimeSec,
+          totalSilenceSec: analysis.totalSilenceSec,
+          pauseCount: analysis.pauseCount,
+          wordCount: getWordCount(transcript),
+        });
+        const durationFactor = getDurationFactor(analysis.speakingTimeSec);
+        const adjustedAiScore = Math.round(aiResult.score * durationFactor);
+        return {
+          finalScore: calculateTotalScore(analysis.flowScore, adjustedAiScore, durationBonus),
+          feedback: aiResult.feedback,
+        };
+      } catch (error) {
+        console.error("Telegram inline AI feedback failed", error);
+        return { finalScore: analysis.flowScore, feedback: null };
+      }
+    };
 
     if (pendingChallenge?.challenge_type === "friend" && challenge) {
+      const fc = challenge;
+      const pc = pendingChallenge;
+
       try {
         await recordFriendChallengeSubmission({
-          challengeId: challenge.id,
+          challengeId: fc.id,
           telegramId,
           sessionId: String(sessionId),
         });
@@ -590,60 +676,65 @@ export async function handleVoiceMessage(
         console.error("Telegram friend challenge submission marker failed", error);
       }
 
-      if (Number(challenge.creator_telegram_id) === telegramId) {
-        try {
-          await updateFriendChallengeCreatorScore(challenge.id, finalScore);
-        } catch (error) {
-          console.error("Telegram challenge creator score update failed", error);
-          if (isMissingChallengesTableError(error)) {
-            await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
-            return;
-          }
-        }
-
-        let friendTelegramId: number | null = null;
-        try {
-          friendTelegramId = await getFriendChallengeParticipantTelegramId({
-            challengeId: challenge.id,
-            creatorTelegramId: telegramId,
-          });
-        } catch (error) {
-          console.error("Telegram friend challenge participant lookup failed", error);
-        }
-
-        // Auto-notify friend with creator's result (no transcript/feedback)
-        if (friendTelegramId) {
-          try {
-            const creatorAttemptCount = await getGroupChallengeAttemptCount({
-              challengeId: challenge.id,
-              telegramId,
-            });
-            const shouldSend = await claimFriendChallengeResultSend({
-              challengeId: challenge.id,
-              telegramId,
-              sessionId: String(sessionId),
-            });
-            if (shouldSend) {
-              await ctx.telegram.sendMessage(
-                friendTelegramId,
-                getAutoFriendChallengeNotification({
-                  fromUsername: getTelegramUsername(ctx),
-                  topic: challenge.topic,
-                  analysis: displayAnalysis,
-                  attemptCount: creatorAttemptCount,
-                  otherScore: null,
-                }),
-                { parse_mode: "HTML" },
-              );
-            }
-          } catch (error) {
-            console.error("Auto friend challenge notification to friend failed", error);
-          }
-        }
-
-        await sendResult(ctx, {
-          text: getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix,
+      if (Number(fc.creator_telegram_id) === telegramId) {
+        await sendStreamingResult(ctx, {
+          buildText: (a, suffix) => getChallengeResultMessage({ topic: fc.topic, analysis: a, transcript }) + suffix,
           keyboard: {},
+          runAi: runAiFeedback,
+          preAiAnalysis: analysis,
+          sessionId: String(sessionId),
+          userId,
+          onFinal: async ({ finalScore, displayAnalysis }) => {
+            try {
+              await updateFriendChallengeCreatorScore(fc.id, finalScore);
+            } catch (error) {
+              console.error("Telegram challenge creator score update failed", error);
+              if (isMissingChallengesTableError(error)) {
+                await ctx.reply(getChallengesTableMissingMessage(), { parse_mode: "HTML" });
+                return;
+              }
+            }
+
+            let friendTelegramId: number | null = null;
+            try {
+              friendTelegramId = await getFriendChallengeParticipantTelegramId({
+                challengeId: fc.id,
+                creatorTelegramId: telegramId,
+              });
+            } catch (error) {
+              console.error("Telegram friend challenge participant lookup failed", error);
+            }
+
+            // Auto-notify friend with creator's result (no transcript/feedback)
+            if (friendTelegramId) {
+              try {
+                const creatorAttemptCount = await getGroupChallengeAttemptCount({
+                  challengeId: fc.id,
+                  telegramId,
+                });
+                const shouldSend = await claimFriendChallengeResultSend({
+                  challengeId: fc.id,
+                  telegramId,
+                  sessionId: String(sessionId),
+                });
+                if (shouldSend) {
+                  await ctx.telegram.sendMessage(
+                    friendTelegramId,
+                    getAutoFriendChallengeNotification({
+                      fromUsername: getTelegramUsername(ctx),
+                      topic: fc.topic,
+                      analysis: displayAnalysis,
+                      attemptCount: creatorAttemptCount,
+                      otherScore: null,
+                    }),
+                    { parse_mode: "HTML" },
+                  );
+                }
+              } catch (error) {
+                console.error("Auto friend challenge notification to friend failed", error);
+              }
+            }
+          },
           logTemplate: 'friend_challenge_creator_result',
           tTotal: t_total,
           telegramChatId,
@@ -653,48 +744,53 @@ export async function handleVoiceMessage(
         return;
       }
 
-      const creatorUsername = pendingChallenge.creator_username ?? String(challenge.creator_telegram_id);
-      const creatorTelegramId = Number(challenge.creator_telegram_id);
+      const creatorUsername = pc.creator_username ?? String(fc.creator_telegram_id);
+      const creatorTelegramId = Number(fc.creator_telegram_id);
 
-      // Auto-notify creator with participant's result (no transcript/feedback)
-      try {
-        const participantAttemptCount = await getGroupChallengeAttemptCount({
-          challengeId: challenge.id,
-          telegramId,
-        });
-        const shouldSend = await claimFriendChallengeResultSend({
-          challengeId: challenge.id,
-          telegramId,
-          sessionId: String(sessionId),
-        });
-        if (shouldSend) {
-          await ctx.telegram.sendMessage(
-            creatorTelegramId,
-            getAutoFriendChallengeNotification({
-              fromUsername: getTelegramUsername(ctx),
-              topic: challenge.topic,
-              analysis: displayAnalysis,
-              attemptCount: participantAttemptCount,
-              otherScore: challenge.creator_score,
-            }),
-            { parse_mode: "HTML" },
-          );
-          if (challenge.creator_score === null || challenge.creator_score === undefined) {
-            await upsertPendingChallenge({
-              telegramId: creatorTelegramId,
-              challengeId: challenge.id,
-              challengeType: "friend",
-              creatorUsername,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Auto friend challenge notification to creator failed", error);
-      }
-
-      await sendResult(ctx, {
-        text: getChallengeResultMessage({ topic: challenge.topic, analysis: displayAnalysis, transcript }) + feedbackSuffix,
+      await sendStreamingResult(ctx, {
+        buildText: (a, suffix) => getChallengeResultMessage({ topic: fc.topic, analysis: a, transcript }) + suffix,
         keyboard: {},
+        runAi: runAiFeedback,
+        preAiAnalysis: analysis,
+        sessionId: String(sessionId),
+        userId,
+        onFinal: async ({ displayAnalysis }) => {
+          // Auto-notify creator with participant's result (no transcript/feedback)
+          try {
+            const participantAttemptCount = await getGroupChallengeAttemptCount({
+              challengeId: fc.id,
+              telegramId,
+            });
+            const shouldSend = await claimFriendChallengeResultSend({
+              challengeId: fc.id,
+              telegramId,
+              sessionId: String(sessionId),
+            });
+            if (shouldSend) {
+              await ctx.telegram.sendMessage(
+                creatorTelegramId,
+                getAutoFriendChallengeNotification({
+                  fromUsername: getTelegramUsername(ctx),
+                  topic: fc.topic,
+                  analysis: displayAnalysis,
+                  attemptCount: participantAttemptCount,
+                  otherScore: fc.creator_score,
+                }),
+                { parse_mode: "HTML" },
+              );
+              if (fc.creator_score === null || fc.creator_score === undefined) {
+                await upsertPendingChallenge({
+                  telegramId: creatorTelegramId,
+                  challengeId: fc.id,
+                  challengeType: "friend",
+                  creatorUsername,
+                });
+              }
+            }
+          } catch (error) {
+            console.error("Auto friend challenge notification to creator failed", error);
+          }
+        },
         logTemplate: 'friend_challenge_participant_result',
         tTotal: t_total,
         telegramChatId,
@@ -705,26 +801,31 @@ export async function handleVoiceMessage(
     }
 
     if (pendingChallenge?.challenge_type === "group" && challenge) {
-      const groupId = Number(pendingChallenge.group_id ?? challenge.creator_telegram_id);
+      const gc = challenge;
+      const groupId = Number(pendingChallenge.group_id ?? gc.creator_telegram_id);
       const attemptCount = await recordGroupChallengeAttempt({
-        challengeId: challenge.id,
+        challengeId: gc.id,
         telegramId,
         sessionId: String(sessionId),
       });
-      await sendResult(ctx, {
-        text: getChallengeResultMessage({
+      await sendStreamingResult(ctx, {
+        buildText: (a, suffix) => getChallengeResultMessage({
           title: "Group Challenge Result",
-          topic: challenge.topic,
-          analysis: displayAnalysis,
+          topic: gc.topic,
+          analysis: a,
           transcript,
           attemptCount,
-        }) + feedbackSuffix,
+        }) + suffix,
         keyboard: getGroupChallengeResultActions({
           sessionId: String(sessionId),
           groupId,
-          challengeId: challenge.id,
+          challengeId: gc.id,
           attemptCount,
         }),
+        runAi: runAiFeedback,
+        preAiAnalysis: analysis,
+        sessionId: String(sessionId),
+        userId,
         logTemplate: 'group_challenge_result',
         tTotal: t_total,
         telegramChatId,
@@ -734,9 +835,13 @@ export async function handleVoiceMessage(
       return;
     }
 
-    await sendResult(ctx, {
-      text: getSpeakingResultMessage({ analysis: displayAnalysis, transcript }) + feedbackSuffix,
+    await sendStreamingResult(ctx, {
+      buildText: (a, suffix) => getSpeakingResultMessage({ analysis: a, transcript }) + suffix,
       keyboard: getSessionActions(String(sessionId)),
+      runAi: runAiFeedback,
+      preAiAnalysis: analysis,
+      sessionId: String(sessionId),
+      userId,
       logTemplate: 'speaking_result',
       tTotal: t_total,
       telegramChatId,
