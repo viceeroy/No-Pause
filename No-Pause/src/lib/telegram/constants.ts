@@ -6,6 +6,10 @@ import type { SilenceGap } from "../core/silence.js";
 export const SITE_URL = APP_URL;
 export const TELEGRAM_BOT_USERNAME = "NoPauseAI_bot";
 
+// Minimum gap between accepted voice notes per user. Rejects rapid spam
+// (protects Groq bill) and innocent double-taps. Tune here.
+export const VOICE_COOLDOWN_MS = 10_000;
+
 export const CHALLENGE_LABEL = "⚔️ Challenge";
 export const MY_STATS_LABEL = "📈 My Stats";
 export const SPEAK_LABEL = "🎤 Speak";
@@ -664,6 +668,8 @@ export const MESSAGES = {
     "🎤 Please record a fresh voice note directly in this chat, not forwarded from somewhere else.",
   voiceTooLong:
     "🎤 The maximum voice note length is 5 minutes. Please send a shorter voice note.",
+  voiceCooldown:
+    "⏳ One sec — still finishing your last one.\n\nSend your next voice note in a moment.",
   challengeForwardHint:
     "👆 Forward the message above to your friends so they can accept your challenge!",
   statsPrivate:
