@@ -259,7 +259,10 @@ export function createTelegramBot() {
   });
 
   bot.action(new RegExp(`^${CHANGE_GROUP_TOPIC_ACTION_PREFIX}(.+)$`), async (ctx) => {
-    await ctx.answerCbQuery();
+    // Do not pre-answer here: changeGroupChallengeTopic owns answerCbQuery on
+    // every path and uses it to surface permission/error alerts. A bare
+    // pre-answer would consume the query, hiding those alerts and risking a
+    // throw on the duplicate answer that skips the topic edit.
     console.log('[NoPause:challenge] callback', { action: 'change_group_topic', telegram_id: getTelegramId(ctx), challenge_id: ctx.match?.[1] });
     await changeGroupChallengeTopic(ctx);
   });
@@ -312,10 +315,12 @@ export function createTelegramBot() {
   });
 
   bot.action(CHANGE_PROMPT_ACTION, async (ctx) => {
+    // Answer first so the button's loading spinner clears instantly; this
+    // handler shows no alert, so there is nothing to lose by answering early.
+    await ctx.answerCbQuery();
     const userId = await resolveUserIdForPrompt(ctx);
     const prompt = await pickPromptForUser(userId);
 
-    await ctx.answerCbQuery();
     const message = isGroupChat(ctx)
       ? `💬 <b>Prompt</b>\n\n<b>For:</b>\n${escapeTelegramHtml(getTelegramUsername(ctx))}\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`
       : `💬 <b>Prompt</b>\n\n<b>Topic:</b>\n${escapeTelegramHtml(prompt)}`;
