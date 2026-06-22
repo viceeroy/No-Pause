@@ -2,6 +2,7 @@ import { Square } from 'lucide-react';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
 import { formatMMSS } from './time';
+import { cn } from '@/shared/lib/utils';
 
 type RecordingPanelProps = {
   timeLeft: number;
@@ -24,6 +25,7 @@ export function RecordingPanel({
 }: RecordingPanelProps) {
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
   const isSilent = audioData?.isSilent ?? !soundDetected;
+  const isSilenceWarning = (audioData?.currentSilenceDuration ?? 0) > 1000;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
@@ -38,20 +40,29 @@ export function RecordingPanel({
 
       <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
         <div
-          className="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-border bg-surface-card p-5 shadow-card md:p-8"
+          className={cn(
+            "relative flex w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-border bg-surface-card p-5 shadow-card transition-colors duration-300 md:p-8",
+            isSilenceWarning && "border-primary/30"
+          )}
           aria-label="Recording in progress"
         >
           <div className="pointer-events-none absolute inset-x-8 top-1/2 h-24 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" />
           <div className="relative z-10 mb-6 flex items-center justify-between gap-4">
-            <div className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-surface-elevated px-4 text-xs font-sans font-black uppercase tracking-widest text-foreground shadow-card">
-              <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+            <div
+              role="status"
+              className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-surface-elevated px-4 text-xs font-sans font-black uppercase tracking-widest text-foreground shadow-card"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
               Recording
             </div>
-            <div className="font-serif text-4xl font-medium leading-none text-primary md:text-6xl">
+            <div className="font-serif text-4xl font-medium leading-none text-primary md:text-6xl" aria-live="off">
               {formatMMSS(timerValue)}
             </div>
           </div>
-          <div className="relative z-10 overflow-hidden rounded-[22px] border border-border bg-surface-elevated px-2 py-5 shadow-[0_0_36px_hsl(var(--primary)/0.08)] md:px-4 md:py-8">
+          <div className={cn(
+            "relative z-10 overflow-hidden rounded-[22px] border border-border bg-surface-elevated px-2 py-5 shadow-[0_0_36px_hsl(var(--primary)/0.08)] transition-all duration-300 md:px-4 md:py-8",
+            isSilenceWarning && "animate-silence-flash border-primary/40 shadow-[0_0_48px_hsl(var(--primary)/0.15)]"
+          )}>
             <div className="h-28 md:h-36">
               <VoiceVisualizer
                 frequencyData={audioData?.frequencyData}
@@ -61,8 +72,11 @@ export function RecordingPanel({
               />
             </div>
           </div>
-          <p className="relative z-10 mt-5 text-center text-sm font-sans font-black uppercase tracking-widest text-foreground md:text-base">
-            Speak now
+          <p className={cn(
+            "relative z-10 mt-5 text-center text-sm font-sans font-black uppercase tracking-widest transition-colors duration-300 md:text-base",
+            isSilenceWarning ? "text-primary" : "text-foreground"
+          )}>
+            {isSilenceWarning ? 'Keep going!' : 'Speak now'}
           </p>
         </div>
       </div>
@@ -70,9 +84,10 @@ export function RecordingPanel({
       <div className="w-full shrink-0 pt-5 md:w-auto md:pt-7">
         <button
           onClick={() => void stopRecording()}
-          className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
+          className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background md:w-auto sm:px-16 sm:text-lg"
+          aria-label="Finish recording and view results"
         >
-          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <Square size={20} fill="currentColor" className="rounded-sm" aria-hidden="true" /> Finish & View Results
         </button>
       </div>
     </div>
