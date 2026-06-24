@@ -134,8 +134,12 @@ export default function PracticePage() {
         'flex w-full items-center justify-between shrink-0',
         state.isFixedScreen ? 'mb-3' : 'mb-8'
       )}>
-        <button onClick={handleBackClick} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0">
-          <ChevronLeft size={16} /> Back
+        <button
+          onClick={handleBackClick}
+          aria-label="Back to dashboard"
+          className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none rounded-md"
+        >
+          <ChevronLeft size={16} aria-hidden="true" /> Back
         </button>
         {state.state === 'setup' && (
           <button

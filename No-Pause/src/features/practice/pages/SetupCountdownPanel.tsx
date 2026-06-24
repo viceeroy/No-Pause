@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -168,10 +168,31 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
+  const handleStartClick = useCallback(() => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
-  };
+  }, [activeIndex, onStart, slides]);
+
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if focus is on an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleStartClick();
+      } else if (e.code === 'ArrowLeft') {
+        setActiveIndex((prev) => Math.max(0, prev - 1));
+      } else if (e.code === 'ArrowRight') {
+        setActiveIndex((prev) => Math.min(slides.length - 1, prev + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state, slides.length, handleStartClick]);
 
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
@@ -245,7 +266,10 @@ export function SetupCountdownPanel({
                   <button
                     type="button"
                     onClick={() => setTimerMenuOpen(!timerMenuOpen)}
-                    className={cn(pillBase, selectedTimerSeconds > 0 ? pillActive : pillIdle)}
+                    aria-label={`Set timer, current: ${timerLabel}`}
+                    aria-haspopup="true"
+                    aria-expanded={timerMenuOpen}
+                    className={cn(pillBase, selectedTimerSeconds > 0 ? pillActive : pillIdle, 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none')}
                   >
                     <Clock size={15} className="text-primary shrink-0" />
                     {timerLabel}
@@ -276,7 +300,8 @@ export function SetupCountdownPanel({
                 <button
                   type="button"
                   onClick={onOpenPrompts}
-                  className={cn(pillBase, activeIndex > 0 ? pillActive : pillIdle)}
+                  aria-label="Open prompts list"
+                  className={cn(pillBase, activeIndex > 0 ? pillActive : pillIdle, 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none')}
                 >
                   <ListChecks size={15} className="shrink-0 text-primary" />
                   Prompts
@@ -285,7 +310,8 @@ export function SetupCountdownPanel({
                   type="button"
                   disabled={slides.length < 2}
                   onClick={showRandomPrompt}
-                  className={cn(pillBase, pillIdle, 'disabled:cursor-not-allowed disabled:opacity-50')}
+                  aria-label="Show random prompt"
+                  className={cn(pillBase, pillIdle, 'disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none')}
                 >
                   <Shuffle size={15} className="shrink-0 text-primary" />
                   Random
@@ -294,9 +320,11 @@ export function SetupCountdownPanel({
               <button
                 type="button"
                 onClick={handleStartClick}
-                className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
+                aria-keyshortcuts="Space"
+                className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
                 Start Speaking
+                <kbd className="hidden md:inline-flex ml-2 opacity-70 text-[10px] border border-primary-foreground/30 rounded px-1.5 py-0.5 font-sans font-bold">Space</kbd>
               </button>
             </div>
           </div>

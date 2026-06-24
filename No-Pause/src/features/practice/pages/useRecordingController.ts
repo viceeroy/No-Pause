@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import { useRecording } from '@/features/practice/hooks/useRecording';
 import { useScoring } from '@/features/practice/hooks/useScoring';
@@ -73,7 +73,7 @@ export function useRecordingController({
     setTimeLeft(0);
   }, [setState, setAudioData, setLastResults, setTimeLeft]);
 
-  return {
+  return useMemo(() => ({
     handleStart,
     handleRetryMicrophone,
     handleRetry,
@@ -81,5 +81,13 @@ export function useRecordingController({
     stopRecording,
     requestTranscription,
     soundDetectedRef,
-  };
+  }), [
+    handleStart,
+    handleRetryMicrophone,
+    handleRetry,
+    handleBack,
+    stopRecording,
+    requestTranscription,
+    soundDetectedRef,
+  ]);
 }
