@@ -62,6 +62,17 @@ export function ResultPanel({
     frameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameId);
   }, [lastResults.bonusPoints, lastResults.flowScore]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleRetry();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleRetry]);
   const copyText = async (text: string, onCopied: (copied: boolean) => void) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -323,9 +334,11 @@ export function ResultPanel({
         <div className="grid gap-3 pt-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <button
             onClick={handleRetry}
-            className="flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110"
+            aria-keyshortcuts="Space"
+            className="flex min-h-[56px] items-center justify-center gap-2 rounded-full bg-primary px-6 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none"
           >
             <Mic size={18} /> Practice Again
+            <kbd className="hidden md:inline-flex ml-2 opacity-70 text-[10px] border border-primary-foreground/30 rounded px-1.5 py-0.5 font-sans font-bold">Space</kbd>
           </button>
           <button
             onClick={async () => {

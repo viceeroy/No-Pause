@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Square } from 'lucide-react';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
@@ -24,6 +25,17 @@ export function RecordingPanel({
 }: RecordingPanelProps) {
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
   const isSilent = audioData?.isSilent ?? !soundDetected;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        void stopRecording();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stopRecording]);
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
@@ -70,9 +82,11 @@ export function RecordingPanel({
       <div className="w-full shrink-0 pt-5 md:w-auto md:pt-7">
         <button
           onClick={() => void stopRecording()}
-          className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
+          aria-keyshortcuts="Space"
+          className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background outline-none md:w-auto sm:px-16 sm:text-lg"
         >
           <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <kbd className="hidden md:inline-flex ml-2 opacity-70 text-[10px] border border-primary-foreground/30 rounded px-1.5 py-0.5 font-sans font-bold">Space</kbd>
         </button>
       </div>
     </div>
