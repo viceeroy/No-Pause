@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Square } from 'lucide-react';
+import { cn } from '@/shared/lib/utils';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
 import { formatMMSS } from './time';
@@ -24,6 +26,26 @@ export function RecordingPanel({
 }: RecordingPanelProps) {
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
   const isSilent = audioData?.isSilent ?? !soundDetected;
+  const isLowTime = selectedTimerSeconds > 0 && timeLeft <= 10 && timeLeft > 0;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input/textarea
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        void stopRecording();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stopRecording]);
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
@@ -47,7 +69,10 @@ export function RecordingPanel({
               <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
               Recording
             </div>
-            <div className="font-serif text-4xl font-medium leading-none text-primary md:text-6xl">
+            <div className={cn(
+              "font-serif text-4xl font-medium leading-none md:text-6xl transition-colors duration-300",
+              isLowTime ? "text-destructive animate-pulse" : "text-primary"
+            )}>
               {formatMMSS(timerValue)}
             </div>
           </div>
@@ -71,9 +96,13 @@ export function RecordingPanel({
         <button
           onClick={() => void stopRecording()}
           className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
+          aria-keyshortcuts="Space Enter"
         >
           <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
         </button>
+        <p className="mt-2 hidden text-[10px] font-sans font-bold uppercase tracking-widest text-muted-foreground md:block">
+          Press Space to finish
+        </p>
       </div>
     </div>
   );
