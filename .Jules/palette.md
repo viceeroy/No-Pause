@@ -1,0 +1,3 @@
+## 2025-05-15 - [Timer Urgency & Keyboard Shortcuts]
+**Learning:** For time-sensitive tasks like speaking practice, visual urgency cues (color change + pulse) and common keyboard shortcuts (Space/Enter to stop) significantly improve the sense of control and accessibility. Adding a desktop-only hint for the shortcut makes the feature discoverable without cluttering the mobile UI.
+**Action:** Always include keyboard shortcuts for primary actions in recording or media-heavy interfaces, and provide subtle visual hints on desktop. Use 'aria-keyshortcuts' to communicate these to assistive technologies.

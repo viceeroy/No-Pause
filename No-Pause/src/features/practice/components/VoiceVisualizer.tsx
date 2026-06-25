@@ -150,6 +150,8 @@ export const VoiceVisualizer = ({ frequencyData, volume, isSilent, isRecording }
   return (
     <canvas
       ref={canvasRef}
+      role="img"
+      aria-label="Real-time voice activity visualizer"
       className="w-full h-full waveform-canvas"
       style={{ width: '100%', height: '100%' }}
     />
