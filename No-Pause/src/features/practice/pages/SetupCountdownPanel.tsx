@@ -122,6 +122,26 @@ export function SetupCountdownPanel({
     };
   };
 
+  // Keyboard navigation for the prompt carousel
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only navigate if the carousel container or one of its descendants (except buttons) is focused
+      const isCarouselFocused = containerRef.current?.contains(document.activeElement);
+      if (!isCarouselFocused || document.activeElement?.tagName === 'BUTTON') return;
+
+      if (e.key === 'ArrowLeft') {
+        setActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state, slides.length]);
+
   // Safety: drop any dangling drag listeners / timers on unmount.
   useEffect(
     () => () => {
@@ -203,8 +223,11 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              tabIndex={0}
+              role="region"
+              aria-label="Prompt selection"
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base rounded-[28px]',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
@@ -213,13 +236,20 @@ export function SetupCountdownPanel({
             >
               <div
                 className="flex"
+                role="listbox"
+                aria-label="Prompts"
                 style={{
                   transform: `translateX(calc(${-activeIndex * 100}% + ${dragOffset + nudgeOffset}px))`,
                   transition: dragging ? 'none' : 'transform 300ms ease',
                 }}
               >
                 {slides.map((slide, i) => (
-                  <div key={i} className="w-full shrink-0 select-none px-1">
+                  <div
+                    key={i}
+                    role="option"
+                    aria-selected={activeIndex === i}
+                    className="w-full shrink-0 select-none px-1"
+                  >
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
                       <p
@@ -245,17 +275,26 @@ export function SetupCountdownPanel({
                   <button
                     type="button"
                     onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+                    aria-haspopup="listbox"
+                    aria-expanded={timerMenuOpen}
+                    aria-controls="timer-menu"
                     className={cn(pillBase, selectedTimerSeconds > 0 ? pillActive : pillIdle)}
                   >
                     <Clock size={15} className="text-primary shrink-0" />
                     {timerLabel}
                   </button>
                   {timerMenuOpen && (
-                    <div className="absolute bottom-full left-1/2 z-50 mb-2 w-36 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float">
+                    <div
+                      id="timer-menu"
+                      role="listbox"
+                      className="absolute bottom-full left-1/2 z-50 mb-2 w-36 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-border bg-surface-elevated p-1.5 shadow-float"
+                    >
                       {timerOptions.map((option) => (
                         <button
                           key={option.seconds}
                           type="button"
+                          role="option"
+                          aria-selected={selectedTimerSeconds === option.seconds}
                           onClick={() => {
                             setSelectedTimerSeconds(option.seconds);
                             setTimerMenuOpen(false);
