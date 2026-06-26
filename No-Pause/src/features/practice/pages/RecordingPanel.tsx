@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Square } from 'lucide-react';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
@@ -22,6 +23,18 @@ export function RecordingPanel({
   soundDetected,
   stopRecording,
 }: RecordingPanelProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ') {
+        e.preventDefault();
+        void stopRecording();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stopRecording]);
+
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
   const isSilent = audioData?.isSilent ?? !soundDetected;
 
@@ -70,9 +83,10 @@ export function RecordingPanel({
       <div className="w-full shrink-0 pt-5 md:w-auto md:pt-7">
         <button
           onClick={() => void stopRecording()}
+          aria-keyshortcuts=" "
           className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
         >
-          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results <span className="hidden opacity-70 md:inline">(Space)</span>
         </button>
       </div>
     </div>
