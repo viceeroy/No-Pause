@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -168,10 +168,30 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
+  const handleStartClick = useCallback(() => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
-  };
+  }, [activeIndex, onStart, slides]);
+
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'ArrowLeft') {
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((prev) => Math.min(prev + 1, slides.length - 1));
+      } else if ((e.key === 'Enter' || e.key === ' ') && e.target === document.body) {
+        e.preventDefault();
+        handleStartClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state, slides.length, handleStartClick]);
 
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
@@ -325,8 +345,15 @@ export function SetupCountdownPanel({
       </div>
 
       {state === 'countdown' && (
-        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
-          <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">{countdown}</div>
+        <div
+          className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div className="sr-only">Starting in</div>
+          <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">
+            {countdown}
+          </div>
         </div>
       )}
     </div>
