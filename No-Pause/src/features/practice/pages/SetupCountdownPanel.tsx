@@ -158,6 +158,22 @@ export function SetupCountdownPanel({
     );
   };
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setActiveIndex((prev) => Math.max(0, prev - 1));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setActiveIndex((prev) => Math.min(slides.length - 1, prev + 1));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setActiveIndex(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setActiveIndex(slides.length - 1);
+    }
+  };
+
   const showRandomPrompt = () => {
     const promptCount = slides.length - 1;
     if (promptCount < 1) return;
@@ -203,13 +219,17 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              role="region"
+              aria-label="Prompt selection carousel"
+              tabIndex={0}
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none rounded-[28px] outline-none focus-visible:ring-2 focus-visible:ring-primary',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
               onWheel={onWheel}
+              onKeyDown={onKeyDown}
             >
               <div
                 className="flex"
@@ -325,8 +345,14 @@ export function SetupCountdownPanel({
       </div>
 
       {state === 'countdown' && (
-        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
-          <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">{countdown}</div>
+        <div
+          className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">
+            {countdown}
+          </div>
         </div>
       )}
     </div>
