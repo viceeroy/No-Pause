@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, Copy, FileText, MessageSquare, Mic, Pause, VolumeX, Share2, TrendingUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Confetti from '@/shared/components/Confetti';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
 import { useAuth } from '@/providers/AuthContext';
 import type { SessionResult } from './types';
 import { formatMMSS } from './time';
@@ -221,14 +222,19 @@ export function ResultPanel({
               <MessageSquare size={20} className="text-primary" /> Feedback
             </h3>
             {lastResults.analysisFeedback && !lastResults.analysisFeedbackLoading ? (
-              <button
-                type="button"
-                onClick={() => copyText(lastResults.analysisFeedback || '', setCopiedFeedback)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
-              >
-                {copiedFeedback ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
-                {copiedFeedback ? 'Copied' : 'Copy'}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => copyText(lastResults.analysisFeedback || '', setCopiedFeedback)}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 ring-offset-surface-elevated outline-none"
+                  >
+                    {copiedFeedback ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+                    {copiedFeedback ? 'Copied' : 'Copy'}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Copy feedback to clipboard</TooltipContent>
+              </Tooltip>
             ) : null}
           </div>
           {lastResults.analysisFeedbackLoading ? (
@@ -255,14 +261,19 @@ export function ResultPanel({
               <FileText size={20} className="text-primary" /> Transcript
             </h3>
             {transcriptReady ? (
-              <button
-                type="button"
-                onClick={() => copyText(transcriptForCopy, setCopiedTranscript)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive"
-              >
-                {copiedTranscript ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
-                {copiedTranscript ? 'Copied' : 'Copy'}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => copyText(transcriptForCopy, setCopiedTranscript)}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-surface-elevated px-3 text-xs font-sans font-bold text-foreground transition-colors btn-press hover:bg-surface-interactive focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-1 ring-offset-surface-elevated outline-none"
+                  >
+                    {copiedTranscript ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+                    {copiedTranscript ? 'Copied' : 'Copy'}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Copy transcript to clipboard</TooltipContent>
+              </Tooltip>
             ) : null}
           </div>
           {transcriptReady ? (

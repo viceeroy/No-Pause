@@ -134,7 +134,7 @@ export default function PracticePage() {
         'flex w-full items-center justify-between shrink-0',
         state.isFixedScreen ? 'mb-3' : 'mb-8'
       )}>
-        <button onClick={handleBackClick} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0">
+        <button onClick={handleBackClick} className="min-h-11 -ml-2 px-2 inline-flex items-center gap-1 self-start text-muted-foreground font-sans text-sm hover:text-foreground btn-press transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none rounded-md">
           <ChevronLeft size={16} /> Back
         </button>
         {state.state === 'setup' && (

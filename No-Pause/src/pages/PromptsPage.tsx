@@ -75,7 +75,7 @@ export default function PromptsPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
+          className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none rounded-md"
         >
           <ChevronLeft size={16} /> Back
         </button>
@@ -148,7 +148,7 @@ export default function PromptsPage() {
                   key={prompt}
                   type="button"
                   onClick={() => openPrompt(prompt)}
-                  className="flex min-h-[168px] items-center rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:min-h-[196px] md:p-6"
+                  className="flex min-h-[168px] items-center rounded-[22px] border border-border bg-surface-card p-5 text-left shadow-card transition-colors btn-press hover:bg-surface-elevated md:min-h-[196px] md:p-6 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
                 >
                   <span className="text-xl font-serif font-medium leading-snug text-foreground md:text-2xl">
                     {prompt}
