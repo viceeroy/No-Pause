@@ -136,6 +136,14 @@ export function SetupCountdownPanel({
   // Accumulate until threshold, fire ONCE, then lock until the wheel stream
   // goes quiet (150ms gap = gesture truly ended). The momentum tail keeps
   // resetting the quiet timer, so one physical swipe = one card (no double-skip).
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'ArrowRight') {
+      setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+    }
+  };
+
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical intent
     // Any horizontal wheel event (incl. momentum) defers the unlock.
@@ -203,13 +211,17 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              role="region"
+              aria-label="Select a speaking prompt"
+              tabIndex={0}
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none rounded-[28px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
               onWheel={onWheel}
+              onKeyDown={onKeyDown}
             >
               <div
                 className="flex"
@@ -325,7 +337,7 @@ export function SetupCountdownPanel({
       </div>
 
       {state === 'countdown' && (
-        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
+        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center" aria-live="assertive" aria-atomic="true">
           <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">{countdown}</div>
         </div>
       )}
