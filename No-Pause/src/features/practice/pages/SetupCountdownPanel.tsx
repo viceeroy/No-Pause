@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -158,7 +158,7 @@ export function SetupCountdownPanel({
     );
   };
 
-  const showRandomPrompt = () => {
+  const showRandomPrompt = useCallback(() => {
     const promptCount = slides.length - 1;
     if (promptCount < 1) return;
     let next = 1 + Math.floor(Math.random() * promptCount);
@@ -166,12 +166,34 @@ export function SetupCountdownPanel({
       next = next === slides.length - 1 ? 1 : next + 1;
     }
     setActiveIndex(next);
-  };
+  }, [activeIndex, slides.length]);
 
-  const handleStartClick = () => {
+  const handleStartClick = useCallback(() => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
+  }, [activeIndex, onStart, slides]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'ArrowRight') {
+      setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+    }
   };
+
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ' && !['INPUT', 'TEXTAREA', 'BUTTON'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        handleStartClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [state, handleStartClick]);
 
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
@@ -203,13 +225,17 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              role="region"
+              aria-label="Prompt selection carousel"
+              tabIndex={0}
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none rounded-[28px]',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
               onWheel={onWheel}
+              onKeyDown={handleKeyDown}
             >
               <div
                 className="flex"
@@ -296,7 +322,7 @@ export function SetupCountdownPanel({
                 onClick={handleStartClick}
                 className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
-                Start Speaking
+                Start Speaking <span className="hidden opacity-60 md:inline">(Space)</span>
               </button>
             </div>
           </div>
