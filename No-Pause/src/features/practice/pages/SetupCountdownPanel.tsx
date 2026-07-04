@@ -158,6 +158,19 @@ export function SetupCountdownPanel({
     );
   };
 
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleStartClick();
+    }
+  };
+
   const showRandomPrompt = () => {
     const promptCount = slides.length - 1;
     if (promptCount < 1) return;
@@ -203,13 +216,17 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              tabIndex={0}
+              role="region"
+              aria-label="Select a prompt"
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none rounded-[28px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
               onWheel={onWheel}
+              onKeyDown={onKeyDown}
             >
               <div
                 className="flex"
@@ -325,8 +342,14 @@ export function SetupCountdownPanel({
       </div>
 
       {state === 'countdown' && (
-        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
-          <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">{countdown}</div>
+        <div
+          className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">
+            {countdown}
+          </div>
         </div>
       )}
     </div>
