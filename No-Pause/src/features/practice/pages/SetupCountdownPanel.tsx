@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -168,10 +168,32 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
+  const handleStartClick = useCallback(() => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
-  };
+  }, [activeIndex, onStart, slides]);
+
+  // Keyboard shortcuts: Arrow keys for carousel, Space to start.
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
+
+      if (e.key === 'ArrowLeft') {
+        setActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+      } else if (e.key === ' ') {
+        // Prevent scroll
+        e.preventDefault();
+        handleStartClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state, slides.length, handleStartClick]);
 
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
@@ -221,7 +243,10 @@ export function SetupCountdownPanel({
                 {slides.map((slide, i) => (
                   <div key={i} className="w-full shrink-0 select-none px-1">
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
+                      <div className="mb-2 flex items-center gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
+                        <span className="hidden rounded bg-muted/30 px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground md:inline-block">←/→</span>
+                      </div>
                       <p
                         className={cn(
                           'mx-auto font-serif font-medium leading-tight text-balance text-foreground',
@@ -297,6 +322,7 @@ export function SetupCountdownPanel({
                 className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
                 Start Speaking
+                <span className="hidden rounded bg-primary-foreground/20 px-2 py-0.5 text-[10px] font-bold md:inline-block">Space</span>
               </button>
             </div>
           </div>
