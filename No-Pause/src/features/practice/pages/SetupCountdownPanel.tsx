@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -131,6 +131,32 @@ export function SetupCountdownPanel({
     []
   );
 
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        setActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+      } else if (e.key === ' ' && !e.repeat) {
+        // Space to start
+        if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+        e.preventDefault();
+        handleStartClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state, slides.length, handleStartClick]);
+
   // Trackpad two-finger horizontal swipe. Trackpads emit many small deltaX
   // events per swipe — plus an inertial momentum tail after the fingers lift.
   // Accumulate until threshold, fire ONCE, then lock until the wheel stream
@@ -168,10 +194,10 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
+  const handleStartClick = useCallback(() => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
-  };
+  }, [activeIndex, onStart, slides]);
 
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
@@ -294,9 +320,12 @@ export function SetupCountdownPanel({
               <button
                 type="button"
                 onClick={handleStartClick}
-                className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
+                className="flex w-full flex-col items-center justify-center gap-0.5 rounded-full bg-primary px-10 py-3.5 text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16"
               >
-                Start Speaking
+                <span className="text-base font-sans font-black sm:text-lg">Start Speaking</span>
+                <span className="hidden text-[10px] font-black uppercase tracking-widest opacity-70 md:block">
+                  Press Space
+                </span>
               </button>
             </div>
           </div>
