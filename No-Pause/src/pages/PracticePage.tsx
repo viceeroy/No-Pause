@@ -92,6 +92,25 @@ export default function PracticePage() {
   }, [promptTextParam, setTimeLeft, setTopicPrompt]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.target as HTMLElement).tagName === 'BUTTON' ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)
+      ) {
+        return;
+      }
+
+      if (e.key === ' ' && state.state === 'recording') {
+        e.preventDefault();
+        void recording.stopRecording();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.state, recording]);
+
+  useEffect(() => {
     if (state.state === 'recording') {
       document.body.dataset.recording = 'true';
     } else {

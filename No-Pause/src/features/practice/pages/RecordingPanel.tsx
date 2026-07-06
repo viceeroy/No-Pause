@@ -70,9 +70,15 @@ export function RecordingPanel({
       <div className="w-full shrink-0 pt-5 md:w-auto md:pt-7">
         <button
           onClick={() => void stopRecording()}
-          className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
+          className="flex w-full flex-col items-center justify-center gap-0.5 rounded-full bg-primary px-10 py-3.5 text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16"
         >
-          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <div className="flex items-center gap-3">
+            <Square size={18} fill="currentColor" className="rounded-sm" />
+            <span className="text-base font-sans font-black sm:text-lg">Finish & View Results</span>
+          </div>
+          <span className="hidden text-[10px] font-black uppercase tracking-widest opacity-70 md:block">
+            Press Space
+          </span>
         </button>
       </div>
     </div>
