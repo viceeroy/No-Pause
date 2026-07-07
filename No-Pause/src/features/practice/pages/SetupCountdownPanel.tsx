@@ -23,6 +23,9 @@ type SetupCountdownPanelProps = {
   onStart: (selection: StartSelection) => void;
   onOpenPrompts: () => void;
   countdown: number;
+  activeIndex: number;
+  setActiveIndex: (index: number | ((prev: number) => number)) => void;
+  slides: string[];
 };
 
 const pillBase =
@@ -47,17 +50,10 @@ export function SetupCountdownPanel({
   onStart,
   onOpenPrompts,
   countdown,
+  activeIndex,
+  setActiveIndex,
+  slides,
 }: SetupCountdownPanelProps) {
-  // Card 0 = free speak, cards 1…N = one prompt each.
-  // A picked prompt (from /prompts) arrives via promptText — surface it as the first prompt card.
-  const slides = useMemo(() => {
-    const ordered = promptText
-      ? [promptText, ...prompts.filter((p) => p !== promptText)]
-      : prompts;
-    return ['__free__', ...ordered];
-  }, [prompts, promptText]);
-
-  const [activeIndex, setActiveIndex] = useState(promptText ? 1 : 0);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [nudgeOffset, setNudgeOffset] = useState(0);
@@ -296,7 +292,7 @@ export function SetupCountdownPanel({
                 onClick={handleStartClick}
                 className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
-                Start Speaking
+                Start Speaking <span className="hidden md:inline text-[13px] font-bold opacity-80 bg-black/10 px-2 py-0.5 rounded border border-white/10">[Space]</span>
               </button>
             </div>
           </div>

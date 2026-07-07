@@ -72,7 +72,7 @@ export function RecordingPanel({
           onClick={() => void stopRecording()}
           className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
         >
-          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results <span className="hidden md:inline text-[13px] font-bold opacity-80 bg-black/10 px-2 py-0.5 rounded border border-white/10">[Space]</span>
         </button>
       </div>
     </div>
