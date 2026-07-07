@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, CircleHelp } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -76,6 +76,15 @@ export default function PracticePage() {
 
   const promptText = state.topicPrompt?.topicTitle || promptTextParam || '';
   const carouselPrompts = useMemo(() => getShuffledPrompts(20), []);
+  const slides = useMemo(() => {
+    const ordered = promptText
+      ? [promptText, ...carouselPrompts.filter((p) => p !== promptText)]
+      : carouselPrompts;
+    return ['__free__', ...ordered];
+  }, [carouselPrompts, promptText]);
+
+  const [activeIndex, setActiveIndex] = useState(promptText ? 1 : 0);
+
   const timerLabel = useMemo(
     () => timerOptions.find((option) => option.seconds === selectedTimerSeconds)?.label ?? 'No timer',
     [selectedTimerSeconds],
@@ -102,23 +111,54 @@ export default function PracticePage() {
     };
   }, [state.state]);
 
-  const applyPrompt = (topicTitle: string) => {
+  const applyPrompt = useCallback((topicTitle: string) => {
     state.setTopicPrompt({
       id: `speaking-practice-${topicTitle}`,
       topicTitle,
       category: 'SPEAKING_PRACTICE',
       cueCard: [],
     });
-  };
+  }, [state]);
 
-  const handleStartWithSelection = (selection: StartSelection) => {
+  const handleStartWithSelection = useCallback((selection: StartSelection) => {
     if (selection.type === 'free') {
       state.setTopicPrompt(null);
     } else {
       applyPrompt(selection.text);
     }
     void recording.handleStart();
-  };
+  }, [state, recording, applyPrompt]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== ' ') return;
+
+      // Gate against typing in standard form elements
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
+        return;
+      }
+
+      // If the target is a button, let the browser handle it (usually clicks the button)
+      if (target.tagName === 'BUTTON') return;
+
+      if (state.state === 'setup') {
+        e.preventDefault();
+        const slide = slides[activeIndex];
+        if (slide === '__free__') {
+          handleStartWithSelection({ type: 'free' });
+        } else {
+          handleStartWithSelection({ type: 'prompt', text: slide });
+        }
+      } else if (state.state === 'recording') {
+        e.preventDefault();
+        void recording.stopRecording();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state.state, activeIndex, slides, handleStartWithSelection, recording]);
 
   return (
     <div className={cn(
@@ -171,6 +211,9 @@ export default function PracticePage() {
           onStart={handleStartWithSelection}
           onOpenPrompts={() => navigate('/prompts')}
           countdown={state.countdown}
+          activeIndex={activeIndex}
+          setActiveIndex={setActiveIndex}
+          slides={slides}
         />
       )}
 
