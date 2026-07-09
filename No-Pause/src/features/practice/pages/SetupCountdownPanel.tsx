@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -19,7 +19,10 @@ type SetupCountdownPanelProps = {
   setSelectedTimerSeconds: (seconds: number) => void;
   timerOptions: { label: string; seconds: number }[];
   promptText: string;
-  prompts: string[];
+  slides: string[];
+  activeIndex: number;
+  setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
+  onRandomPrompt: () => void;
   onStart: (selection: StartSelection) => void;
   onOpenPrompts: () => void;
   countdown: number;
@@ -43,21 +46,14 @@ export function SetupCountdownPanel({
   setSelectedTimerSeconds,
   timerOptions,
   promptText,
-  prompts,
+  slides,
+  activeIndex,
+  setActiveIndex,
+  onRandomPrompt,
   onStart,
   onOpenPrompts,
   countdown,
 }: SetupCountdownPanelProps) {
-  // Card 0 = free speak, cards 1…N = one prompt each.
-  // A picked prompt (from /prompts) arrives via promptText — surface it as the first prompt card.
-  const slides = useMemo(() => {
-    const ordered = promptText
-      ? [promptText, ...prompts.filter((p) => p !== promptText)]
-      : prompts;
-    return ['__free__', ...ordered];
-  }, [prompts, promptText]);
-
-  const [activeIndex, setActiveIndex] = useState(promptText ? 1 : 0);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [nudgeOffset, setNudgeOffset] = useState(0);
@@ -158,15 +154,6 @@ export function SetupCountdownPanel({
     );
   };
 
-  const showRandomPrompt = () => {
-    const promptCount = slides.length - 1;
-    if (promptCount < 1) return;
-    let next = 1 + Math.floor(Math.random() * promptCount);
-    if (promptCount > 1 && next === activeIndex) {
-      next = next === slides.length - 1 ? 1 : next + 1;
-    }
-    setActiveIndex(next);
-  };
 
   const handleStartClick = () => {
     if (activeIndex === 0) onStart({ type: 'free' });
@@ -203,13 +190,24 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              tabIndex={0}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Prompt selection"
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none rounded-[28px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
               onWheel={onWheel}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') {
+                  setActiveIndex((i) => Math.max(i - 1, 0));
+                } else if (e.key === 'ArrowRight') {
+                  setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+                }
+              }}
             >
               <div
                 className="flex"
@@ -284,7 +282,7 @@ export function SetupCountdownPanel({
                 <button
                   type="button"
                   disabled={slides.length < 2}
-                  onClick={showRandomPrompt}
+                  onClick={onRandomPrompt}
                   className={cn(pillBase, pillIdle, 'disabled:cursor-not-allowed disabled:opacity-50')}
                 >
                   <Shuffle size={15} className="shrink-0 text-primary" />
