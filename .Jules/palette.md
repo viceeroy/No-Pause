@@ -1,0 +1,3 @@
+## 2025-05-15 - Global Keyboard Shortcuts & Accessible Carousels
+**Learning:** For interactive carousels, combining `tabIndex={0}`, `role="region"`, and `aria-roledescription="carousel"` provides the necessary semantic context for screen readers. Implementing global `keydown` listeners allows for intuitive power-user shortcuts (like `Space` to start/stop and `Arrow` keys for navigation), but these must be gated to ignore inputs and textareas to avoid breaking standard form interactions.
+**Action:** When adding keyboard shortcuts to primary actions, always include a gated `keydown` listener and a visual hint (e.g., `[Space]`) that is responsive (hidden on mobile).
