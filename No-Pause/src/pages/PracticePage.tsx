@@ -102,23 +102,23 @@ export default function PracticePage() {
     };
   }, [state.state]);
 
-  const applyPrompt = (topicTitle: string) => {
+  const applyPrompt = useCallback((topicTitle: string) => {
     state.setTopicPrompt({
       id: `speaking-practice-${topicTitle}`,
       topicTitle,
       category: 'SPEAKING_PRACTICE',
       cueCard: [],
     });
-  };
+  }, [state]);
 
-  const handleStartWithSelection = (selection: StartSelection) => {
+  const handleStartWithSelection = useCallback((selection: StartSelection) => {
     if (selection.type === 'free') {
       state.setTopicPrompt(null);
     } else {
       applyPrompt(selection.text);
     }
     void recording.handleStart();
-  };
+  }, [applyPrompt, recording, state]);
 
   return (
     <div className={cn(
