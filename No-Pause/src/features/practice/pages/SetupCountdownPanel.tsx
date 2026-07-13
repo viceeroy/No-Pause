@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -168,10 +168,30 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
+  const handleStartClick = useCallback(() => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
-  };
+  }, [activeIndex, onStart, slides]);
+
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'BUTTON'].includes((e.target as HTMLElement).tagName)) return;
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        handleStartClick();
+      } else if (e.key === 'ArrowLeft') {
+        setActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [state, handleStartClick, slides.length]);
 
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
@@ -203,8 +223,12 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              tabIndex={0}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Practice topics"
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none rounded-[28px]',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
@@ -296,7 +320,7 @@ export function SetupCountdownPanel({
                 onClick={handleStartClick}
                 className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
-                Start Speaking
+                Start Speaking <span className="hidden opacity-70 md:inline">[Space]</span>
               </button>
             </div>
           </div>
@@ -325,7 +349,7 @@ export function SetupCountdownPanel({
       </div>
 
       {state === 'countdown' && (
-        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
+        <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center" aria-live="assertive" aria-atomic="true">
           <div className="text-9xl font-serif font-bold text-primary animate-in zoom-in duration-300">{countdown}</div>
         </div>
       )}
