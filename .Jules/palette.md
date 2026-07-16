@@ -1,0 +1,3 @@
+## 2025-05-14 - Standardized Keyboard Shortcuts for Critical Actions
+**Learning:** For interactive applications like speech analyzers, keyboard shortcuts (especially Space for start/stop) significantly improve efficiency. Visual hints in button labels aid discoverability without cluttering the UI. Gating listeners by tag name (excluding INPUT/TEXTAREA) is essential for avoiding conflicts.
+**Action:** Always include keyboard shortcut hints and state-gated listeners for primary CTA buttons in practice-heavy features. Use the 'focus-visible' pattern for accessible custom components like carousels.
