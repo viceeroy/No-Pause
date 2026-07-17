@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -78,6 +78,42 @@ export function SetupCountdownPanel({
       clearTimeout(t2);
     };
   }, [slides.length]);
+
+  const handleStartClick = useCallback(() => {
+    if (activeIndex === 0) onStart({ type: 'free' });
+    else onStart({ type: 'prompt', text: slides[activeIndex] });
+  }, [activeIndex, slides, onStart]);
+
+  // Global spacebar keyboard shortcut to start speaking
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'BUTTON'].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
+
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        handleStartClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [state, handleStartClick]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+    }
+  };
 
   // Detacher for the active drag's window listeners (set on pointerdown).
   const detachDragRef = useRef<(() => void) | null>(null);
@@ -168,11 +204,6 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
-    if (activeIndex === 0) onStart({ type: 'free' });
-    else onStart({ type: 'prompt', text: slides[activeIndex] });
-  };
-
   return (
     <div className={cn('flex flex-1 flex-col justify-start overflow-visible pb-6 text-center md:pb-8')}>
       {transcriptError && (
@@ -203,8 +234,13 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              tabIndex={0}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Prompts carousel"
+              onKeyDown={handleKeyDown}
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none rounded-[28px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
@@ -296,7 +332,7 @@ export function SetupCountdownPanel({
                 onClick={handleStartClick}
                 className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
-                Start Speaking
+                Start Speaking <span className="hidden opacity-70 md:inline">[Space]</span>
               </button>
             </div>
           </div>
