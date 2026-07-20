@@ -203,13 +203,26 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              tabIndex={0}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Practice topic selection"
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none rounded-[28px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
               onPointerDown={onPointerDown}
               onWheel={onWheel}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  setActiveIndex((idx) => Math.max(idx - 1, 0));
+                } else if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  setActiveIndex((idx) => Math.min(idx + 1, slides.length - 1));
+                }
+              }}
             >
               <div
                 className="flex"
@@ -219,7 +232,11 @@ export function SetupCountdownPanel({
                 }}
               >
                 {slides.map((slide, i) => (
-                  <div key={i} className="w-full shrink-0 select-none px-1">
+                  <div
+                    key={i}
+                    className="w-full shrink-0 select-none px-1"
+                    aria-hidden={i !== activeIndex}
+                  >
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
                       <p
@@ -236,6 +253,23 @@ export function SetupCountdownPanel({
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Carousel dot indicators */}
+            <div className="flex justify-center gap-1.5 py-2">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                  aria-current={i === activeIndex ? 'true' : 'false'}
+                  className={cn(
+                    'h-1.5 rounded-full transition-all duration-300',
+                    i === activeIndex ? 'w-3 bg-primary' : 'w-1.5 bg-muted/40 hover:bg-muted-foreground/60'
+                  )}
+                />
+              ))}
             </div>
 
             <div className="flex w-full flex-col items-center gap-4 pb-2 pt-6 md:pt-0 md:pb-0">
