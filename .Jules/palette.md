@@ -1,0 +1,3 @@
+## 2026-06-15 - [Keyboard-Accessible Carousels and Space Shortcuts]
+**Learning:** Custom swipe/pointer-based carousels can cause major accessibility barriers for keyboard-only and screen reader users if they don't support tab focus, arrow key navigation, or aria-hidden state updates. Standardizing keyboard shortcuts with key guards (e.g. ignoring inputs, textareas, and buttons) is highly valued for desktop speech trainer micro-interactions.
+**Action:** When creating custom selection or scrollable regions, ensure they are focusable with `tabIndex={0}`, styled with proper focus indicator outlines, support arrow keys with `preventDefault()`, and hide inactive off-screen elements from screen readers using `aria-hidden`.
