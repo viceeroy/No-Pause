@@ -1,0 +1,3 @@
+## 2025-02-14 - Accessible Custom Carousel Components
+**Learning:** Custom swipe/wheel carousel components (like the speaking prompt slider) are often completely inaccessible to keyboard and screen-reader users if they lack proper roles, focus management, and focus-visible indicators. Standard accessibility helpers (like `aria-hidden` on inactive slides and horizontal Arrow key listeners) make them highly usable and delightful without heavy third-party dependencies.
+**Action:** Always wrap custom sliders or carousels in a focusable region (`role="region"`, `aria-roledescription="carousel"`, `tabIndex={0}`) with proper `aria-label`, support standard Left/Right Arrow keys to change slide focus, and hide non-active slides via `aria-hidden`.
