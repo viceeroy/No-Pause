@@ -1,0 +1,5 @@
+# Palette's Journal — Critical UX & Accessibility Learnings
+
+## 2025-07-26 - Keyboard-Navigable Carousel & Global Shortcuts
+**Learning:** For interactive slideshows or prompt carousels (such as the topics list in SetupCountdownPanel), visual-only swipe gestures leave keyboard-only and screen reader users stranded. Adding `role="region"`, `aria-roledescription="carousel"`, and explicit `tabIndex={0}` transforms the element into a navigable region. Standardizing `focus-visible` styles ensures a clear visual indicator. To avoid screen-reader clutter, off-screen/inactive slides should be explicitly hidden using `aria-hidden={i !== activeIndex}`. For global key listeners like `Space` to record, gating with `['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)` is critical to prevent interfering with standard form controls.
+**Action:** Always implement carousel components with `tabIndex={0}`, standard focus indicators, Arrow navigation hooks, and gate any global shortcut listeners to avoid form field interference.
