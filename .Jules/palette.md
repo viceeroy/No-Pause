@@ -1,0 +1,3 @@
+## 2025-02-14 - Keyboard Accessible Carousel Integration
+**Learning:** Custom touch-and-swipe carousel decks are highly intuitive for mobile users but completely inaccessible for screen reader or keyboard-only desktop users. Without explicit tabIndex, focus outlines, and ArrowLeft/ArrowRight listeners, they remain invisible and unnavigable. Furthermore, off-screen slides must use `aria-hidden` to prevent screen reader screen clutter.
+**Action:** Always wrap custom carousel viewport decks in a container with tabIndex={0}, appropriate ARIA roles (e.g., `role="region"`, `aria-roledescription="carousel"`), and ArrowLeft/ArrowRight keydown event handlers. Hide off-screen slides using `aria-hidden={i !== activeIndex}` dynamically.
