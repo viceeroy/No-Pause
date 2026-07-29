@@ -1,0 +1,5 @@
+# Palette's Journal - Critical UX/Accessibility Learnings
+
+## 2025-07-29 - Accessible Horizontal Carousel & Action Shortcuts
+**Learning:** For interactive horizontal sliders and card carousels in this design system, standard pointers/swipes leave keyboard/screen reader users completely locked out. Applying `tabIndex={0}`, `role="region"`, and arrow key keyboard event handlers provides a fully accessible interactive boundary. To ensure screen readers do not read out-of-view carousel items, adding `aria-hidden={i !== activeIndex}` is critical. Furthermore, pairing primary state-changing buttons with global [Space] listeners and subtle `[Space]` desktop visual hints creates a highly satisfying, fluid transition that delights power users.
+**Action:** When working with sliders, carousels, or multi-step panels, always build-in keyboard arrow navigation, standard focus outline styles (`focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none`), hide inactive slide nodes from accessibility trees via `aria-hidden`, and surface action shortcuts with visual hints like `[Space]`.
