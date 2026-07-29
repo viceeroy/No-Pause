@@ -1,0 +1,5 @@
+# Palette's Journal — No Pause
+
+## 2025-03-02 - Accessible Carousel Navigation & Gated Space Shortcut
+**Learning:** In a highly interactive speech-training app like No Pause, users frequently interact with custom visual carousels and expect fluid keyboard access. When a custom slider doesn't have native focusable elements, keyboard users are locked out of navigation. Gaining focus on the deck container itself via `tabIndex={0}`, styled with a design-system compliant focus ring (`focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`), and handling `ArrowLeft`/`ArrowRight` keys makes the carousel fully inclusive. Additionally, global triggers like `Space` must be carefully gated against `INPUT`, `TEXTAREA`, and `BUTTON` tag names to prevent accidental activation during form fill or button clicks.
+**Action:** Always wrap custom selectors in `role="region" aria-roledescription="carousel"` and provide keyboard navigation with focus states. Ensure all global hotkeys ignore key presses when the user's active focus is within editable form controls.
