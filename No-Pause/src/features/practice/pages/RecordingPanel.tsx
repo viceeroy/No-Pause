@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Square } from 'lucide-react';
 import { VoiceVisualizer } from '../components/VoiceVisualizer';
 import type { AudioDataPayload } from '../lib/speechAnalyzer';
@@ -24,6 +25,20 @@ export function RecordingPanel({
 }: RecordingPanelProps) {
   const timerValue = selectedTimerSeconds > 0 ? timeLeft : elapsedTime;
   const isSilent = audioData?.isSilent ?? !soundDetected;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ') {
+        const activeTag = (e.target as HTMLElement).tagName;
+        if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(activeTag)) return;
+        e.preventDefault();
+        void stopRecording();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stopRecording]);
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-between overflow-hidden pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-center animate-in fade-in duration-700 md:pb-12">
@@ -72,7 +87,9 @@ export function RecordingPanel({
           onClick={() => void stopRecording()}
           className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
         >
-          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <Square size={20} fill="currentColor" className="rounded-sm" />
+          <span>Finish & View Results</span>
+          <span className="hidden text-xs opacity-70 md:inline font-sans font-medium bg-primary-foreground/20 px-1.5 py-0.5 rounded border border-primary-foreground/30">[Space]</span>
         </button>
       </div>
     </div>
