@@ -1,0 +1,3 @@
+## 2025-08-04 - Keyboard Accessible Swiper Carousel
+**Learning:** For custom drag-and-swipe swiper carousel components, adding keyboard navigation (ArrowLeft, ArrowRight) and interactive focus outline rings enhances visual accessibility. For screen readers, hiding non-active slide elements via `aria-hidden` guarantees that off-screen items are not incorrectly announced.
+**Action:** When working with swipe-to-select regions, always define `role="region"`, `aria-roledescription="carousel"`, `tabIndex={0}`, and clear visual focus rings, then listen to `keydown` events while ignoring standard input/textareas.
