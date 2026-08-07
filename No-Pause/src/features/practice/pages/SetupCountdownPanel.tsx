@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, ListChecks, Shuffle } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { PracticeState } from './types';
@@ -67,6 +67,32 @@ export function SetupCountdownPanel({
   const wheelLockRef = useRef(false);
   const wheelAccumRef = useRef(0);
   const wheelQuietRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleStartClick = useCallback(() => {
+    if (activeIndex === 0) onStart({ type: 'free' });
+    else onStart({ type: 'prompt', text: slides[activeIndex] });
+  }, [activeIndex, onStart, slides]);
+
+  // Global [Space] listener to trigger start
+  useEffect(() => {
+    if (state !== 'setup') return;
+
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
+      if (e.key === ' ') {
+        const target = e.target as HTMLElement;
+        if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName) || target.isContentEditable) {
+          return;
+        }
+        e.preventDefault();
+        handleStartClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDownGlobal);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDownGlobal);
+    };
+  }, [state, handleStartClick]);
 
   // One-time nudge: shift deck slightly left to reveal card 1's edge, then snap back.
   useEffect(() => {
@@ -168,9 +194,15 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
-  const handleStartClick = () => {
-    if (activeIndex === 0) onStart({ type: 'free' });
-    else onStart({ type: 'prompt', text: slides[activeIndex] });
+  // Keyboard navigation for carousel
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((prev) => Math.min(prev + 1, slides.length - 1));
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((prev) => Math.max(prev - 1, 0));
+    }
   };
 
   return (
@@ -203,8 +235,13 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Speaking prompts carousel"
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none rounded-[28px]',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
@@ -219,7 +256,11 @@ export function SetupCountdownPanel({
                 }}
               >
                 {slides.map((slide, i) => (
-                  <div key={i} className="w-full shrink-0 select-none px-1">
+                  <div
+                    key={i}
+                    className="w-full shrink-0 select-none px-1"
+                    aria-hidden={i !== activeIndex}
+                  >
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
                       <p
@@ -296,7 +337,7 @@ export function SetupCountdownPanel({
                 onClick={handleStartClick}
                 className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto sm:px-16 sm:text-lg"
               >
-                Start Speaking
+                Start Speaking <span className="hidden opacity-70 md:inline">[Space]</span>
               </button>
             </div>
           </div>
