@@ -99,6 +99,14 @@
     font-family: 'Playfair Display', serif;
     color: #E6EAF2;
   }
+
+  /* Keyboard focus states for accessibility */
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex="0"]:focus-visible,
+  [role="button"]:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background outline-none;
+  }
 }
 
 /* Preserve component defaults that rely on standard element styling */
