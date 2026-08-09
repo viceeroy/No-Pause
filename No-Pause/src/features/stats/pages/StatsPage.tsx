@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogIn, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
 import { supabase } from '@/services/supabase';
 import {
   getPracticeStats,
@@ -11,7 +11,6 @@ import {
   type WeeklyStatsComparison,
 } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
-import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/providers/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -431,6 +430,22 @@ export default function StatsPage({
               <ArrowUpRight size={16} />
             </span>
           </div>
+          {telegramChallengeStats && (telegramChallengeStats.friendChallenges > 0 || telegramChallengeStats.groupChallenges > 0) && (
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-border/60 pt-3 text-xs font-sans text-muted-foreground">
+              {telegramChallengeStats.friendChallenges > 0 && (
+                <span>
+                  ⚔️ Friend: <strong className="text-foreground">{telegramChallengeStats.friendChallenges}</strong>
+                  {telegramChallengeStats.friendWins > 0 && ` (${telegramChallengeStats.friendWins} win${telegramChallengeStats.friendWins > 1 ? 's' : ''})`}
+                </span>
+              )}
+              {telegramChallengeStats.groupChallenges > 0 && (
+                <span>
+                  🏆 Group: <strong className="text-foreground">{telegramChallengeStats.groupChallenges}</strong>
+                  {telegramChallengeStats.groupWins > 0 && ` (${telegramChallengeStats.groupWins} win${telegramChallengeStats.groupWins > 1 ? 's' : ''})`}
+                </span>
+              )}
+            </div>
+          )}
         </a>
 
         {statsError && (
