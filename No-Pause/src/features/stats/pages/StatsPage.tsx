@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogIn, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
 import { supabase } from '@/services/supabase';
 import {
   getPracticeStats,
@@ -11,7 +11,6 @@ import {
   type WeeklyStatsComparison,
 } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
-import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/providers/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -145,12 +144,6 @@ type StatsPageProps = {
   showEmptyStateAction?: boolean;
 };
 
-type TelegramChallengeStats = {
-  friendChallenges: number;
-  groupChallenges: number;
-  friendWins: number;
-  groupWins: number;
-} | null;
 
 export default function StatsPage({
   emptyStateTitle = 'No sessions yet',
@@ -174,7 +167,6 @@ export default function StatsPage({
   });
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityDay[]>(() => createEmptyWeeklyActivity());
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStatsComparison>(() => createEmptyWeeklyStats());
-  const [telegramChallengeStats, setTelegramChallengeStats] = useState<TelegramChallengeStats>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const isMountedRef = useRef(false);
@@ -228,7 +220,6 @@ export default function StatsPage({
 
     async function loadTelegramChallengeStats() {
       if (!user?.id) {
-        setTelegramChallengeStats(null);
         return;
       }
 
@@ -241,22 +232,12 @@ export default function StatsPage({
 
       if (error || !data) {
         if (error) console.error('Failed to load Telegram challenge stats:', error);
-        setTelegramChallengeStats(null);
         return;
       }
-
-      const stats = data as Record<string, unknown>;
-      setTelegramChallengeStats({
-        friendChallenges: Number(stats.friendChallenges) || 0,
-        groupChallenges: Number(stats.groupChallenges) || 0,
-        friendWins: Number(stats.friendWins) || 0,
-        groupWins: Number(stats.groupWins) || 0,
-      });
     }
 
     void loadTelegramChallengeStats().catch((error) => {
       console.error('Failed to load Telegram challenge stats:', error);
-      if (!isCancelled) setTelegramChallengeStats(null);
     });
 
     return () => {

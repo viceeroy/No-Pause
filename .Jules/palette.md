@@ -1,0 +1,3 @@
+## 2026-08-10 - Carousel Accessibility & Global Shortcuts
+**Learning:** For custom drag/swipe carousels on the web, keyboard arrow navigation is essential. Adding `tabIndex={0}`, standard keyboard navigation event handlers, and correct ARIA roles/labels transforms custom widgets into accessible, keyboard-friendly controls. Furthermore, global shortcuts like Space should always be gated properly using tag checks to prevent interference with standard inputs and buttons.
+**Action:** Always add ARIA attributes, focus indicators, keyboard arrow handlers, and selective shortcut gates to custom components and global keydown listeners to guarantee seamless keyboard and screen reader accessibility.
