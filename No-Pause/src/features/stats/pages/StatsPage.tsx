@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogIn, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
 import { supabase } from '@/services/supabase';
 import {
   getPracticeStats,
@@ -11,7 +11,6 @@ import {
   type WeeklyStatsComparison,
 } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
-import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/providers/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -426,6 +425,16 @@ export default function StatsPage({
               <p className="text-sm font-sans leading-relaxed text-muted-foreground">
                 Optional voice note practice outside the web app.
               </p>
+              {telegramChallengeStats && (telegramChallengeStats.friendChallenges > 0 || telegramChallengeStats.groupChallenges > 0) && (
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-sans text-primary">
+                  {telegramChallengeStats.friendChallenges > 0 && (
+                    <span>👥 Friend Challenges: {telegramChallengeStats.friendChallenges} ({telegramChallengeStats.friendWins} wins)</span>
+                  )}
+                  {telegramChallengeStats.groupChallenges > 0 && (
+                    <span>🏆 Group Challenges: {telegramChallengeStats.groupChallenges} ({telegramChallengeStats.groupWins} wins)</span>
+                  )}
+                </div>
+              )}
             </div>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface-elevated text-primary">
               <ArrowUpRight size={16} />
