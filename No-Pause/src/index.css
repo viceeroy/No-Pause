@@ -99,6 +99,17 @@
     font-family: 'Playfair Display', serif;
     color: #E6EAF2;
   }
+
+  /* Global keyboard navigation focus styles */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex="0"]:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 outline-none;
+    --tw-ring-offset-color: var(--background-base);
+  }
 }
 
 /* Preserve component defaults that rely on standard element styling */
