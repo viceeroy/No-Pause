@@ -70,9 +70,12 @@ export function RecordingPanel({
       <div className="w-full shrink-0 pt-5 md:w-auto md:pt-7">
         <button
           onClick={() => void stopRecording()}
+          aria-keyshortcuts="Space"
           className="flex w-full items-center justify-center gap-4 rounded-full bg-primary px-10 py-4 text-base font-sans font-black text-primary-foreground shadow-soft btn-press hover:brightness-110 md:w-auto sm:px-16 sm:text-lg"
         >
-          <Square size={20} fill="currentColor" className="rounded-sm" /> Finish & View Results
+          <Square size={20} fill="currentColor" className="rounded-sm" />
+          <span>Finish & View Results</span>
+          <span className="hidden text-xs font-normal opacity-70 md:inline">[Space]</span>
         </button>
       </div>
     </div>
