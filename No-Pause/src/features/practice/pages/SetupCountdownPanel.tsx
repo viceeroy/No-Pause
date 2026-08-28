@@ -168,6 +168,16 @@ export function SetupCountdownPanel({
     setActiveIndex(next);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+    }
+  };
+
   const handleStartClick = () => {
     if (activeIndex === 0) onStart({ type: 'free' });
     else onStart({ type: 'prompt', text: slides[activeIndex] });
@@ -203,8 +213,13 @@ export function SetupCountdownPanel({
           <div className="flex min-h-[calc(100dvh-230px)] flex-col items-center justify-between py-1 md:min-h-0 md:justify-start md:gap-8 md:py-0">
             <div
               ref={containerRef}
+              role="region"
+              aria-roledescription="carousel"
+              aria-label="Practice prompt carousel"
+              tabIndex={0}
+              onKeyDown={handleKeyDown}
               className={cn(
-                'w-full overflow-hidden select-none',
+                'w-full overflow-hidden select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none rounded-[28px]',
                 dragging ? 'cursor-grabbing' : 'cursor-grab'
               )}
               style={{ touchAction: 'pan-y', overscrollBehaviorX: 'contain' }}
@@ -219,7 +234,7 @@ export function SetupCountdownPanel({
                 }}
               >
                 {slides.map((slide, i) => (
-                  <div key={i} className="w-full shrink-0 select-none px-1">
+                  <div key={i} className="w-full shrink-0 select-none px-1" aria-hidden={i !== activeIndex}>
                     <div className="flex w-full flex-col items-center justify-center rounded-[28px] border border-border bg-surface-card px-5 py-8 shadow-card md:min-h-[300px] md:px-10 md:py-12">
                       <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-primary">Speaking Mode</p>
                       <p
