@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, Megaphone, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, Megaphone, type LucideIcon } from 'lucide-react';
 import { HELP_ARTICLES } from '@/features/help/helpContent';
 
 const SLUG_ICONS: Record<string, LucideIcon> = {
@@ -32,9 +32,10 @@ export default function HelpPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mb-4 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Back"
+          className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
         >
-          ← Back
+          <ChevronLeft size={16} aria-hidden="true" /> Back
         </button>
         <header className="mb-6">
           <h1 className="text-3xl font-serif font-medium text-foreground">Help</h1>
