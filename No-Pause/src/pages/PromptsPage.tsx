@@ -75,9 +75,10 @@ export default function PromptsPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
+          aria-label="Go back"
           className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
         >
-          <ChevronLeft size={16} /> Back
+          <ChevronLeft size={16} aria-hidden="true" /> Back
         </button>
 
         <header className="mb-6 text-left">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogIn, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronLeft, Clock, Flame, LogOut, Send, TrendingUp, Trophy } from 'lucide-react';
 import { supabase } from '@/services/supabase';
 import {
   getPracticeStats,
@@ -11,7 +11,6 @@ import {
   type WeeklyStatsComparison,
 } from '@/lib/practiceApi';
 import { MODE_LABELS, normalizeMode } from '@/lib/core/modes';
-import { formatDuration } from '@/lib/core/time';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/providers/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -174,7 +173,7 @@ export default function StatsPage({
   });
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityDay[]>(() => createEmptyWeeklyActivity());
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStatsComparison>(() => createEmptyWeeklyStats());
-  const [telegramChallengeStats, setTelegramChallengeStats] = useState<TelegramChallengeStats>(null);
+  const [, setTelegramChallengeStats] = useState<TelegramChallengeStats>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const isMountedRef = useRef(false);
@@ -287,9 +286,10 @@ export default function StatsPage({
         <button
           type="button"
           onClick={() => navigate(-1)}
+          aria-label="Go back"
           className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
         >
-          <ChevronLeft size={16} /> Back
+          <ChevronLeft size={16} aria-hidden="true" /> Back
         </button>
 
         <header className="mb-6 text-left">
