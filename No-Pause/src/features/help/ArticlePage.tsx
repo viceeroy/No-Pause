@@ -1,5 +1,5 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, Megaphone, ExternalLink, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, Mic, TrendingUp, VolumeX, Zap, Flame, Send, Shield, Brain, RefreshCw, Target, Megaphone, ExternalLink, type LucideIcon } from 'lucide-react';
 import {
   getArticleBySlug,
   type HelpSection,
@@ -211,9 +211,10 @@ export default function ArticlePage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+          className="-ml-2 mb-4 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-sans text-muted-foreground transition-colors btn-press hover:text-foreground"
+          aria-label="Back to Help"
         >
-          ← Help
+          <ChevronLeft size={16} aria-hidden="true" /> Back to Help
         </button>
 
         <header className="mt-4">
